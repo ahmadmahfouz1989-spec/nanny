@@ -1,10 +1,10 @@
 import { useTranslations } from "next-intl";
+import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
 import WaveDivider from "@/components/wave-divider";
-import HeroIllustration from "@/components/illustrations/hero-illustration";
 import Sparkle from "@/components/illustrations/sparkle";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import MatchIllustration from "@/components/illustrations/match-illustration";
@@ -106,7 +106,22 @@ export default function Home() {
             </div>
           </div>
 
-          <HeroIllustration className="w-full max-w-md mx-auto" />
+          <div className="relative w-full max-w-md mx-auto">
+            <div
+              aria-hidden
+              className="absolute -inset-4 rounded-[2.5rem] bg-accent/50 -rotate-2"
+            />
+            <div className="relative aspect-[4/3] rounded-3xl overflow-hidden border-4 border-surface shadow-[0_1px_2px_rgba(30,20,10,0.04),0_24px_48px_-16px_rgba(30,20,10,0.35)]">
+              <Image
+                src="/images/hero-nanny-child.jpg"
+                alt={t("heroPhotoAlt")}
+                fill
+                priority
+                sizes="(min-width: 1024px) 480px, 90vw"
+                className="object-cover"
+              />
+            </div>
+          </div>
         </div>
 
         <WaveDivider className="text-background" />
