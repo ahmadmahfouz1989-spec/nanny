@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useLayoutEffect, useSyncExternalStore } from "react";
 
 const THEME_CHANGE_EVENT = "theme-change";
 
@@ -27,6 +27,10 @@ function getServerSnapshot(): "light" | "dark" {
 
 export default function ThemeSwitcher({ className = "" }: { className?: string }) {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+
+  useLayoutEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   function toggle() {
     const next = theme === "light" ? "dark" : "light";
