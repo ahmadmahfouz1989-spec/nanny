@@ -22,7 +22,7 @@ export default function LoginForm() {
     ? rawNext.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/"
     : null;
 
-  const [identifier, setIdentifier] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "account_suspended" ? t("accountSuspended") : null,
@@ -35,11 +35,8 @@ export default function LoginForm() {
     setSubmitting(true);
 
     const supabase = createClient();
-    const isEmail = identifier.includes("@");
 
-    const { error } = await supabase.auth.signInWithPassword(
-      isEmail ? { email: identifier, password } : { phone: identifier, password },
-    );
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setSubmitting(false);
@@ -71,11 +68,11 @@ export default function LoginForm() {
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
-          type="text"
+          type="email"
           required
-          placeholder={tAuth("identifierPlaceholder")}
-          value={identifier}
-          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder={tAuth("emailPlaceholder")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           className={ui.input}
         />
         <input
