@@ -248,6 +248,8 @@
     "profilesEmpty": "Nothing waiting for review.",
     "typeParent": "Parent",
     "typeNanny": "Nanny",
+    "viewDetails": "View details",
+    "hideDetails": "Hide details",
     "approve": "Approve",
     "reject": "Reject",
     "rejectNotesPlaceholder": "Reason for rejection (sent to the user)",

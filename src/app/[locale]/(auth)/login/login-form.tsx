@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useRouter, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -12,8 +12,14 @@ export default function LoginForm() {
   const t = useTranslations("Login");
   const tAuth = useTranslations("Auth");
   const router = useRouter();
+  const locale = useLocale();
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  // middleware sets `next` to a locale-prefixed pathname (e.g. /en/admin) —
+  // strip the prefix since the locale-aware router re-adds it on push.
+  const rawNext = searchParams.get("next");
+  const explicitNext = rawNext
+    ? rawNext.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/"
+    : null;
 
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -50,7 +56,10 @@ export default function LoginForm() {
       return;
     }
 
-    router.push(next);
+    const target =
+      explicitNext ?? (me?.profile?.moderation_status === "approved" ? "/matches" : "/dashboard");
+
+    router.push(target);
     router.refresh();
   }
 

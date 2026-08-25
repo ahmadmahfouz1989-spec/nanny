@@ -248,6 +248,8 @@
     "profilesEmpty": "لا يوجد شيء بانتظار المراجعة.",
     "typeParent": "أحد الوالدين",
     "typeNanny": "مربية",
+    "viewDetails": "عرض التفاصيل",
+    "hideDetails": "إخفاء التفاصيل",
     "approve": "اعتماد",
     "reject": "رفض",
     "rejectNotesPlaceholder": "سبب الرفض (يُرسل إلى المستخدم)",
