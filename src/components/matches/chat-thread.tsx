@@ -47,7 +47,11 @@ export default function ChatThread({
         { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` },
         (payload) => {
           const incoming = payload.new as Message;
-          setMessages((prev) => (prev ? [...prev, incoming] : [incoming]));
+          setMessages((prev) => {
+            if (!prev) return [incoming];
+            if (prev.some((m) => m.id === incoming.id)) return prev;
+            return [...prev, incoming];
+          });
           onMessageRef.current?.(incoming);
           fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
         },
