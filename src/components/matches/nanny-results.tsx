@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
-import ResultsShell from "@/components/matches/results-shell";
 import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
@@ -86,7 +85,8 @@ export default function NannyResults() {
   }, [t]);
 
   return (
-    <ResultsShell title={t("titleParent")} backLabel={t("backToDashboard")}>
+    <div className="max-w-2xl mx-auto w-full px-6 py-8">
+      <h1 className="font-display text-2xl font-bold mb-6">{t("titleParent")}</h1>
       {!results && !error && <p className="text-sm text-muted">{t("loading")}</p>}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
@@ -196,6 +196,6 @@ export default function NannyResults() {
           );
         })}
       </div>
-    </ResultsShell>
+    </div>
   );
 }

@@ -18,26 +18,32 @@ export default async function OnboardingPage({
     redirect({ href: "/login", locale });
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user!.id).single();
+  const { data: profile } = await supabase.from("users").select("role, contact_phone").eq("id", user!.id).single();
 
   if (profile?.role === "parent") {
     const { data: existing } = await supabase
       .from("parent_profiles")
-      .select("id")
+      .select("*, parent_profile_languages(language_id)")
       .eq("user_id", user!.id)
       .maybeSingle();
-    if (existing) redirect({ href: "/dashboard", locale });
-    return <ParentOnboarding />;
+    return (
+      <ParentOnboarding
+        initialProfile={existing ? { ...existing, contact_phone: profile.contact_phone } : null}
+      />
+    );
   }
 
   if (profile?.role === "nanny") {
     const { data: existing } = await supabase
       .from("nanny_profiles")
-      .select("id")
+      .select("*, nanny_profile_languages(language_id), nanny_experience(age_group, years_experience)")
       .eq("user_id", user!.id)
       .maybeSingle();
-    if (existing) redirect({ href: "/dashboard", locale });
-    return <NannyOnboarding />;
+    return (
+      <NannyOnboarding
+        initialProfile={existing ? { ...existing, contact_phone: profile.contact_phone } : null}
+      />
+    );
   }
 
   redirect({ href: "/dashboard", locale });
