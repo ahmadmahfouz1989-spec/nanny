@@ -1,18 +1,27 @@
 import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 const FROM = process.env.RESEND_FROM_EMAIL ?? "nanny <onboarding@resend.dev>";
 
-/**
- * No-ops (logs and returns) when RESEND_API_KEY isn't configured, so the
- * app works the same with or without email set up — nothing in the calling
- * code needs to branch on whether email is enabled.
- */
-export async function sendEmail(to: string, subject: string, html: string) {
-  if (!resend) {
-    console.log(`[email] RESEND_API_KEY not set — skipping email to ${to}: ${subject}`);
-    return;
-  }
+// Fallback for when Resend has no verified domain: Resend's sandbox mode
+// (the default until a domain is verified at resend.com/domains) only
+// delivers to the account owner's own address, so any other recipient is
+// silently rejected. Gmail SMTP has no such restriction and needs no
+// domain — just a Gmail account and an App Password.
+const smtpTransport =
+  process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD
+    ? nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT ?? 587),
+        secure: false,
+        auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASSWORD },
+      })
+    : null;
+const SMTP_FROM = process.env.SMTP_FROM ?? process.env.SMTP_USER;
+
+async function sendViaResend(to: string, subject: string, html: string) {
+  if (!resend) return false;
   try {
     // The Resend SDK resolves with { data: null, error } on API-level
     // failures (bad API key, unverified from-address, etc.) rather than
@@ -21,12 +30,40 @@ export async function sendEmail(to: string, subject: string, html: string) {
     const { error } = await resend.emails.send({ from: FROM, to, subject, html });
     if (error) {
       console.error(`[email] Resend rejected email to ${to}:`, error);
+      return false;
     }
+    return true;
   } catch (err) {
-    // Notification email failures shouldn't break the underlying action
-    // (approval, interest, etc.) — log and move on.
-    console.error(`[email] failed to send to ${to}:`, err);
+    console.error(`[email] Resend failed to send to ${to}:`, err);
+    return false;
   }
+}
+
+async function sendViaSmtp(to: string, subject: string, html: string) {
+  if (!smtpTransport) return false;
+  try {
+    await smtpTransport.sendMail({ from: SMTP_FROM, to, subject, html });
+    return true;
+  } catch (err) {
+    console.error(`[email] SMTP failed to send to ${to}:`, err);
+    return false;
+  }
+}
+
+/**
+ * No-ops (logs and returns) when neither provider is configured, so the
+ * app works the same with or without email set up — nothing in the calling
+ * code needs to branch on whether email is enabled. Tries Resend first
+ * (so it takes over automatically once a domain is verified there) and
+ * falls back to Gmail SMTP on any failure.
+ */
+export async function sendEmail(to: string, subject: string, html: string) {
+  if (!resend && !smtpTransport) {
+    console.log(`[email] no email provider configured — skipping email to ${to}: ${subject}`);
+    return;
+  }
+  if (await sendViaResend(to, subject, html)) return;
+  await sendViaSmtp(to, subject, html);
 }
 
 type Lang = "en" | "ar" | "fr" | null | undefined;
