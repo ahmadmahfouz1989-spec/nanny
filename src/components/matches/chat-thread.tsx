@@ -45,7 +45,13 @@ export default function ChatThread({
       .then((res) => res.json())
       .then((body) => setMessages(body.messages ?? []));
 
-    fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
+    // Only the dedicated Messages thread (variant "full") represents the user
+    // deliberately opening a conversation — the compact widget embedded on
+    // match cards renders unconditionally, so mounting it shouldn't clear
+    // the unread badge before the user has actually looked at their inbox.
+    if (variant === "full") {
+      fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
+    }
 
     const channel = supabase
       .channel(`messages:${matchId}`)
@@ -60,7 +66,9 @@ export default function ChatThread({
             return [...prev, incoming];
           });
           onMessageRef.current?.(incoming);
-          fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
+          if (variant === "full") {
+            fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
+          }
         },
       )
       .subscribe();
@@ -68,7 +76,7 @@ export default function ChatThread({
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [matchId]);
+  }, [matchId, variant]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
