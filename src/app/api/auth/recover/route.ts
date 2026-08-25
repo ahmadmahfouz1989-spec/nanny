@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { getPublicOrigin } from "@/lib/site-url";
 import { z } from "zod";
 
 const bodySchema = z
@@ -16,7 +17,7 @@ export async function POST(request: Request) {
   }
 
   const supabase = await createClient();
-  const origin = new URL(request.url).origin;
+  const origin = getPublicOrigin(request);
 
   if (parsed.data.email) {
     await supabase.auth.resetPasswordForEmail(parsed.data.email, {

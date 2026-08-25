@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signupSchema } from "@/lib/validation/auth";
 import { sendEmail, alreadyRegisteredEmail } from "@/lib/email";
+import { getPublicOrigin } from "@/lib/site-url";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -14,7 +15,7 @@ export async function POST(request: Request) {
 
   const { role, email, password, preferredLanguage } = parsed.data;
   const supabase = await createClient();
-  const origin = new URL(request.url).origin;
+  const origin = getPublicOrigin(request);
   const metadata = { role, preferred_language: preferredLanguage };
 
   const { data, error } = await supabase.auth.signUp({

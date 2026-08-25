@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { getPublicOrigin } from "@/lib/site-url";
 import { routing } from "@/i18n/routing";
 
 // Dedicated, query-string-free callback for password recovery specifically.
 // Kept separate from /auth/callback (rather than using its `?next=` param)
-// because Supabase's Redirect URLs allow-list wasn't reliably matching a
-// redirectTo with a query string, even with a trailing wildcard — a plain
-// path sidesteps that ambiguity entirely.
+// since a plain path is simpler to reason about for the one flow that
+// needs a fixed destination.
 async function currentLocale() {
   const cookieStore = await cookies();
   const cookieLocale = cookieStore.get("NEXT_LOCALE")?.value;
@@ -17,7 +17,8 @@ async function currentLocale() {
 }
 
 export async function GET(request: Request) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  const origin = getPublicOrigin(request);
   const code = searchParams.get("code");
   const locale = await currentLocale();
 
