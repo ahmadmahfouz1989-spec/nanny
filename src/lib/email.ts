@@ -51,6 +51,17 @@ export function interestReceivedEmail(lang: Lang, fromName: string) {
   };
 }
 
+export function alreadyRegisteredEmail(lang: Lang, loginUrl: string, recoverUrl: string) {
+  return {
+    subject: pick(lang, "You already have an account", "لديك حساب بالفعل"),
+    html: pick(
+      lang,
+      `<p>Someone just tried to sign up with this email, but you already have a nanny account.</p><p><a href="${loginUrl}">Log in</a> or <a href="${recoverUrl}">reset your password</a> if you forgot it.</p><p>If this wasn't you, you can safely ignore this email.</p>`,
+      `<p>حاول شخص ما للتو إنشاء حساب بهذا البريد الإلكتروني، لكن لديك حساب على nanny بالفعل.</p><p><a href="${loginUrl}">سجّل الدخول</a> أو <a href="${recoverUrl}">أعد تعيين كلمة المرور</a> إذا نسيتها.</p><p>إذا لم يكن هذا أنت، يمكنك تجاهل هذا البريد بأمان.</p>`,
+    ),
+  };
+}
+
 export function mutualMatchEmail(lang: Lang, otherName: string) {
   return {
     subject: pick(lang, "It's a match!", "لقد تطابقتما!"),
