@@ -1,6 +1,7 @@
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
+import SignOutButton from "@/components/sign-out-button";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 
@@ -20,6 +21,7 @@ export default function ResultsShell({
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
           <LocaleSwitcher />
+          <SignOutButton />
         </div>
       </header>
 
