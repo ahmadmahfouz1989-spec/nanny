@@ -213,7 +213,17 @@
     "viewContact": "View contact",
     "openWhatsapp": "Open WhatsApp",
     "declined": "Declined",
-    "actionError": "Something went wrong. Please try again."
+    "actionError": "Something went wrong. Please try again.",
+    "chatTitle": "Chat",
+    "chatEmpty": "No messages yet — say hello!",
+    "chatPlaceholder": "Type a message…",
+    "chatSend": "Send"
+  },
+  "Inbox": {
+    "navLabel": "Messages",
+    "title": "Messages",
+    "empty": "No conversations yet. They'll show up here once you match with someone.",
+    "noMessagesYet": "No messages yet"
   },
   "Report": {
     "action": "Report",

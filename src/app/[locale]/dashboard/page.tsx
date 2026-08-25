@@ -6,8 +6,17 @@ import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
 import SignOutButton from "@/components/sign-out-button";
+import InboxLink from "@/components/matches/inbox-link";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
+import WaveDivider from "@/components/wave-divider";
+import Sparkle from "@/components/illustrations/sparkle";
 import { ui } from "@/lib/ui";
+
+const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
+  success: "bg-success-soft",
+  warning: "bg-warning-soft",
+  danger: "bg-danger-soft",
+};
 
 export default async function DashboardPage({
   params,
@@ -57,18 +66,26 @@ export default async function DashboardPage({
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 sm:px-10 py-6">
-        <BrandMark />
-        <div className="flex items-center gap-4">
-          <ThemeSwitcher />
-          <LocaleSwitcher />
-          <SignOutButton />
+      <div className="relative bg-sky-soft overflow-hidden">
+        <Sparkle className="hidden sm:block absolute bottom-14 end-[10%] h-4 w-4 text-primary opacity-70" />
+        <header className="relative z-10 flex items-center justify-between px-6 sm:px-10 py-6">
+          <BrandMark />
+          <div className="flex items-center gap-4">
+            {profile?.role !== "admin" && <InboxLink />}
+            <ThemeSwitcher />
+            <LocaleSwitcher />
+            <SignOutButton />
+          </div>
+        </header>
+
+        <div className="relative max-w-lg mx-auto w-full px-6 pt-4 pb-16">
+          <h1 className="font-display text-3xl sm:text-4xl font-extrabold uppercase">{t("title")}</h1>
         </div>
-      </header>
 
-      <main className="flex-1 max-w-lg mx-auto w-full px-6 py-10">
-        <h1 className="font-display text-3xl font-semibold mb-8">{t("title")}</h1>
+        <WaveDivider className="text-background" />
+      </div>
 
+      <main className="flex-1 max-w-lg mx-auto w-full px-6 pt-6 pb-10">
         <div className={ui.card + " p-6 mb-5"}>
           <p className="text-xs font-medium uppercase tracking-wide text-muted mb-4">
             {t("accountLabel")}
@@ -110,25 +127,27 @@ export default async function DashboardPage({
             </Link>
           </div>
         ) : (
-        <div className={matchProfile ? ui.card + " p-6" : ui.card + " overflow-hidden"}>
+        <div className={ui.card + " overflow-hidden"}>
           {matchProfile ? (
             <>
-              <div className="flex items-center justify-between mb-2">
-                <p className="font-display text-lg font-semibold">{t("yourProfile")}</p>
+              <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
+                <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
                 <span className={ui.badge(moderationTone)}>
                   {matchProfile.moderation_status === "approved" && t("statusApproved")}
                   {matchProfile.moderation_status === "pending" && t("statusPending")}
                   {matchProfile.moderation_status === "rejected" && t("statusRejected")}
                 </span>
               </div>
-              <p className="text-sm text-muted mb-4">
-                {matchProfile.moderation_status === "approved" && t("descriptionApproved")}
-                {matchProfile.moderation_status === "pending" && t("descriptionPending")}
-                {matchProfile.moderation_status === "rejected" && t("descriptionRejected")}
-              </p>
-              <Link href="/matches" className={ui.buttonPrimary}>
-                {t("viewMatches")}
-              </Link>
+              <div className="p-6">
+                <p className="text-sm text-muted mb-4">
+                  {matchProfile.moderation_status === "approved" && t("descriptionApproved")}
+                  {matchProfile.moderation_status === "pending" && t("descriptionPending")}
+                  {matchProfile.moderation_status === "rejected" && t("descriptionRejected")}
+                </p>
+                <Link href="/matches" className={ui.buttonPrimary}>
+                  {t("viewMatches")}
+                </Link>
+              </div>
             </>
           ) : (
             <>
