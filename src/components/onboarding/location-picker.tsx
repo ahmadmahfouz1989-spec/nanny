@@ -27,6 +27,12 @@ async function fetchLocations(level: string, parentId?: string) {
   return (body.locations ?? []) as Location[];
 }
 
+async function fetchLocationById(id: string) {
+  const res = await fetch(`/api/locations?id=${id}`);
+  const body = await res.json();
+  return ((body.locations ?? []) as Location[])[0] ?? null;
+}
+
 export default function LocationPicker({
   value,
   onChange,
@@ -44,6 +50,34 @@ export default function LocationPicker({
 
   useEffect(() => {
     fetchLocations("governorate").then(setGovernorates);
+  }, []);
+
+  // Resolve the district/governorate chain for a pre-existing area value
+  // (editing a saved profile) — LocationPicker otherwise only ever learns
+  // its parent selects by the user picking them in order.
+  useEffect(() => {
+    if (!value) return;
+    let cancelled = false;
+    (async () => {
+      const area = await fetchLocationById(value);
+      if (!area?.parent_location_id || cancelled) return;
+      const district = await fetchLocationById(area.parent_location_id);
+      if (!district?.parent_location_id || cancelled) return;
+
+      setDistrictId(district.id);
+      setGovernorateId(district.parent_location_id);
+      const [districtsForGov, areasForDistrict] = await Promise.all([
+        fetchLocations("district", district.parent_location_id),
+        fetchLocations("area", district.id),
+      ]);
+      if (cancelled) return;
+      setDistricts(districtsForGov);
+      setAreas(areasForDistrict);
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleGovernorateChange(id: string) {

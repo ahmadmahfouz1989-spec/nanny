@@ -46,7 +46,47 @@ const initialState: FormState = {
   familyDescription: "",
 };
 
-export default function ParentOnboarding() {
+type ExistingParentProfile = {
+  full_name: string;
+  contact_phone: string | null;
+  location_id: string;
+  num_children: number;
+  children_age_ranges: string[];
+  schedule_type: FormState["scheduleType"];
+  live_arrangement: FormState["liveArrangement"];
+  desired_start_date: string;
+  salary_min: number;
+  salary_max: number;
+  transportation_required: boolean;
+  additional_duties: string[];
+  family_description: string | null;
+  parent_profile_languages: { language_id: string }[];
+};
+
+function stateFromExisting(p: ExistingParentProfile): FormState {
+  return {
+    fullName: p.full_name,
+    contactPhone: p.contact_phone ?? "",
+    locationId: p.location_id,
+    numChildren: p.num_children,
+    childrenAgeRanges: p.children_age_ranges,
+    scheduleType: p.schedule_type,
+    liveArrangement: p.live_arrangement,
+    desiredStartDate: p.desired_start_date,
+    salaryMin: String(p.salary_min),
+    salaryMax: String(p.salary_max),
+    transportationRequired: p.transportation_required,
+    languageIds: p.parent_profile_languages.map((l) => l.language_id),
+    additionalDuties: p.additional_duties,
+    familyDescription: p.family_description ?? "",
+  };
+}
+
+export default function ParentOnboarding({
+  initialProfile,
+}: {
+  initialProfile?: ExistingParentProfile | null;
+}) {
   const t = useTranslations("ParentOnboarding");
   const tw = useTranslations("Wizard");
   const tAge = useTranslations("AgeGroups");
@@ -54,8 +94,9 @@ export default function ParentOnboarding() {
   const tSchedule = useTranslations("ScheduleOptions");
   const tLive = useTranslations("LiveArrangementOptions");
   const router = useRouter();
+  const isEdit = !!initialProfile;
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -132,7 +173,7 @@ export default function ParentOnboarding() {
 
     setSubmitting(true);
     const res = await fetch("/api/profile", {
-      method: "POST",
+      method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });

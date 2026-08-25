@@ -4,7 +4,11 @@
     "signup": "إنشاء حساب",
     "logout": "تسجيل الخروج",
     "dashboard": "لوحة التحكم",
-    "backToHome": "العودة إلى الصفحة الرئيسية"
+    "backToHome": "العودة إلى الصفحة الرئيسية",
+    "home": "الرئيسية",
+    "messages": "الرسائل",
+    "profile": "الملف الشخصي",
+    "admin": "الإدارة"
   },
   "Home": {
     "badge": "نرحّب الآن بالعائلات في جميع أنحاء لبنان",
@@ -80,7 +84,6 @@
     "role": "الدور",
     "roleParent": "أحد الوالدين",
     "roleNanny": "مربية",
-    "roleAdmin": "مشرف",
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
     "verified": "موثّق",
@@ -97,9 +100,7 @@
     "noProfileNanny": "أنشئ ملفك الشخصي لتبدأ برؤية العائلات المناسبة.",
     "createProfile": "إنشاء الملف الشخصي",
     "viewMatches": "عرض التطابقات",
-    "adminWelcomeTitle": "صلاحيات المشرف",
-    "adminWelcomeBody": "لقد سجّلت الدخول كمشرف. توجّه إلى لوحة الإشراف لمراجعة الملفات الشخصية والمستخدمين والبلاغات المعلّقة.",
-    "goToAdmin": "الذهاب إلى لوحة الإشراف"
+    "editProfile": "تعديل الملف الشخصي"
   },
   "Wizard": {
     "step": "الخطوة {step} من {total}",
@@ -204,7 +205,6 @@
     "yearsExperience": "{years} سنوات خبرة",
     "children": "{count, plural, one {# طفل} other {# أطفال}}",
     "salaryRange": "${min}–${max}/شهريًا",
-    "backToDashboard": "العودة إلى لوحة التحكم",
     "sendInterest": "إرسال اهتمام",
     "waitingForResponse": "تم إرسال الاهتمام — بانتظار الرد.",
     "theyAreInterested": "هناك اهتمام بالتواصل معك!",

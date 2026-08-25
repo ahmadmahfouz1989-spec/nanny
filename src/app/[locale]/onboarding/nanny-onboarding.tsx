@@ -57,7 +57,55 @@ const initialState: FormState = {
   shortIntro: "",
 };
 
-export default function NannyOnboarding() {
+type ExistingNannyProfile = {
+  full_name: string;
+  contact_phone: string | null;
+  profile_photo_url: string | null;
+  location_id: string;
+  work_radius_km: number;
+  employment_type: FormState["employmentType"];
+  live_arrangement_pref: FormState["liveArrangementPref"];
+  availability: { days: string[]; start_time: string; end_time: string };
+  years_experience: number;
+  expected_salary_min: number;
+  expected_salary_max: number;
+  has_transportation: boolean;
+  can_drive: boolean;
+  certifications: string[];
+  short_intro: string | null;
+  nanny_profile_languages: { language_id: string }[];
+  nanny_experience: { age_group: string; years_experience: number }[];
+};
+
+function stateFromExisting(p: ExistingNannyProfile): FormState {
+  return {
+    fullName: p.full_name,
+    contactPhone: p.contact_phone ?? "",
+    profilePhotoUrl: p.profile_photo_url,
+    locationId: p.location_id,
+    workRadiusKm: String(p.work_radius_km),
+    employmentType: p.employment_type,
+    liveArrangementPref: p.live_arrangement_pref,
+    days: p.availability?.days ?? [],
+    startTime: p.availability?.start_time ?? "08:00",
+    endTime: p.availability?.end_time ?? "18:00",
+    languageIds: p.nanny_profile_languages.map((l) => l.language_id),
+    yearsExperience: String(p.years_experience),
+    experience: Object.fromEntries(p.nanny_experience.map((e) => [e.age_group, String(e.years_experience)])),
+    expectedSalaryMin: String(p.expected_salary_min),
+    expectedSalaryMax: String(p.expected_salary_max),
+    hasTransportation: p.has_transportation,
+    canDrive: p.can_drive,
+    certifications: p.certifications,
+    shortIntro: p.short_intro ?? "",
+  };
+}
+
+export default function NannyOnboarding({
+  initialProfile,
+}: {
+  initialProfile?: ExistingNannyProfile | null;
+}) {
   const t = useTranslations("NannyOnboarding");
   const tw = useTranslations("Wizard");
   const tAge = useTranslations("AgeGroups");
@@ -67,8 +115,9 @@ export default function NannyOnboarding() {
   const tLive = useTranslations("LiveArrangementOptions");
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isEdit = !!initialProfile;
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(initialState);
+  const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -165,7 +214,7 @@ export default function NannyOnboarding() {
 
     setSubmitting(true);
     const res = await fetch("/api/profile", {
-      method: "POST",
+      method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });

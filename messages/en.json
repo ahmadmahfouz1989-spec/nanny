@@ -4,7 +4,11 @@
     "signup": "Sign up",
     "logout": "Log out",
     "dashboard": "Dashboard",
-    "backToHome": "Back to home"
+    "backToHome": "Back to home",
+    "home": "Home",
+    "messages": "Messages",
+    "profile": "Profile",
+    "admin": "Admin"
   },
   "Home": {
     "badge": "Now welcoming families across Lebanon",
@@ -80,7 +84,6 @@
     "role": "Role",
     "roleParent": "Parent",
     "roleNanny": "Nanny",
-    "roleAdmin": "Admin",
     "email": "Email",
     "phone": "Phone",
     "verified": "Verified",
@@ -97,9 +100,7 @@
     "noProfileNanny": "Create your profile to start seeing matching families.",
     "createProfile": "Create profile",
     "viewMatches": "View matches",
-    "adminWelcomeTitle": "Admin access",
-    "adminWelcomeBody": "You're signed in as an admin. Head to the admin console to review pending profiles, users, and reports.",
-    "goToAdmin": "Go to admin console"
+    "editProfile": "Edit profile"
   },
   "Wizard": {
     "step": "Step {step} of {total}",
@@ -204,7 +205,6 @@
     "yearsExperience": "{years} yrs experience",
     "children": "{count, plural, one {# child} other {# children}}",
     "salaryRange": "${min}–${max}/mo",
-    "backToDashboard": "Back to dashboard",
     "sendInterest": "Send interest",
     "waitingForResponse": "Interest sent — waiting for a response.",
     "theyAreInterested": "They're interested in connecting!",
