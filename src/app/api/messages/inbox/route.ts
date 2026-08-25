@@ -60,6 +60,7 @@ export async function GET() {
     return {
       matchId: m.id,
       counterpart: {
+        id: counterpart?.id ?? "",
         name: counterpart?.full_name ?? "",
         photoUrl: role === "parent" ? (counterpart as { profile_photo_url?: string | null })?.profile_photo_url ?? null : null,
       },
@@ -74,5 +75,5 @@ export async function GET() {
     return bTime.localeCompare(aTime);
   });
 
-  return NextResponse.json({ conversations });
+  return NextResponse.json({ role, conversations });
 }

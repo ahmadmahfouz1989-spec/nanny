@@ -217,13 +217,17 @@
     "chatTitle": "الدردشة",
     "chatEmpty": "لا توجد رسائل بعد — قل مرحبًا!",
     "chatPlaceholder": "اكتب رسالة…",
-    "chatSend": "إرسال"
+    "chatSend": "إرسال",
+    "today": "اليوم"
   },
   "Inbox": {
     "navLabel": "الرسائل",
     "title": "الرسائل",
     "empty": "لا توجد محادثات بعد. ستظهر هنا بمجرد أن تتطابق مع شخص ما.",
-    "noMessagesYet": "لا توجد رسائل بعد"
+    "noMessagesYet": "لا توجد رسائل بعد",
+    "selectConversation": "اختر محادثة لبدء الدردشة.",
+    "menu": "المزيد من الخيارات",
+    "backToList": "العودة إلى الرسائل"
   },
   "Report": {
     "action": "إبلاغ",

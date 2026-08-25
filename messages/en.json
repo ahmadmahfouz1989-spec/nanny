@@ -217,13 +217,17 @@
     "chatTitle": "Chat",
     "chatEmpty": "No messages yet — say hello!",
     "chatPlaceholder": "Type a message…",
-    "chatSend": "Send"
+    "chatSend": "Send",
+    "today": "Today"
   },
   "Inbox": {
     "navLabel": "Messages",
     "title": "Messages",
     "empty": "No conversations yet. They'll show up here once you match with someone.",
-    "noMessagesYet": "No messages yet"
+    "noMessagesYet": "No messages yet",
+    "selectConversation": "Select a conversation to start chatting.",
+    "menu": "More options",
+    "backToList": "Back to messages"
   },
   "Report": {
     "action": "Report",
