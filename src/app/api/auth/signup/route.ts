@@ -10,13 +10,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { role, email, phone, password, preferredLanguage } = parsed.data;
+  const { role, email, password, preferredLanguage } = parsed.data;
   const supabase = await createClient();
-  const metadata = { role, phone, preferred_language: preferredLanguage };
+  const metadata = { role, preferred_language: preferredLanguage };
 
-  const { data, error } = email
-    ? await supabase.auth.signUp({ email, password, options: { data: metadata } })
-    : await supabase.auth.signUp({ phone: phone!, password, options: { data: metadata } });
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: metadata } });
 
   if (error) {
     // Supabase returns a generic-enough message; avoid echoing raw provider errors
