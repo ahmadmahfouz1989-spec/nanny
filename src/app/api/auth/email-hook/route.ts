@@ -36,12 +36,23 @@ export async function POST(request: Request) {
   const { user, email_data } = parsed;
   const { token_hash, redirect_to, email_action_type } = email_data;
 
-  // GoTrue's own hosted verify endpoint still redeems the token and applies
-  // the Redirect URLs allow-list before forwarding to redirect_to — this
-  // hook only replaces who sends the email, not how the link is verified.
-  const verifyUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`;
+  // email_data.redirect_to reflects Supabase's own allow-list check made at
+  // request time (resetPasswordForEmail/signUp), which was observed to fall
+  // back to the bare Site URL even when the requested URL is a correctly
+  // listed exact match — a Supabase-side quirk, not something fixable from
+  // our end of that check. Since we fully own email delivery via this hook,
+  // we sidestep it entirely: build our own destination from the action
+  // type and this request's own origin (which is how Supabase reaches us,
+  // so it's always our real public domain), rather than trust redirect_to.
+  const { origin } = new URL(request.url);
+  const ownDestination =
+    email_action_type === "recovery" ? `${origin}/auth/callback-recovery` : `${origin}/auth/callback`;
 
-  console.log(`[email-hook] action=${email_action_type} redirect_to=${redirect_to} verifyUrl=${verifyUrl}`);
+  const verifyUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(ownDestination)}`;
+
+  console.log(
+    `[email-hook] action=${email_action_type} original_redirect_to=${redirect_to} using=${ownDestination} verifyUrl=${verifyUrl}`,
+  );
 
   const admin = createAdminClient();
   const { data: existing } = await admin
