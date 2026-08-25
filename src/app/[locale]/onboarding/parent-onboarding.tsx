@@ -14,6 +14,7 @@ const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_hel
 
 type FormState = {
   fullName: string;
+  contactPhone: string;
   locationId: string | null;
   numChildren: number;
   childrenAgeRanges: string[];
@@ -30,6 +31,7 @@ type FormState = {
 
 const initialState: FormState = {
   fullName: "",
+  contactPhone: "",
   locationId: null,
   numChildren: 1,
   childrenAgeRanges: [],
@@ -107,6 +109,7 @@ export default function ParentOnboarding() {
 
     const payload = {
       fullName: form.fullName,
+      contactPhone: form.contactPhone || undefined,
       locationId: form.locationId,
       numChildren: form.numChildren,
       childrenAgeRanges: form.childrenAgeRanges,
@@ -169,6 +172,14 @@ export default function ParentOnboarding() {
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
           />
+          <input
+            type="tel"
+            className={ui.input}
+            placeholder={t("contactPhonePlaceholder")}
+            value={form.contactPhone}
+            onChange={(e) => update("contactPhone", e.target.value)}
+          />
+          <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
           <LocationPicker value={form.locationId} onChange={(id) => update("locationId", id)} />
         </>
       )}

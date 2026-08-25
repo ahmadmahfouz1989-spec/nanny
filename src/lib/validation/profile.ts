@@ -12,10 +12,16 @@ export const AGE_GROUPS = [
 export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 const uuid = z.string().uuid();
+const contactPhone = z
+  .string()
+  .min(6, "Enter a valid phone number")
+  .max(20, "Enter a valid phone number")
+  .optional();
 
 export const parentProfileSchema = z
   .object({
     fullName: z.string().min(2).max(80),
+    contactPhone,
     locationId: uuid,
     numChildren: z.number().int().min(1).max(10),
     childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
@@ -47,6 +53,7 @@ export const nannyExperienceEntrySchema = z.object({
 export const nannyProfileSchema = z
   .object({
     fullName: z.string().min(2).max(80),
+    contactPhone,
     profilePhotoUrl: z.string().url(),
     locationId: uuid,
     workRadiusKm: z.number().int().min(1).max(50),

@@ -46,13 +46,15 @@ export async function GET() {
 
   const role = await getRole(supabase, user.id);
 
+  const { data: userRow } = await supabase.from("users").select("contact_phone").eq("id", user.id).single();
+
   if (role === "parent") {
     const { data } = await supabase
       .from("parent_profiles")
       .select("*, parent_profile_languages(language_id)")
       .eq("user_id", user.id)
       .maybeSingle();
-    return NextResponse.json({ profile: data });
+    return NextResponse.json({ profile: data && { ...data, contact_phone: userRow?.contact_phone ?? null } });
   }
 
   if (role === "nanny") {
@@ -61,7 +63,7 @@ export async function GET() {
       .select("*, nanny_profile_languages(language_id), nanny_experience(age_group, years_experience)")
       .eq("user_id", user.id)
       .maybeSingle();
-    return NextResponse.json({ profile: data });
+    return NextResponse.json({ profile: data && { ...data, contact_phone: userRow?.contact_phone ?? null } });
   }
 
   return NextResponse.json({ error: "No profile for this role" }, { status: 404 });
@@ -114,6 +116,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
+    await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
     await recomputeMatchesForParent((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "parent");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
@@ -148,6 +151,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
+    await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
     await recomputeMatchesForNanny((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "nanny");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });

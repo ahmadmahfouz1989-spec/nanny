@@ -15,6 +15,7 @@ const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_c
 
 type FormState = {
   fullName: string;
+  contactPhone: string;
   profilePhotoUrl: string | null;
   locationId: string | null;
   workRadiusKm: string;
@@ -36,6 +37,7 @@ type FormState = {
 
 const initialState: FormState = {
   fullName: "",
+  contactPhone: "",
   profilePhotoUrl: null,
   locationId: null,
   workRadiusKm: "10",
@@ -134,6 +136,7 @@ export default function NannyOnboarding() {
 
     const payload = {
       fullName: form.fullName,
+      contactPhone: form.contactPhone || undefined,
       profilePhotoUrl: form.profilePhotoUrl,
       locationId: form.locationId,
       workRadiusKm: Number(form.workRadiusKm),
@@ -202,6 +205,14 @@ export default function NannyOnboarding() {
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
           />
+          <input
+            type="tel"
+            className={ui.input}
+            placeholder={t("contactPhonePlaceholder")}
+            value={form.contactPhone}
+            onChange={(e) => update("contactPhone", e.target.value)}
+          />
+          <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
 
           <div className="flex items-center gap-4">
             <button
