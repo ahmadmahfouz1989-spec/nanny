@@ -30,11 +30,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   const admin = createAdminClient();
   const { data: counterpart } = await admin
     .from("users")
-    .select("phone, email")
+    .select("contact_phone, email")
     .eq("id", counterpartUserId)
     .single();
 
-  const phone = counterpart?.phone ?? null;
+  const phone = counterpart?.contact_phone ?? null;
   const whatsappUrl = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : null;
 
   return NextResponse.json({ phone, email: counterpart?.email ?? null, whatsappUrl });
