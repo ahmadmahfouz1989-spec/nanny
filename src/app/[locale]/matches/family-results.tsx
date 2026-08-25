@@ -7,8 +7,11 @@ import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
+import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { ui } from "@/lib/ui";
+
+const TONES = ["primary", "secondary", "berry"] as const;
 
 type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
 
@@ -87,55 +90,64 @@ export default function FamilyResults() {
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        {results?.map((r) => {
+      <div className="flex flex-col gap-5">
+        {results?.map((r, i) => {
           const parent = r.parent_profiles;
           const area = localizedLocationName(parent.locations, locale);
           const langs = (parent.parent_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
+          const tone = TONES[i % TONES.length];
           return (
-            <div key={r.id} className={ui.card + " p-5"}>
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <p className="font-display text-lg font-semibold truncate">{parent.full_name}</p>
-                <span className={ui.badge(ui.scoreTone(r.score))}>{t("scoreLabel", { score: Math.round(r.score) })}</span>
+            <div key={r.id} className={ui.card + " overflow-hidden"}>
+              <div className="relative">
+                <AvatarIllustration tone={tone} className="h-28 w-full" />
+                <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
+                  {t("scoreLabel", { score: Math.round(r.score) })}
+                </span>
+                <div className="absolute bottom-0 start-0 p-4">
+                  <p className="font-display text-lg font-bold text-white drop-shadow">{parent.full_name}</p>
+                  <p className="text-xs text-white/90 drop-shadow">
+                    {area && `${area} · `}
+                    {t("children", { count: parent.num_children })} ·{" "}
+                    {t("salaryRange", { min: parent.salary_min, max: parent.salary_max })}
+                  </p>
+                </div>
               </div>
-              <p className="text-sm text-muted mb-2">
-                {area && `${area} · `}
-                {t("children", { count: parent.num_children })} ·{" "}
-                {t("salaryRange", { min: parent.salary_min, max: parent.salary_max })}
-              </p>
-              {parent.family_description && (
-                <p className="text-sm text-ink/80 mb-3">{parent.family_description}</p>
-              )}
 
-              <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
-                <dt className="text-muted">{tParent("ageRanges")}</dt>
-                <dd>{parent.children_age_ranges.map((g) => tAgeGroups(g as never)).join(", ")}</dd>
-                <dt className="text-muted">{tParent("schedule")}</dt>
-                <dd>{tSchedule(parent.schedule_type as never)}</dd>
-                <dt className="text-muted">{tParent("liveArrangement")}</dt>
-                <dd>{tLiveArrangement(parent.live_arrangement as never)}</dd>
-                <dt className="text-muted">{tParent("desiredStartDate")}</dt>
-                <dd>{parent.desired_start_date}</dd>
-                <dt className="text-muted">{tParent("preferredLanguages")}</dt>
-                <dd>{langs.join(", ") || "—"}</dd>
-                <dt className="text-muted">{tParent("transportationRequired")}</dt>
-                <dd>{parent.transportation_required ? "Yes" : "No"}</dd>
-                {parent.additional_duties.length > 0 && (
-                  <>
-                    <dt className="text-muted">{tParent("additionalDuties")}</dt>
-                    <dd>{parent.additional_duties.map((d) => tDuties(d as never)).join(", ")}</dd>
-                  </>
+              <div className="p-5">
+                {parent.family_description && (
+                  <p className="text-sm text-ink/80 mb-3">{parent.family_description}</p>
                 )}
-              </dl>
 
-              <CriteriaChecklist breakdown={r.score_breakdown} />
-              <MatchActions
-                matchId={r.id}
-                status={r.status}
-                interestExpiresAt={r.interest_expires_at}
-                viewerSide="nanny"
-              />
-              <ReportButton profileId={parent.id} profileType="parent" />
+                <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
+                  <dt className="text-muted">{tParent("ageRanges")}</dt>
+                  <dd>{parent.children_age_ranges.map((g) => tAgeGroups(g as never)).join(", ")}</dd>
+                  <dt className="text-muted">{tParent("schedule")}</dt>
+                  <dd>{tSchedule(parent.schedule_type as never)}</dd>
+                  <dt className="text-muted">{tParent("liveArrangement")}</dt>
+                  <dd>{tLiveArrangement(parent.live_arrangement as never)}</dd>
+                  <dt className="text-muted">{tParent("desiredStartDate")}</dt>
+                  <dd>{parent.desired_start_date}</dd>
+                  <dt className="text-muted">{tParent("preferredLanguages")}</dt>
+                  <dd>{langs.join(", ") || "—"}</dd>
+                  <dt className="text-muted">{tParent("transportationRequired")}</dt>
+                  <dd>{parent.transportation_required ? "Yes" : "No"}</dd>
+                  {parent.additional_duties.length > 0 && (
+                    <>
+                      <dt className="text-muted">{tParent("additionalDuties")}</dt>
+                      <dd>{parent.additional_duties.map((d) => tDuties(d as never)).join(", ")}</dd>
+                    </>
+                  )}
+                </dl>
+
+                <CriteriaChecklist breakdown={r.score_breakdown} />
+                <MatchActions
+                  matchId={r.id}
+                  status={r.status}
+                  interestExpiresAt={r.interest_expires_at}
+                  viewerSide="nanny"
+                />
+                <ReportButton profileId={parent.id} profileType="parent" />
+              </div>
             </div>
           );
         })}

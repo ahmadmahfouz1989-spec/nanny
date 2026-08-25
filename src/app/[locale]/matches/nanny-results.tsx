@@ -8,8 +8,12 @@ import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
+import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
+import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
+
+const TONES = ["primary", "secondary", "berry"] as const;
 
 type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
 
@@ -92,44 +96,67 @@ export default function NannyResults() {
         </div>
       )}
 
-      <div className="flex flex-col gap-4">
-        {results?.map((r) => {
+      <div className="flex flex-col gap-5">
+        {results?.map((r, i) => {
           const nanny = r.nanny_profiles;
           const area = localizedLocationName(nanny.locations, locale);
           const langs = (nanny.nanny_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
           const experience = nanny.nanny_experience ?? [];
+          const tone = TONES[i % TONES.length];
+          const availableDays = nanny.availability?.days ?? [];
           return (
-            <div key={r.id} className={ui.card + " p-5 flex gap-4"}>
-              {nanny.profile_photo_url ? (
-                <Image
-                  src={nanny.profile_photo_url}
-                  alt=""
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="h-16 w-16 rounded-full object-cover shrink-0"
-                />
-              ) : (
-                <div className="h-16 w-16 rounded-full bg-primary-soft shrink-0" />
-              )}
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <p className="font-display text-lg font-semibold truncate">{nanny.full_name}</p>
-                  <span className={ui.badge(ui.scoreTone(r.score))}>{t("scoreLabel", { score: Math.round(r.score) })}</span>
+            <div key={r.id} className={ui.card + " overflow-hidden"}>
+              <div className="relative">
+                {nanny.profile_photo_url ? (
+                  <Image
+                    src={nanny.profile_photo_url}
+                    alt=""
+                    width={640}
+                    height={160}
+                    unoptimized
+                    className="h-28 w-full object-cover"
+                  />
+                ) : (
+                  <AvatarIllustration tone={tone} className="h-28 w-full" />
+                )}
+                {nanny.profile_photo_url && (
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                )}
+                <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
+                  {t("scoreLabel", { score: Math.round(r.score) })}
+                </span>
+                <div className="absolute bottom-0 start-0 p-4">
+                  <p className="font-display text-lg font-bold text-white drop-shadow">{nanny.full_name}</p>
+                  <p className="text-xs text-white/90 drop-shadow">
+                    {area && `${area} · `}
+                    {t("yearsExperience", { years: nanny.years_experience })}
+                  </p>
                 </div>
-                <p className="text-sm text-muted mb-2">
-                  {area && `${area} · `}
-                  {t("yearsExperience", { years: nanny.years_experience })}
-                </p>
+              </div>
+
+              <div className="p-5">
                 {nanny.short_intro && <p className="text-sm text-ink/80 mb-3">{nanny.short_intro}</p>}
+
+                {availableDays.length > 0 && (
+                  <div className="mb-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-1.5">
+                      {tNanny("availableDays")}
+                    </p>
+                    <div className="grid grid-cols-7 gap-1">
+                      {DAYS.map((day) => (
+                        <div key={day} className={ui.dayChip(availableDays.includes(day))}>
+                          {tDays(day)}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
                   <dt className="text-muted">{tNanny("employmentType")}</dt>
                   <dd>{tSchedule(nanny.employment_type as never)}</dd>
                   <dt className="text-muted">{tNanny("liveArrangementPref")}</dt>
                   <dd>{tLiveArrangement(nanny.live_arrangement_pref as never)}</dd>
-                  <dt className="text-muted">{tNanny("availableDays")}</dt>
-                  <dd>{(nanny.availability?.days ?? []).map((d) => tDays(d as never)).join(", ")}</dd>
                   <dt className="text-muted">{tNanny("expectedSalaryRange")}</dt>
                   <dd>{t("salaryRange", { min: nanny.expected_salary_min, max: nanny.expected_salary_max })}</dd>
                   <dt className="text-muted">{tNanny("languages")}</dt>
