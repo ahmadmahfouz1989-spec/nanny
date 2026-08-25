@@ -1,7 +1,33 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { parentProfileSchema, nannyProfileSchema } from "@/lib/validation/profile";
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
+import { sendEmail, pendingReviewEmail } from "@/lib/email";
+
+async function notifyAdminsOfPendingReview(fullName: string, profileType: "parent" | "nanny") {
+  const admin = createAdminClient();
+  const { data: admins } = await admin.from("users").select("id, email, preferred_language").eq("role", "admin");
+
+  if (!admins || admins.length === 0) return;
+
+  await admin.from("notifications").insert(
+    admins.map((a) => ({
+      user_id: a.id,
+      type: "profile_pending_review" as const,
+      payload: { profile_type: profileType, full_name: fullName },
+    })),
+  );
+
+  await Promise.all(
+    admins
+      .filter((a) => a.email)
+      .map((a) => {
+        const { subject, html } = pendingReviewEmail(a.preferred_language, fullName, profileType);
+        return sendEmail(a.email!, subject, html);
+      }),
+  );
+}
 
 async function getRole(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
   const { data } = await supabase.from("users").select("role").eq("id", userId).single();
@@ -89,6 +115,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
     await recomputeMatchesForParent((data as { id: string }).id);
+    await notifyAdminsOfPendingReview(p.fullName, "parent");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
   }
 
@@ -122,6 +149,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
     await recomputeMatchesForNanny((data as { id: string }).id);
+    await notifyAdminsOfPendingReview(p.fullName, "nanny");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
   }
 

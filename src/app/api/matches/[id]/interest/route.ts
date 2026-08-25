@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMatchAccess, effectiveStatus } from "@/lib/matching/access";
+import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
 
 const INTEREST_WINDOW_DAYS = 14;
 
@@ -65,6 +66,39 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (notify.length > 0) {
     await admin.from("notifications").insert(
       notify.map((n) => ({ ...n, payload: { match_id: id } })),
+    );
+
+    const [{ data: recipients }, { data: parentProfile }, { data: nannyProfile }] = await Promise.all([
+      admin
+        .from("users")
+        .select("id, email, preferred_language")
+        .in(
+          "id",
+          notify.map((n) => n.user_id),
+        ),
+      admin.from("parent_profiles").select("full_name").eq("id", access.parentProfileId).single(),
+      admin.from("nanny_profiles").select("full_name").eq("id", access.nannyProfileId).single(),
+    ]);
+
+    const recipientById = new Map((recipients ?? []).map((r) => [r.id, r]));
+
+    await Promise.all(
+      notify.map((n) => {
+        const recipient = recipientById.get(n.user_id);
+        if (!recipient?.email) return Promise.resolve();
+
+        if (n.type === "interest_received") {
+          const fromName = access.side === "parent" ? parentProfile?.full_name : nannyProfile?.full_name;
+          const { subject, html } = interestReceivedEmail(recipient.preferred_language, fromName ?? "Someone");
+          return sendEmail(recipient.email, subject, html);
+        }
+
+        // mutual: the "other" name is whichever profile isn't this recipient's own side
+        const isParentRecipient = n.user_id === access.parentUserId;
+        const otherName = isParentRecipient ? nannyProfile?.full_name : parentProfile?.full_name;
+        const { subject, html } = mutualMatchEmail(recipient.preferred_language, otherName ?? "your match");
+        return sendEmail(recipient.email, subject, html);
+      }),
     );
   }
 
