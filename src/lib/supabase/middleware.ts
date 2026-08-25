@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 
-const PROTECTED_PREFIXES = ["/dashboard", "/onboarding", "/matches", "/messages", "/settings", "/admin"];
+const PROTECTED_PREFIXES = ["/dashboard", "/onboarding", "/matches", "/messages", "/profile", "/settings", "/admin"];
 
 function splitLocale(pathname: string): { locale: string; rest: string } {
   const segments = pathname.split("/");

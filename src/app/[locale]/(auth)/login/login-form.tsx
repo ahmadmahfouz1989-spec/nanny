@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useRouter, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { resolvePostLoginPath } from "@/lib/auth/post-login-redirect";
 import AuthCard from "@/components/auth-card";
 import { ui } from "@/lib/ui";
 
@@ -54,10 +53,7 @@ export default function LoginForm() {
       return;
     }
 
-    const target =
-      explicitNext ?? resolvePostLoginPath(me?.user?.role, me?.profile?.moderation_status);
-
-    router.push(target);
+    router.push(explicitNext ?? "/dashboard");
     router.refresh();
   }
 
