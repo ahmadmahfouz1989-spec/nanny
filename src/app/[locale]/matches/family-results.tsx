@@ -10,6 +10,8 @@ import CreateProfileIllustration from "@/components/illustrations/create-profile
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { ui } from "@/lib/ui";
 
+type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
+
 type FamilyResult = {
   id: string;
   score: number;
@@ -20,12 +22,17 @@ type FamilyResult = {
     id: string;
     full_name: string;
     num_children: number;
+    children_age_ranges: string[];
     schedule_type: string;
     live_arrangement: string;
+    desired_start_date: string;
     salary_min: number;
     salary_max: number;
+    transportation_required: boolean;
+    additional_duties: string[];
     family_description: string | null;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
+    parent_profile_languages: LangRef[];
   };
 };
 
@@ -39,8 +46,19 @@ function localizedLocationName(
   return loc.name_en;
 }
 
+function localizedLangName(l: LangRef["languages"], locale: string) {
+  if (locale === "ar") return l.name_ar;
+  if (locale === "fr") return l.name_fr;
+  return l.name_en;
+}
+
 export default function FamilyResults() {
   const t = useTranslations("Matches");
+  const tParent = useTranslations("ParentOnboarding");
+  const tAgeGroups = useTranslations("AgeGroups");
+  const tDuties = useTranslations("Duties");
+  const tSchedule = useTranslations("ScheduleOptions");
+  const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const locale = useLocale();
   const [results, setResults] = useState<FamilyResult[] | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +91,7 @@ export default function FamilyResults() {
         {results?.map((r) => {
           const parent = r.parent_profiles;
           const area = localizedLocationName(parent.locations, locale);
+          const langs = (parent.parent_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
           return (
             <div key={r.id} className={ui.card + " p-5"}>
               <div className="flex items-center justify-between gap-2 mb-1">
@@ -87,6 +106,28 @@ export default function FamilyResults() {
               {parent.family_description && (
                 <p className="text-sm text-ink/80 mb-3">{parent.family_description}</p>
               )}
+
+              <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
+                <dt className="text-muted">{tParent("ageRanges")}</dt>
+                <dd>{parent.children_age_ranges.map((g) => tAgeGroups(g as never)).join(", ")}</dd>
+                <dt className="text-muted">{tParent("schedule")}</dt>
+                <dd>{tSchedule(parent.schedule_type as never)}</dd>
+                <dt className="text-muted">{tParent("liveArrangement")}</dt>
+                <dd>{tLiveArrangement(parent.live_arrangement as never)}</dd>
+                <dt className="text-muted">{tParent("desiredStartDate")}</dt>
+                <dd>{parent.desired_start_date}</dd>
+                <dt className="text-muted">{tParent("preferredLanguages")}</dt>
+                <dd>{langs.join(", ") || "—"}</dd>
+                <dt className="text-muted">{tParent("transportationRequired")}</dt>
+                <dd>{parent.transportation_required ? "Yes" : "No"}</dd>
+                {parent.additional_duties.length > 0 && (
+                  <>
+                    <dt className="text-muted">{tParent("additionalDuties")}</dt>
+                    <dd>{parent.additional_duties.map((d) => tDuties(d as never)).join(", ")}</dd>
+                  </>
+                )}
+              </dl>
+
               <CriteriaChecklist breakdown={r.score_breakdown} />
               <MatchActions
                 matchId={r.id}

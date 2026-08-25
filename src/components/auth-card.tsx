@@ -1,9 +1,14 @@
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import BrandMark from "./brand-mark";
 import LocaleSwitcher from "./locale-switcher";
 import ThemeSwitcher from "./theme-switcher";
 import ReadingIllustration from "./illustrations/reading-illustration";
+import { ui } from "@/lib/ui";
 
 export default function AuthCard({ children }: { children: React.ReactNode }) {
+  const t = useTranslations("Nav");
+
   return (
     <main className="relative flex-1 flex items-center justify-center px-6 py-16 overflow-hidden">
       <div
@@ -14,6 +19,12 @@ export default function AuthCard({ children }: { children: React.ReactNode }) {
         aria-hidden
         className="pointer-events-none absolute -bottom-24 -end-24 h-72 w-72 rounded-full bg-secondary-soft blur-3xl opacity-70"
       />
+
+      <div className="absolute top-6 start-6">
+        <Link href="/" className={ui.link + " text-sm"}>
+          {t("backToHome")}
+        </Link>
+      </div>
 
       <div className="absolute top-6 end-6 flex items-center gap-3">
         <ThemeSwitcher />

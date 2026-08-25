@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
-import SignOutButton from "./sign-out-button";
+import SignOutButton from "@/components/sign-out-button";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import { ui } from "@/lib/ui";
 

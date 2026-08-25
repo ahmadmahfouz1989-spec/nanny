@@ -2,7 +2,9 @@
   "Nav": {
     "login": "Log in",
     "signup": "Sign up",
-    "logout": "Log out"
+    "logout": "Log out",
+    "dashboard": "Dashboard",
+    "backToHome": "Back to home"
   },
   "Home": {
     "badge": "Now welcoming families across Lebanon",

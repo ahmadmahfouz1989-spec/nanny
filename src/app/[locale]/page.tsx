@@ -1,9 +1,11 @@
-import { useTranslations } from "next-intl";
+import { getTranslations } from "next-intl/server";
 import Image from "next/image";
 import { Link } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/server";
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
+import SignOutButton from "@/components/sign-out-button";
 import WaveDivider from "@/components/wave-divider";
 import Sparkle from "@/components/illustrations/sparkle";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
@@ -12,10 +14,15 @@ import ConnectIllustration from "@/components/illustrations/connect-illustration
 import PreviewProfileCard from "@/components/preview-profile-card";
 import { ui } from "@/lib/ui";
 
-export default function Home() {
-  const t = useTranslations("Home");
-  const tNav = useTranslations("Nav");
-  const tPreview = useTranslations("Preview");
+export default async function Home() {
+  const t = await getTranslations("Home");
+  const tNav = await getTranslations("Nav");
+  const tPreview = await getTranslations("Preview");
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const steps = [
     { title: t("step1Title"), body: t("step1Body"), Illustration: CreateProfileIllustration },
@@ -59,12 +66,23 @@ export default function Home() {
         <nav className="flex items-center gap-3">
           <ThemeSwitcher />
           <LocaleSwitcher />
-          <Link href="/login" className={ui.buttonGhost}>
-            {tNav("login")}
-          </Link>
-          <Link href="/signup" className={ui.buttonSecondary + " px-5! py-2! text-sm"}>
-            {tNav("signup")}
-          </Link>
+          {user ? (
+            <>
+              <Link href="/dashboard" className={ui.buttonGhost}>
+                {tNav("dashboard")}
+              </Link>
+              <SignOutButton />
+            </>
+          ) : (
+            <>
+              <Link href="/login" className={ui.buttonGhost}>
+                {tNav("login")}
+              </Link>
+              <Link href="/signup" className={ui.buttonSecondary + " px-5! py-2! text-sm"}>
+                {tNav("signup")}
+              </Link>
+            </>
+          )}
         </nav>
       </header>
 

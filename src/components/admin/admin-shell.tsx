@@ -5,6 +5,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
+import SignOutButton from "@/components/sign-out-button";
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("Admin");
@@ -24,6 +25,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         <div className="flex items-center gap-3">
           <ThemeSwitcher />
           <LocaleSwitcher />
+          <SignOutButton />
         </div>
       </header>
 
