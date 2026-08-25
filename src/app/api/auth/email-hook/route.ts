@@ -41,10 +41,18 @@ export async function POST(request: Request) {
   // back to the bare Site URL even when the requested URL is a correctly
   // listed exact match — a Supabase-side quirk, not something fixable from
   // our end of that check. Since we fully own email delivery via this hook,
-  // we sidestep it entirely: build our own destination from the action
-  // type and this request's own origin (which is how Supabase reaches us,
-  // so it's always our real public domain), rather than trust redirect_to.
-  const { origin } = new URL(request.url);
+  // we sidestep it entirely and build our own destination from the action
+  // type instead of trusting redirect_to.
+  //
+  // Can't derive the origin from this request the way other routes do —
+  // Supabase's server-to-server call to this webhook resolves to the
+  // container's internal address (localhost:8080), not the public domain,
+  // unlike browser-originated requests that pass through Railway's edge
+  // with forwarding headers intact. RAILWAY_PUBLIC_DOMAIN is Railway's own
+  // env var for exactly this, always the real public host.
+  const origin = process.env.RAILWAY_PUBLIC_DOMAIN
+    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
+    : new URL(request.url).origin;
   const ownDestination =
     email_action_type === "recovery" ? `${origin}/auth/callback-recovery` : `${origin}/auth/callback`;
 
