@@ -14,7 +14,14 @@ export async function sendEmail(to: string, subject: string, html: string) {
     return;
   }
   try {
-    await resend.emails.send({ from: FROM, to, subject, html });
+    // The Resend SDK resolves with { data: null, error } on API-level
+    // failures (bad API key, unverified from-address, etc.) rather than
+    // throwing — has to be checked explicitly or a real failure looks
+    // identical to success.
+    const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+    if (error) {
+      console.error(`[email] Resend rejected email to ${to}:`, error);
+    }
   } catch (err) {
     // Notification email failures shouldn't break the underlying action
     // (approval, interest, etc.) — log and move on.
