@@ -41,6 +41,8 @@ export async function POST(request: Request) {
   // hook only replaces who sends the email, not how the link is verified.
   const verifyUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(redirect_to)}`;
 
+  console.log(`[email-hook] action=${email_action_type} redirect_to=${redirect_to} verifyUrl=${verifyUrl}`);
+
   const admin = createAdminClient();
   const { data: existing } = await admin
     .from("users")
