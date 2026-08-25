@@ -3,24 +3,20 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
-import { useRouter, Link } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import { ui } from "@/lib/ui";
 
 type Role = "parent" | "nanny";
-type Identifier = "email" | "phone";
 
 export default function SignupForm() {
   const t = useTranslations("Signup");
   const tAuth = useTranslations("Auth");
-  const router = useRouter();
   const searchParams = useSearchParams();
   const initialRole = searchParams.get("role") === "nanny" ? "nanny" : "parent";
 
   const [role, setRole] = useState<Role>(initialRole);
-  const [identifierType, setIdentifierType] = useState<Identifier>("email");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,12 +36,7 @@ export default function SignupForm() {
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        role,
-        email: identifierType === "email" ? email : undefined,
-        phone: identifierType === "phone" ? phone : undefined,
-        password,
-      }),
+      body: JSON.stringify({ role, email, password }),
     });
     setSubmitting(false);
 
@@ -62,11 +53,7 @@ export default function SignupForm() {
       return;
     }
 
-    if (identifierType === "email") {
-      setSubmitted(true);
-    } else {
-      router.push("/dashboard");
-    }
+    setSubmitted(true);
   }
 
   if (submitted) {
@@ -112,38 +99,14 @@ export default function SignupForm() {
           ))}
         </div>
 
-        <div className="flex rounded-xl border border-border bg-background p-1 text-sm">
-          {(["email", "phone"] as const).map((tId) => (
-            <button
-              type="button"
-              key={tId}
-              onClick={() => setIdentifierType(tId)}
-              className={ui.toggleTab(identifierType === tId)}
-            >
-              {tId === "email" ? tAuth("emailTab") : tAuth("phoneTab")}
-            </button>
-          ))}
-        </div>
-
-        {identifierType === "email" ? (
-          <input
-            type="email"
-            required
-            placeholder={tAuth("emailPlaceholder")}
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className={ui.input}
-          />
-        ) : (
-          <input
-            type="tel"
-            required
-            placeholder={tAuth("phonePlaceholder")}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            className={ui.input}
-          />
-        )}
+        <input
+          type="email"
+          required
+          placeholder={tAuth("emailPlaceholder")}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className={ui.input}
+        />
 
         <input
           type="password"
