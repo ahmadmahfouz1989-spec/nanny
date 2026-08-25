@@ -72,3 +72,38 @@ export function mutualMatchEmail(lang: Lang, otherName: string) {
     ),
   };
 }
+
+// Sent via Supabase's Send Email auth hook (src/app/api/auth/email-hook),
+// which fully replaces Supabase's own email delivery for these flows.
+export function signupConfirmationEmail(lang: Lang, confirmUrl: string) {
+  return {
+    subject: pick(lang, "Confirm your email", "أكّد بريدك الإلكتروني"),
+    html: pick(
+      lang,
+      `<p>Welcome to nanny — click below to confirm your email and activate your account.</p><p><a href="${confirmUrl}">Confirm email</a></p><p>If you didn't create this account, you can ignore this email.</p>`,
+      `<p>مرحبًا بك في nanny — اضغط أدناه لتأكيد بريدك الإلكتروني وتفعيل حسابك.</p><p><a href="${confirmUrl}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تُنشئ هذا الحساب، يمكنك تجاهل هذا البريد.</p>`,
+    ),
+  };
+}
+
+export function passwordRecoveryEmail(lang: Lang, resetUrl: string) {
+  return {
+    subject: pick(lang, "Reset your password", "إعادة تعيين كلمة المرور"),
+    html: pick(
+      lang,
+      `<p>Click below to choose a new password.</p><p><a href="${resetUrl}">Reset password</a></p><p>If you didn't request this, you can safely ignore this email — your password won't change.</p>`,
+      `<p>اضغط أدناه لاختيار كلمة مرور جديدة.</p><p><a href="${resetUrl}">إعادة تعيين كلمة المرور</a></p><p>إذا لم تطلب ذلك، يمكنك تجاهل هذا البريد بأمان — لن تتغيّر كلمة مرورك.</p>`,
+    ),
+  };
+}
+
+export function genericAuthEmail(lang: Lang, actionType: string, actionUrl: string) {
+  return {
+    subject: pick(lang, "Confirm this action", "تأكيد هذا الإجراء"),
+    html: pick(
+      lang,
+      `<p>Click below to confirm: ${actionType}.</p><p><a href="${actionUrl}">Confirm</a></p>`,
+      `<p>اضغط أدناه للتأكيد: ${actionType}.</p><p><a href="${actionUrl}">تأكيد</a></p>`,
+    ),
+  };
+}
