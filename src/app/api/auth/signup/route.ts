@@ -14,9 +14,14 @@ export async function POST(request: Request) {
 
   const { role, email, password, preferredLanguage } = parsed.data;
   const supabase = await createClient();
+  const origin = new URL(request.url).origin;
   const metadata = { role, preferred_language: preferredLanguage };
 
-  const { data, error } = await supabase.auth.signUp({ email, password, options: { data: metadata } });
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: { data: metadata, emailRedirectTo: `${origin}/auth/callback` },
+  });
 
   if (error) {
     // Supabase returns a generic-enough message; avoid echoing raw provider errors
@@ -30,7 +35,6 @@ export async function POST(request: Request) {
   // email instead of silently doing nothing (no confirmation email is sent
   // in this case, since no new account was created).
   if (data.user && data.user.identities?.length === 0) {
-    const origin = new URL(request.url).origin;
     const admin = createAdminClient();
     const { data: existing } = await admin
       .from("users")
