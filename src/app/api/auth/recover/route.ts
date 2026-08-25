@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   if (parsed.data.email) {
     await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: `${origin}/auth/callback?next=/reset-password`,
+      redirectTo: `${origin}/auth/callback-recovery`,
     });
   } else if (parsed.data.phone) {
     await supabase.auth.signInWithOtp({ phone: parsed.data.phone });
