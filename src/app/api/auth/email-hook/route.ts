@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail, signupConfirmationEmail, passwordRecoveryEmail, genericAuthEmail } from "@/lib/email";
+import { getPublicOrigin } from "@/lib/site-url";
 
 // Configured as Supabase's "Send Email" Auth Hook — once enabled, Supabase
 // stops sending auth emails (signup confirmation, password recovery) itself
@@ -36,23 +37,13 @@ export async function POST(request: Request) {
   const { user, email_data } = parsed;
   const { token_hash, redirect_to, email_action_type } = email_data;
 
-  // email_data.redirect_to reflects Supabase's own allow-list check made at
-  // request time (resetPasswordForEmail/signUp), which was observed to fall
-  // back to the bare Site URL even when the requested URL is a correctly
-  // listed exact match — a Supabase-side quirk, not something fixable from
-  // our end of that check. Since we fully own email delivery via this hook,
-  // we sidestep it entirely and build our own destination from the action
-  // type instead of trusting redirect_to.
-  //
-  // Can't derive the origin from this request the way other routes do —
-  // Supabase's server-to-server call to this webhook resolves to the
-  // container's internal address (localhost:8080), not the public domain,
-  // unlike browser-originated requests that pass through Railway's edge
-  // with forwarding headers intact. RAILWAY_PUBLIC_DOMAIN is Railway's own
-  // env var for exactly this, always the real public host.
-  const origin = process.env.RAILWAY_PUBLIC_DOMAIN
-    ? `https://${process.env.RAILWAY_PUBLIC_DOMAIN}`
-    : new URL(request.url).origin;
+  // email_data.redirect_to reflects whatever redirectTo the original
+  // resetPasswordForEmail()/signUp() call sent — which, before the
+  // getPublicOrigin fix, was itself built from the container's internal
+  // address, so it never matched Supabase's allow-list and silently fell
+  // back to the Site URL. Rebuilt here directly instead of trusted, now
+  // that every route derives its origin the same correct way.
+  const origin = getPublicOrigin(request);
   const ownDestination =
     email_action_type === "recovery" ? `${origin}/auth/callback-recovery` : `${origin}/auth/callback`;
 
