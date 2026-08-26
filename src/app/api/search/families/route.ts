@@ -27,7 +27,6 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const minScore = Number(searchParams.get("minScore") ?? 60);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
   const from = (page - 1) * pageSize;
@@ -39,7 +38,6 @@ export async function GET(request: Request) {
       "id, score, score_breakdown, status, interest_expires_at, parent_profiles!inner(id, full_name, location_id, num_children, children_age_ranges, schedule_type, live_arrangement, desired_start_date, salary_min, salary_max, transportation_required, additional_duties, family_description, locations(name_en, name_ar, name_fr), parent_profile_languages(languages(id, name_en, name_ar, name_fr)))",
     )
     .eq("nanny_profile_id", nannyProfile.id)
-    .gte("score", minScore)
     .order("score", { ascending: false })
     .range(from, to);
 
