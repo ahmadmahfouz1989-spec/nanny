@@ -277,7 +277,12 @@
     "against": "Against",
     "resolve": "Resolve",
     "dismiss": "Dismiss",
-    "resolutionNotesPlaceholder": "Resolution notes (optional)"
+    "resolutionNotesPlaceholder": "Resolution notes (optional)",
+    "viewConversation": "View conversation",
+    "hideConversation": "Hide conversation",
+    "noConversation": "No conversation between these two — they were never a mutual match.",
+    "reporterLabel": "Reporter",
+    "reportedLabel": "Reported"
   },
   "NannyOnboarding": {
     "step1Title": "You and your area",
