@@ -27,8 +27,6 @@ type FormState = {
   languageIds: string[];
   yearsExperience: string;
   experience: Record<string, string>; // ageGroup -> years
-  expectedSalaryMin: string;
-  expectedSalaryMax: string;
   hasTransportation: boolean;
   canDrive: boolean;
   certifications: string[];
@@ -49,8 +47,6 @@ const initialState: FormState = {
   languageIds: [],
   yearsExperience: "",
   experience: {},
-  expectedSalaryMin: "",
-  expectedSalaryMax: "",
   hasTransportation: false,
   canDrive: false,
   certifications: [],
@@ -67,8 +63,6 @@ type ExistingNannyProfile = {
   live_arrangement_pref: FormState["liveArrangementPref"];
   availability: { days: string[]; start_time: string; end_time: string };
   years_experience: number;
-  expected_salary_min: number;
-  expected_salary_max: number;
   has_transportation: boolean;
   can_drive: boolean;
   certifications: string[];
@@ -92,8 +86,6 @@ function stateFromExisting(p: ExistingNannyProfile): FormState {
     languageIds: p.nanny_profile_languages.map((l) => l.language_id),
     yearsExperience: String(p.years_experience),
     experience: Object.fromEntries(p.nanny_experience.map((e) => [e.age_group, String(e.years_experience)])),
-    expectedSalaryMin: String(p.expected_salary_min),
-    expectedSalaryMax: String(p.expected_salary_max),
     hasTransportation: p.has_transportation,
     canDrive: p.can_drive,
     certifications: p.certifications,
@@ -167,8 +159,7 @@ export default function NannyOnboarding({
       case 5:
         return activeAgeGroups.length > 0;
       case 6:
-        return form.expectedSalaryMin !== "" && form.expectedSalaryMax !== "" &&
-          Number(form.expectedSalaryMax) >= Number(form.expectedSalaryMin);
+        return true;
       case 7:
         return true;
       default:
@@ -193,8 +184,6 @@ export default function NannyOnboarding({
       liveArrangementPref: form.liveArrangementPref,
       availability: { days: form.days, startTime: form.startTime, endTime: form.endTime },
       yearsExperience: Number(form.yearsExperience),
-      expectedSalaryMin: Number(form.expectedSalaryMin),
-      expectedSalaryMax: Number(form.expectedSalaryMax),
       hasTransportation: form.hasTransportation,
       canDrive: form.canDrive,
       certifications: form.certifications,
@@ -420,25 +409,6 @@ export default function NannyOnboarding({
 
       {step === 6 && (
         <>
-          <label className={ui.label}>{t("expectedSalaryRange")}</label>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="number"
-              min={0}
-              placeholder={tw("min")}
-              className={ui.input}
-              value={form.expectedSalaryMin}
-              onChange={(e) => update("expectedSalaryMin", e.target.value)}
-            />
-            <input
-              type="number"
-              min={0}
-              placeholder={tw("max")}
-              className={ui.input}
-              value={form.expectedSalaryMax}
-              onChange={(e) => update("expectedSalaryMax", e.target.value)}
-            />
-          </div>
           <label className="flex items-center gap-2 text-sm mt-2">
             <input
               type="checkbox"

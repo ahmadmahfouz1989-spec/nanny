@@ -15,8 +15,6 @@ export interface ParentMatchInput {
   location: LocationRef;
   scheduleType: ScheduleType;
   liveArrangement: LiveArrangement;
-  salaryMin: number;
-  salaryMax: number;
   transportationRequired: boolean;
   childrenAgeRanges: AgeGroup[];
   languageIds: string[];
@@ -27,19 +25,19 @@ export interface NannyMatchInput {
   employmentType: ScheduleType;
   liveArrangementPref: LiveArrangement;
   availabilityDays: string[];
-  expectedSalaryMin: number;
-  expectedSalaryMax: number;
   hasTransportation: boolean;
   languageIds: string[];
   experienceAgeGroups: AgeGroup[];
 }
 
+// Pricing is negotiated directly between matched parties, not scored — the
+// salary criterion's former 0.1 weight was folded into location and
+// availability, the two next-highest-weighted criteria.
 export const CRITERIA_WEIGHTS = {
-  location: 0.25,
-  availability: 0.2,
+  location: 0.3,
+  availability: 0.25,
   employmentType: 0.15,
   liveArrangement: 0.1,
-  salary: 0.1,
   language: 0.08,
   childAgeExperience: 0.07,
   transportation: 0.05,
@@ -78,16 +76,6 @@ function eitherMatch(a: string, b: string): number {
   return a === b ? 1 : 0;
 }
 
-function salaryOverlapScore(parent: ParentMatchInput, nanny: NannyMatchInput): number {
-  const overlap = Math.max(
-    0,
-    Math.min(parent.salaryMax, nanny.expectedSalaryMax) - Math.max(parent.salaryMin, nanny.expectedSalaryMin),
-  );
-  const union = Math.max(parent.salaryMax, nanny.expectedSalaryMax) - Math.min(parent.salaryMin, nanny.expectedSalaryMin);
-  if (union <= 0) return 0;
-  return overlap / union;
-}
-
 function languageScore(parent: ParentMatchInput, nanny: NannyMatchInput): number {
   if (parent.languageIds.length === 0) return 1;
   const nannySet = new Set(nanny.languageIds);
@@ -113,7 +101,6 @@ export function computeMatchScore(parent: ParentMatchInput, nanny: NannyMatchInp
     availability: availabilityScore(nanny),
     employmentType: eitherMatch(parent.scheduleType, nanny.employmentType),
     liveArrangement: eitherMatch(parent.liveArrangement, nanny.liveArrangementPref),
-    salary: salaryOverlapScore(parent, nanny),
     language: languageScore(parent, nanny),
     childAgeExperience: childAgeExperienceScore(parent, nanny),
     transportation: transportationScore(parent, nanny),

@@ -24,7 +24,7 @@ export async function GET(request: Request) {
           .select(
             "id, full_name, status, moderation_status, created_at, updated_at, locations(name_en, name_ar, name_fr), " +
               "num_children, children_age_ranges, schedule_type, live_arrangement, desired_start_date, " +
-              "salary_min, salary_max, transportation_required, additional_duties, family_description, " +
+              "transportation_required, additional_duties, family_description, " +
               "parent_profile_languages(languages(id, name_en, name_ar, name_fr))",
           )
           .eq("moderation_status", moderationStatus)
@@ -36,7 +36,7 @@ export async function GET(request: Request) {
           .select(
             "id, full_name, profile_photo_url, status, moderation_status, created_at, updated_at, locations(name_en, name_ar, name_fr), " +
               "work_radius_km, employment_type, live_arrangement_pref, availability, years_experience, " +
-              "expected_salary_min, expected_salary_max, has_transportation, can_drive, certifications, short_intro, " +
+              "has_transportation, can_drive, certifications, short_intro, " +
               "nanny_profile_languages(languages(id, name_en, name_ar, name_fr)), nanny_experience(age_group, years_experience)",
           )
           .eq("moderation_status", moderationStatus)
