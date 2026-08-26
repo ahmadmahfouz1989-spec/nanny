@@ -9,7 +9,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, parentProfileSchema } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 
-const TOTAL_STEPS = 6;
+const TOTAL_STEPS = 5;
 const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_help", "laundry"] as const;
 
 type FormState = {
@@ -21,8 +21,6 @@ type FormState = {
   scheduleType: "full_time" | "part_time" | "either";
   liveArrangement: "live_in" | "live_out" | "either";
   desiredStartDate: string;
-  salaryMin: string;
-  salaryMax: string;
   transportationRequired: boolean;
   languageIds: string[];
   additionalDuties: string[];
@@ -38,8 +36,6 @@ const initialState: FormState = {
   scheduleType: "full_time",
   liveArrangement: "live_out",
   desiredStartDate: "",
-  salaryMin: "",
-  salaryMax: "",
   transportationRequired: false,
   languageIds: [],
   additionalDuties: [],
@@ -55,8 +51,6 @@ type ExistingParentProfile = {
   schedule_type: FormState["scheduleType"];
   live_arrangement: FormState["liveArrangement"];
   desired_start_date: string;
-  salary_min: number;
-  salary_max: number;
   transportation_required: boolean;
   additional_duties: string[];
   family_description: string | null;
@@ -73,8 +67,6 @@ function stateFromExisting(p: ExistingParentProfile): FormState {
     scheduleType: p.schedule_type,
     liveArrangement: p.live_arrangement,
     desiredStartDate: p.desired_start_date,
-    salaryMin: String(p.salary_min),
-    salaryMax: String(p.salary_max),
     transportationRequired: p.transportation_required,
     languageIds: p.parent_profile_languages.map((l) => l.language_id),
     additionalDuties: p.additional_duties,
@@ -131,10 +123,8 @@ export default function ParentOnboarding({
       case 3:
         return !!form.desiredStartDate;
       case 4:
-        return form.salaryMin !== "" && form.salaryMax !== "" && Number(form.salaryMax) >= Number(form.salaryMin);
-      case 5:
         return true;
-      case 6:
+      case 5:
         return true;
       default:
         return false;
@@ -157,8 +147,6 @@ export default function ParentOnboarding({
       scheduleType: form.scheduleType,
       liveArrangement: form.liveArrangement,
       desiredStartDate: form.desiredStartDate,
-      salaryMin: Number(form.salaryMin),
-      salaryMax: Number(form.salaryMax),
       transportationRequired: form.transportationRequired,
       additionalDuties: form.additionalDuties,
       familyDescription: form.familyDescription || undefined,
@@ -287,30 +275,6 @@ export default function ParentOnboarding({
 
       {step === 4 && (
         <>
-          <label className={ui.label}>{t("salaryRange")}</label>
-          <div className="grid grid-cols-2 gap-2">
-            <input
-              type="number"
-              min={0}
-              placeholder={tw("min")}
-              className={ui.input}
-              value={form.salaryMin}
-              onChange={(e) => update("salaryMin", e.target.value)}
-            />
-            <input
-              type="number"
-              min={0}
-              placeholder={tw("max")}
-              className={ui.input}
-              value={form.salaryMax}
-              onChange={(e) => update("salaryMax", e.target.value)}
-            />
-          </div>
-        </>
-      )}
-
-      {step === 5 && (
-        <>
           <label className={ui.label}>{t("preferredLanguages")}</label>
           <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
           <label className="flex items-center gap-2 text-sm mt-2">
@@ -325,7 +289,7 @@ export default function ParentOnboarding({
         </>
       )}
 
-      {step === 6 && (
+      {step === 5 && (
         <>
           <label className={ui.label}>{t("additionalDuties")}</label>
           <div className="flex flex-wrap gap-2">

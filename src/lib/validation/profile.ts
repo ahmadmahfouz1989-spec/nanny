@@ -18,30 +18,23 @@ const contactPhone = z
   .max(20, "Enter a valid phone number")
   .optional();
 
-export const parentProfileSchema = z
-  .object({
-    fullName: z.string().min(2).max(80),
-    contactPhone,
-    locationId: uuid,
-    numChildren: z.number().int().min(1).max(10),
-    childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
-    scheduleType: z.enum(["full_time", "part_time", "either"]),
-    liveArrangement: z.enum(["live_in", "live_out", "either"]),
-    desiredStartDate: z
-      .string()
-      .refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date")
-      .refine((d) => new Date(d) >= new Date(new Date().toDateString()), "Start date can't be in the past"),
-    salaryMin: z.number().int().min(0),
-    salaryMax: z.number().int().min(0),
-    transportationRequired: z.boolean(),
-    additionalDuties: z.array(z.string()).default([]),
-    familyDescription: z.string().max(1000).optional(),
-    languageIds: z.array(uuid).default([]),
-  })
-  .refine((d) => d.salaryMax >= d.salaryMin, {
-    message: "salaryMax must be >= salaryMin",
-    path: ["salaryMax"],
-  });
+export const parentProfileSchema = z.object({
+  fullName: z.string().min(2).max(80),
+  contactPhone,
+  locationId: uuid,
+  numChildren: z.number().int().min(1).max(10),
+  childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
+  scheduleType: z.enum(["full_time", "part_time", "either"]),
+  liveArrangement: z.enum(["live_in", "live_out", "either"]),
+  desiredStartDate: z
+    .string()
+    .refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date")
+    .refine((d) => new Date(d) >= new Date(new Date().toDateString()), "Start date can't be in the past"),
+  transportationRequired: z.boolean(),
+  additionalDuties: z.array(z.string()).default([]),
+  familyDescription: z.string().max(1000).optional(),
+  languageIds: z.array(uuid).default([]),
+});
 
 export type ParentProfileInput = z.infer<typeof parentProfileSchema>;
 
@@ -50,33 +43,26 @@ export const nannyExperienceEntrySchema = z.object({
   yearsExperience: z.number().min(0),
 });
 
-export const nannyProfileSchema = z
-  .object({
-    fullName: z.string().min(2).max(80),
-    contactPhone,
-    profilePhotoUrl: z.string().url(),
-    locationId: uuid,
-    workRadiusKm: z.number().int().min(1).max(50),
-    employmentType: z.enum(["full_time", "part_time", "either"]),
-    liveArrangementPref: z.enum(["live_in", "live_out", "either"]),
-    availability: z.object({
-      days: z.array(z.enum(DAYS)).min(1),
-      startTime: z.string().regex(/^\d{2}:\d{2}$/),
-      endTime: z.string().regex(/^\d{2}:\d{2}$/),
-    }),
-    yearsExperience: z.number().min(0),
-    expectedSalaryMin: z.number().int().min(0),
-    expectedSalaryMax: z.number().int().min(0),
-    hasTransportation: z.boolean(),
-    canDrive: z.boolean(),
-    certifications: z.array(z.string()).default([]),
-    shortIntro: z.string().max(500).optional(),
-    languageIds: z.array(uuid).default([]),
-    experience: z.array(nannyExperienceEntrySchema).min(1),
-  })
-  .refine((d) => d.expectedSalaryMax >= d.expectedSalaryMin, {
-    message: "expectedSalaryMax must be >= expectedSalaryMin",
-    path: ["expectedSalaryMax"],
-  });
+export const nannyProfileSchema = z.object({
+  fullName: z.string().min(2).max(80),
+  contactPhone,
+  profilePhotoUrl: z.string().url(),
+  locationId: uuid,
+  workRadiusKm: z.number().int().min(1).max(50),
+  employmentType: z.enum(["full_time", "part_time", "either"]),
+  liveArrangementPref: z.enum(["live_in", "live_out", "either"]),
+  availability: z.object({
+    days: z.array(z.enum(DAYS)).min(1),
+    startTime: z.string().regex(/^\d{2}:\d{2}$/),
+    endTime: z.string().regex(/^\d{2}:\d{2}$/),
+  }),
+  yearsExperience: z.number().min(0),
+  hasTransportation: z.boolean(),
+  canDrive: z.boolean(),
+  certifications: z.array(z.string()).default([]),
+  shortIntro: z.string().max(500).optional(),
+  languageIds: z.array(uuid).default([]),
+  experience: z.array(nannyExperienceEntrySchema).min(1),
+});
 
 export type NannyProfileInput = z.infer<typeof nannyProfileSchema>;

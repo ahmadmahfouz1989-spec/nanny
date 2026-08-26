@@ -34,7 +34,7 @@ async function loadParentInputs(admin: Admin, locationRefs: Map<string, Location
   const { data } = await admin
     .from("parent_profiles")
     .select(
-      "id, location_id, schedule_type, live_arrangement, salary_min, salary_max, transportation_required, children_age_ranges, parent_profile_languages(language_id)",
+      "id, location_id, schedule_type, live_arrangement, transportation_required, children_age_ranges, parent_profile_languages(language_id)",
     )
     .eq("status", "active")
     .eq("moderation_status", "approved");
@@ -45,8 +45,6 @@ async function loadParentInputs(admin: Admin, locationRefs: Map<string, Location
       location: locationRefs.get(p.location_id as string) ?? { areaId: p.location_id as string, districtId: null, governorateId: null },
       scheduleType: p.schedule_type as ScheduleType,
       liveArrangement: p.live_arrangement as LiveArrangement,
-      salaryMin: p.salary_min as number,
-      salaryMax: p.salary_max as number,
       transportationRequired: p.transportation_required as boolean,
       childrenAgeRanges: p.children_age_ranges as AgeGroup[],
       languageIds: (p.parent_profile_languages as { language_id: string }[]).map((l) => l.language_id),
@@ -58,7 +56,7 @@ async function loadNannyInputs(admin: Admin, locationRefs: Map<string, LocationR
   const { data } = await admin
     .from("nanny_profiles")
     .select(
-      "id, location_id, employment_type, live_arrangement_pref, availability, expected_salary_min, expected_salary_max, has_transportation, nanny_profile_languages(language_id), nanny_experience(age_group)",
+      "id, location_id, employment_type, live_arrangement_pref, availability, has_transportation, nanny_profile_languages(language_id), nanny_experience(age_group)",
     )
     .eq("status", "active")
     .eq("moderation_status", "approved");
@@ -70,8 +68,6 @@ async function loadNannyInputs(admin: Admin, locationRefs: Map<string, LocationR
       employmentType: n.employment_type as ScheduleType,
       liveArrangementPref: n.live_arrangement_pref as LiveArrangement,
       availabilityDays: (n.availability as { days: string[] })?.days ?? [],
-      expectedSalaryMin: n.expected_salary_min as number,
-      expectedSalaryMax: n.expected_salary_max as number,
       hasTransportation: n.has_transportation as boolean,
       languageIds: (n.nanny_profile_languages as { language_id: string }[]).map((l) => l.language_id),
       experienceAgeGroups: (n.nanny_experience as { age_group: string }[]).map((e) => e.age_group as AgeGroup),
@@ -94,7 +90,7 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
   const { data: parentRow } = await admin
     .from("parent_profiles")
     .select(
-      "id, location_id, schedule_type, live_arrangement, salary_min, salary_max, transportation_required, children_age_ranges, status, moderation_status, parent_profile_languages(language_id)",
+      "id, location_id, schedule_type, live_arrangement, transportation_required, children_age_ranges, status, moderation_status, parent_profile_languages(language_id)",
     )
     .eq("id", parentProfileId)
     .single();
@@ -112,8 +108,6 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
     },
     scheduleType: parentRow.schedule_type as ScheduleType,
     liveArrangement: parentRow.live_arrangement as LiveArrangement,
-    salaryMin: parentRow.salary_min as number,
-    salaryMax: parentRow.salary_max as number,
     transportationRequired: parentRow.transportation_required as boolean,
     childrenAgeRanges: parentRow.children_age_ranges as AgeGroup[],
     languageIds: (parentRow.parent_profile_languages as { language_id: string }[]).map((l) => l.language_id),
@@ -135,7 +129,7 @@ export async function recomputeMatchesForNanny(nannyProfileId: string) {
   const { data: nannyRow } = await admin
     .from("nanny_profiles")
     .select(
-      "id, location_id, employment_type, live_arrangement_pref, availability, expected_salary_min, expected_salary_max, has_transportation, status, moderation_status, nanny_profile_languages(language_id), nanny_experience(age_group)",
+      "id, location_id, employment_type, live_arrangement_pref, availability, has_transportation, status, moderation_status, nanny_profile_languages(language_id), nanny_experience(age_group)",
     )
     .eq("id", nannyProfileId)
     .single();
@@ -151,8 +145,6 @@ export async function recomputeMatchesForNanny(nannyProfileId: string) {
     employmentType: nannyRow.employment_type as ScheduleType,
     liveArrangementPref: nannyRow.live_arrangement_pref as LiveArrangement,
     availabilityDays: (nannyRow.availability as { days: string[] })?.days ?? [],
-    expectedSalaryMin: nannyRow.expected_salary_min as number,
-    expectedSalaryMax: nannyRow.expected_salary_max as number,
     hasTransportation: nannyRow.has_transportation as boolean,
     languageIds: (nannyRow.nanny_profile_languages as { language_id: string }[]).map((l) => l.language_id),
     experienceAgeGroups: (nannyRow.nanny_experience as { age_group: string }[]).map((e) => e.age_group as AgeGroup),
