@@ -277,7 +277,12 @@
     "against": "بحق",
     "resolve": "حل",
     "dismiss": "رفض البلاغ",
-    "resolutionNotesPlaceholder": "ملاحظات الحل (اختياري)"
+    "resolutionNotesPlaceholder": "ملاحظات الحل (اختياري)",
+    "viewConversation": "عرض المحادثة",
+    "hideConversation": "إخفاء المحادثة",
+    "noConversation": "لا توجد محادثة بين الطرفين — لم يحدث بينهما تطابق متبادل قط.",
+    "reporterLabel": "المُبلِّغ",
+    "reportedLabel": "المُبلَّغ عنه"
   },
   "NannyOnboarding": {
     "step1Title": "بياناتك ومنطقتك",
