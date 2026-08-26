@@ -9,14 +9,12 @@ export default function PreviewProfileCard({
   name,
   area,
   tone,
-  rateLabel,
   years,
   availableDays,
 }: {
   name: string;
   area: string;
   tone: "primary" | "secondary" | "berry";
-  rateLabel: string;
   years: number;
   availableDays: readonly string[];
 }) {
@@ -36,8 +34,7 @@ export default function PreviewProfileCard({
         </div>
       </div>
       <div className="p-4">
-        <p className="text-sm font-semibold mb-1">{rateLabel}</p>
-        <p className="text-xs text-muted mb-3">{t("yearsExperience", { years })}</p>
+        <p className="text-sm font-semibold mb-3">{t("yearsExperience", { years })}</p>
         <div className="grid grid-cols-7 gap-1">
           {DAYS.map((day) => (
             <div key={day} className={ui.dayChip(availableDays.includes(day))}>

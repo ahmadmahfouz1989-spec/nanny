@@ -28,8 +28,6 @@ type FamilyResult = {
     schedule_type: string;
     live_arrangement: string;
     desired_start_date: string;
-    salary_min: number;
-    salary_max: number;
     transportation_required: boolean;
     additional_duties: string[];
     family_description: string | null;
@@ -107,8 +105,7 @@ export default function FamilyResults() {
                   <p className="font-display text-lg font-bold text-white drop-shadow">{parent.full_name}</p>
                   <p className="text-xs text-white/90 drop-shadow">
                     {area && `${area} · `}
-                    {t("children", { count: parent.num_children })} ·{" "}
-                    {t("salaryRange", { min: parent.salary_min, max: parent.salary_max })}
+                    {t("children", { count: parent.num_children })}
                   </p>
                 </div>
               </div>

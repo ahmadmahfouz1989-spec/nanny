@@ -21,8 +21,6 @@ type QueueProfile = {
   schedule_type?: string;
   live_arrangement?: string;
   desired_start_date?: string;
-  salary_min?: number;
-  salary_max?: number;
   transportation_required?: boolean;
   additional_duties?: string[];
   family_description?: string | null;
@@ -34,8 +32,6 @@ type QueueProfile = {
   live_arrangement_pref?: string;
   availability?: { days: string[] };
   years_experience?: number;
-  expected_salary_min?: number;
-  expected_salary_max?: number;
   has_transportation?: boolean;
   can_drive?: boolean;
   certifications?: string[];
@@ -125,8 +121,6 @@ export default function AdminProfilesPage() {
           <dd>{tLiveArrangement(profile.live_arrangement as never)}</dd>
           <dt className="text-muted">{tParent("desiredStartDate")}</dt>
           <dd>{profile.desired_start_date}</dd>
-          <dt className="text-muted">{tParent("salaryRange")}</dt>
-          <dd>{tMatches("salaryRange", { min: profile.salary_min ?? 0, max: profile.salary_max ?? 0 })}</dd>
           <dt className="text-muted">{tParent("preferredLanguages")}</dt>
           <dd>{langs.join(", ") || "—"}</dd>
           <dt className="text-muted">{tParent("transportationRequired")}</dt>
@@ -161,13 +155,6 @@ export default function AdminProfilesPage() {
         <dd>{(profile.availability?.days ?? []).map((d) => tDays(d as never)).join(", ")}</dd>
         <dt className="text-muted">{tNanny("yearsExperience")}</dt>
         <dd>{tMatches("yearsExperience", { years: profile.years_experience ?? 0 })}</dd>
-        <dt className="text-muted">{tNanny("expectedSalaryRange")}</dt>
-        <dd>
-          {tMatches("salaryRange", {
-            min: profile.expected_salary_min ?? 0,
-            max: profile.expected_salary_max ?? 0,
-          })}
-        </dd>
         <dt className="text-muted">{tNanny("languages")}</dt>
         <dd>{langs.join(", ") || "—"}</dd>
         <dt className="text-muted">{tNanny("hasTransportation")}</dt>

@@ -31,8 +31,6 @@ type NannyResult = {
     live_arrangement_pref: string;
     availability: { days: string[] };
     years_experience: number;
-    expected_salary_min: number;
-    expected_salary_max: number;
     has_transportation: boolean;
     can_drive: boolean;
     certifications: string[];
@@ -157,8 +155,6 @@ export default function NannyResults() {
                   <dd>{tSchedule(nanny.employment_type as never)}</dd>
                   <dt className="text-muted">{tNanny("liveArrangementPref")}</dt>
                   <dd>{tLiveArrangement(nanny.live_arrangement_pref as never)}</dd>
-                  <dt className="text-muted">{tNanny("expectedSalaryRange")}</dt>
-                  <dd>{t("salaryRange", { min: nanny.expected_salary_min, max: nanny.expected_salary_max })}</dd>
                   <dt className="text-muted">{tNanny("languages")}</dt>
                   <dd>{langs.join(", ") || "—"}</dd>
                   <dt className="text-muted">{tNanny("hasTransportation")}</dt>
