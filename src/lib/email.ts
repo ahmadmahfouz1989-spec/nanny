@@ -93,6 +93,23 @@ export function pendingReviewEmail(lang: Lang, profileName: string, profileType:
   };
 }
 
+export function newSignupAdminEmail(lang: Lang, newUserRole: string, newUserEmail: string) {
+  const kind = pick(
+    lang,
+    newUserRole === "nanny" ? "nanny" : "parent",
+    newUserRole === "nanny" ? "مربية" : "أحد الوالدين",
+  );
+  const addr = escapeHtml(newUserEmail);
+  return {
+    subject: pick(lang, `New ${kind} sign-up`, `تسجيل جديد: ${kind}`),
+    html: pick(
+      lang,
+      `<p>A new ${kind} just signed up: <strong>${addr}</strong>.</p><p>Their profile will show up in the moderation queue once they finish onboarding.</p>`,
+      `<p>سجّل ${kind} جديد للتو: <strong>${addr}</strong>.</p><p>سيظهر ملفه في قائمة المراجعة بعد إكمال الإعداد.</p>`,
+    ),
+  };
+}
+
 export function interestReceivedEmail(lang: Lang, fromName: string) {
   return {
     subject: pick(lang, "Someone is interested in connecting", "شخص ما مهتم بالتواصل معك"),
