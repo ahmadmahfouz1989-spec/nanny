@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMatchAccess, effectiveStatus } from "@/lib/matching/access";
 import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
+import { getPublicOrigin } from "@/lib/site-url";
 
 const INTEREST_WINDOW_DAYS = 14;
 
@@ -96,7 +97,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         // mutual: the "other" name is whichever profile isn't this recipient's own side
         const isParentRecipient = n.user_id === access.parentUserId;
         const otherName = isParentRecipient ? nannyProfile?.full_name : parentProfile?.full_name;
-        const { subject, html } = mutualMatchEmail(recipient.preferred_language, otherName ?? "your match");
+        const locale = recipient.preferred_language === "ar" ? "ar" : "en";
+        const matchUrl = `${getPublicOrigin(request)}/${locale}/messages`;
+        const { subject, html } = mutualMatchEmail(
+          recipient.preferred_language,
+          otherName ?? "your match",
+          matchUrl,
+        );
         return sendEmail(recipient.email, subject, html);
       }),
     );
