@@ -129,13 +129,14 @@ export function newMessageEmail(lang: Lang, fromName: string, snippet: string, m
   };
 }
 
-export function mutualMatchEmail(lang: Lang, otherName: string) {
+export function mutualMatchEmail(lang: Lang, otherName: string, matchUrl: string) {
+  const name = escapeHtml(otherName);
   return {
     subject: pick(lang, "It's a match!", "لقد تطابقتما!"),
     html: pick(
       lang,
-      `<p>You and ${otherName} are both interested — contact details are now unlocked.</p><p>Log in to view them.</p>`,
-      `<p>أنتما مهتمّان ببعضكما البعض — تم إلغاء قفل معلومات التواصل الآن.</p><p>سجّل الدخول لعرضها.</p>`,
+      `<p>You and ${name} are both interested — it's a match!</p><p>Contact details are unlocked and you can now message each other. <a href="${matchUrl}">Log in to view the match and start chatting</a>.</p>`,
+      `<p>أنت و${name} مهتمّان ببعضكما — لقد تطابقتما!</p><p>تم فتح معلومات التواصل ويمكنكما الآن مراسلة بعضكما. <a href="${matchUrl}">سجّل الدخول لعرض التطابق وبدء المحادثة</a>.</p>`,
     ),
   };
 }
