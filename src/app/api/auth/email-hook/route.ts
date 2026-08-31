@@ -44,13 +44,17 @@ export async function POST(request: Request) {
   // back to the Site URL. Rebuilt here directly instead of trusted, now
   // that every route derives its origin the same correct way.
   const origin = getPublicOrigin(request);
-  const ownDestination =
-    email_action_type === "recovery" ? `${origin}/auth/callback-recovery` : `${origin}/auth/callback`;
 
-  const verifyUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${token_hash}&type=${email_action_type}&redirect_to=${encodeURIComponent(ownDestination)}`;
+  // Point the link straight at our own /auth/confirm route with the raw
+  // token_hash, rather than through Supabase's /auth/v1/verify + a PKCE
+  // code exchange. /auth/confirm calls verifyOtp(), which both confirms the
+  // token and logs the user in — so clicking the link works even when it's
+  // opened on a different device from the one that signed up.
+  const dest = email_action_type === "recovery" ? "/reset-password" : "/dashboard";
+  const verifyUrl = `${origin}/auth/confirm?token_hash=${token_hash}&type=${email_action_type}&next=${encodeURIComponent(dest)}`;
 
   console.log(
-    `[email-hook] action=${email_action_type} original_redirect_to=${redirect_to} using=${ownDestination} verifyUrl=${verifyUrl}`,
+    `[email-hook] action=${email_action_type} original_redirect_to=${redirect_to} verifyUrl=${verifyUrl}`,
   );
 
   const admin = createAdminClient();
