@@ -13,10 +13,13 @@ type Notification = {
   created_at: string;
 };
 
+// This app has no per-match detail route — matches (with contact, rating
+// and an embedded chat) all live on the dashboard, so match-related
+// notifications go there rather than to the empty inbox.
 const ROUTE_BY_TYPE: Record<string, string> = {
-  interest_accepted: "/messages",
+  interest_accepted: "/dashboard",
   interest_received: "/dashboard",
-  rating_received: "/messages",
+  rating_received: "/dashboard",
   new_match: "/dashboard",
   profile_approved: "/dashboard",
   profile_rejected: "/dashboard",
