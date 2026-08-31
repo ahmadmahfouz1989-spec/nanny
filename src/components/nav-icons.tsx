@@ -28,11 +28,14 @@ export function ProfileIcon({ className = "" }: { className?: string }) {
   );
 }
 
-export function BellIcon({ className = "" }: { className?: string }) {
+export function HeartIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
-      <path d="M6 9a6 6 0 0 1 12 0c0 4.5 1.5 6 2 6H4c.5 0 2-1.5 2-6Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M9.5 19a2.5 2.5 0 0 0 5 0" strokeLinecap="round" />
+      <path
+        d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 5.9 5.8 4 8.3 4c1.7 0 3.1.9 3.7 2.3C12.6 4.9 14 4 15.7 4c2.5 0 4.8 1.9 4.8 4.9 0 6.1-8.5 11.6-8.5 11.6Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   );
 }
