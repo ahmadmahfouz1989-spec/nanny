@@ -72,6 +72,15 @@ function pick(lang: Lang, en: string, ar: string) {
   return lang === "ar" ? ar : en;
 }
 
+function escapeHtml(s: string) {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export function pendingReviewEmail(lang: Lang, profileName: string, profileType: "parent" | "nanny") {
   const kind = pick(lang, profileType === "parent" ? "parent" : "nanny", profileType === "parent" ? "أحد الوالدين" : "مربية");
   return {
@@ -102,6 +111,20 @@ export function alreadyRegisteredEmail(lang: Lang, loginUrl: string, recoverUrl:
       lang,
       `<p>Someone just tried to sign up with this email, but you already have a nanny account.</p><p><a href="${loginUrl}">Log in</a> or <a href="${recoverUrl}">reset your password</a> if you forgot it.</p><p>If this wasn't you, you can safely ignore this email.</p>`,
       `<p>حاول شخص ما للتو إنشاء حساب بهذا البريد الإلكتروني، لكن لديك حساب على nanny بالفعل.</p><p><a href="${loginUrl}">سجّل الدخول</a> أو <a href="${recoverUrl}">أعد تعيين كلمة المرور</a> إذا نسيتها.</p><p>إذا لم يكن هذا أنت، يمكنك تجاهل هذا البريد بأمان.</p>`,
+    ),
+  };
+}
+
+export function newMessageEmail(lang: Lang, fromName: string, snippet: string, messagesUrl: string) {
+  const name = escapeHtml(fromName);
+  const body = escapeHtml(snippet);
+  return {
+    // Subject is rendered as plain text by mail clients — use the raw name.
+    subject: pick(lang, `New message from ${fromName}`, `رسالة جديدة من ${fromName}`),
+    html: pick(
+      lang,
+      `<p>${name} sent you a message on nanny:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${messagesUrl}">Open the conversation</a> to reply.</p><p style="color:#888;font-size:13px">We'll only email you once per conversation until you've read it.</p>`,
+      `<p>أرسل/أرسلت ${name} رسالة إليك على nanny:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${messagesUrl}">افتح المحادثة</a> للرد.</p><p style="color:#888;font-size:13px">سنرسل لك بريدًا واحدًا فقط لكل محادثة حتى تقرأها.</p>`,
     ),
   };
 }
