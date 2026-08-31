@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
+import ProfileRating from "@/components/matches/profile-rating";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
@@ -20,6 +21,7 @@ type FamilyResult = {
   score_breakdown: Record<Criterion, CriterionResult>;
   status: string;
   interest_expires_at: string | null;
+  rating: { average: number | null; count: number };
   parent_profiles: {
     id: string;
     full_name: string;
@@ -111,6 +113,14 @@ export default function FamilyResults() {
               </div>
 
               <div className="p-5">
+                <div className="mb-3">
+                  <ProfileRating
+                    profileId={parent.id}
+                    profileType="parent"
+                    average={r.rating?.average ?? null}
+                    count={r.rating?.count ?? 0}
+                  />
+                </div>
                 {parent.family_description && (
                   <p className="text-sm text-ink/80 mb-3">{parent.family_description}</p>
                 )}

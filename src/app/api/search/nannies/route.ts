@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { ratingAggregatesByUser } from "@/lib/ratings";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -45,5 +47,33 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ results: data });
+  // Attach each nanny's aggregate rating. The profile→user_id mapping stays
+  // server-side (user_id is never part of the search response).
+  const nannyProfileIds = (data ?? [])
+    .map((r) => (r.nanny_profiles as unknown as { id: string } | null)?.id)
+    .filter((v): v is string => Boolean(v));
+
+  const ratingByProfileId = new Map<string, { average: number | null; count: number }>();
+  if (nannyProfileIds.length > 0) {
+    const admin = createAdminClient();
+    const { data: owners } = await admin
+      .from("nanny_profiles")
+      .select("id, user_id")
+      .in("id", nannyProfileIds);
+    const aggregates = await ratingAggregatesByUser((owners ?? []).map((o) => o.user_id));
+    for (const owner of owners ?? []) {
+      ratingByProfileId.set(owner.id, aggregates.get(owner.user_id) ?? { average: null, count: 0 });
+    }
+  }
+
+  const results = (data ?? []).map((r) => ({
+    ...r,
+    rating:
+      ratingByProfileId.get((r.nanny_profiles as unknown as { id: string }).id) ?? {
+        average: null,
+        count: 0,
+      },
+  }));
+
+  return NextResponse.json({ results });
 }

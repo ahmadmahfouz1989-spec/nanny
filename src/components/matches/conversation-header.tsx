@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
+import RatingButton from "@/components/matches/rating-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { ui } from "@/lib/ui";
 
@@ -99,6 +100,9 @@ export default function ConversationHeader({
                 )}
               </div>
             )}
+            <div className="border-t border-border pt-2">
+              <RatingButton matchId={matchId} counterpartName={name} />
+            </div>
             <div className="border-t border-border pt-2">
               <ReportButton profileId={profileId} profileType={profileType} />
             </div>
