@@ -28,6 +28,15 @@ export function ProfileIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function BellIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path d="M6 9a6 6 0 0 1 12 0c0 4.5 1.5 6 2 6H4c.5 0 2-1.5 2-6Z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9.5 19a2.5 2.5 0 0 0 5 0" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function AdminIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
