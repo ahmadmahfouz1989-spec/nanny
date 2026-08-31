@@ -274,7 +274,9 @@
     "reviewsEmpty": "No written reviews yet.",
     "reviewsError": "Couldn't load reviews. Please try again.",
     "raterParent": "— a parent they matched with",
-    "raterNanny": "— a nanny they matched with"
+    "raterNanny": "— a nanny they matched with",
+    "myRatingsTitle": "Ratings you've received",
+    "myRatingsEmpty": "No one has rated you yet. Ratings appear here after a match."
   },
   "Admin": {
     "navOverview": "Overview",

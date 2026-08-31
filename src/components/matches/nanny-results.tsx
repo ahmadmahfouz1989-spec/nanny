@@ -12,6 +12,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
+import { useHashScroll } from "@/components/matches/use-hash-scroll";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -69,6 +70,7 @@ export default function NannyResults() {
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const locale = useLocale();
   const [results, setResults] = useState<NannyResult[] | null>(null);
+  useHashScroll(!!results);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -105,7 +107,11 @@ export default function NannyResults() {
           const tone = TONES[i % TONES.length];
           const availableDays = nanny.availability?.days ?? [];
           return (
-            <div key={r.id} className={ui.card + " overflow-hidden"}>
+            <div
+              key={r.id}
+              id={`match-${r.id}`}
+              className={ui.card + " overflow-hidden scroll-mt-6 transition-shadow"}
+            >
               <div className="relative">
                 {nanny.profile_photo_url ? (
                   <Image

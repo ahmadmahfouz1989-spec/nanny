@@ -13,22 +13,39 @@ type Notification = {
   created_at: string;
 };
 
-// This app has no per-match detail route — matches (with contact, rating
-// and an embedded chat) all live on the dashboard, so match-related
-// notifications go there rather than to the empty inbox.
-const ROUTE_BY_TYPE: Record<string, string> = {
-  interest_accepted: "/dashboard",
-  interest_received: "/dashboard",
-  rating_received: "/dashboard",
-  new_match: "/dashboard",
-  profile_approved: "/dashboard",
-  profile_rejected: "/dashboard",
-  profile_pending_review: "/admin/profiles",
-  verification_updated: "/profile",
-  report_resolved: "/dashboard",
-};
+const KNOWN_TYPES = new Set([
+  "interest_accepted",
+  "interest_received",
+  "rating_received",
+  "new_match",
+  "profile_approved",
+  "profile_rejected",
+  "profile_pending_review",
+  "verification_updated",
+  "report_resolved",
+]);
 
-const KNOWN_TYPES = new Set(Object.keys(ROUTE_BY_TYPE));
+// The app has no per-match detail route — match cards live on the
+// dashboard, so match notifications deep-link to the specific card
+// (#match-<id>); a rating you received opens the ratings section of your
+// profile.
+function hrefFor(n: Notification): string {
+  const matchId = typeof n.payload?.match_id === "string" ? n.payload.match_id : null;
+  switch (n.type) {
+    case "interest_accepted":
+    case "interest_received":
+    case "new_match":
+      return matchId ? `/dashboard#match-${matchId}` : "/dashboard";
+    case "rating_received":
+      return "/profile#ratings";
+    case "profile_pending_review":
+      return "/admin/profiles";
+    case "verification_updated":
+      return "/profile";
+    default:
+      return "/dashboard";
+  }
+}
 
 function formatRelative(iso: string, locale: string, justNow: string) {
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -89,7 +106,7 @@ export default function NotificationBell({
       );
       fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
     }
-    router.push(ROUTE_BY_TYPE[n.type] ?? "/dashboard");
+    router.push(hrefFor(n));
   }
 
   function markAllRead() {
