@@ -10,6 +10,7 @@ import CreateProfileIllustration from "@/components/illustrations/create-profile
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { ui } from "@/lib/ui";
+import { useHashScroll } from "@/components/matches/use-hash-scroll";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -63,6 +64,7 @@ export default function FamilyResults() {
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const locale = useLocale();
   const [results, setResults] = useState<FamilyResult[] | null>(null);
+  useHashScroll(!!results);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -97,7 +99,11 @@ export default function FamilyResults() {
           const langs = (parent.parent_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
           const tone = TONES[i % TONES.length];
           return (
-            <div key={r.id} className={ui.card + " overflow-hidden"}>
+            <div
+              key={r.id}
+              id={`match-${r.id}`}
+              className={ui.card + " overflow-hidden scroll-mt-6 transition-shadow"}
+            >
               <div className="relative">
                 <AvatarIllustration tone={tone} className="h-28 w-full" />
                 <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
