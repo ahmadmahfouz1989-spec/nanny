@@ -3,6 +3,7 @@ import { redirect } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
+import MyRatings from "@/components/matches/my-ratings";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import { ui } from "@/lib/ui";
 
@@ -95,6 +96,8 @@ export default async function ProfilePage({
             </dd>
           </dl>
         </div>
+
+        <MyRatings />
 
         <div className={ui.card + " overflow-hidden"}>
           {matchProfile ? (
