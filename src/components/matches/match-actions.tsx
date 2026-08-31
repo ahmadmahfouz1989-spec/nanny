@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import ChatThread from "./chat-thread";
+import RatingButton from "./rating-button";
 import { ui } from "@/lib/ui";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
@@ -114,6 +115,7 @@ export default function MatchActions({
           </div>
         )}
         {error && <p className="text-xs text-danger mt-1">{error}</p>}
+        <RatingButton matchId={matchId} />
         <ChatThread matchId={matchId} />
       </div>
     );
