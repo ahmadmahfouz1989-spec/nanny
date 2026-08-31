@@ -10,6 +10,24 @@
     "profile": "الملف الشخصي",
     "admin": "الإدارة"
   },
+  "Notifications": {
+    "title": "الإشعارات",
+    "empty": "لا توجد إشعارات بعد.",
+    "loading": "جارٍ التحميل…",
+    "markAllRead": "تحديد الكل كمقروء",
+    "justNow": "الآن",
+    "generic": "لديك إشعار جديد",
+    "interest_accepted": "🎉 لقد تطابقتما — يمكنكما المحادثة الآن",
+    "interest_received": "شخص ما مهتم بالتواصل معك",
+    "new_match": "اقتراح تطابق جديد",
+    "rating_received": "حصلت على تقييم {score}★",
+    "rating_received_generic": "حصلت على تقييم جديد",
+    "profile_approved": "تمت الموافقة على ملفك الشخصي",
+    "profile_rejected": "ملفك الشخصي يحتاج إلى تعديلات",
+    "profile_pending_review": "ملف شخصي جديد بانتظار المراجعة",
+    "verification_updated": "تغيّرت حالة التحقق الخاصة بك",
+    "report_resolved": "تمت معالجة بلاغ قدّمته"
+  },
   "Home": {
     "badge": "نرحّب الآن بالعائلات في جميع أنحاء لبنان",
     "heroPhotoAlt": "مربية تلعب مع طفل في الخارج",

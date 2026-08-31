@@ -10,6 +10,24 @@
     "profile": "Profile",
     "admin": "Admin"
   },
+  "Notifications": {
+    "title": "Notifications",
+    "empty": "No notifications yet.",
+    "loading": "Loading…",
+    "markAllRead": "Mark all read",
+    "justNow": "just now",
+    "generic": "You have a new notification",
+    "interest_accepted": "🎉 It's a match — you can chat now",
+    "interest_received": "Someone is interested in connecting",
+    "new_match": "New match suggestion",
+    "rating_received": "You received a {score}★ rating",
+    "rating_received_generic": "You received a new rating",
+    "profile_approved": "Your profile was approved",
+    "profile_rejected": "Your profile needs changes",
+    "profile_pending_review": "A new profile is awaiting review",
+    "verification_updated": "Your verification status changed",
+    "report_resolved": "A report you filed was resolved"
+  },
   "Home": {
     "badge": "Now welcoming families across Lebanon",
     "heroPhotoAlt": "A caregiver playing with a child outdoors",
