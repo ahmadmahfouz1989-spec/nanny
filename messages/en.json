@@ -237,6 +237,27 @@
     "submitted": "Thanks — our team will review this.",
     "cancel": "Cancel"
   },
+  "Rating": {
+    "action": "Rate this match",
+    "editYourRating": "Your rating: {score}★ — edit",
+    "title": "How was this match?",
+    "titleNamed": "How was working with {name}?",
+    "commentPlaceholder": "Add a comment (optional)",
+    "submit": "Submit rating",
+    "update": "Update rating",
+    "submitting": "Saving…",
+    "cancel": "Cancel",
+    "error": "Something went wrong. Please try again.",
+    "notYet": "You can rate each other once you've matched.",
+    "none": "No ratings yet",
+    "seeReviews": "See reviews",
+    "hideReviews": "Hide reviews",
+    "reviewsLoading": "Loading reviews…",
+    "reviewsEmpty": "No written reviews yet.",
+    "reviewsError": "Couldn't load reviews. Please try again.",
+    "raterParent": "— a parent they matched with",
+    "raterNanny": "— a nanny they matched with"
+  },
   "Admin": {
     "navOverview": "Overview",
     "navProfiles": "Profiles",
