@@ -4,6 +4,7 @@ import BrandMark from "@/components/brand-mark";
 import ThemeSwitcher from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
+import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
 import { HomeIcon, ProfileIcon } from "@/components/nav-icons";
 
@@ -36,6 +37,7 @@ export default async function AppShell({
             <span>{t("home")}</span>
           </Link>
           <MessagesSidebarItem active={active === "messages"} />
+          <NotificationBell variant="sidebar" />
           <Link
             href="/profile"
             className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-[15px] transition-colors ${
@@ -59,6 +61,7 @@ export default async function AppShell({
       <header className="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border bg-background">
         <BrandMark />
         <div className="flex items-center gap-1">
+          <NotificationBell variant="header" />
           <ThemeSwitcher />
           <LocaleSwitcher className="px-2" />
           <SignOutButton />
