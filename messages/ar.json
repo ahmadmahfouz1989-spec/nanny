@@ -239,7 +239,7 @@
   },
   "Rating": {
     "action": "قيّم هذا التطابق",
-    "editYourRating": "تقييمك: {score}★ — تعديل",
+    "editRating": "تعديل تقييمك ({score}★)",
     "title": "كيف كان هذا التطابق؟",
     "titleNamed": "كيف كان التعامل مع {name}؟",
     "commentPlaceholder": "أضف تعليقًا (اختياري)",

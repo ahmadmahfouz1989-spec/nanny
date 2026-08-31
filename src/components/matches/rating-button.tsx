@@ -95,23 +95,28 @@ export default function RatingButton({
   }
 
   if (data && !data.canRate) {
-    return <p className="text-xs text-muted mt-2">{t("notYet")}</p>;
+    return <p className="mt-3 text-xs text-muted">{t("notYet")}</p>;
   }
 
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="text-xs text-muted hover:text-ink transition mt-2"
-      >
-        {data?.mine ? t("editYourRating", { score: data.mine.score }) : t("action")}
-      </button>
+      <div className="mt-3">
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-ink/80 transition hover:border-primary/40 hover:bg-primary-soft/40 hover:text-ink"
+        >
+          <span aria-hidden className="text-base leading-none text-accent-hover">
+            {data?.mine ? "★" : "☆"}
+          </span>
+          {data?.mine ? t("editRating", { score: data.mine.score }) : t("action")}
+        </button>
+      </div>
     );
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-border p-3 flex flex-col gap-2">
+    <div className="mt-3 rounded-xl border border-border p-3 flex flex-col gap-2">
       <label className={ui.label + " text-xs"}>
         {counterpartName ? t("titleNamed", { name: counterpartName }) : t("title")}
       </label>

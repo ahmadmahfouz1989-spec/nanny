@@ -239,7 +239,7 @@
   },
   "Rating": {
     "action": "Rate this match",
-    "editYourRating": "Your rating: {score}★ — edit",
+    "editRating": "Edit your rating ({score}★)",
     "title": "How was this match?",
     "titleNamed": "How was working with {name}?",
     "commentPlaceholder": "Add a comment (optional)",
