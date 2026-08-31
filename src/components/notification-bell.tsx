@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import { BellIcon } from "@/components/nav-icons";
+import { HeartIcon } from "@/components/nav-icons";
 
 type Notification = {
   id: string;
@@ -122,7 +122,7 @@ export default function NotificationBell({
         aria-label={t("title")}
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition hover:bg-surface hover:text-ink"
       >
-        <BellIcon className="h-5 w-5" />
+        <HeartIcon className="h-5 w-5" />
         {unread > 0 && (
           <span className="absolute top-1 end-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
             {unread > 9 ? "9+" : unread}
@@ -137,7 +137,7 @@ export default function NotificationBell({
           open ? "font-bold text-ink" : "text-ink/80 hover:bg-surface"
         }`}
       >
-        <BellIcon className="h-6 w-6 shrink-0" />
+        <HeartIcon className="h-6 w-6 shrink-0" />
         <span>{t("title")}</span>
         {unread > 0 && (
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">
