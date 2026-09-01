@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
+import { labelOr } from "@/lib/i18n-fallback";
 
 type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
 
@@ -172,7 +173,7 @@ export default function AdminProfilesPage() {
         {(profile.certifications?.length ?? 0) > 0 && (
           <>
             <dt className="text-muted">{tNanny("certifications")}</dt>
-            <dd>{(profile.certifications ?? []).map((c) => tCerts(c as never)).join(", ")}</dd>
+            <dd>{(profile.certifications ?? []).map((c) => labelOr(tCerts, c)).join(", ")}</dd>
           </>
         )}
         {profile.short_intro && (
