@@ -154,10 +154,10 @@ export default function NotificationBell({
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
           <div
-            className={`absolute z-50 w-[20rem] max-w-[calc(100vw-1.5rem)] overflow-hidden rounded-2xl border border-border bg-surface shadow-lg ${
+            className={`z-50 overflow-hidden rounded-2xl border border-border bg-surface shadow-lg ${
               variant === "header"
-                ? "end-0 top-full mt-2"
-                : "start-0 top-full mt-1 sm:start-full sm:top-0 sm:ms-2"
+                ? "fixed inset-x-3 top-16"
+                : "absolute start-0 top-full mt-1 w-[20rem] max-w-[calc(100vw-1.5rem)] sm:start-full sm:top-0 sm:ms-2"
             }`}
           >
             <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
