@@ -12,6 +12,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
+import { labelOr } from "@/lib/i18n-fallback";
 import { useHashScroll } from "@/components/matches/use-hash-scroll";
 
 const TONES = ["primary", "secondary", "berry"] as const;
@@ -190,7 +191,7 @@ export default function NannyResults() {
                   {(nanny.certifications?.length ?? 0) > 0 && (
                     <>
                       <dt className="text-muted">{tNanny("certifications")}</dt>
-                      <dd>{nanny.certifications.map((c) => tCerts(c as never)).join(", ")}</dd>
+                      <dd>{nanny.certifications.map((c) => labelOr(tCerts, c)).join(", ")}</dd>
                     </>
                   )}
                 </dl>
