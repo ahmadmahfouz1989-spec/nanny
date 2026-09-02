@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import ChatThread from "./chat-thread";
 import RatingButton from "./rating-button";
 import { ui } from "@/lib/ui";
@@ -30,6 +31,7 @@ export default function MatchActions({
   const [loading, setLoading] = useState(false);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [paywalled, setPaywalled] = useState(false);
 
   const otherSide = viewerSide === "parent" ? "nanny" : "parent";
   const ownPending = `${viewerSide}_interested`;
@@ -38,9 +40,14 @@ export default function MatchActions({
   async function act(action: "interest" | "decline") {
     setLoading(true);
     setError(null);
+    setPaywalled(false);
     const res = await fetch(`/api/matches/${matchId}/${action}`, { method: "POST" });
     setLoading(false);
 
+    if (res.status === 402) {
+      setPaywalled(true);
+      return;
+    }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       setError(typeof body.error === "string" ? body.error : t("actionError"));
@@ -54,9 +61,14 @@ export default function MatchActions({
   async function loadContact() {
     setLoading(true);
     setError(null);
+    setPaywalled(false);
     const res = await fetch(`/api/matches/${matchId}/contact`);
     setLoading(false);
 
+    if (res.status === 402) {
+      setPaywalled(true);
+      return;
+    }
     if (!res.ok) {
       setError(t("actionError"));
       return;
@@ -64,13 +76,21 @@ export default function MatchActions({
     setContact(await res.json());
   }
 
+  const feedback = paywalled ? (
+    <Link href="/subscribe" className={ui.link + " text-xs font-semibold"}>
+      {t("subscribeToConnect")}
+    </Link>
+  ) : error ? (
+    <p className="text-xs text-danger">{error}</p>
+  ) : null;
+
   if (current === "suggested" || current === "expired") {
     return (
       <div className="flex items-center gap-3 mt-3">
         <button onClick={() => act("interest")} disabled={loading} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
           {t("sendInterest")}
         </button>
-        {error && <p className="text-xs text-danger">{error}</p>}
+        {feedback}
       </div>
     );
   }
@@ -91,7 +111,7 @@ export default function MatchActions({
             {t("decline")}
           </button>
         </div>
-        {error && <p className="text-xs text-danger">{error}</p>}
+        {feedback}
       </div>
     );
   }
@@ -114,7 +134,7 @@ export default function MatchActions({
             )}
           </div>
         )}
-        {error && <p className="text-xs text-danger mt-1">{error}</p>}
+        {feedback}
         <RatingButton matchId={matchId} />
         <ChatThread matchId={matchId} />
       </div>
