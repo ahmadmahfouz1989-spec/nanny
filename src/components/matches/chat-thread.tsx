@@ -33,7 +33,7 @@ export default function ChatThread({
   const [sending, setSending] = useState(false);
   const [paywalled, setPaywalled] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const onMessageRef = useRef(onMessage);
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -81,7 +81,11 @@ export default function ChatThread({
   }, [matchId, variant]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Scroll only this thread's own container to the bottom — never
+    // scrollIntoView, which would also scroll the page (the compact widget
+    // is embedded mid-page on the dashboard).
+    const el = listRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
 
   async function send() {
@@ -132,6 +136,7 @@ export default function ChatThread({
       )}
 
       <div
+        ref={listRef}
         className={
           full
             ? "flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 p-4"
@@ -169,7 +174,6 @@ export default function ChatThread({
             </div>
           );
         })}
-        <div ref={bottomRef} />
       </div>
 
       <SubscribeModal open={paywalled} onClose={() => setPaywalled(false)} />
