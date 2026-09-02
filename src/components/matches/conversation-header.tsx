@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
 import RatingButton from "@/components/matches/rating-button";
+import SubscribeModal from "@/components/subscribe-modal";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { ui } from "@/lib/ui";
 
@@ -32,16 +33,23 @@ export default function ConversationHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const [paywalled, setPaywalled] = useState(false);
 
   async function loadContact() {
     setLoading(true);
     const res = await fetch(`/api/matches/${matchId}/contact`);
     setLoading(false);
+    if (res.status === 402) {
+      setMenuOpen(false);
+      setPaywalled(true);
+      return;
+    }
     if (res.ok) setContact(await res.json());
   }
 
   return (
     <div className="relative flex items-center gap-3 px-4 py-3 border-b border-border shrink-0">
+      <SubscribeModal open={paywalled} onClose={() => setPaywalled(false)} />
       {onBack && (
         <button
           type="button"

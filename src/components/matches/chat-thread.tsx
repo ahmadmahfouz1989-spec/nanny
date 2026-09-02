@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
+import SubscribeModal from "@/components/subscribe-modal";
 import { ui } from "@/lib/ui";
 
 type Message = {
@@ -172,14 +172,7 @@ export default function ChatThread({
         <div ref={bottomRef} />
       </div>
 
-      {paywalled && (
-        <div className="border-t border-border bg-warning-soft px-3 py-2 text-xs text-ink/80 shrink-0">
-          {t("chatPaywalled")}{" "}
-          <Link href="/subscribe" className={ui.link + " font-semibold"}>
-            {t("subscribeToConnect")}
-          </Link>
-        </div>
-      )}
+      <SubscribeModal open={paywalled} onClose={() => setPaywalled(false)} />
 
       <div className={full ? "flex items-center gap-2 p-3 border-t border-border shrink-0" : "flex items-center gap-2 p-2 border-t border-border"}>
         <input

@@ -251,7 +251,11 @@
     "step1": "Send the amount by Whish to",
     "step2": "In the transfer note, put your account email:",
     "step3": "Your account is activated manually, usually within a few hours.",
-    "whishNotConfigured": "Payment details coming soon — contact us."
+    "whishNotConfigured": "Payment details coming soon — contact us.",
+    "blockedTitle": "Subscribe to continue",
+    "blockedBody": "Sending interest, messaging, and viewing contact details need an active subscription.",
+    "blockedCta": "See plans",
+    "notNow": "Not now"
   },
   "Inbox": {
     "navLabel": "Messages",
