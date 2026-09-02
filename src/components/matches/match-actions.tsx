@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
 import ChatThread from "./chat-thread";
 import RatingButton from "./rating-button";
+import SubscribeModal from "@/components/subscribe-modal";
 import { ui } from "@/lib/ui";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
@@ -76,16 +76,12 @@ export default function MatchActions({
     setContact(await res.json());
   }
 
-  const feedback = paywalled ? (
-    <Link href="/subscribe" className={ui.link + " text-xs font-semibold"}>
-      {t("subscribeToConnect")}
-    </Link>
-  ) : error ? (
-    <p className="text-xs text-danger">{error}</p>
-  ) : null;
+  const feedback = error ? <p className="text-xs text-danger">{error}</p> : null;
+
+  let body: ReactNode = null;
 
   if (current === "suggested" || current === "expired") {
-    return (
+    body = (
       <div className="flex items-center gap-3 mt-3">
         <button onClick={() => act("interest")} disabled={loading} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
           {t("sendInterest")}
@@ -93,14 +89,10 @@ export default function MatchActions({
         {feedback}
       </div>
     );
-  }
-
-  if (current === ownPending) {
-    return <p className="text-sm text-muted mt-3">{t("waitingForResponse")}</p>;
-  }
-
-  if (current === otherPending) {
-    return (
+  } else if (current === ownPending) {
+    body = <p className="text-sm text-muted mt-3">{t("waitingForResponse")}</p>;
+  } else if (current === otherPending) {
+    body = (
       <div className="flex flex-col gap-2 mt-3">
         <p className="text-sm text-secondary font-medium">{t("theyAreInterested")}</p>
         <div className="flex items-center gap-3">
@@ -114,10 +106,8 @@ export default function MatchActions({
         {feedback}
       </div>
     );
-  }
-
-  if (current === "mutual") {
-    return (
+  } else if (current === "mutual") {
+    body = (
       <div className="mt-3">
         {!contact ? (
           <button onClick={loadContact} disabled={loading} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
@@ -139,11 +129,14 @@ export default function MatchActions({
         <ChatThread matchId={matchId} />
       </div>
     );
+  } else if (current.startsWith("declined_by_")) {
+    body = <p className="text-sm text-muted mt-3">{t("declined")}</p>;
   }
 
-  if (current.startsWith("declined_by_")) {
-    return <p className="text-sm text-muted mt-3">{t("declined")}</p>;
-  }
-
-  return null;
+  return (
+    <>
+      {body}
+      <SubscribeModal open={paywalled} onClose={() => setPaywalled(false)} />
+    </>
+  );
 }
