@@ -31,9 +31,11 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("role, email, phone, email_verified_at, phone_verified_at")
+    .select("role, email, phone, email_verified_at, phone_verified_at, subscribed_until")
     .eq("id", user!.id)
     .single();
+
+  const subActive = !!profile?.subscribed_until && new Date(profile.subscribed_until) > new Date();
 
   if (profile?.role === "admin") {
     redirect({ href: "/admin", locale });
@@ -96,6 +98,23 @@ export default async function ProfilePage({
             </dd>
           </dl>
         </div>
+
+        <Link
+          href="/subscribe"
+          className={`${ui.card} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 transition-colors ${
+            subActive ? "bg-success-soft" : "bg-warning-soft"
+          }`}
+        >
+          <div className="text-sm">
+            <p className="font-medium">{t("subscriptionLabel")}</p>
+            <p className="text-muted text-xs">
+              {subActive
+                ? t("subscribedUntil", { date: new Date(profile!.subscribed_until!).toLocaleDateString() })
+                : t("notSubscribed")}
+            </p>
+          </div>
+          <span className={ui.link + " text-sm shrink-0"}>{t("manageSubscription")}</span>
+        </Link>
 
         <MyRatings />
 

@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const db = createAdminClient();
   let query = db
     .from("users")
-    .select("id, role, email, phone, status, email_verified_at, phone_verified_at, created_at")
+    .select("id, role, email, phone, status, subscribed_until, email_verified_at, phone_verified_at, created_at")
     .order("created_at", { ascending: false })
     .range(from, to);
 
