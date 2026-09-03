@@ -20,14 +20,60 @@ const smtpTransport =
     : null;
 const SMTP_FROM = process.env.SMTP_FROM ?? process.env.SMTP_USER;
 
-async function sendViaResend(to: string, subject: string, html: string) {
+const REPLY_TO = process.env.EMAIL_REPLY_TO || undefined;
+const UNSUBSCRIBE = process.env.EMAIL_UNSUBSCRIBE || undefined;
+
+// Extra headers that help deliverability: a real Reply-To (not noreply@)
+// and, when configured, List-Unsubscribe.
+function extraHeaders(): Record<string, string> | undefined {
+  if (!UNSUBSCRIBE) return undefined;
+  const headers: Record<string, string> = { "List-Unsubscribe": `<${UNSUBSCRIBE}>` };
+  if (UNSUBSCRIBE.startsWith("https://")) {
+    headers["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click";
+  }
+  return headers;
+}
+
+// Wrap a template's inner HTML in a real document — a bare run of <p> tags
+// with no <!doctype>/<html> and no text/plain part scores as spam.
+function wrapHtml(inner: string): string {
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f1ea;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:12px;padding:28px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#241d15;"><tr><td><div style="font-weight:700;font-size:18px;color:#ee4f26;margin-bottom:16px;">nanny</div>${inner}</td></tr></table></td></tr></table></body></html>`;
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<a\b[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, "$2 ($1)")
+    .replace(/<\/(p|div|h[1-6]|li|tr|blockquote)>/gi, "\n")
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+async function sendViaResend(to: string, subject: string, html: string, text: string) {
   if (!resend) return false;
   try {
     // The Resend SDK resolves with { data: null, error } on API-level
     // failures (bad API key, unverified from-address, etc.) rather than
     // throwing — has to be checked explicitly or a real failure looks
     // identical to success.
-    const { error } = await resend.emails.send({ from: FROM, to, subject, html });
+    const { error } = await resend.emails.send({
+      from: FROM,
+      to,
+      subject,
+      html,
+      text,
+      ...(REPLY_TO ? { replyTo: REPLY_TO } : {}),
+      ...(extraHeaders() ? { headers: extraHeaders() } : {}),
+    });
     if (error) {
       console.error(`[email] Resend rejected email to ${to}:`, error);
       return false;
@@ -39,10 +85,18 @@ async function sendViaResend(to: string, subject: string, html: string) {
   }
 }
 
-async function sendViaSmtp(to: string, subject: string, html: string) {
+async function sendViaSmtp(to: string, subject: string, html: string, text: string) {
   if (!smtpTransport) return false;
   try {
-    await smtpTransport.sendMail({ from: SMTP_FROM, to, subject, html });
+    await smtpTransport.sendMail({
+      from: SMTP_FROM,
+      to,
+      subject,
+      html,
+      text,
+      replyTo: REPLY_TO,
+      headers: extraHeaders(),
+    });
     return true;
   } catch (err) {
     console.error(`[email] SMTP failed to send to ${to}:`, err);
@@ -62,8 +116,10 @@ export async function sendEmail(to: string, subject: string, html: string) {
     console.log(`[email] no email provider configured — skipping email to ${to}: ${subject}`);
     return;
   }
-  if (await sendViaResend(to, subject, html)) return;
-  await sendViaSmtp(to, subject, html);
+  const doc = wrapHtml(html);
+  const text = htmlToText(html);
+  if (await sendViaResend(to, subject, doc, text)) return;
+  await sendViaSmtp(to, subject, doc, text);
 }
 
 type Lang = "en" | "ar" | "fr" | null | undefined;
