@@ -30,3 +30,22 @@ export async function GET(request: Request) {
 
   return NextResponse.json({ notifications: data });
 }
+
+// Clear all of the caller's notifications.
+export async function DELETE() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const { error } = await supabase.from("notifications").delete().eq("user_id", user.id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  return NextResponse.json({ status: "cleared" });
+}
