@@ -11,7 +11,7 @@ export default function BrandMark({ className = "" }: { className?: string }) {
           />
         </svg>
       </span>
-      <span className="font-brand text-xl font-bold tracking-tight text-ink">Link Lebanon</span>
+      <span className="font-brand text-xl font-bold tracking-tight text-ink">Linked Lebanon</span>
     </Link>
   );
 }
