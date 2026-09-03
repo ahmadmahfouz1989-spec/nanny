@@ -5,6 +5,22 @@
 alter table public.parent_profiles add column if not exists location_detail text;
 alter table public.nanny_profiles add column if not exists location_detail text;
 
+-- Relax the validate trigger FIRST (it required area-level) so the
+-- backfill below can move location_id up to a governorate.
+create or replace function public.validate_area_location()
+returns trigger
+language plpgsql
+as $$
+begin
+  if not exists (
+    select 1 from public.locations where id = new.location_id and level = 'governorate'
+  ) then
+    raise exception 'location_id must reference a location with level = governorate';
+  end if;
+  return new;
+end;
+$$;
+
 -- Backfill: move each profile's area-level location_id up to its
 -- governorate ancestor, keeping the old area name as the detail text.
 with chain as (
@@ -38,21 +54,6 @@ set location_detail = coalesce(p.location_detail, c.area_name),
     location_id = c.gov_id
 from chain c
 where p.location_id = c.area_id;
-
--- The validate trigger now requires a governorate-level location (was area).
-create or replace function public.validate_area_location()
-returns trigger
-language plpgsql
-as $$
-begin
-  if not exists (
-    select 1 from public.locations where id = new.location_id and level = 'governorate'
-  ) then
-    raise exception 'location_id must reference a location with level = governorate';
-  end if;
-  return new;
-end;
-$$;
 
 -- ─── profile RPCs: add p_location_detail ───────────────────────────────
 
