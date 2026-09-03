@@ -72,7 +72,7 @@ export default function NotificationBell({
     let active = true;
     async function load() {
       try {
-        const res = await fetch("/api/notifications");
+        const res = await fetch("/api/notifications?pageSize=10");
         if (!res.ok || !active) return;
         const body = await res.json();
         setItems(body.notifications ?? []);
@@ -112,6 +112,11 @@ export default function NotificationBell({
   function markAllRead() {
     setItems((prev) => prev?.map((x) => ({ ...x, read_at: x.read_at ?? new Date().toISOString() })) ?? prev);
     fetch("/api/notifications/read-all", { method: "PATCH" }).catch(() => {});
+  }
+
+  function clearAll() {
+    setItems([]);
+    fetch("/api/notifications", { method: "DELETE" }).catch(() => {});
   }
 
   const trigger =
@@ -162,13 +167,20 @@ export default function NotificationBell({
                 : "absolute start-0 top-full mt-1 w-[20rem] max-w-[calc(100vw-1.5rem)] sm:start-full sm:top-0 sm:ms-2"
             }`}
           >
-            <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
               <p className="font-display text-sm font-bold">{t("title")}</p>
-              {unread > 0 && (
-                <button type="button" onClick={markAllRead} className="text-xs text-primary hover:underline">
-                  {t("markAllRead")}
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {unread > 0 && (
+                  <button type="button" onClick={markAllRead} className="text-xs text-primary hover:underline">
+                    {t("markAllRead")}
+                  </button>
+                )}
+                {items && items.length > 0 && (
+                  <button type="button" onClick={clearAll} className="text-xs text-muted hover:text-danger">
+                    {t("clearAll")}
+                  </button>
+                )}
+              </div>
             </div>
             <div className="max-h-[22rem] overflow-y-auto">
               {!items && <p className="px-4 py-6 text-center text-sm text-muted">{t("loading")}</p>}
