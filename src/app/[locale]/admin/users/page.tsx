@@ -23,6 +23,7 @@ export default function AdminUsersPage() {
   const [users, setUsers] = useState<AdminUser[] | null>(null);
   const [q, setQ] = useState("");
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
 
   function load(query: string) {
     const params = new URLSearchParams();
@@ -73,6 +74,16 @@ export default function AdminUsersPage() {
     }
   }
 
+  async function remove(user: AdminUser) {
+    setSubmitting(user.id);
+    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+    setSubmitting(null);
+    setConfirmDelete(null);
+    if (res.ok) {
+      setUsers((prev) => prev?.filter((u) => u.id !== user.id) ?? null);
+    }
+  }
+
   return (
     <>
       <h1 className="font-display text-3xl font-semibold mb-6">{t("usersTitle")}</h1>
@@ -104,6 +115,23 @@ export default function AdminUsersPage() {
                 >
                   {user.status === "suspended" ? t("reactivate") : t("suspend")}
                 </button>
+                {user.role !== "admin" &&
+                  (confirmDelete === user.id ? (
+                    <button
+                      onClick={() => remove(user)}
+                      disabled={submitting === user.id}
+                      className={ui.buttonPrimary + " bg-danger! px-4! py-1.5! text-sm"}
+                    >
+                      {t("confirmDelete")}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setConfirmDelete(user.id)}
+                      className="text-sm text-muted hover:text-danger transition"
+                    >
+                      {t("delete")}
+                    </button>
+                  ))}
               </div>
             </div>
 
