@@ -18,6 +18,7 @@ type FormState = {
   contactPhone: string;
   profilePhotoUrl: string | null;
   locationId: string | null;
+  locationDetail: string;
   workRadiusKm: string;
   employmentType: "full_time" | "part_time" | "either";
   liveArrangementPref: "live_in" | "live_out" | "either";
@@ -38,6 +39,7 @@ const initialState: FormState = {
   contactPhone: "",
   profilePhotoUrl: null,
   locationId: null,
+  locationDetail: "",
   workRadiusKm: "10",
   employmentType: "full_time",
   liveArrangementPref: "live_out",
@@ -58,6 +60,7 @@ type ExistingNannyProfile = {
   contact_phone: string | null;
   profile_photo_url: string | null;
   location_id: string;
+  location_detail: string | null;
   work_radius_km: number;
   employment_type: FormState["employmentType"];
   live_arrangement_pref: FormState["liveArrangementPref"];
@@ -77,6 +80,7 @@ function stateFromExisting(p: ExistingNannyProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     profilePhotoUrl: p.profile_photo_url,
     locationId: p.location_id,
+    locationDetail: p.location_detail ?? "",
     workRadiusKm: String(p.work_radius_km),
     employmentType: p.employment_type,
     liveArrangementPref: p.live_arrangement_pref,
@@ -149,7 +153,7 @@ export default function NannyOnboarding({
   const stepValid = (() => {
     switch (step) {
       case 1:
-        return form.fullName.trim().length >= 2 && !!form.locationId && !!form.profilePhotoUrl;
+        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2 && !!form.profilePhotoUrl;
       case 2:
         return true;
       case 3:
@@ -179,6 +183,7 @@ export default function NannyOnboarding({
       contactPhone: form.contactPhone || undefined,
       profilePhotoUrl: form.profilePhotoUrl,
       locationId: form.locationId,
+      locationDetail: form.locationDetail,
       workRadiusKm: Number(form.workRadiusKm),
       employmentType: form.employmentType,
       liveArrangementPref: form.liveArrangementPref,
@@ -293,7 +298,12 @@ export default function NannyOnboarding({
             />
           </div>
 
-          <LocationPicker value={form.locationId} onChange={(id) => update("locationId", id)} />
+          <LocationPicker
+            governorateId={form.locationId}
+            detail={form.locationDetail}
+            onGovernorate={(id) => update("locationId", id)}
+            onDetail={(v) => update("locationDetail", v)}
+          />
           <label className={ui.label}>{t("workRadius")}</label>
           <input
             type="number"

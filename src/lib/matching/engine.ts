@@ -6,8 +6,8 @@ export type LiveArrangement = "live_in" | "live_out" | "either";
 export type AgeGroup = "newborn" | "infant" | "toddler" | "preschool" | "school_age" | "teen";
 
 export interface LocationRef {
-  areaId: string;
-  districtId: string | null;
+  // Profiles now record only a governorate; the specific location is
+  // free text and not scored.
   governorateId: string | null;
 }
 
@@ -57,10 +57,7 @@ export interface MatchResult {
 }
 
 function locationScore(a: LocationRef, b: LocationRef): number {
-  if (a.areaId === b.areaId) return 1;
-  if (a.districtId && a.districtId === b.districtId) return 0.6;
-  if (a.governorateId && a.governorateId === b.governorateId) return 0.3;
-  return 0;
+  return a.governorateId && a.governorateId === b.governorateId ? 1 : 0;
 }
 
 // Parents don't record specific required days in the MVP onboarding form —

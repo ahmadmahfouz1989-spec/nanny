@@ -16,6 +16,7 @@ type FormState = {
   fullName: string;
   contactPhone: string;
   locationId: string | null;
+  locationDetail: string;
   numChildren: number;
   childrenAgeRanges: string[];
   scheduleType: "full_time" | "part_time" | "either";
@@ -31,6 +32,7 @@ const initialState: FormState = {
   fullName: "",
   contactPhone: "",
   locationId: null,
+  locationDetail: "",
   numChildren: 1,
   childrenAgeRanges: [],
   scheduleType: "full_time",
@@ -46,6 +48,7 @@ type ExistingParentProfile = {
   full_name: string;
   contact_phone: string | null;
   location_id: string;
+  location_detail: string | null;
   num_children: number;
   children_age_ranges: string[];
   schedule_type: FormState["scheduleType"];
@@ -62,6 +65,7 @@ function stateFromExisting(p: ExistingParentProfile): FormState {
     fullName: p.full_name,
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
+    locationDetail: p.location_detail ?? "",
     numChildren: p.num_children,
     childrenAgeRanges: p.children_age_ranges,
     scheduleType: p.schedule_type,
@@ -117,7 +121,7 @@ export default function ParentOnboarding({
   const stepValid = (() => {
     switch (step) {
       case 1:
-        return form.fullName.trim().length >= 2 && !!form.locationId;
+        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2;
       case 2:
         return form.numChildren >= 1 && form.childrenAgeRanges.length > 0;
       case 3:
@@ -142,6 +146,7 @@ export default function ParentOnboarding({
       fullName: form.fullName,
       contactPhone: form.contactPhone || undefined,
       locationId: form.locationId,
+      locationDetail: form.locationDetail,
       numChildren: form.numChildren,
       childrenAgeRanges: form.childrenAgeRanges,
       scheduleType: form.scheduleType,
@@ -209,7 +214,12 @@ export default function ParentOnboarding({
             onChange={(e) => update("contactPhone", e.target.value)}
           />
           <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
-          <LocationPicker value={form.locationId} onChange={(id) => update("locationId", id)} />
+          <LocationPicker
+            governorateId={form.locationId}
+            detail={form.locationDetail}
+            onGovernorate={(id) => update("locationId", id)}
+            onDetail={(v) => update("locationDetail", v)}
+          />
         </>
       )}
 

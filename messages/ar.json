@@ -148,7 +148,8 @@
   "Location": {
     "governorate": "المحافظة",
     "district": "القضاء",
-    "area": "المنطقة"
+    "area": "المنطقة",
+    "detailPlaceholder": "الحي أو الشارع أو المبنى"
   },
   "AgeGroups": {
     "newborn": "حديث الولادة (٠–٣ أشهر)",
@@ -221,7 +222,7 @@
     "loading": "جارٍ تحميل التطابقات…",
     "errorNoProfile": "أنشئ ملفك الشخصي أولاً لرؤية التطابقات.",
     "scoreLabel": "تطابق {score}٪",
-    "criteriaLocation": "الموقع",
+    "criteriaLocation": "المحافظة",
     "criteriaAvailability": "التوفر",
     "criteriaEmploymentType": "الجدول الزمني",
     "criteriaLiveArrangement": "الإقامة",

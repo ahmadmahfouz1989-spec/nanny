@@ -148,7 +148,8 @@
   "Location": {
     "governorate": "Governorate",
     "district": "District",
-    "area": "Area"
+    "area": "Area",
+    "detailPlaceholder": "Neighbourhood, street or building"
   },
   "AgeGroups": {
     "newborn": "Newborn (0–3mo)",
@@ -221,7 +222,7 @@
     "loading": "Loading matches…",
     "errorNoProfile": "Create your profile first to see matches.",
     "scoreLabel": "{score}% match",
-    "criteriaLocation": "Location",
+    "criteriaLocation": "Governorate",
     "criteriaAvailability": "Availability",
     "criteriaEmploymentType": "Schedule",
     "criteriaLiveArrangement": "Live arrangement",
