@@ -380,6 +380,8 @@
     "subGiveMonth": "+ 1 month",
     "subGiveYear": "+ 1 year",
     "subRevoke": "Revoke",
+    "delete": "Delete",
+    "confirmDelete": "Delete permanently",
     "reportsTitle": "Reports",
     "reportsEmpty": "No open reports.",
     "reportedBy": "Reported by",
