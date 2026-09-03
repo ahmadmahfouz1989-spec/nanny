@@ -14,6 +14,7 @@ type QueueProfile = {
   profile_photo_url?: string | null;
   profileType: "parent" | "nanny";
   location_detail?: string | null;
+  nationality?: string | null;
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
   created_at: string;
 
@@ -69,6 +70,7 @@ export default function AdminProfilesPage() {
   const tCerts = useTranslations("Certifications");
   const tSchedule = useTranslations("ScheduleOptions");
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
+  const tNat = useTranslations("Nationality");
   const locale = useLocale();
   const [profiles, setProfiles] = useState<QueueProfile[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -220,7 +222,12 @@ export default function AdminProfilesPage() {
                     {profile.profileType === "parent" ? t("typeParent") : t("typeNanny")}
                   </span>
                 </div>
-                {area && <p className="text-sm text-muted mb-3">{area}</p>}
+                {area && <p className="text-sm text-muted mb-1">{area}</p>}
+                {profile.nationality && (
+                  <p className="text-sm text-muted mb-3">
+                    {tNat("label")}: {tNat(profile.nationality as never)}
+                  </p>
+                )}
 
                 <button
                   type="button"

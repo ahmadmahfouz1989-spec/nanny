@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import WizardShell from "@/components/onboarding/wizard-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
+import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, parentProfileSchema } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -17,6 +18,7 @@ type FormState = {
   contactPhone: string;
   locationId: string | null;
   locationDetail: string;
+  nationality: string;
   numChildren: number;
   childrenAgeRanges: string[];
   scheduleType: "full_time" | "part_time" | "either";
@@ -33,6 +35,7 @@ const initialState: FormState = {
   contactPhone: "",
   locationId: null,
   locationDetail: "",
+  nationality: "",
   numChildren: 1,
   childrenAgeRanges: [],
   scheduleType: "full_time",
@@ -49,6 +52,7 @@ type ExistingParentProfile = {
   contact_phone: string | null;
   location_id: string;
   location_detail: string | null;
+  nationality: string | null;
   num_children: number;
   children_age_ranges: string[];
   schedule_type: FormState["scheduleType"];
@@ -66,6 +70,7 @@ function stateFromExisting(p: ExistingParentProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: p.location_detail ?? "",
+    nationality: p.nationality ?? "",
     numChildren: p.num_children,
     childrenAgeRanges: p.children_age_ranges,
     scheduleType: p.schedule_type,
@@ -121,7 +126,7 @@ export default function ParentOnboarding({
   const stepValid = (() => {
     switch (step) {
       case 1:
-        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2;
+        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2 && !!form.nationality;
       case 2:
         return form.numChildren >= 1 && form.childrenAgeRanges.length > 0;
       case 3:
@@ -147,6 +152,7 @@ export default function ParentOnboarding({
       contactPhone: form.contactPhone || undefined,
       locationId: form.locationId,
       locationDetail: form.locationDetail,
+      nationality: form.nationality,
       numChildren: form.numChildren,
       childrenAgeRanges: form.childrenAgeRanges,
       scheduleType: form.scheduleType,
@@ -220,6 +226,8 @@ export default function ParentOnboarding({
             onGovernorate={(id) => update("locationId", id)}
             onDetail={(v) => update("locationDetail", v)}
           />
+          <label className={ui.label}>{t("nationality")}</label>
+          <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
         </>
       )}
 

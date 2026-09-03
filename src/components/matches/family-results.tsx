@@ -35,6 +35,7 @@ type FamilyResult = {
     additional_duties: string[];
     family_description: string | null;
     location_detail: string | null;
+    nationality: string | null;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
     parent_profile_languages: LangRef[];
   };
@@ -63,6 +64,7 @@ export default function FamilyResults() {
   const tDuties = useTranslations("Duties");
   const tSchedule = useTranslations("ScheduleOptions");
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
+  const tNat = useTranslations("Nationality");
   const locale = useLocale();
   const [results, setResults] = useState<FamilyResult[] | null>(null);
   useHashScroll(!!results);
@@ -134,6 +136,12 @@ export default function FamilyResults() {
                 )}
 
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
+                  {parent.nationality && (
+                    <>
+                      <dt className="text-muted">{tNat("label")}</dt>
+                      <dd>{tNat(parent.nationality as never)}</dd>
+                    </>
+                  )}
                   <dt className="text-muted">{tParent("ageRanges")}</dt>
                   <dd>{parent.children_age_ranges.map((g) => tAgeGroups(g as never)).join(", ")}</dd>
                   <dt className="text-muted">{tParent("schedule")}</dt>
