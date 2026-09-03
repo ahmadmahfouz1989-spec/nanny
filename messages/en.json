@@ -8,7 +8,15 @@
     "home": "Home",
     "messages": "Messages",
     "profile": "Profile",
-    "admin": "Admin"
+    "admin": "Admin",
+    "categories": "Categories"
+  },
+  "Categories": {
+    "hubTitle": "Browse categories",
+    "hubSubtitle": "Pick a category to find people offering that service — or offering to do the work.",
+    "comingSoon": "Coming soon",
+    "landingTitle": "One place for every kind of help",
+    "landingSubtitle": "Childcare is live now. More categories are on the way."
   },
   "Notifications": {
     "title": "Notifications",
@@ -29,13 +37,13 @@
     "report_resolved": "A report you filed was resolved"
   },
   "Home": {
-    "badge": "Now welcoming families across Lebanon",
+    "badge": "Now across Lebanon — starting with childcare",
     "heroPhotoAlt": "A caregiver playing with a child outdoors",
-    "headline": "Find the right <mark>nanny</mark> for your family.",
-    "subhead": "Trusted childcare connections across Lebanon.",
-    "bullet1": "See a transparent match score for every profile",
+    "headline": "Find the right <mark>help</mark> — or your next job.",
+    "subhead": "A marketplace connecting people who need a service with people who provide it, across Lebanon.",
+    "bullet1": "Every category has a transparent match score",
     "bullet2": "Contact details stay private until you both say yes",
-    "bullet3": "Growing across Beirut, Metn, Baabda, Keserwan and beyond",
+    "bullet3": "Childcare is live now — cleaning, tutoring and more are coming",
     "ctaParent": "I'm looking for a nanny",
     "ctaNanny": "I'm looking for a family",
     "howItWorksTitle": "How it works",
