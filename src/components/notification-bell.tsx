@@ -120,7 +120,7 @@ export default function NotificationBell({
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-label={t("title")}
-        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-ink/70 transition hover:bg-surface hover:text-ink"
+        className="relative inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink"
       >
         <HeartIcon className="h-5 w-5" />
         {unread > 0 && (
@@ -133,11 +133,13 @@ export default function NotificationBell({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className={`relative flex w-full items-center gap-3 rounded-full px-3 py-2.5 text-[15px] transition-colors ${
-          open ? "font-bold text-ink" : "text-ink/80 hover:bg-surface"
+        className={`relative flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+          open
+            ? "bg-surface-sunken font-semibold text-ink"
+            : "text-muted hover:bg-surface-sunken hover:text-ink"
         }`}
       >
-        <HeartIcon className="h-6 w-6 shrink-0" />
+        <HeartIcon className="h-[22px] w-[22px] shrink-0" />
         <span>{t("title")}</span>
         {unread > 0 && (
           <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">
