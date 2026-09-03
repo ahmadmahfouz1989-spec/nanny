@@ -3,7 +3,6 @@ import {
   computeMatchScore,
   type AgeGroup,
   type LiveArrangement,
-  type LocationRef,
   type NannyMatchInput,
   type ParentMatchInput,
   type ScheduleType,
@@ -11,26 +10,10 @@ import {
 
 type Admin = ReturnType<typeof createAdminClient>;
 
-async function loadLocationRefs(admin: Admin): Promise<Map<string, LocationRef>> {
-  const { data } = await admin.from("locations").select("id, parent_location_id, level");
-  const rows = data ?? [];
-  const byId = new Map(rows.map((l) => [l.id, l]));
-  const refs = new Map<string, LocationRef>();
+// profile.location_id now holds a governorate id directly.
+const govRef = (locationId: string | null) => ({ governorateId: locationId });
 
-  for (const loc of rows) {
-    if (loc.level !== "area") continue;
-    const district = loc.parent_location_id ? byId.get(loc.parent_location_id) : undefined;
-    const governorate = district?.parent_location_id ? byId.get(district.parent_location_id) : undefined;
-    refs.set(loc.id, {
-      areaId: loc.id,
-      districtId: district?.id ?? null,
-      governorateId: governorate?.id ?? null,
-    });
-  }
-  return refs;
-}
-
-async function loadParentInputs(admin: Admin, locationRefs: Map<string, LocationRef>) {
+async function loadParentInputs(admin: Admin) {
   const { data } = await admin
     .from("parent_profiles")
     .select(
@@ -42,7 +25,7 @@ async function loadParentInputs(admin: Admin, locationRefs: Map<string, Location
   return (data ?? []).map((p) => ({
     id: p.id as string,
     input: {
-      location: locationRefs.get(p.location_id as string) ?? { areaId: p.location_id as string, districtId: null, governorateId: null },
+      location: govRef(p.location_id as string | null),
       scheduleType: p.schedule_type as ScheduleType,
       liveArrangement: p.live_arrangement as LiveArrangement,
       transportationRequired: p.transportation_required as boolean,
@@ -52,7 +35,7 @@ async function loadParentInputs(admin: Admin, locationRefs: Map<string, Location
   }));
 }
 
-async function loadNannyInputs(admin: Admin, locationRefs: Map<string, LocationRef>) {
+async function loadNannyInputs(admin: Admin) {
   const { data } = await admin
     .from("nanny_profiles")
     .select(
@@ -64,7 +47,7 @@ async function loadNannyInputs(admin: Admin, locationRefs: Map<string, LocationR
   return (data ?? []).map((n) => ({
     id: n.id as string,
     input: {
-      location: locationRefs.get(n.location_id as string) ?? { areaId: n.location_id as string, districtId: null, governorateId: null },
+      location: govRef(n.location_id as string | null),
       employmentType: n.employment_type as ScheduleType,
       liveArrangementPref: n.live_arrangement_pref as LiveArrangement,
       availabilityDays: (n.availability as { days: string[] })?.days ?? [],
@@ -85,7 +68,6 @@ async function upsertMatches(
 
 export async function recomputeMatchesForParent(parentProfileId: string) {
   const admin = createAdminClient();
-  const locationRefs = await loadLocationRefs(admin);
 
   const { data: parentRow } = await admin
     .from("parent_profiles")
@@ -101,11 +83,7 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
   if (!parentRow || parentRow.status !== "active") return;
 
   const parentInput: ParentMatchInput = {
-    location: locationRefs.get(parentRow.location_id as string) ?? {
-      areaId: parentRow.location_id as string,
-      districtId: null,
-      governorateId: null,
-    },
+    location: govRef(parentRow.location_id as string | null),
     scheduleType: parentRow.schedule_type as ScheduleType,
     liveArrangement: parentRow.live_arrangement as LiveArrangement,
     transportationRequired: parentRow.transportation_required as boolean,
@@ -113,7 +91,7 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
     languageIds: (parentRow.parent_profile_languages as { language_id: string }[]).map((l) => l.language_id),
   };
 
-  const nannies = await loadNannyInputs(admin, locationRefs);
+  const nannies = await loadNannyInputs(admin);
   const rows = nannies.map(({ id, input }) => {
     const { score, breakdown } = computeMatchScore(parentInput, input);
     return { parent_profile_id: parentProfileId, nanny_profile_id: id, score, score_breakdown: breakdown };
@@ -124,7 +102,6 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
 
 export async function recomputeMatchesForNanny(nannyProfileId: string) {
   const admin = createAdminClient();
-  const locationRefs = await loadLocationRefs(admin);
 
   const { data: nannyRow } = await admin
     .from("nanny_profiles")
@@ -137,11 +114,7 @@ export async function recomputeMatchesForNanny(nannyProfileId: string) {
   if (!nannyRow || nannyRow.status !== "active") return;
 
   const nannyInput: NannyMatchInput = {
-    location: locationRefs.get(nannyRow.location_id as string) ?? {
-      areaId: nannyRow.location_id as string,
-      districtId: null,
-      governorateId: null,
-    },
+    location: govRef(nannyRow.location_id as string | null),
     employmentType: nannyRow.employment_type as ScheduleType,
     liveArrangementPref: nannyRow.live_arrangement_pref as LiveArrangement,
     availabilityDays: (nannyRow.availability as { days: string[] })?.days ?? [],
@@ -150,7 +123,7 @@ export async function recomputeMatchesForNanny(nannyProfileId: string) {
     experienceAgeGroups: (nannyRow.nanny_experience as { age_group: string }[]).map((e) => e.age_group as AgeGroup),
   };
 
-  const parents = await loadParentInputs(admin, locationRefs);
+  const parents = await loadParentInputs(admin);
   const rows = parents.map(({ id, input }) => {
     const { score, breakdown } = computeMatchScore(input, nannyInput);
     return { parent_profile_id: id, nanny_profile_id: nannyProfileId, score, score_breakdown: breakdown };

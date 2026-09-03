@@ -19,86 +19,40 @@ function localizedName(location: Location, locale: string) {
   return location.name_en;
 }
 
-async function fetchLocations(level: string, parentId?: string) {
-  const params = new URLSearchParams({ level });
-  if (parentId) params.set("parent_id", parentId);
-  const res = await fetch(`/api/locations?${params.toString()}`);
-  const body = await res.json();
-  return (body.locations ?? []) as Location[];
-}
-
-async function fetchLocationById(id: string) {
-  const res = await fetch(`/api/locations?id=${id}`);
-  const body = await res.json();
-  return ((body.locations ?? []) as Location[])[0] ?? null;
-}
-
+/**
+ * Pick a governorate from the list, then type the specific location
+ * (street / building / neighbourhood) as free text. Only the governorate
+ * feeds the match score.
+ */
 export default function LocationPicker({
-  value,
-  onChange,
+  governorateId,
+  detail,
+  onGovernorate,
+  onDetail,
 }: {
-  value: string | null;
-  onChange: (areaId: string | null) => void;
+  governorateId: string | null;
+  detail: string;
+  onGovernorate: (id: string | null) => void;
+  onDetail: (value: string) => void;
 }) {
   const locale = useLocale();
   const t = useTranslations("Location");
   const [governorates, setGovernorates] = useState<Location[]>([]);
-  const [districts, setDistricts] = useState<Location[]>([]);
-  const [areas, setAreas] = useState<Location[]>([]);
-  const [governorateId, setGovernorateId] = useState("");
-  const [districtId, setDistrictId] = useState("");
 
   useEffect(() => {
-    fetchLocations("governorate").then(setGovernorates);
+    fetch("/api/locations?level=governorate")
+      .then((res) => res.json())
+      .then((body) => setGovernorates((body.locations ?? []) as Location[]))
+      .catch(() => {});
   }, []);
-
-  // Resolve the district/governorate chain for a pre-existing area value
-  // (editing a saved profile) — LocationPicker otherwise only ever learns
-  // its parent selects by the user picking them in order.
-  useEffect(() => {
-    if (!value) return;
-    let cancelled = false;
-    (async () => {
-      const area = await fetchLocationById(value);
-      if (!area?.parent_location_id || cancelled) return;
-      const district = await fetchLocationById(area.parent_location_id);
-      if (!district?.parent_location_id || cancelled) return;
-
-      setDistrictId(district.id);
-      setGovernorateId(district.parent_location_id);
-      const [districtsForGov, areasForDistrict] = await Promise.all([
-        fetchLocations("district", district.parent_location_id),
-        fetchLocations("area", district.id),
-      ]);
-      if (cancelled) return;
-      setDistricts(districtsForGov);
-      setAreas(areasForDistrict);
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  async function handleGovernorateChange(id: string) {
-    setGovernorateId(id);
-    setDistrictId("");
-    setDistricts([]);
-    setAreas([]);
-    onChange(null);
-    if (id) setDistricts(await fetchLocations("district", id));
-  }
-
-  async function handleDistrictChange(id: string) {
-    setDistrictId(id);
-    setAreas([]);
-    onChange(null);
-    if (id) setAreas(await fetchLocations("area", id));
-  }
 
   return (
-    <div className="grid grid-cols-3 gap-2">
-      <select className={ui.select} value={governorateId} onChange={(e) => handleGovernorateChange(e.target.value)}>
+    <div className="flex flex-col gap-2">
+      <select
+        className={ui.select}
+        value={governorateId ?? ""}
+        onChange={(e) => onGovernorate(e.target.value || null)}
+      >
         <option value="">{t("governorate")}</option>
         {governorates.map((g) => (
           <option key={g.id} value={g.id}>
@@ -107,33 +61,14 @@ export default function LocationPicker({
         ))}
       </select>
 
-      <select
-        className={ui.select}
-        value={districtId}
-        onChange={(e) => handleDistrictChange(e.target.value)}
-        disabled={!governorateId}
-      >
-        <option value="">{t("district")}</option>
-        {districts.map((d) => (
-          <option key={d.id} value={d.id}>
-            {localizedName(d, locale)}
-          </option>
-        ))}
-      </select>
-
-      <select
-        className={ui.select}
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value || null)}
-        disabled={!districtId}
-      >
-        <option value="">{t("area")}</option>
-        {areas.map((a) => (
-          <option key={a.id} value={a.id}>
-            {localizedName(a, locale)}
-          </option>
-        ))}
-      </select>
+      <input
+        type="text"
+        className={ui.input}
+        placeholder={t("detailPlaceholder")}
+        value={detail}
+        onChange={(e) => onDetail(e.target.value)}
+        maxLength={120}
+      />
     </div>
   );
 }

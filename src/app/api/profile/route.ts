@@ -100,6 +100,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
     const { data, error } = await supabase.rpc(fn, {
       p_full_name: p.fullName,
       p_location_id: p.locationId,
+      p_location_detail: p.locationDetail,
       p_num_children: p.numChildren,
       p_children_age_ranges: p.childrenAgeRanges,
       p_schedule_type: p.scheduleType,
@@ -131,6 +132,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       p_full_name: p.fullName,
       p_profile_photo_url: p.profilePhotoUrl,
       p_location_id: p.locationId,
+      p_location_detail: p.locationDetail,
       p_work_radius_km: p.workRadiusKm,
       p_employment_type: p.employmentType,
       p_live_arrangement_pref: p.liveArrangementPref,
