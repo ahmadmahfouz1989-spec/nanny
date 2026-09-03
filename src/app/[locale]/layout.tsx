@@ -53,7 +53,7 @@ export async function generateMetadata({
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Home" });
   return {
-    title: `nanny — ${t("subhead")}`,
+    title: `Link Lebanon — ${t("subhead")}`,
     description: t("subhead"),
   };
 }

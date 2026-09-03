@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import nodemailer from "nodemailer";
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
-const FROM = process.env.RESEND_FROM_EMAIL ?? "nanny <onboarding@resend.dev>";
+const FROM = process.env.RESEND_FROM_EMAIL ?? "Link Lebanon <onboarding@resend.dev>";
 
 // Fallback for when Resend has no verified domain: Resend's sandbox mode
 // (the default until a domain is verified at resend.com/domains) only
@@ -37,7 +37,7 @@ function extraHeaders(): Record<string, string> | undefined {
 // Wrap a template's inner HTML in a real document — a bare run of <p> tags
 // with no <!doctype>/<html> and no text/plain part scores as spam.
 function wrapHtml(inner: string): string {
-  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f1ea;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:12px;padding:28px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#241d15;"><tr><td><div style="font-weight:700;font-size:18px;color:#ee4f26;margin-bottom:16px;">nanny</div>${inner}</td></tr></table></td></tr></table></body></html>`;
+  return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head><body style="margin:0;padding:0;background:#f4f1ea;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px;"><tr><td align="center"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:12px;padding:28px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:#241d15;"><tr><td><div style="font-weight:700;font-size:18px;color:#ee4f26;margin-bottom:16px;">Link Lebanon</div>${inner}</td></tr></table></td></tr></table></body></html>`;
 }
 
 function htmlToText(html: string): string {
@@ -171,8 +171,8 @@ export function interestReceivedEmail(lang: Lang, fromName: string) {
     subject: pick(lang, "Someone is interested in connecting", "شخص ما مهتم بالتواصل معك"),
     html: pick(
       lang,
-      `<p>${fromName} is interested in connecting with you on nanny.</p><p>Log in to view the match and respond.</p>`,
-      `<p>${fromName} مهتم/ة بالتواصل معك على تطبيق nanny.</p><p>سجّل الدخول لعرض التطابق والرد عليه.</p>`,
+      `<p>${fromName} is interested in connecting with you on Link Lebanon.</p><p>Log in to view the match and respond.</p>`,
+      `<p>${fromName} مهتم/ة بالتواصل معك على Link Lebanon.</p><p>سجّل الدخول لعرض التطابق والرد عليه.</p>`,
     ),
   };
 }
@@ -182,8 +182,8 @@ export function alreadyRegisteredEmail(lang: Lang, loginUrl: string, recoverUrl:
     subject: pick(lang, "You already have an account", "لديك حساب بالفعل"),
     html: pick(
       lang,
-      `<p>Someone just tried to sign up with this email, but you already have a nanny account.</p><p><a href="${loginUrl}">Log in</a> or <a href="${recoverUrl}">reset your password</a> if you forgot it.</p><p>If this wasn't you, you can safely ignore this email.</p>`,
-      `<p>حاول شخص ما للتو إنشاء حساب بهذا البريد الإلكتروني، لكن لديك حساب على nanny بالفعل.</p><p><a href="${loginUrl}">سجّل الدخول</a> أو <a href="${recoverUrl}">أعد تعيين كلمة المرور</a> إذا نسيتها.</p><p>إذا لم يكن هذا أنت، يمكنك تجاهل هذا البريد بأمان.</p>`,
+      `<p>Someone just tried to sign up with this email, but you already have a Link Lebanon account.</p><p><a href="${loginUrl}">Log in</a> or <a href="${recoverUrl}">reset your password</a> if you forgot it.</p><p>If this wasn't you, you can safely ignore this email.</p>`,
+      `<p>حاول شخص ما للتو إنشاء حساب بهذا البريد الإلكتروني، لكن لديك حساب على Link Lebanon بالفعل.</p><p><a href="${loginUrl}">سجّل الدخول</a> أو <a href="${recoverUrl}">أعد تعيين كلمة المرور</a> إذا نسيتها.</p><p>إذا لم يكن هذا أنت، يمكنك تجاهل هذا البريد بأمان.</p>`,
     ),
   };
 }
@@ -196,8 +196,8 @@ export function newMessageEmail(lang: Lang, fromName: string, snippet: string, m
     subject: pick(lang, `New message from ${fromName}`, `رسالة جديدة من ${fromName}`),
     html: pick(
       lang,
-      `<p>${name} sent you a message on nanny:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${messagesUrl}">Open the conversation</a> to reply.</p><p style="color:#888;font-size:13px">We'll only email you once per conversation until you've read it.</p>`,
-      `<p>أرسل/أرسلت ${name} رسالة إليك على nanny:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${messagesUrl}">افتح المحادثة</a> للرد.</p><p style="color:#888;font-size:13px">سنرسل لك بريدًا واحدًا فقط لكل محادثة حتى تقرأها.</p>`,
+      `<p>${name} sent you a message on Link Lebanon:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${messagesUrl}">Open the conversation</a> to reply.</p><p style="color:#888;font-size:13px">We'll only email you once per conversation until you've read it.</p>`,
+      `<p>أرسل/أرسلت ${name} رسالة إليك على Link Lebanon:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${messagesUrl}">افتح المحادثة</a> للرد.</p><p style="color:#888;font-size:13px">سنرسل لك بريدًا واحدًا فقط لكل محادثة حتى تقرأها.</p>`,
     ),
   };
 }
@@ -221,8 +221,8 @@ export function signupConfirmationEmail(lang: Lang, confirmUrl: string) {
     subject: pick(lang, "Confirm your email", "أكّد بريدك الإلكتروني"),
     html: pick(
       lang,
-      `<p>Welcome to nanny — click below to confirm your email and activate your account.</p><p><a href="${confirmUrl}">Confirm email</a></p><p>If you didn't create this account, you can ignore this email.</p>`,
-      `<p>مرحبًا بك في nanny — اضغط أدناه لتأكيد بريدك الإلكتروني وتفعيل حسابك.</p><p><a href="${confirmUrl}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تُنشئ هذا الحساب، يمكنك تجاهل هذا البريد.</p>`,
+      `<p>Welcome to Link Lebanon — click below to confirm your email and activate your account.</p><p><a href="${confirmUrl}">Confirm email</a></p><p>If you didn't create this account, you can ignore this email.</p>`,
+      `<p>مرحبًا بك في Link Lebanon — اضغط أدناه لتأكيد بريدك الإلكتروني وتفعيل حسابك.</p><p><a href="${confirmUrl}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تُنشئ هذا الحساب، يمكنك تجاهل هذا البريد.</p>`,
     ),
   };
 }
