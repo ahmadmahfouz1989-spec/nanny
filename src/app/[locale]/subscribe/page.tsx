@@ -24,7 +24,7 @@ export default async function SubscribePage({
   }
 
   return (
-    <AppShell active="home">
+    <AppShell active="nanny">
       <SubscribeClient />
     </AppShell>
   );
