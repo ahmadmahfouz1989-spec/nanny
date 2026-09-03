@@ -116,6 +116,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
     await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
+    await supabase.from("parent_profiles").update({ nationality: p.nationality }).eq("user_id", user.id);
     await recomputeMatchesForParent((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "parent");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
@@ -150,6 +151,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
     await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
+    await supabase.from("nanny_profiles").update({ nationality: p.nationality }).eq("user_id", user.id);
     await recomputeMatchesForNanny((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "nanny");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });

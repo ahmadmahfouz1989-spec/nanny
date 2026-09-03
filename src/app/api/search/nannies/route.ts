@@ -37,7 +37,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from("matches")
     .select(
-      "id, score, score_breakdown, status, interest_expires_at, nanny_profiles!inner(id, full_name, profile_photo_url, location_id, location_detail, work_radius_km, employment_type, live_arrangement_pref, availability, years_experience, has_transportation, can_drive, certifications, short_intro, locations(name_en, name_ar, name_fr), nanny_profile_languages(languages(id, name_en, name_ar, name_fr)), nanny_experience(age_group, years_experience))",
+      "id, score, score_breakdown, status, interest_expires_at, nanny_profiles!inner(id, full_name, profile_photo_url, location_id, location_detail, nationality, work_radius_km, employment_type, live_arrangement_pref, availability, years_experience, has_transportation, can_drive, certifications, short_intro, locations(name_en, name_ar, name_fr), nanny_profile_languages(languages(id, name_en, name_ar, name_fr)), nanny_experience(age_group, years_experience))",
     )
     .eq("parent_profile_id", parentProfile.id)
     .order("score", { ascending: false })

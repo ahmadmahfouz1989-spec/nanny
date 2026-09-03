@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import WizardShell from "@/components/onboarding/wizard-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
+import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS, nannyProfileSchema } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -19,6 +20,7 @@ type FormState = {
   profilePhotoUrl: string | null;
   locationId: string | null;
   locationDetail: string;
+  nationality: string;
   workRadiusKm: string;
   employmentType: "full_time" | "part_time" | "either";
   liveArrangementPref: "live_in" | "live_out" | "either";
@@ -40,6 +42,7 @@ const initialState: FormState = {
   profilePhotoUrl: null,
   locationId: null,
   locationDetail: "",
+  nationality: "",
   workRadiusKm: "10",
   employmentType: "full_time",
   liveArrangementPref: "live_out",
@@ -61,6 +64,7 @@ type ExistingNannyProfile = {
   profile_photo_url: string | null;
   location_id: string;
   location_detail: string | null;
+  nationality: string | null;
   work_radius_km: number;
   employment_type: FormState["employmentType"];
   live_arrangement_pref: FormState["liveArrangementPref"];
@@ -81,6 +85,7 @@ function stateFromExisting(p: ExistingNannyProfile): FormState {
     profilePhotoUrl: p.profile_photo_url,
     locationId: p.location_id,
     locationDetail: p.location_detail ?? "",
+    nationality: p.nationality ?? "",
     workRadiusKm: String(p.work_radius_km),
     employmentType: p.employment_type,
     liveArrangementPref: p.live_arrangement_pref,
@@ -153,7 +158,7 @@ export default function NannyOnboarding({
   const stepValid = (() => {
     switch (step) {
       case 1:
-        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2 && !!form.profilePhotoUrl;
+        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2 && !!form.nationality && !!form.profilePhotoUrl;
       case 2:
         return true;
       case 3:
@@ -184,6 +189,7 @@ export default function NannyOnboarding({
       profilePhotoUrl: form.profilePhotoUrl,
       locationId: form.locationId,
       locationDetail: form.locationDetail,
+      nationality: form.nationality,
       workRadiusKm: Number(form.workRadiusKm),
       employmentType: form.employmentType,
       liveArrangementPref: form.liveArrangementPref,
@@ -304,6 +310,8 @@ export default function NannyOnboarding({
             onGovernorate={(id) => update("locationId", id)}
             onDetail={(v) => update("locationDetail", v)}
           />
+          <label className={ui.label}>{t("nationality")}</label>
+          <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
           <label className={ui.label}>{t("workRadius")}</label>
           <input
             type="number"
