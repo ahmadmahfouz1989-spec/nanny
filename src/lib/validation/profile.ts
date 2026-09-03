@@ -11,6 +11,28 @@ export const AGE_GROUPS = [
 
 export const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
+export const NATIONALITIES = [
+  "lebanese",
+  "syrian",
+  "palestinian",
+  "egyptian",
+  "ethiopian",
+  "filipino",
+  "bangladeshi",
+  "sri_lankan",
+  "nepalese",
+  "kenyan",
+  "ghanaian",
+  "sierra_leonean",
+  "sudanese",
+  "iraqi",
+  "jordanian",
+  "indian",
+  "cameroonian",
+  "ivorian",
+  "other",
+] as const;
+
 const uuid = z.string().uuid();
 const contactPhone = z
   .string()
@@ -23,6 +45,7 @@ export const parentProfileSchema = z.object({
   contactPhone,
   locationId: uuid,
   locationDetail: z.string().trim().min(2).max(120),
+  nationality: z.enum(NATIONALITIES),
   numChildren: z.number().int().min(1).max(10),
   childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
   scheduleType: z.enum(["full_time", "part_time", "either"]),
@@ -50,6 +73,7 @@ export const nannyProfileSchema = z.object({
   profilePhotoUrl: z.string().url(),
   locationId: uuid,
   locationDetail: z.string().trim().min(2).max(120),
+  nationality: z.enum(NATIONALITIES),
   workRadiusKm: z.number().int().min(1).max(50),
   employmentType: z.enum(["full_time", "part_time", "either"]),
   liveArrangementPref: z.enum(["live_in", "live_out", "either"]),

@@ -40,6 +40,7 @@ type NannyResult = {
     certifications: string[];
     short_intro: string | null;
     location_detail: string | null;
+    nationality: string | null;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
     nanny_profile_languages: LangRef[];
     nanny_experience: { age_group: string; years_experience: number }[];
@@ -65,6 +66,7 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
 export default function NannyResults() {
   const t = useTranslations("Matches");
   const tNanny = useTranslations("NannyOnboarding");
+  const tNat = useTranslations("Nationality");
   const tAgeGroups = useTranslations("AgeGroups");
   const tDays = useTranslations("Days");
   const tCerts = useTranslations("Certifications");
@@ -170,6 +172,12 @@ export default function NannyResults() {
                 )}
 
                 <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
+                  {nanny.nationality && (
+                    <>
+                      <dt className="text-muted">{tNat("label")}</dt>
+                      <dd>{tNat(nanny.nationality as never)}</dd>
+                    </>
+                  )}
                   <dt className="text-muted">{tNanny("employmentType")}</dt>
                   <dd>{tSchedule(nanny.employment_type as never)}</dd>
                   <dt className="text-muted">{tNanny("liveArrangementPref")}</dt>
