@@ -104,6 +104,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       p_num_children: p.numChildren,
       p_children_age_ranges: p.childrenAgeRanges,
       p_schedule_type: p.scheduleType,
+      p_needed_days: p.neededDays,
       p_live_arrangement: p.liveArrangement,
       p_desired_start_date: p.desiredStartDate,
       p_transportation_required: p.transportationRequired,

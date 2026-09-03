@@ -226,6 +226,8 @@
     "numChildren": "عدد الأطفال",
     "ageRanges": "الفئات العمرية للأطفال",
     "schedule": "الجدول الزمني",
+    "neededDays": "ما هي الأيام التي تحتاج فيها إلى مساعدة؟",
+    "neededDaysHint": "اتركها فارغة إذا كنت مرنًا.",
     "liveArrangement": "الإقامة الداخلية / الخارجية",
     "desiredStartDate": "تاريخ البدء المطلوب",
     "preferredLanguages": "اللغات المفضّلة",

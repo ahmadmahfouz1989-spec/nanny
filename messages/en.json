@@ -226,6 +226,8 @@
     "numChildren": "Number of children",
     "ageRanges": "Children's age ranges",
     "schedule": "Schedule",
+    "neededDays": "Which days do you need help?",
+    "neededDaysHint": "Leave empty if you're flexible.",
     "liveArrangement": "Live-in / live-out",
     "desiredStartDate": "Desired start date",
     "preferredLanguages": "Preferred languages",

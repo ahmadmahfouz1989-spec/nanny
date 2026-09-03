@@ -7,7 +7,7 @@ import WizardShell from "@/components/onboarding/wizard-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
-import { AGE_GROUPS, parentProfileSchema } from "@/lib/validation/profile";
+import { AGE_GROUPS, DAYS, parentProfileSchema } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 
 const TOTAL_STEPS = 5;
@@ -22,6 +22,7 @@ type FormState = {
   numChildren: number;
   childrenAgeRanges: string[];
   scheduleType: "full_time" | "part_time" | "either";
+  neededDays: string[];
   liveArrangement: "live_in" | "live_out" | "either";
   desiredStartDate: string;
   transportationRequired: boolean;
@@ -39,6 +40,7 @@ const initialState: FormState = {
   numChildren: 1,
   childrenAgeRanges: [],
   scheduleType: "full_time",
+  neededDays: [],
   liveArrangement: "live_out",
   desiredStartDate: "",
   transportationRequired: false,
@@ -56,6 +58,7 @@ type ExistingParentProfile = {
   num_children: number;
   children_age_ranges: string[];
   schedule_type: FormState["scheduleType"];
+  needed_days: string[] | null;
   live_arrangement: FormState["liveArrangement"];
   desired_start_date: string;
   transportation_required: boolean;
@@ -74,6 +77,7 @@ function stateFromExisting(p: ExistingParentProfile): FormState {
     numChildren: p.num_children,
     childrenAgeRanges: p.children_age_ranges,
     scheduleType: p.schedule_type,
+    neededDays: p.needed_days ?? [],
     liveArrangement: p.live_arrangement,
     desiredStartDate: p.desired_start_date,
     transportationRequired: p.transportation_required,
@@ -94,6 +98,7 @@ export default function ParentOnboarding({
   const tDuty = useTranslations("Duties");
   const tSchedule = useTranslations("ScheduleOptions");
   const tLive = useTranslations("LiveArrangementOptions");
+  const tDays = useTranslations("Days");
   const router = useRouter();
   const isEdit = !!initialProfile;
   const [step, setStep] = useState(1);
@@ -156,6 +161,7 @@ export default function ParentOnboarding({
       numChildren: form.numChildren,
       childrenAgeRanges: form.childrenAgeRanges,
       scheduleType: form.scheduleType,
+      neededDays: form.neededDays,
       liveArrangement: form.liveArrangement,
       desiredStartDate: form.desiredStartDate,
       transportationRequired: form.transportationRequired,
@@ -270,6 +276,29 @@ export default function ParentOnboarding({
             <option value="part_time">{tSchedule("part_time")}</option>
             <option value="either">{tSchedule("either")}</option>
           </select>
+
+          <label className={ui.label}>{t("neededDays")}</label>
+          <p className="text-xs text-muted -mt-2">{t("neededDaysHint")}</p>
+          <div className="flex flex-wrap gap-2">
+            {DAYS.map((day) => (
+              <button
+                type="button"
+                key={day}
+                onClick={() =>
+                  update(
+                    "neededDays",
+                    form.neededDays.includes(day)
+                      ? form.neededDays.filter((d) => d !== day)
+                      : [...form.neededDays, day],
+                  )
+                }
+                className={ui.pill(form.neededDays.includes(day))}
+              >
+                {tDays(day)}
+              </button>
+            ))}
+          </div>
+
           <label className={ui.label}>{t("liveArrangement")}</label>
           <select
             className={ui.select}

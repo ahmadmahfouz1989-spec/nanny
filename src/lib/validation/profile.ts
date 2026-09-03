@@ -49,6 +49,7 @@ export const parentProfileSchema = z.object({
   numChildren: z.number().int().min(1).max(10),
   childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
   scheduleType: z.enum(["full_time", "part_time", "either"]),
+  neededDays: z.array(z.enum(DAYS)).default([]),
   liveArrangement: z.enum(["live_in", "live_out", "either"]),
   desiredStartDate: z
     .string()
