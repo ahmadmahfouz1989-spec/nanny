@@ -21,35 +21,39 @@ export default async function AppShell({
 
   return (
     <div className="flex min-h-screen">
-      <aside className="hidden sm:flex sm:flex-col sm:w-64 shrink-0 border-e border-border px-3 py-6">
-        <div className="px-3 mb-6">
+      <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5">
+        <div className="px-3 mb-5">
           <BrandMark />
         </div>
 
-        <nav className="flex flex-col gap-1">
+        <nav className="flex flex-col gap-0.5">
           <Link
             href="/dashboard"
-            className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-[15px] transition-colors ${
-              active === "home" ? "font-bold text-ink" : "text-ink/80 hover:bg-surface"
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+              active === "home"
+                ? "bg-surface-sunken font-semibold text-ink"
+                : "text-muted hover:bg-surface-sunken hover:text-ink"
             }`}
           >
-            <HomeIcon className="h-6 w-6 shrink-0" />
+            <HomeIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("home")}</span>
           </Link>
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
           <Link
             href="/profile"
-            className={`flex items-center gap-3 rounded-full px-3 py-2.5 text-[15px] transition-colors ${
-              active === "profile" ? "font-bold text-ink" : "text-ink/80 hover:bg-surface"
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+              active === "profile"
+                ? "bg-surface-sunken font-semibold text-ink"
+                : "text-muted hover:bg-surface-sunken hover:text-ink"
             }`}
           >
-            <ProfileIcon className="h-6 w-6 shrink-0" />
+            <ProfileIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("profile")}</span>
           </Link>
         </nav>
 
-        <div className="mt-auto flex flex-col gap-3 px-3">
+        <div className="mt-auto flex flex-col gap-3 px-3 pt-4">
           <div className="flex items-center gap-3">
             <ThemeSwitcher />
             <LocaleSwitcher />
@@ -58,7 +62,7 @@ export default async function AppShell({
         </div>
       </aside>
 
-      <header className="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border bg-background">
+      <header className="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border bg-background/90 backdrop-blur">
         <BrandMark />
         <div className="flex items-center gap-1">
           <NotificationBell variant="header" />
@@ -68,24 +72,24 @@ export default async function AppShell({
         </div>
       </header>
 
-      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-border bg-background py-1.5">
+      <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-border bg-background/90 backdrop-blur py-1.5">
         <Link
           href="/dashboard"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] ${
-            active === "home" ? "text-primary" : "text-muted"
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+            active === "home" ? "font-semibold text-primary" : "text-muted"
           }`}
         >
-          <HomeIcon className="h-6 w-6" />
+          <HomeIcon className="h-[22px] w-[22px]" />
           {t("home")}
         </Link>
         <MessagesTabItem active={active === "messages"} />
         <Link
           href="/profile"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] ${
-            active === "profile" ? "text-primary" : "text-muted"
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+            active === "profile" ? "font-semibold text-primary" : "text-muted"
           }`}
         >
-          <ProfileIcon className="h-6 w-6" />
+          <ProfileIcon className="h-[22px] w-[22px]" />
           {t("profile")}
         </Link>
       </nav>
