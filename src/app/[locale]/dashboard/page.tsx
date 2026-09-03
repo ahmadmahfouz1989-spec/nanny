@@ -55,7 +55,7 @@ export default async function DashboardPage({
 
   if (matchProfile?.moderation_status === "approved") {
     return (
-      <AppShell active="home">
+      <AppShell active="nanny">
         {profile?.role === "parent" ? <NannyResults /> : <FamilyResults />}
       </AppShell>
     );
@@ -65,7 +65,7 @@ export default async function DashboardPage({
     matchProfile?.moderation_status === "rejected" ? "danger" : "warning";
 
   return (
-    <AppShell active="home">
+    <AppShell active="nanny">
       <div className="max-w-lg mx-auto w-full px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 

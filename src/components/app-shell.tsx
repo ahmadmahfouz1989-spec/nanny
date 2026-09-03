@@ -8,7 +8,7 @@ import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
 import { HomeIcon, ProfileIcon, GridIcon } from "@/components/nav-icons";
 
-type ActiveKey = "home" | "categories" | "messages" | "profile";
+type ActiveKey = "categories" | "nanny" | "messages" | "profile";
 
 export default async function AppShell({
   active,
@@ -28,17 +28,6 @@ export default async function AppShell({
 
         <nav className="flex flex-col gap-0.5">
           <Link
-            href="/dashboard"
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
-              active === "home"
-                ? "bg-surface-sunken font-semibold text-ink"
-                : "text-muted hover:bg-surface-sunken hover:text-ink"
-            }`}
-          >
-            <HomeIcon className="h-[22px] w-[22px] shrink-0" />
-            <span>{t("home")}</span>
-          </Link>
-          <Link
             href="/categories"
             className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
               active === "categories"
@@ -48,6 +37,17 @@ export default async function AppShell({
           >
             <GridIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("categories")}</span>
+          </Link>
+          <Link
+            href="/dashboard"
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+              active === "nanny"
+                ? "bg-surface-sunken font-semibold text-ink"
+                : "text-muted hover:bg-surface-sunken hover:text-ink"
+            }`}
+          >
+            <HomeIcon className="h-[22px] w-[22px] shrink-0" />
+            <span>{t("nanny")}</span>
           </Link>
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
@@ -85,15 +85,6 @@ export default async function AppShell({
 
       <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-border bg-background/90 backdrop-blur py-1.5">
         <Link
-          href="/dashboard"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
-            active === "home" ? "font-semibold text-primary" : "text-muted"
-          }`}
-        >
-          <HomeIcon className="h-[22px] w-[22px]" />
-          {t("home")}
-        </Link>
-        <Link
           href="/categories"
           className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
             active === "categories" ? "font-semibold text-primary" : "text-muted"
@@ -101,6 +92,15 @@ export default async function AppShell({
         >
           <GridIcon className="h-[22px] w-[22px]" />
           {t("categories")}
+        </Link>
+        <Link
+          href="/dashboard"
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+            active === "nanny" ? "font-semibold text-primary" : "text-muted"
+          }`}
+        >
+          <HomeIcon className="h-[22px] w-[22px]" />
+          {t("nanny")}
         </Link>
         <MessagesTabItem active={active === "messages"} />
         <Link
