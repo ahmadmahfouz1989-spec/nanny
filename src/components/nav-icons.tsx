@@ -7,6 +7,17 @@ export function HomeIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function GridIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <rect x="4" y="4" width="7" height="7" rx="1.6" />
+      <rect x="13" y="4" width="7" height="7" rx="1.6" />
+      <rect x="4" y="13" width="7" height="7" rx="1.6" />
+      <rect x="13" y="13" width="7" height="7" rx="1.6" />
+    </svg>
+  );
+}
+
 export function ChatIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
