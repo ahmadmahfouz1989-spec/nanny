@@ -380,6 +380,8 @@
     "subGiveMonth": "+ شهر",
     "subGiveYear": "+ سنة",
     "subRevoke": "إلغاء",
+    "delete": "حذف",
+    "confirmDelete": "حذف نهائي",
     "reportsTitle": "البلاغات",
     "reportsEmpty": "لا توجد بلاغات مفتوحة.",
     "reportedBy": "أُبلغ من قِبل",
