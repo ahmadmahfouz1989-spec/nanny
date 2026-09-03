@@ -13,6 +13,7 @@ type QueueProfile = {
   full_name: string;
   profile_photo_url?: string | null;
   profileType: "parent" | "nanny";
+  location_detail?: string | null;
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
   created_at: string;
 
@@ -194,7 +195,9 @@ export default function AdminProfilesPage() {
 
       <div className="flex flex-col gap-4">
         {profiles?.map((profile) => {
-          const area = localizedLocationName(profile.locations, locale);
+          const area = [localizedLocationName(profile.locations, locale), profile.location_detail]
+            .filter(Boolean)
+            .join(", ");
           const isExpanded = expanded.has(profile.id);
           return (
             <div key={profile.id} className={ui.card + " p-5 flex gap-4"}>

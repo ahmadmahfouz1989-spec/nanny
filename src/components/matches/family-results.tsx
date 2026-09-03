@@ -34,6 +34,7 @@ type FamilyResult = {
     transportation_required: boolean;
     additional_duties: string[];
     family_description: string | null;
+    location_detail: string | null;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
     parent_profile_languages: LangRef[];
   };
@@ -95,7 +96,8 @@ export default function FamilyResults() {
       <div className="flex flex-col gap-5">
         {results?.map((r, i) => {
           const parent = r.parent_profiles;
-          const area = localizedLocationName(parent.locations, locale);
+          const gov = localizedLocationName(parent.locations, locale);
+          const area = [gov, parent.location_detail].filter(Boolean).join(", ");
           const langs = (parent.parent_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
           const tone = TONES[i % TONES.length];
           return (

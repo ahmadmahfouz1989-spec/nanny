@@ -39,6 +39,7 @@ type NannyResult = {
     can_drive: boolean;
     certifications: string[];
     short_intro: string | null;
+    location_detail: string | null;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
     nanny_profile_languages: LangRef[];
     nanny_experience: { age_group: string; years_experience: number }[];
@@ -102,7 +103,8 @@ export default function NannyResults() {
       <div className="flex flex-col gap-5">
         {results?.map((r, i) => {
           const nanny = r.nanny_profiles;
-          const area = localizedLocationName(nanny.locations, locale);
+          const gov = localizedLocationName(nanny.locations, locale);
+          const area = [gov, nanny.location_detail].filter(Boolean).join(", ");
           const langs = (nanny.nanny_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
           const experience = nanny.nanny_experience ?? [];
           const tone = TONES[i % TONES.length];
