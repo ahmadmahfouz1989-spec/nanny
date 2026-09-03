@@ -13,6 +13,7 @@ export interface LocationRef {
 
 export interface ParentMatchInput {
   location: LocationRef;
+  neededDays: string[]; // weekdays the parent needs; empty = flexible
   scheduleType: ScheduleType;
   liveArrangement: LiveArrangement;
   transportationRequired: boolean;
@@ -60,12 +61,17 @@ function locationScore(a: LocationRef, b: LocationRef): number {
   return a.governorateId && a.governorateId === b.governorateId ? 1 : 0;
 }
 
-// Parents don't record specific required days in the MVP onboarding form —
-// only a full/part/either preference — so availability is scored as the
-// breadth of the nanny's stated days (a proxy for scheduling flexibility)
-// rather than literal day-overlap against a parent-supplied day set.
-function availabilityScore(nanny: NannyMatchInput): number {
-  return Math.min(1, nanny.availabilityDays.length / 7);
+// Day-overlap: what fraction of the parent's needed weekdays the nanny is
+// available for. When the parent didn't pin down specific days (empty
+// neededDays = "flexible"), fall back to the nanny's overall breadth of
+// availability as a flexibility proxy.
+function availabilityScore(parent: ParentMatchInput, nanny: NannyMatchInput): number {
+  if (parent.neededDays.length === 0) {
+    return Math.min(1, nanny.availabilityDays.length / 7);
+  }
+  const have = new Set(nanny.availabilityDays);
+  const covered = parent.neededDays.filter((d) => have.has(d)).length;
+  return covered / parent.neededDays.length;
 }
 
 function eitherMatch(a: string, b: string): number {
@@ -95,7 +101,7 @@ function transportationScore(parent: ParentMatchInput, nanny: NannyMatchInput): 
 export function computeMatchScore(parent: ParentMatchInput, nanny: NannyMatchInput): MatchResult {
   const raw: Record<Criterion, number> = {
     location: locationScore(parent.location, nanny.location),
-    availability: availabilityScore(nanny),
+    availability: availabilityScore(parent, nanny),
     employmentType: eitherMatch(parent.scheduleType, nanny.employmentType),
     liveArrangement: eitherMatch(parent.liveArrangement, nanny.liveArrangementPref),
     language: languageScore(parent, nanny),

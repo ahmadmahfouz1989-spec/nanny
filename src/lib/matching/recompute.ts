@@ -17,7 +17,7 @@ async function loadParentInputs(admin: Admin) {
   const { data } = await admin
     .from("parent_profiles")
     .select(
-      "id, location_id, schedule_type, live_arrangement, transportation_required, children_age_ranges, parent_profile_languages(language_id)",
+      "id, location_id, schedule_type, needed_days, live_arrangement, transportation_required, children_age_ranges, parent_profile_languages(language_id)",
     )
     .eq("status", "active")
     .eq("moderation_status", "approved");
@@ -29,6 +29,7 @@ async function loadParentInputs(admin: Admin) {
       scheduleType: p.schedule_type as ScheduleType,
       liveArrangement: p.live_arrangement as LiveArrangement,
       transportationRequired: p.transportation_required as boolean,
+      neededDays: (p.needed_days ?? []) as string[],
       childrenAgeRanges: p.children_age_ranges as AgeGroup[],
       languageIds: (p.parent_profile_languages as { language_id: string }[]).map((l) => l.language_id),
     } satisfies ParentMatchInput,
@@ -72,7 +73,7 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
   const { data: parentRow } = await admin
     .from("parent_profiles")
     .select(
-      "id, location_id, schedule_type, live_arrangement, transportation_required, children_age_ranges, status, moderation_status, parent_profile_languages(language_id)",
+      "id, location_id, schedule_type, needed_days, live_arrangement, transportation_required, children_age_ranges, status, moderation_status, parent_profile_languages(language_id)",
     )
     .eq("id", parentProfileId)
     .single();
@@ -87,6 +88,7 @@ export async function recomputeMatchesForParent(parentProfileId: string) {
     scheduleType: parentRow.schedule_type as ScheduleType,
     liveArrangement: parentRow.live_arrangement as LiveArrangement,
     transportationRequired: parentRow.transportation_required as boolean,
+    neededDays: (parentRow.needed_days ?? []) as string[],
     childrenAgeRanges: parentRow.children_age_ranges as AgeGroup[],
     languageIds: (parentRow.parent_profile_languages as { language_id: string }[]).map((l) => l.language_id),
   };
