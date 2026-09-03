@@ -128,6 +128,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </h2>
           <p className="text-muted text-center max-w-lg mx-auto mb-10">{tCat("landingSubtitle")}</p>
           <CategoryGrid categories={categories} locale={locale} comingSoonLabel={tCat("comingSoon")} />
+          <p className="text-center text-xs text-muted mt-6">{tCat("moreComingSoon")}</p>
         </div>
       </section>
 
