@@ -10,16 +10,7 @@ export default function AuthCard({ children }: { children: React.ReactNode }) {
   const t = useTranslations("Nav");
 
   return (
-    <main className="relative flex-1 flex items-center justify-center px-6 py-16 overflow-hidden">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-24 -start-24 h-72 w-72 rounded-full bg-primary-soft blur-3xl opacity-70"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -bottom-24 -end-24 h-72 w-72 rounded-full bg-secondary-soft blur-3xl opacity-70"
-      />
-
+    <main className="relative flex-1 flex items-center justify-center px-6 py-16">
       <div className="absolute top-6 start-6">
         <Link href="/" className={ui.link + " text-sm"}>
           {t("backToHome")}
@@ -32,11 +23,11 @@ export default function AuthCard({ children }: { children: React.ReactNode }) {
       </div>
 
       <div className="relative w-full max-w-sm">
-        <div className="flex justify-center mb-2">
+        <div className="flex flex-col items-center gap-3 mb-6">
           <BrandMark />
+          <ReadingIllustration className="w-28" />
         </div>
-        <ReadingIllustration className="w-40 mx-auto mb-2" />
-        <div className="rounded-3xl border border-border bg-surface shadow-[0_1px_2px_rgba(30,20,10,0.04),0_24px_48px_-24px_rgba(30,20,10,0.25)] p-8">
+        <div className="rounded-2xl border border-border bg-surface shadow-md p-8">
           {children}
         </div>
       </div>
