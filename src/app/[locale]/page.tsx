@@ -10,12 +10,17 @@ import CreateProfileIllustration from "@/components/illustrations/create-profile
 import MatchIllustration from "@/components/illustrations/match-illustration";
 import ConnectIllustration from "@/components/illustrations/connect-illustration";
 import PreviewProfileCard from "@/components/preview-profile-card";
+import CategoryGrid from "@/components/category-grid";
+import { getCategories } from "@/lib/categories";
 import { ui } from "@/lib/ui";
 
-export default async function Home() {
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   const t = await getTranslations("Home");
   const tNav = await getTranslations("Nav");
   const tPreview = await getTranslations("Preview");
+  const tCat = await getTranslations("Categories");
+  const categories = await getCategories();
 
   const supabase = await createClient();
   const {
@@ -112,6 +117,17 @@ export default async function Home() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Categories */}
+      <section className="border-t border-border bg-surface-sunken px-6 py-16 sm:py-20">
+        <div className="max-w-5xl mx-auto">
+          <h2 className="font-display text-2xl sm:text-3xl font-bold text-center mb-2">
+            {tCat("landingTitle")}
+          </h2>
+          <p className="text-muted text-center max-w-lg mx-auto mb-10">{tCat("landingSubtitle")}</p>
+          <CategoryGrid categories={categories} locale={locale} comingSoonLabel={tCat("comingSoon")} />
         </div>
       </section>
 

@@ -6,9 +6,9 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
-import { HomeIcon, ProfileIcon } from "@/components/nav-icons";
+import { HomeIcon, ProfileIcon, GridIcon } from "@/components/nav-icons";
 
-type ActiveKey = "home" | "messages" | "profile";
+type ActiveKey = "home" | "categories" | "messages" | "profile";
 
 export default async function AppShell({
   active,
@@ -37,6 +37,17 @@ export default async function AppShell({
           >
             <HomeIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("home")}</span>
+          </Link>
+          <Link
+            href="/categories"
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+              active === "categories"
+                ? "bg-surface-sunken font-semibold text-ink"
+                : "text-muted hover:bg-surface-sunken hover:text-ink"
+            }`}
+          >
+            <GridIcon className="h-[22px] w-[22px] shrink-0" />
+            <span>{t("categories")}</span>
           </Link>
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
@@ -81,6 +92,15 @@ export default async function AppShell({
         >
           <HomeIcon className="h-[22px] w-[22px]" />
           {t("home")}
+        </Link>
+        <Link
+          href="/categories"
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+            active === "categories" ? "font-semibold text-primary" : "text-muted"
+          }`}
+        >
+          <GridIcon className="h-[22px] w-[22px]" />
+          {t("categories")}
         </Link>
         <MessagesTabItem active={active === "messages"} />
         <Link
