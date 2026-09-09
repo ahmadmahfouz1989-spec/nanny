@@ -43,7 +43,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 sm:px-10 py-5">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/70 px-6 py-4 backdrop-blur-md sm:px-10">
         <BrandMark />
         <nav className="flex items-center gap-2 sm:gap-3">
           <ThemeSwitcher />
@@ -69,44 +69,70 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       </header>
 
       {/* Hero */}
-      <section className="px-6 pt-10 pb-16 sm:pt-16 sm:pb-24">
-        <div className="max-w-5xl mx-auto grid lg:grid-cols-[1.05fr_1fr] gap-12 items-center">
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-start gap-5">
-            <span className="inline-flex items-center rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-secondary">
+      <section className="relative overflow-hidden px-6 pt-14 pb-20 sm:pt-20 sm:pb-28">
+        <div
+          aria-hidden
+          className="oui-float pointer-events-none absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/25 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="oui-float-2 pointer-events-none absolute top-40 -end-28 h-72 w-72 rounded-full bg-secondary/25 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(var(--color-border-strong)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_35%,#000,transparent)]"
+        />
+
+        <div className="relative mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-[1.05fr_1fr]">
+          <div className="flex flex-col items-center gap-5 text-center lg:items-start lg:text-start">
+            <span className="oui-in inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-secondary">
+              <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
               {t("badge")}
             </span>
-            <h1 className="font-display text-4xl sm:text-6xl font-bold tracking-tight leading-[1.05]">
+            <h1
+              className="oui-in font-display text-5xl font-bold leading-[1.03] tracking-tight sm:text-7xl"
+              style={{ animationDelay: "0.06s" }}
+            >
               {t.rich("headline", {
                 mark: (chunks) => (
-                  <span className="text-primary">{chunks}</span>
+                  <span className="bg-gradient-to-br from-primary to-berry bg-clip-text text-transparent">
+                    {chunks}
+                  </span>
                 ),
               })}
             </h1>
-            <p className="text-lg text-muted max-w-md">{t("subhead")}</p>
+            <p className="oui-in max-w-md text-lg text-muted" style={{ animationDelay: "0.12s" }}>
+              {t("subhead")}
+            </p>
 
-            <ul className="flex flex-col gap-2.5 items-start text-start mt-1">
+            <ul className="oui-in mt-1 flex flex-col items-start gap-2.5 text-start" style={{ animationDelay: "0.18s" }}>
               {bullets.map((bullet) => (
                 <li key={bullet} className="flex items-start gap-2.5 text-sm text-ink/80">
-                  <svg viewBox="0 0 20 20" className="mt-0.5 h-4 w-4 shrink-0 text-primary" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M4 10.5l4 4 8-9" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary">
+                    <svg viewBox="0 0 20 20" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M4 10.5l4 4 8-9" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                   {bullet}
                 </li>
               ))}
             </ul>
 
-            <div className="flex flex-col sm:flex-row gap-3 mt-3 w-full sm:w-auto">
-              <Link href="/signup?role=parent" className={ui.buttonPrimary + " px-6! py-3!"}>
+            <div
+              className="oui-in mt-3 flex w-full flex-col gap-3 sm:w-auto sm:flex-row"
+              style={{ animationDelay: "0.24s" }}
+            >
+              <Link href="/signup?role=parent" className={ui.buttonPrimary + " px-6! py-3! text-base!"}>
                 {t("ctaParent")}
               </Link>
-              <Link href="/signup?role=nanny" className={ui.buttonSecondary + " px-6! py-3!"}>
+              <Link href="/signup?role=nanny" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNanny")}
               </Link>
             </div>
           </div>
 
-          <div className="relative w-full max-w-md mx-auto">
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden border border-border shadow-lg">
+          <div className="oui-in relative mx-auto w-full max-w-md" style={{ animationDelay: "0.15s" }}>
+            <div className="relative aspect-[4/3] rotate-1 overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl">
               <Image
                 src="/images/hero-nanny-child.jpg"
                 alt={t("heroPhotoAlt")}
@@ -116,33 +142,44 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 className="object-cover"
               />
             </div>
+            <div className="oui-float-2 absolute -start-5 top-8 flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 text-sm font-semibold shadow-lg">
+              <span className="text-accent-hover">★</span> 4.9
+            </div>
+            <div className="oui-float absolute -end-4 bottom-6 flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 text-xs font-semibold shadow-lg">
+              <span className="flex h-4 w-4 items-center justify-center rounded-full bg-success-soft text-success">
+                <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3">
+                  <path d="M4 10.5l4 4 8-9" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </span>
+              {t("bullet2Short")}
+            </div>
           </div>
         </div>
       </section>
 
       {/* Categories */}
       <section className="border-t border-border bg-surface-sunken px-6 py-16 sm:py-20">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-center mb-2">
-            {tCat("landingTitle")}
-          </h2>
-          <p className="text-muted text-center max-w-lg mx-auto mb-10">{tCat("landingSubtitle")}</p>
+        <div className="oui-reveal mx-auto max-w-5xl">
+          <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">{tCat("landingTitle")}</h2>
+          <p className="mx-auto mb-10 max-w-lg text-center text-muted">{tCat("landingSubtitle")}</p>
           <CategoryGrid categories={categories} locale={locale} comingSoonLabel={tCat("comingSoon")} />
-          <p className="text-center text-xs text-muted mt-6">{tCat("moreComingSoon")}</p>
+          <p className="mt-6 text-center text-xs text-muted">{tCat("moreComingSoon")}</p>
         </div>
       </section>
 
       {/* Preview */}
       <section className="border-t border-border px-6 py-16 sm:py-20">
-        <div className="max-w-5xl mx-auto">
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-center mb-3">
+        <div className="mx-auto max-w-5xl">
+          <h2 className="oui-reveal mb-3 text-center font-display text-2xl font-bold sm:text-3xl">
             {tPreview("title")}
           </h2>
-          <p className="text-muted text-center max-w-lg mx-auto mb-10">{tPreview("subtitle")}</p>
+          <p className="oui-reveal mx-auto mb-10 max-w-lg text-center text-muted">{tPreview("subtitle")}</p>
 
-          <div className="grid sm:grid-cols-3 gap-5">
-            {previewCards.map((card) => (
-              <PreviewProfileCard key={card.name} {...card} />
+          <div className="grid gap-5 sm:grid-cols-3">
+            {previewCards.map((card, i) => (
+              <div key={card.name} className="oui-reveal" style={{ animationDelay: `${i * 0.06}s` }}>
+                <PreviewProfileCard {...card} />
+              </div>
             ))}
           </div>
         </div>
@@ -150,16 +187,29 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
       {/* How it works */}
       <section className="border-t border-border bg-surface-sunken px-6 py-16 sm:py-20">
-        <div className="max-w-5xl mx-auto flex flex-col items-center">
-          <h2 className="font-display text-2xl sm:text-3xl font-bold text-center mb-10">
+        <div className="mx-auto flex max-w-5xl flex-col items-center">
+          <h2 className="oui-reveal mb-12 text-center font-display text-2xl font-bold sm:text-3xl">
             {t("howItWorksTitle")}
           </h2>
 
-          <ol className="grid sm:grid-cols-3 gap-5 w-full">
+          <ol className="relative grid w-full gap-5 sm:grid-cols-3">
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-x-[16%] top-9 hidden h-px bg-gradient-to-r from-transparent via-border-strong to-transparent sm:block"
+            />
             {steps.map((step, i) => (
-              <li key={step.title} className={ui.card + " overflow-hidden text-start"}>
-                <step.Illustration className="w-full h-28" />
-                <div className="p-5 flex flex-col gap-1.5">
+              <li
+                key={step.title}
+                className={`oui-reveal relative ${ui.cardHover} overflow-hidden text-start`}
+                style={{ animationDelay: `${i * 0.08}s` }}
+              >
+                <div className="relative">
+                  <step.Illustration className="h-28 w-full" />
+                  <span className="absolute -bottom-4 start-5 flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-primary to-berry text-sm font-bold text-white shadow-md">
+                    {i + 1}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1.5 p-5 pt-7">
                   <span className={ui.eyebrow}>{t("stepLabel", { number: i + 1 })}</span>
                   <span className="font-display text-lg font-bold">{step.title}</span>
                   <span className="text-sm text-muted">{step.body}</span>
@@ -167,15 +217,25 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               </li>
             ))}
           </ol>
+        </div>
+      </section>
 
-          <p className="font-display text-xl font-bold mt-14 mb-4">{t("readyTitle")}</p>
-          <Link href="/signup" className={ui.buttonPrimary + " px-6! py-3!"}>
+      {/* CTA band */}
+      <section className="px-6 py-16 sm:py-20">
+        <div className="oui-reveal relative mx-auto max-w-5xl overflow-hidden rounded-3xl bg-gradient-to-br from-primary to-berry px-6 py-14 text-center text-white sm:px-10">
+          <div aria-hidden className="oui-float absolute -top-16 -end-10 h-52 w-52 rounded-full bg-white/15 blur-2xl" />
+          <h2 className="relative font-display text-2xl font-bold sm:text-3xl">{t("readyTitle")}</h2>
+          <p className="relative mx-auto mt-2 max-w-md text-white/85">{t("subhead")}</p>
+          <Link
+            href="/signup"
+            className="relative mt-6 inline-flex items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-primary shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0"
+          >
             {tNav("signup")}
           </Link>
         </div>
       </section>
 
-      <footer className="border-t border-border px-6 sm:px-10 py-8 text-center text-xs text-muted">
+      <footer className="border-t border-border px-6 py-8 text-center text-xs text-muted sm:px-10">
         {t("footer", { year: new Date().getFullYear() })}
       </footer>
     </>
