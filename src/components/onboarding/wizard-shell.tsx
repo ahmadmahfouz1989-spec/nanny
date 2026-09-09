@@ -55,7 +55,7 @@ export default function WizardShell({
             ))}
           </div>
 
-          <div className={ui.card + " p-8"}>
+          <div key={step} className={ui.card + " oui-in p-8"}>
             <h1 className="font-display text-2xl font-semibold mb-6">{title}</h1>
 
             <div className="flex flex-col gap-4">{children}</div>

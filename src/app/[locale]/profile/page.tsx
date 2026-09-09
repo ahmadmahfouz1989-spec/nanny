@@ -101,7 +101,7 @@ export default async function ProfilePage({
 
         <Link
           href="/subscribe"
-          className={`${ui.card} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 transition-colors ${
+          className={`${ui.cardHover} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 ${
             subActive ? "bg-success-soft" : "bg-warning-soft"
           }`}
         >
