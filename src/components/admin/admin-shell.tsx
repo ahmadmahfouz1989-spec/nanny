@@ -48,7 +48,9 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </nav>
       </div>
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-10">{children}</main>
+      <main className="flex-1 max-w-3xl mx-auto w-full px-6 py-10">
+        <div className="oui-in">{children}</div>
+      </main>
     </>
   );
 }

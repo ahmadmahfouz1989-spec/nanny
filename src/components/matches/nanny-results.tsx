@@ -115,7 +115,8 @@ export default function NannyResults() {
             <div
               key={r.id}
               id={`match-${r.id}`}
-              className={ui.card + " overflow-hidden scroll-mt-6 transition-shadow"}
+              className={ui.cardHover + " oui-in overflow-hidden scroll-mt-6"}
+              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
             >
               <div className="relative">
                 {nanny.profile_photo_url ? (
