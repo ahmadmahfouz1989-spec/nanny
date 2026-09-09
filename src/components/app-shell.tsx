@@ -114,7 +114,9 @@ export default async function AppShell({
         </Link>
       </nav>
 
-      <main className="flex-1 min-w-0 h-screen overflow-y-auto pt-16 pb-20 sm:pt-0 sm:pb-0">{children}</main>
+      <main className="flex-1 min-w-0 h-screen overflow-y-auto pt-16 pb-20 sm:pt-0 sm:pb-0">
+        <div className="oui-in">{children}</div>
+      </main>
     </div>
   );
 }
