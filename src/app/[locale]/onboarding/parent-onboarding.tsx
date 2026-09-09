@@ -172,7 +172,8 @@ export default function ParentOnboarding({
 
     const parsed = parentProfileSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(tw("validationError"));
+      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
+      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
       return;
     }
 

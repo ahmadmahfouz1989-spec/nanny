@@ -208,7 +208,8 @@ export default function NannyOnboarding({
 
     const parsed = nannyProfileSchema.safeParse(payload);
     if (!parsed.success) {
-      setError(tw("validationError"));
+      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
+      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
       return;
     }
 
