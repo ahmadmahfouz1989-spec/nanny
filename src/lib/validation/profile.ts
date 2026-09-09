@@ -51,10 +51,7 @@ export const parentProfileSchema = z.object({
   scheduleType: z.enum(["full_time", "part_time", "either"]),
   neededDays: z.array(z.enum(DAYS)).default([]),
   liveArrangement: z.enum(["live_in", "live_out", "either"]),
-  desiredStartDate: z
-    .string()
-    .refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date")
-    .refine((d) => new Date(d) >= new Date(new Date().toDateString()), "Start date can't be in the past"),
+  desiredStartDate: z.string().refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date"),
   transportationRequired: z.boolean(),
   additionalDuties: z.array(z.string()).default([]),
   familyDescription: z.string().max(1000).optional(),
