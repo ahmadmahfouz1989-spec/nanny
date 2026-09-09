@@ -170,3 +170,72 @@
     color-scheme: light dark;
   }
 }
+
+/* ─── motion ─────────────────────────────────────────────────────────── */
+
+@keyframes oui-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes oui-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(8px, -16px);
+  }
+}
+
+@keyframes oui-float-rev {
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  50% {
+    transform: translate(-10px, 12px) rotate(-2deg);
+  }
+}
+
+/* On-load entrance — pair with an inline animation-delay for a stagger. */
+.oui-in {
+  animation: oui-fade-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.oui-float {
+  animation: oui-float 9s ease-in-out infinite;
+}
+.oui-float-2 {
+  animation: oui-float-rev 12s ease-in-out infinite;
+}
+
+/* Scroll-reveal via scroll-linked animations where supported; content is
+   fully visible otherwise. */
+.oui-reveal {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .oui-reveal {
+      animation: oui-fade-up linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 24%;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oui-in,
+  .oui-float,
+  .oui-float-2,
+  .oui-reveal {
+    animation: none !important;
+  }
+}
