@@ -124,7 +124,13 @@ export default function SignupForm() {
             onChange={(e) => setAgreed(e.target.checked)}
             className="mt-0.5 accent-primary"
           />
-          {tAuth("termsLabel")}
+          {tAuth.rich("termsLabel", {
+            terms: (chunks) => (
+              <Link href="/terms" target="_blank" className={ui.link}>
+                {chunks}
+              </Link>
+            ),
+          })}
         </label>
 
         {error && (
