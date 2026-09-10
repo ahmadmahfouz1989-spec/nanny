@@ -11,7 +11,8 @@
     "admin": "Admin",
     "nanny": "Nanny",
     "categories": "Categories",
-    "terms": "Terms of Service"
+    "terms": "Terms of Service",
+    "contact": "Contact us"
   },
   "Categories": {
     "hubTitle": "Browse categories",
