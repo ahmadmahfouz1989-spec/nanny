@@ -10,7 +10,8 @@
     "profile": "الملف الشخصي",
     "admin": "الإدارة",
     "nanny": "مربيات",
-    "categories": "الفئات"
+    "categories": "الفئات",
+    "terms": "شروط الخدمة"
   },
   "Categories": {
     "hubTitle": "تصفّح الفئات",
@@ -64,7 +65,7 @@
   "Auth": {
     "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
     "termsRequired": "يرجى الموافقة على الشروط للمتابعة.",
-    "termsLabel": "أوافق على شروط الاستخدام وسياسة الخصوصية.",
+    "termsLabel": "أوافق على <terms>شروط الخدمة</terms>.",
     "emailPlaceholder": "البريد الإلكتروني",
     "passwordPlaceholder": "كلمة المرور",
     "identifierPlaceholder": "البريد الإلكتروني أو الهاتف (+9613123456)",

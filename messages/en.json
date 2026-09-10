@@ -10,7 +10,8 @@
     "profile": "Profile",
     "admin": "Admin",
     "nanny": "Nanny",
-    "categories": "Categories"
+    "categories": "Categories",
+    "terms": "Terms of Service"
   },
   "Categories": {
     "hubTitle": "Browse categories",
@@ -64,7 +65,7 @@
   "Auth": {
     "genericError": "Something went wrong. Please try again.",
     "termsRequired": "Please accept the terms to continue.",
-    "termsLabel": "I agree to the terms of use and privacy policy.",
+    "termsLabel": "I agree to the <terms>Terms of Service</terms>.",
     "emailPlaceholder": "Email",
     "passwordPlaceholder": "Password",
     "identifierPlaceholder": "Email or phone (+9613123456)",

@@ -236,7 +236,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       </section>
 
       <footer className="border-t border-border px-6 py-8 text-center text-xs text-muted sm:px-10">
-        {t("footer", { year: new Date().getFullYear() })}
+        <p>{t("footer", { year: new Date().getFullYear() })}</p>
+        <Link href="/terms" className="mt-2 inline-block hover:text-ink">
+          {tNav("terms")}
+        </Link>
       </footer>
     </>
   );
