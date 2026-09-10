@@ -14,6 +14,8 @@ import CategoryGrid from "@/components/category-grid";
 import { getCategories } from "@/lib/categories";
 import { ui } from "@/lib/ui";
 
+const SUPPORT_WHATSAPP = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "96176775996";
+
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations("Home");
@@ -235,11 +237,26 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </section>
 
-      <footer className="border-t border-border px-6 py-8 text-center text-xs text-muted sm:px-10">
-        <p>{t("footer", { year: new Date().getFullYear() })}</p>
-        <Link href="/terms" className="mt-2 inline-block hover:text-ink">
-          {tNav("terms")}
-        </Link>
+      <footer className="border-t border-border px-6 py-10 sm:px-10">
+        <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 text-center text-xs text-muted">
+          <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            <Link href="/terms" className="hover:text-ink">
+              {tNav("terms")}
+            </Link>
+            <a
+              href={`https://wa.me/${SUPPORT_WHATSAPP}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 hover:text-ink"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+                <path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.9 9.9 0 0 0 4.84 1.24h.01c5.5 0 9.96-4.46 9.96-9.96S17.54 2 12.04 2Zm5.8 14.13c-.24.68-1.4 1.32-1.94 1.36-.5.04-.96.22-3.22-.68-2.72-1.08-4.44-3.86-4.58-4.04-.13-.18-1.1-1.46-1.1-2.78 0-1.32.7-1.98.94-2.24.24-.26.52-.32.7-.32l.5.01c.16 0 .38-.06.6.46.24.56.8 1.96.87 2.1.07.14.12.3.02.48-.1.18-.14.3-.28.46-.14.16-.3.36-.42.48-.14.14-.28.3-.12.58.16.28.72 1.18 1.54 1.9 1.06.94 1.94 1.24 2.22 1.38.28.14.44.12.6-.07.16-.18.7-.8.88-1.08.18-.28.36-.24.6-.14.24.1 1.56.74 1.82.87.26.14.44.2.5.32.06.12.06.68-.18 1.36Z" />
+              </svg>
+              {tNav("contact")}
+            </a>
+          </div>
+          <p>{t("footer", { year: new Date().getFullYear() })}</p>
+        </div>
       </footer>
     </>
   );
