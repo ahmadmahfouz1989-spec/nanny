@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
-import SubscribeModal from "@/components/subscribe-modal";
 import { ui } from "@/lib/ui";
 
 type Message = {
@@ -31,7 +30,6 @@ export default function ChatThread({
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
-  const [paywalled, setPaywalled] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onMessageRef = useRef(onMessage);
@@ -99,11 +97,6 @@ export default function ChatThread({
       body: JSON.stringify({ body }),
     });
     setSending(false);
-    if (res.status === 402) {
-      setPaywalled(true);
-      setDraft(body);
-      return;
-    }
     if (res.ok) {
       const { message } = await res.json();
       setMessages((prev) => {
@@ -175,8 +168,6 @@ export default function ChatThread({
           );
         })}
       </div>
-
-      <SubscribeModal open={paywalled} onClose={() => setPaywalled(false)} />
 
       <div className={full ? "flex items-center gap-2 p-3 border-t border-border shrink-0" : "flex items-center gap-2 p-2 border-t border-border"}>
         <input

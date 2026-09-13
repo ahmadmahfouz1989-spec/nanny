@@ -1,9 +1,9 @@
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
-import SubscribeClient from "@/components/subscribe-client";
+import FeaturedClient from "@/components/featured-client";
 
-export default async function SubscribePage({
+export default async function FeaturedPage({
   params,
 }: {
   params: Promise<{ locale: string }>;
@@ -25,7 +25,7 @@ export default async function SubscribePage({
 
   return (
     <AppShell active="nanny">
-      <SubscribeClient />
+      <FeaturedClient />
     </AppShell>
   );
 }

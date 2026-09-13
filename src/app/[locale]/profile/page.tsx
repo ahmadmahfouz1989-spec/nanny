@@ -31,11 +31,11 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("role, email, phone, email_verified_at, phone_verified_at, subscribed_until")
+    .select("role, email, phone, email_verified_at, phone_verified_at, featured_until")
     .eq("id", user!.id)
     .single();
 
-  const subActive = !!profile?.subscribed_until && new Date(profile.subscribed_until) > new Date();
+  const isFeatured = !!profile?.featured_until && new Date(profile.featured_until) > new Date();
 
   if (profile?.role === "admin") {
     redirect({ href: "/admin", locale });
@@ -100,20 +100,20 @@ export default async function ProfilePage({
         </div>
 
         <Link
-          href="/subscribe"
+          href="/featured"
           className={`${ui.cardHover} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 ${
-            subActive ? "bg-success-soft" : "bg-warning-soft"
+            isFeatured ? "bg-success-soft" : "bg-warning-soft"
           }`}
         >
           <div className="text-sm">
-            <p className="font-medium">{t("subscriptionLabel")}</p>
+            <p className="font-medium">{t("featuredLabel")}</p>
             <p className="text-muted text-xs">
-              {subActive
-                ? t("subscribedUntil", { date: new Date(profile!.subscribed_until!).toLocaleDateString() })
-                : t("notSubscribed")}
+              {isFeatured
+                ? t("featuredUntilLabel", { date: new Date(profile!.featured_until!).toLocaleDateString() })
+                : t("notFeaturedLabel")}
             </p>
           </div>
-          <span className={ui.link + " text-sm shrink-0"}>{t("manageSubscription")}</span>
+          <span className={ui.link + " text-sm shrink-0"}>{t("manageFeatured")}</span>
         </Link>
 
         <MyRatings />

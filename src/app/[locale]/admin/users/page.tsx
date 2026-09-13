@@ -10,12 +10,12 @@ type AdminUser = {
   email: string | null;
   phone: string | null;
   status: string;
-  subscribed_until: string | null;
+  featured_until: string | null;
   created_at: string;
 };
 
-function subActive(u: AdminUser) {
-  return !!u.subscribed_until && new Date(u.subscribed_until) > new Date();
+function isFeaturedNow(u: AdminUser) {
+  return !!u.featured_until && new Date(u.featured_until) > new Date();
 }
 
 export default function AdminUsersPage() {
@@ -53,24 +53,24 @@ export default function AdminUsersPage() {
 
   async function grant(user: AdminUser, plan: "monthly" | "yearly") {
     setSubmitting(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}/subscription`, {
+    const res = await fetch(`/api/admin/users/${user.id}/featured`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan }),
     });
     setSubmitting(null);
     if (res.ok) {
-      const { subscribed_until } = await res.json();
-      setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, subscribed_until } : u)) ?? null);
+      const { featured_until } = await res.json();
+      setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, featured_until } : u)) ?? null);
     }
   }
 
   async function revoke(user: AdminUser) {
     setSubmitting(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}/subscription`, { method: "DELETE" });
+    const res = await fetch(`/api/admin/users/${user.id}/featured`, { method: "DELETE" });
     setSubmitting(null);
     if (res.ok) {
-      setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, subscribed_until: null } : u)) ?? null);
+      setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, featured_until: null } : u)) ?? null);
     }
   }
 
@@ -137,32 +137,32 @@ export default function AdminUsersPage() {
 
             {user.role !== "admin" && (
               <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                <span className={ui.badge(subActive(user) ? "success" : "warning")}>
-                  {subActive(user)
-                    ? t("subActiveUntil", { date: new Date(user.subscribed_until!).toLocaleDateString() })
-                    : t("subInactive")}
+                <span className={ui.badge(isFeaturedNow(user) ? "success" : "warning")}>
+                  {isFeaturedNow(user)
+                    ? t("featuredUntil", { date: new Date(user.featured_until!).toLocaleDateString() })
+                    : t("notFeatured")}
                 </span>
                 <button
                   onClick={() => grant(user, "monthly")}
                   disabled={submitting === user.id}
                   className={ui.buttonSecondary + " px-3! py-1! text-xs"}
                 >
-                  {t("subGiveMonth")}
+                  {t("giveMonth")}
                 </button>
                 <button
                   onClick={() => grant(user, "yearly")}
                   disabled={submitting === user.id}
                   className={ui.buttonSecondary + " px-3! py-1! text-xs"}
                 >
-                  {t("subGiveYear")}
+                  {t("giveYear")}
                 </button>
-                {subActive(user) && (
+                {isFeaturedNow(user) && (
                   <button
                     onClick={() => revoke(user)}
                     disabled={submitting === user.id}
                     className="text-xs text-muted hover:text-danger transition"
                   >
-                    {t("subRevoke")}
+                    {t("revokeFeatured")}
                   </button>
                 )}
               </div>
