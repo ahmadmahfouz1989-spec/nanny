@@ -5,7 +5,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMatchAccess } from "@/lib/matching/access";
 import { sendEmail, newMessageEmail } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
-import { hasActiveSubscription, subscriptionRequiredResponse } from "@/lib/subscription";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -50,10 +49,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  if (!(await hasActiveSubscription(supabase, user.id))) {
-    return subscriptionRequiredResponse();
   }
 
   const access = await resolveMatchAccess(supabase, id, user.id);
