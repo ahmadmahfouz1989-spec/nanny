@@ -4,7 +4,6 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMatchAccess, effectiveStatus } from "@/lib/matching/access";
 import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
-import { hasActiveSubscription, subscriptionRequiredResponse } from "@/lib/subscription";
 
 const INTEREST_WINDOW_DAYS = 14;
 
@@ -17,10 +16,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  if (!(await hasActiveSubscription(supabase, user.id))) {
-    return subscriptionRequiredResponse();
   }
 
   const access = await resolveMatchAccess(supabase, id, user.id);

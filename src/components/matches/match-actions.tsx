@@ -1,10 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { useTranslations } from "next-intl";
 import ChatThread from "./chat-thread";
 import RatingButton from "./rating-button";
-import SubscribeModal from "@/components/subscribe-modal";
 import { ui } from "@/lib/ui";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
@@ -31,7 +30,6 @@ export default function MatchActions({
   const [loading, setLoading] = useState(false);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [paywalled, setPaywalled] = useState(false);
 
   const otherSide = viewerSide === "parent" ? "nanny" : "parent";
   const ownPending = `${viewerSide}_interested`;
@@ -40,14 +38,9 @@ export default function MatchActions({
   async function act(action: "interest" | "decline") {
     setLoading(true);
     setError(null);
-    setPaywalled(false);
     const res = await fetch(`/api/matches/${matchId}/${action}`, { method: "POST" });
     setLoading(false);
 
-    if (res.status === 402) {
-      setPaywalled(true);
-      return;
-    }
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       setError(typeof body.error === "string" ? body.error : t("actionError"));
@@ -61,14 +54,9 @@ export default function MatchActions({
   async function loadContact() {
     setLoading(true);
     setError(null);
-    setPaywalled(false);
     const res = await fetch(`/api/matches/${matchId}/contact`);
     setLoading(false);
 
-    if (res.status === 402) {
-      setPaywalled(true);
-      return;
-    }
     if (!res.ok) {
       setError(t("actionError"));
       return;
@@ -76,23 +64,23 @@ export default function MatchActions({
     setContact(await res.json());
   }
 
-  const feedback = error ? <p className="text-xs text-danger">{error}</p> : null;
-
-  let body: ReactNode = null;
-
   if (current === "suggested" || current === "expired") {
-    body = (
+    return (
       <div className="flex items-center gap-3 mt-3">
         <button onClick={() => act("interest")} disabled={loading} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
           {t("sendInterest")}
         </button>
-        {feedback}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     );
-  } else if (current === ownPending) {
-    body = <p className="text-sm text-muted mt-3">{t("waitingForResponse")}</p>;
-  } else if (current === otherPending) {
-    body = (
+  }
+
+  if (current === ownPending) {
+    return <p className="text-sm text-muted mt-3">{t("waitingForResponse")}</p>;
+  }
+
+  if (current === otherPending) {
+    return (
       <div className="flex flex-col gap-2 mt-3">
         <p className="text-sm text-secondary font-medium">{t("theyAreInterested")}</p>
         <div className="flex items-center gap-3">
@@ -103,11 +91,13 @@ export default function MatchActions({
             {t("decline")}
           </button>
         </div>
-        {feedback}
+        {error && <p className="text-xs text-danger">{error}</p>}
       </div>
     );
-  } else if (current === "mutual") {
-    body = (
+  }
+
+  if (current === "mutual") {
+    return (
       <div className="mt-3">
         {!contact ? (
           <button onClick={loadContact} disabled={loading} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
@@ -124,19 +114,16 @@ export default function MatchActions({
             )}
           </div>
         )}
-        {feedback}
+        {error && <p className="text-xs text-danger mt-1">{error}</p>}
         <RatingButton matchId={matchId} />
         <ChatThread matchId={matchId} />
       </div>
     );
-  } else if (current.startsWith("declined_by_")) {
-    body = <p className="text-sm text-muted mt-3">{t("declined")}</p>;
   }
 
-  return (
-    <>
-      {body}
-      <SubscribeModal open={paywalled} onClose={() => setPaywalled(false)} />
-    </>
-  );
+  if (current.startsWith("declined_by_")) {
+    return <p className="text-sm text-muted mt-3">{t("declined")}</p>;
+  }
+
+  return null;
 }

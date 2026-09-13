@@ -8,26 +8,23 @@ const WHISH_NUMBER = process.env.NEXT_PUBLIC_WHISH_NUMBER ?? "";
 const WHISH_NAME = process.env.NEXT_PUBLIC_WHISH_NAME ?? "";
 const WHISH_NOTE = process.env.NEXT_PUBLIC_WHISH_NOTE ?? "";
 
-type Me = { email: string | null; subscribed_until: string | null };
+type Me = { email: string | null; featured_until: string | null };
 
-export default function SubscribeClient() {
-  const t = useTranslations("Subscribe");
+export default function FeaturedClient() {
+  const t = useTranslations("Featured");
   const locale = useLocale();
   const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
     fetch("/api/auth/me")
       .then((res) => (res.ok ? res.json() : null))
-      .then((body) => body?.user && setMe({ email: body.user.email, subscribed_until: body.user.subscribed_until }));
+      .then((body) => body?.user && setMe({ email: body.user.email, featured_until: body.user.featured_until }));
   }, []);
 
   const activeUntil =
-    me?.subscribed_until && new Date(me.subscribed_until) > new Date()
-      ? new Date(me.subscribed_until)
-      : null;
+    me?.featured_until && new Date(me.featured_until) > new Date() ? new Date(me.featured_until) : null;
 
-  const fmtDate = (d: Date) =>
-    new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(d);
+  const fmtDate = (d: Date) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(d);
 
   return (
     <div className="max-w-lg mx-auto w-full px-6 py-8">
@@ -39,16 +36,26 @@ export default function SubscribeClient() {
           activeUntil ? "bg-success-soft" : "bg-warning-soft"
         }`}
       >
-        {activeUntil
-          ? t("statusActive", { date: fmtDate(activeUntil) })
-          : t("statusInactive")}
+        {activeUntil ? t("statusActive", { date: fmtDate(activeUntil) }) : t("statusInactive")}
+      </div>
+
+      <div className={ui.card + " p-5 mb-6"}>
+        <p className="font-display text-lg font-semibold mb-3">{t("whyTitle")}</p>
+        <ul className="flex flex-col gap-2 text-sm text-ink/80">
+          {[t("perk1"), t("perk2"), t("perk3")].map((perk) => (
+            <li key={perk} className="flex items-start gap-2">
+              <span className="mt-0.5 text-accent-hover">★</span>
+              {perk}
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="grid grid-cols-2 gap-3 mb-6">
         <div className={ui.card + " p-4 flex flex-col gap-1"}>
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t("planMonthly")}</p>
           <p className="font-display text-2xl font-bold">
-            $6<span className="text-sm font-normal text-muted"> {t("perMonth")}</span>
+            $5<span className="text-sm font-normal text-muted"> {t("perMonth")}</span>
           </p>
         </div>
         <div className={ui.card + " p-4 flex flex-col gap-1 border-primary/40"}>

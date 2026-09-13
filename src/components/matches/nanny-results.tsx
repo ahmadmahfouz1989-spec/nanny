@@ -26,6 +26,7 @@ type NannyResult = {
   status: string;
   interest_expires_at: string | null;
   rating: { average: number | null; count: number };
+  featured: boolean;
   nanny_profiles: {
     id: string;
     full_name: string;
@@ -61,6 +62,13 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
   if (locale === "ar") return l.name_ar;
   if (locale === "fr") return l.name_fr;
   return l.name_en;
+}
+
+// Featured profiles surface first regardless of match score — a stable
+// sort keeps the existing score order within each group.
+function sortedByFeatured(results: NannyResult[] | null) {
+  if (!results) return null;
+  return [...results].sort((a, b) => Number(b.featured) - Number(a.featured));
 }
 
 export default function NannyResults() {
@@ -103,7 +111,7 @@ export default function NannyResults() {
       )}
 
       <div className="flex flex-col gap-5">
-        {results?.map((r, i) => {
+        {sortedByFeatured(results)?.map((r, i, arr) => {
           const nanny = r.nanny_profiles;
           const gov = localizedLocationName(nanny.locations, locale);
           const area = [gov, nanny.location_detail].filter(Boolean).join(", ");
@@ -111,33 +119,49 @@ export default function NannyResults() {
           const experience = nanny.nanny_experience ?? [];
           const tone = TONES[i % TONES.length];
           const availableDays = nanny.availability?.days ?? [];
+          const hasFeaturedSection = arr.some((x) => x.featured);
+          const showFeaturedHeader = r.featured && i === 0;
+          const showRegularHeader = !r.featured && hasFeaturedSection && (i === 0 || arr[i - 1].featured);
           return (
-            <div
-              key={r.id}
-              id={`match-${r.id}`}
-              className={ui.cardHover + " oui-in overflow-hidden scroll-mt-6"}
-              style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
-            >
-              <div className="relative">
-                {nanny.profile_photo_url ? (
-                  <Image
-                    src={nanny.profile_photo_url}
-                    alt=""
-                    width={640}
-                    height={160}
-                    unoptimized
-                    className="h-28 w-full object-cover"
-                  />
-                ) : (
-                  <AvatarIllustration tone={tone} className="h-28 w-full" />
-                )}
-                {nanny.profile_photo_url && (
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
-                )}
-                <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
-                  {t("scoreLabel", { score: Math.round(r.score) })}
-                </span>
-                <div className="absolute bottom-0 start-0 p-4">
+            <div key={r.id} className="flex flex-col gap-2">
+              {showFeaturedHeader && (
+                <p className={ui.eyebrow + " flex items-center gap-1.5"}>
+                  <span className="text-accent-hover">★</span>
+                  {t("featuredSection")}
+                </p>
+              )}
+              {showRegularHeader && <p className={ui.eyebrow}>{t("allMatchesSection")}</p>}
+              <div
+                id={`match-${r.id}`}
+                className={ui.cardHover + " oui-in overflow-hidden scroll-mt-6"}
+                style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
+              >
+                <div className="relative">
+                  {nanny.profile_photo_url ? (
+                    <Image
+                      src={nanny.profile_photo_url}
+                      alt=""
+                      width={640}
+                      height={160}
+                      unoptimized
+                      className="h-28 w-full object-cover"
+                    />
+                  ) : (
+                    <AvatarIllustration tone={tone} className="h-28 w-full" />
+                  )}
+                  {nanny.profile_photo_url && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                  )}
+                  {r.featured && (
+                    <span className="absolute top-3 start-3 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
+                      <span aria-hidden>★</span>
+                      {t("featuredBadge")}
+                    </span>
+                  )}
+                  <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
+                    {t("scoreLabel", { score: Math.round(r.score) })}
+                  </span>
+                  <div className="absolute bottom-0 start-0 p-4">
                   <p className="font-display text-lg font-bold text-white drop-shadow">{nanny.full_name}</p>
                   <p className="text-xs text-white/90 drop-shadow">
                     {area && `${area} · `}
@@ -215,6 +239,7 @@ export default function NannyResults() {
                   viewerSide="parent"
                 />
                 <ReportButton profileId={nanny.id} profileType="nanny" />
+              </div>
               </div>
             </div>
           );

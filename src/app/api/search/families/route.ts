@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
+import { featuredProfileIds } from "@/lib/featured";
 
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -66,14 +67,16 @@ export async function GET(request: Request) {
     }
   }
 
-  const results = (data ?? []).map((r) => ({
-    ...r,
-    rating:
-      ratingByProfileId.get((r.parent_profiles as unknown as { id: string }).id) ?? {
-        average: null,
-        count: 0,
-      },
-  }));
+  const featuredIds = await featuredProfileIds("parent", parentProfileIds);
+
+  const results = (data ?? []).map((r) => {
+    const id = (r.parent_profiles as unknown as { id: string }).id;
+    return {
+      ...r,
+      rating: ratingByProfileId.get(id) ?? { average: null, count: 0 },
+      featured: featuredIds.has(id),
+    };
+  });
 
   return NextResponse.json({ results });
 }

@@ -11,7 +11,7 @@ const bodySchema = z.object({
 
 const DAYS: Record<"monthly" | "yearly", number> = { monthly: 30, yearly: 365 };
 
-// Activate (or extend) a user's subscription after an off-app Whish payment.
+// Grant (or extend) a user's Featured placement after an off-app Whish payment.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -28,7 +28,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const db = createAdminClient();
   const { data: target } = await db
     .from("users")
-    .select("id, subscribed_until")
+    .select("id, featured_until")
     .eq("id", id)
     .maybeSingle();
 
@@ -38,20 +38,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   // Extend from whichever is later: now, or the current expiry.
   const now = new Date();
-  const current = target.subscribed_until ? new Date(target.subscribed_until) : now;
+  const current = target.featured_until ? new Date(target.featured_until) : now;
   const base = current > now ? current : now;
   const expiresAt = new Date(base.getTime() + DAYS[parsed.data.plan] * 86400000);
 
   const { error: updateError } = await db
     .from("users")
-    .update({ subscribed_until: expiresAt.toISOString() })
+    .update({ featured_until: expiresAt.toISOString() })
     .eq("id", id);
 
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 400 });
   }
 
-  await db.from("subscription_grants").insert({
+  await db.from("featured_grants").insert({
     user_id: id,
     plan: parsed.data.plan,
     granted_by: admin.userId,
@@ -60,7 +60,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     note: parsed.data.note ?? null,
   });
 
-  return NextResponse.json({ subscribed_until: expiresAt.toISOString() });
+  return NextResponse.json({ featured_until: expiresAt.toISOString() });
 }
 
 // Revoke immediately.
@@ -75,7 +75,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
   const db = createAdminClient();
   const { data, error } = await db
     .from("users")
-    .update({ subscribed_until: null })
+    .update({ featured_until: null })
     .eq("id", id)
     .select("id")
     .maybeSingle();
@@ -87,5 +87,5 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json({ subscribed_until: null });
+  return NextResponse.json({ featured_until: null });
 }
