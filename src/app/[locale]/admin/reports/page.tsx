@@ -12,6 +12,7 @@ type AdminReport = {
   created_at: string;
   reporter: { id: string; email: string | null; role: string } | null;
   reported: { id: string; email: string | null; role: string } | null;
+  post: { id: string; kind: string; caption: string } | null;
 };
 
 type ConversationMessage = {
@@ -89,6 +90,11 @@ export default function AdminReportsPage() {
             <p className="text-sm text-muted mb-3">
               {t("against")}: {report.reported?.email ?? "—"} ({report.reported?.role})
             </p>
+            {report.post && (
+              <p className="text-sm text-ink/80 mb-3 rounded-lg bg-surface-sunken px-3 py-2">
+                {t("reportedPost")}: &ldquo;{report.post.caption}&rdquo;
+              </p>
+            )}
             {report.details && <p className="text-sm text-ink/80 mb-3">{report.details}</p>}
 
             <button

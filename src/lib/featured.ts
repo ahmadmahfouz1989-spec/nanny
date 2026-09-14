@@ -47,3 +47,20 @@ export async function featuredProfileIds(
   }
   return result;
 }
+
+/** Same check as {@link featuredProfileIds}, but keyed directly by user id (for posts). */
+export async function featuredUserIds(userIds: string[]): Promise<Set<string>> {
+  const ids = [...new Set(userIds.filter(Boolean))];
+  const result = new Set<string>();
+  if (ids.length === 0) return result;
+
+  const admin = createAdminClient();
+  const { data } = await admin
+    .from("users")
+    .select("id")
+    .in("id", ids)
+    .gt("featured_until", new Date().toISOString());
+
+  for (const row of data ?? []) result.add(row.id);
+  return result;
+}
