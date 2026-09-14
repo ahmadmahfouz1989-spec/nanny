@@ -224,7 +224,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
           </div>
         </div>
 
-        {posts === null && <LogoLoader label={t("loading")} />}
+        {posts === null && <LogoLoader label={t("loading")} fullHeight />}
         {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-10">{t("empty")}</p>}
 
         <div className="divide-y divide-border">

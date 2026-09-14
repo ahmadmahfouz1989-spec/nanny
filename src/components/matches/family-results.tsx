@@ -95,7 +95,7 @@ export default function FamilyResults() {
   return (
     <div className="max-w-2xl w-full px-6 py-8">
       <h1 className="font-display text-2xl font-bold mb-6">{t("titleNanny")}</h1>
-      {!results && !error && <LogoLoader label={t("loading")} />}
+      {!results && !error && <LogoLoader label={t("loading")} fullHeight />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>
