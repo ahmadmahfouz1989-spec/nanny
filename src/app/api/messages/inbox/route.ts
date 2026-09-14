@@ -31,7 +31,7 @@ export async function GET() {
     .select(
       role === "parent"
         ? "id, nanny_profiles(id, full_name, profile_photo_url)"
-        : "id, parent_profiles(id, full_name)",
+        : "id, parent_profiles(id, full_name, profile_photo_url)",
     )
     .eq(matchColumn, ownProfile.id)
     .eq("status", "mutual");
@@ -51,18 +51,18 @@ export async function GET() {
     const msgs = (allMessages ?? []).filter((msg) => msg.match_id === m.id);
     const lastMessage = msgs[msgs.length - 1] ?? null;
     const unreadCount = msgs.filter((msg) => msg.sender_id !== user.id && !msg.read_at).length;
+    type Counterpart = { id: string; full_name: string; profile_photo_url: string | null };
     const counterpart =
       role === "parent"
-        ? (m as unknown as { nanny_profiles: { id: string; full_name: string; profile_photo_url: string | null } })
-            .nanny_profiles
-        : (m as unknown as { parent_profiles: { id: string; full_name: string } }).parent_profiles;
+        ? (m as unknown as { nanny_profiles: Counterpart }).nanny_profiles
+        : (m as unknown as { parent_profiles: Counterpart }).parent_profiles;
 
     return {
       matchId: m.id,
       counterpart: {
         id: counterpart?.id ?? "",
         name: counterpart?.full_name ?? "",
-        photoUrl: role === "parent" ? (counterpart as { profile_photo_url?: string | null })?.profile_photo_url ?? null : null,
+        photoUrl: counterpart?.profile_photo_url ?? null,
       },
       lastMessage: lastMessage ? { body: lastMessage.body, createdAt: lastMessage.created_at } : null,
       unreadCount,
