@@ -23,13 +23,18 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const before = searchParams.get("before"); // created_at cursor for "load more"
+  const mine = searchParams.get("mine") === "1";
 
   let query = supabase
     .from("posts")
-    .select("id, user_id, kind, caption, created_at")
-    .eq("status", "open")
+    .select("id, user_id, kind, caption, status, created_at")
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
+
+  // The public feed only ever shows open posts; "my posts" (profile page)
+  // shows the caller's own full history, closed ones included, so they can
+  // still see and delete something they closed earlier.
+  query = mine ? query.eq("user_id", user.id) : query.eq("status", "open");
 
   if (before) query = query.lt("created_at", before);
 

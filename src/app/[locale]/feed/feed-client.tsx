@@ -186,12 +186,8 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     setInterestState((prev) => ({ ...prev, [postId]: typeof body?.error === "string" ? body.error : t("interestError") }));
   }
 
-  async function closePost(postId: string) {
-    await fetch(`/api/posts/${postId}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "closed" }),
-    });
+  async function deletePost(postId: string) {
+    await fetch(`/api/posts/${postId}`, { method: "DELETE" });
     setPosts((prev) => prev?.filter((p) => p.id !== postId) ?? null);
   }
 
@@ -264,10 +260,10 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                     {post.isMine && (
                       <button
                         type="button"
-                        onClick={() => closePost(post.id)}
+                        onClick={() => deletePost(post.id)}
                         className="text-xs text-muted hover:text-danger transition"
                       >
-                        {t("closePost")}
+                        {t("deletePost")}
                       </button>
                     )}
                   </div>
