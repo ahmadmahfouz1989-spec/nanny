@@ -70,6 +70,24 @@ export function MoreIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function SendIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path d="M22 2 11 13" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M22 2 15 22l-4-9-9-4 20-7Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export function SearchIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="m20 20-4.35-4.35" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function AdminIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>

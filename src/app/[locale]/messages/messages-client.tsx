@@ -6,6 +6,8 @@ import { useLocale, useTranslations } from "next-intl";
 import ChatThread from "@/components/matches/chat-thread";
 import ConversationHeader from "@/components/matches/conversation-header";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import { SearchIcon } from "@/components/nav-icons";
+import { ui } from "@/lib/ui";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -36,6 +38,7 @@ export default function MessagesClient() {
   const [role, setRole] = useState<"parent" | "nanny" | null>(null);
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     fetch("/api/messages/inbox")
@@ -67,6 +70,10 @@ export default function MessagesClient() {
     setConversations((cs) => cs?.map((c) => (c.matchId === matchId ? { ...c, unreadCount: 0 } : c)) ?? cs);
   }
 
+  const filteredConversations = conversations?.filter((c) =>
+    c.counterpart.name.toLowerCase().includes(query.trim().toLowerCase()),
+  );
+
   const selectedConversation = conversations?.find((c) => c.matchId === selected) ?? null;
   const selectedIndex = conversations?.findIndex((c) => c.matchId === selected) ?? -1;
   const counterpartProfileType = role === "parent" ? "nanny" : "parent";
@@ -76,8 +83,20 @@ export default function MessagesClient() {
       <div
         className={`${selected ? "hidden sm:flex" : "flex"} w-full sm:w-80 sm:shrink-0 flex-col border-e border-border`}
       >
-        <div className="px-4 py-3 border-b border-border shrink-0">
+        <div className="px-4 py-3 border-b border-border shrink-0 flex flex-col gap-3">
           <h1 className="font-display text-xl font-bold">{t("title")}</h1>
+          {conversations && conversations.length > 0 && (
+            <div className="relative">
+              <SearchIcon className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t("search")}
+                className={ui.input + " rounded-full ps-9! py-2!"}
+              />
+            </div>
+          )}
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -85,13 +104,16 @@ export default function MessagesClient() {
           {conversations && conversations.length === 0 && (
             <p className="text-sm text-muted p-4">{t("empty")}</p>
           )}
-          {conversations?.map((c, i) => (
+          {conversations && conversations.length > 0 && filteredConversations?.length === 0 && (
+            <p className="text-sm text-muted p-4">{t("noResults", { query })}</p>
+          )}
+          {filteredConversations?.map((c, i) => (
             <button
               key={c.matchId}
               type="button"
               onClick={() => select(c.matchId)}
               className={`w-full flex items-center gap-3 p-4 text-start border-b border-border transition-colors ${
-                selected === c.matchId ? "bg-primary-soft/40" : "hover:bg-surface"
+                selected === c.matchId ? "bg-surface-sunken" : "hover:bg-surface-sunken/60"
               }`}
             >
               {c.counterpart.photoUrl ? (

@@ -339,7 +339,9 @@
     "noMessagesYet": "لا توجد رسائل بعد",
     "selectConversation": "اختر محادثة لبدء الدردشة.",
     "menu": "المزيد من الخيارات",
-    "backToList": "العودة إلى الرسائل"
+    "backToList": "العودة إلى الرسائل",
+    "search": "بحث",
+    "noResults": "لا توجد محادثات مطابقة لـ \"{query}\""
   },
   "Report": {
     "action": "إبلاغ",
