@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
+import { MoreIcon } from "@/components/nav-icons";
 
 const REASONS = ["inappropriate_content", "harassment", "fraud_scam", "fake_profile", "other"] as const;
 
@@ -14,11 +15,12 @@ const REASON_LABEL_KEY: Record<(typeof REASONS)[number], string> = {
   other: "reasonOther",
 };
 
-type ReportButtonProps =
+type ReportButtonProps = (
   | { profileId: string; profileType: "parent" | "nanny"; postId?: undefined }
-  | { postId: string; profileId?: undefined; profileType?: undefined };
+  | { postId: string; profileId?: undefined; profileType?: undefined }
+) & { trigger?: "text" | "icon" };
 
-export default function ReportButton({ profileId, profileType, postId }: ReportButtonProps) {
+export default function ReportButton({ profileId, profileType, postId, trigger = "text" }: ReportButtonProps) {
   const t = useTranslations("Report");
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<(typeof REASONS)[number]>("inappropriate_content");
@@ -45,10 +47,22 @@ export default function ReportButton({ profileId, profileType, postId }: ReportB
   }
 
   if (submitted) {
-    return <p className="text-xs text-muted mt-2">{t("submitted")}</p>;
+    return <p className={`text-xs text-muted ${trigger === "text" ? "mt-2" : ""}`}>{t("submitted")}</p>;
   }
 
   if (!open) {
+    if (trigger === "icon") {
+      return (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-label={t("action")}
+          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-danger-soft hover:text-danger"
+        >
+          <MoreIcon className="h-4 w-4" />
+        </button>
+      );
+    }
     return (
       <button type="button" onClick={() => setOpen(true)} className="text-xs text-muted hover:text-danger transition mt-2">
         {t("action")}
@@ -57,7 +71,7 @@ export default function ReportButton({ profileId, profileType, postId }: ReportB
   }
 
   return (
-    <div className="mt-2 rounded-xl border border-border p-3 flex flex-col gap-2">
+    <div className={`rounded-xl border border-border p-3 flex flex-col gap-2 ${trigger === "text" ? "mt-2" : ""}`}>
       <label className={ui.label + " text-xs"}>{t("reasonLabel")}</label>
       <select
         className={ui.select}
