@@ -134,14 +134,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </div>
 
           <div className="oui-in relative mx-auto w-full max-w-md" style={{ animationDelay: "0.15s" }}>
-            <div className="relative aspect-[4/3] rotate-1 overflow-hidden rounded-3xl border border-border bg-surface shadow-2xl">
+            <div className="relative aspect-square rotate-1 overflow-hidden rounded-3xl border border-border bg-background shadow-2xl">
               <Image
-                src="/images/hero-nanny-child.jpg"
+                src="/images/brand-mark.png"
                 alt={t("heroPhotoAlt")}
                 fill
                 priority
                 sizes="(min-width: 1024px) 460px, 90vw"
-                className="object-cover"
+                className="object-contain p-10 sm:p-14"
               />
             </div>
             <div className="oui-float-2 absolute -start-5 top-8 flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 text-sm font-semibold shadow-lg">
