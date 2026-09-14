@@ -202,6 +202,19 @@ export function newMessageEmail(lang: Lang, fromName: string, snippet: string, m
   };
 }
 
+export function postReplyEmail(lang: Lang, fromName: string, snippet: string, postUrl: string) {
+  const name = escapeHtml(fromName);
+  const body = escapeHtml(snippet);
+  return {
+    subject: pick(lang, `${fromName} replied to your post`, `رد ${fromName} على منشورك`),
+    html: pick(
+      lang,
+      `<p>${name} replied to your post on ouiKnow:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${postUrl}">View the feed</a> to reply.</p>`,
+      `<p>رد/ردّت ${name} على منشورك على ouiKnow:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${postUrl}">افتح المنشورات</a> للرد.</p>`,
+    ),
+  };
+}
+
 export function mutualMatchEmail(lang: Lang, otherName: string, matchUrl: string) {
   const name = escapeHtml(otherName);
   return {

@@ -6,9 +6,9 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
-import { HomeIcon, ProfileIcon, GridIcon } from "@/components/nav-icons";
+import { HomeIcon, ProfileIcon, GridIcon, FeedIcon } from "@/components/nav-icons";
 
-type ActiveKey = "categories" | "nanny" | "messages" | "profile";
+type ActiveKey = "categories" | "nanny" | "feed" | "messages" | "profile";
 
 export default async function AppShell({
   active,
@@ -48,6 +48,17 @@ export default async function AppShell({
           >
             <HomeIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("nanny")}</span>
+          </Link>
+          <Link
+            href="/feed"
+            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+              active === "feed"
+                ? "bg-surface-sunken font-semibold text-ink"
+                : "text-muted hover:bg-surface-sunken hover:text-ink"
+            }`}
+          >
+            <FeedIcon className="h-[22px] w-[22px] shrink-0" />
+            <span>{t("feed")}</span>
           </Link>
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
@@ -101,6 +112,15 @@ export default async function AppShell({
         >
           <HomeIcon className="h-[22px] w-[22px]" />
           {t("nanny")}
+        </Link>
+        <Link
+          href="/feed"
+          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+            active === "feed" ? "font-semibold text-primary" : "text-muted"
+          }`}
+        >
+          <FeedIcon className="h-[22px] w-[22px]" />
+          {t("feed")}
         </Link>
         <MessagesTabItem active={active === "messages"} />
         <Link
