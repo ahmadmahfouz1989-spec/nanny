@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { DAYS } from "@/lib/validation/profile";
 import { containsContactInfo } from "@/lib/content-filter";
 import { postAuthors, postEngagement } from "@/lib/posts";
 import { featuredUserIds } from "@/lib/featured";
@@ -9,8 +8,6 @@ import { featuredUserIds } from "@/lib/featured";
 const PAGE_SIZE = 20;
 
 const createSchema = z.object({
-  locationId: z.string().uuid().nullable(),
-  days: z.array(z.enum(DAYS)).default([]),
   caption: z.string().trim().min(1).max(500),
 });
 
@@ -29,9 +26,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("posts")
-    .select(
-      "id, user_id, kind, days, caption, created_at, locations(id, name_en, name_ar, name_fr)",
-    )
+    .select("id, user_id, kind, caption, created_at")
     .eq("status", "open")
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
@@ -90,14 +85,8 @@ export async function POST(request: Request) {
 
   const { data: post, error } = await supabase
     .from("posts")
-    .insert({
-      user_id: user.id,
-      kind,
-      location_id: parsed.data.locationId,
-      days: parsed.data.days,
-      caption: parsed.data.caption,
-    })
-    .select("id, user_id, kind, days, caption, created_at, locations(id, name_en, name_ar, name_fr)")
+    .insert({ user_id: user.id, kind, caption: parsed.data.caption })
+    .select("id, user_id, kind, caption, created_at")
     .single();
 
   if (error) {
