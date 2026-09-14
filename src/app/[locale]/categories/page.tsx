@@ -25,7 +25,7 @@ export default async function CategoriesPage({
 
   return (
     <AppShell active="categories">
-      <div className="max-w-3xl mx-auto w-full px-6 py-8">
+      <div className="max-w-3xl w-full px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-1">{t("hubTitle")}</h1>
         <p className="text-muted text-sm mb-6">{t("hubSubtitle")}</p>
         <CategoryGrid categories={categories} locale={locale} comingSoonLabel={t("comingSoon")} />

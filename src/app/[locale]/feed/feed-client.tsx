@@ -196,7 +196,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-8 flex flex-col gap-6">
+    <div className="max-w-2xl px-4 py-8 flex flex-col gap-6">
       <div>
         <h1 className="font-display text-2xl font-semibold">{t("title")}</h1>
         <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
