@@ -119,7 +119,7 @@ export default function ProfileSummaryPanel({ profileType, profileId }: { profil
             className="h-12 w-12 rounded-full object-cover shrink-0"
           />
         ) : (
-          <AvatarIllustration tone="primary" className="h-12 w-12 rounded-full shrink-0" />
+          <AvatarIllustration tone="primary" className="h-12 w-12 rounded-full overflow-hidden shrink-0" />
         )}
         <div className="min-w-0">
           <p className="font-display font-semibold text-ink truncate">{data.profile.full_name}</p>

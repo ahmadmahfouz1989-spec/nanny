@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type PostAuthor = { fullName: string; role: "parent" | "nanny"; profileId: string };
+export type PostAuthor = { fullName: string; role: "parent" | "nanny"; profileId: string; photoUrl: string | null };
 
 /**
  * Display name for each post's author, resolved from the role-appropriate
@@ -24,12 +24,14 @@ export async function postAuthors(
       ? admin.from("parent_profiles").select("id, user_id, full_name").in("user_id", parentUserIds)
       : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
     nannyUserIds.length
-      ? admin.from("nanny_profiles").select("id, user_id, full_name").in("user_id", nannyUserIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
+      ? admin.from("nanny_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", nannyUserIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
   ]);
 
-  for (const p of parents ?? []) out.set(p.user_id, { fullName: p.full_name, role: "parent", profileId: p.id });
-  for (const n of nannies ?? []) out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id });
+  for (const p of parents ?? [])
+    out.set(p.user_id, { fullName: p.full_name, role: "parent", profileId: p.id, photoUrl: null });
+  for (const n of nannies ?? [])
+    out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id, photoUrl: n.profile_photo_url });
   return out;
 }
 
