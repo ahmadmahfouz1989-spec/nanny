@@ -12,19 +12,15 @@ type ActiveKey = "categories" | "nanny" | "feed" | "messages" | "profile";
 
 export default async function AppShell({
   active,
-  wide = false,
   children,
 }: {
   active: ActiveKey;
-  /** Skip the max-w-6xl cap — for pages built as a full-width multi-pane
-   * layout (Messages) rather than a single centered reading column. */
-  wide?: boolean;
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
 
   return (
-    <div className={`flex min-h-screen ${wide ? "" : "sm:mx-auto sm:max-w-6xl"}`}>
+    <div className="flex min-h-screen">
       <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5">
         <div className="px-3 mb-5">
           <BrandMark />
