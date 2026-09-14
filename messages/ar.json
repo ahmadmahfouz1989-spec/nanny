@@ -146,6 +146,8 @@
   "Dashboard": {
     "title": "لوحة التحكم",
     "accountLabel": "الحساب",
+    "photoUpdateSaved": "تم تحديث الصورة",
+    "photoUpdateError": "تعذّر تحديث صورتك — يرجى المحاولة مجددًا.",
     "featuredLabel": "مميّز",
     "featuredUntilLabel": "مميّز حتى {date}",
     "notFeaturedLabel": "غير مميّز — اظهر أولًا في لوحات الآخرين",

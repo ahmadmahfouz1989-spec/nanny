@@ -146,6 +146,8 @@
   "Dashboard": {
     "title": "Dashboard",
     "accountLabel": "Account",
+    "photoUpdateSaved": "Photo updated",
+    "photoUpdateError": "Couldn't update your photo — please try again.",
     "featuredLabel": "Featured",
     "featuredUntilLabel": "Featured until {date}",
     "notFeaturedLabel": "Not featured — get seen first on other dashboards",
