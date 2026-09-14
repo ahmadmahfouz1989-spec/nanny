@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import WizardShell from "@/components/onboarding/wizard-shell";
+import EditShell from "@/components/onboarding/edit-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
@@ -178,7 +179,7 @@ export default function NannyOnboarding({
 
   async function handleNext() {
     setError(null);
-    if (step < TOTAL_STEPS) {
+    if (!isEdit && step < TOTAL_STEPS) {
       setStep(step + 1);
       return;
     }
@@ -226,7 +227,7 @@ export default function NannyOnboarding({
       return;
     }
 
-    router.push("/dashboard");
+    router.push(isEdit ? "/profile" : "/dashboard");
     router.refresh();
   }
 
@@ -235,20 +236,22 @@ export default function NannyOnboarding({
     setStep((s) => Math.max(1, s - 1));
   }
 
-  return (
-    <WizardShell
-      step={step}
-      totalSteps={TOTAL_STEPS}
-      title={t(`step${step}Title` as "step1Title")}
-      error={error}
-      onBack={handleBack}
-      onNext={handleNext}
-      nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
-      nextDisabled={!stepValid || uploading}
-      submitting={submitting}
-    >
-      {step === 1 && (
+  function handleCancel() {
+    router.push("/profile");
+  }
+
+  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5 | 6 | 7) =>
+    isEdit && (
+      <h2 className="font-display text-sm font-semibold text-muted uppercase tracking-wide">
+        {t(`step${n}Title` as "step1Title")}
+      </h2>
+    );
+
+  const content = (
+    <>
+      {(isEdit || step === 1) && (
         <>
+          {sectionHeading(1)}
           <input
             className={ui.input}
             placeholder={t("namePlaceholder")}
@@ -325,8 +328,9 @@ export default function NannyOnboarding({
         </>
       )}
 
-      {step === 2 && (
+      {(isEdit || step === 2) && (
         <>
+          {sectionHeading(2)}
           <label className={ui.label}>{t("employmentType")}</label>
           <select
             className={ui.select}
@@ -350,8 +354,9 @@ export default function NannyOnboarding({
         </>
       )}
 
-      {step === 3 && (
+      {(isEdit || step === 3) && (
         <>
+          {sectionHeading(3)}
           <label className={ui.label}>{t("availableDays")}</label>
           <div className="flex flex-wrap gap-2">
             {DAYS.map((day) => (
@@ -388,8 +393,9 @@ export default function NannyOnboarding({
         </>
       )}
 
-      {step === 4 && (
+      {(isEdit || step === 4) && (
         <>
+          {sectionHeading(4)}
           <label className={ui.label}>{t("languages")}</label>
           <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
           <label className={ui.label}>{t("yearsExperience")}</label>
@@ -404,8 +410,9 @@ export default function NannyOnboarding({
         </>
       )}
 
-      {step === 5 && (
+      {(isEdit || step === 5) && (
         <>
+          {sectionHeading(5)}
           <label className={ui.label}>{t("experienceByAge")}</label>
           {AGE_GROUPS.map((group) => (
             <div key={group} className="flex items-center justify-between gap-3">
@@ -426,8 +433,9 @@ export default function NannyOnboarding({
         </>
       )}
 
-      {step === 6 && (
+      {(isEdit || step === 6) && (
         <>
+          {sectionHeading(6)}
           <label className="flex items-center gap-2 text-sm mt-2">
             <input
               type="checkbox"
@@ -449,8 +457,9 @@ export default function NannyOnboarding({
         </>
       )}
 
-      {step === 7 && (
+      {(isEdit || step === 7) && (
         <>
+          {sectionHeading(7)}
           <label className={ui.label}>{t("certifications")}</label>
           <div className="flex flex-wrap gap-2">
             {CERTIFICATION_OPTIONS.map((cert) => (
@@ -474,6 +483,30 @@ export default function NannyOnboarding({
           />
         </>
       )}
+    </>
+  );
+
+  if (isEdit) {
+    return (
+      <EditShell title={t("editTitle")} error={error} onCancel={handleCancel} onSave={handleNext} submitting={submitting}>
+        {content}
+      </EditShell>
+    );
+  }
+
+  return (
+    <WizardShell
+      step={step}
+      totalSteps={TOTAL_STEPS}
+      title={t(`step${step}Title` as "step1Title")}
+      error={error}
+      onBack={handleBack}
+      onNext={handleNext}
+      nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
+      nextDisabled={!stepValid || uploading}
+      submitting={submitting}
+    >
+      {content}
     </WizardShell>
   );
 }

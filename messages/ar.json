@@ -182,6 +182,8 @@
     "back": "رجوع",
     "next": "التالي",
     "finish": "إنهاء",
+    "cancel": "إلغاء",
+    "saveChanges": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
     "validationError": "يرجى التحقق من النموذج بحثًا عن الأخطاء.",
     "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
@@ -257,6 +259,7 @@
     "other": "أخرى"
   },
   "ParentOnboarding": {
+    "editTitle": "تعديل ملفك الشخصي",
     "step1Title": "بياناتك ومنطقتك",
     "step2Title": "أطفالك",
     "step3Title": "الجدول الزمني",
@@ -443,6 +446,7 @@
     "reportedLabel": "المُبلَّغ عنه"
   },
   "NannyOnboarding": {
+    "editTitle": "تعديل ملفك الشخصي",
     "step1Title": "بياناتك ومنطقتك",
     "step2Title": "تفضيلات العمل",
     "step3Title": "أوقات التوفر",
