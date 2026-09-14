@@ -72,7 +72,8 @@
     "replyPlaceholder": "Write a reply…",
     "send": "Send",
     "replyError": "Couldn't send reply — please try again.",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "profileError": "Couldn't load this profile."
   },
   "Home": {
     "badge": "Now across Lebanon — starting with nannies",

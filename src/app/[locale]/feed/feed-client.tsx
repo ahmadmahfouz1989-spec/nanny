@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { DAYS } from "@/lib/validation/profile";
 import ReportButton from "@/components/matches/report-button";
+import ProfileSummaryPanel from "@/components/profile-summary-panel";
 
 type Location = { id: string; name_en: string; name_ar: string; name_fr: string };
 
@@ -16,7 +17,7 @@ type Post = {
   caption: string;
   created_at: string;
   locations: Location | null;
-  author: { fullName: string; role: "parent" | "nanny" } | null;
+  author: { fullName: string; role: "parent" | "nanny"; profileId: string } | null;
   likeCount: number;
   likedByMe: boolean;
   replyCount: number;
@@ -58,6 +59,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   const [posting, setPosting] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
 
+  const [openProfile, setOpenProfile] = useState<string | null>(null);
   const [openReplies, setOpenReplies] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, Reply[] | null>>({});
   const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
@@ -238,7 +240,17 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                   {t(post.kind === "looking_for" ? "kindLookingFor" : "kindOffering")}
                 </span>
                 {post.featured && <span className={ui.badge("berry")}>★ {t("featuredBadge")}</span>}
-                <span className="text-sm font-medium text-ink">{post.author?.fullName ?? t("someone")}</span>
+                {post.author && post.author.role !== myRole ? (
+                  <button
+                    type="button"
+                    onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    {post.author.fullName}
+                  </button>
+                ) : (
+                  <span className="text-sm font-medium text-ink">{post.author?.fullName ?? t("someone")}</span>
+                )}
               </div>
               <span className="text-xs text-muted shrink-0">{formatRelative(post.created_at, locale, t("justNow"))}</span>
             </div>
@@ -254,6 +266,10 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                   </span>
                 ))}
               </div>
+            )}
+
+            {openProfile === post.id && post.author && (
+              <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
             )}
 
             <div className="flex items-center gap-4 pt-1 border-t border-border">
