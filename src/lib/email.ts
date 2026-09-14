@@ -202,6 +202,18 @@ export function newMessageEmail(lang: Lang, fromName: string, snippet: string, m
   };
 }
 
+export function postLikeEmail(lang: Lang, fromName: string, postUrl: string) {
+  const name = escapeHtml(fromName);
+  return {
+    subject: pick(lang, `${fromName} liked your post`, `أعجب ${fromName} بمنشورك`),
+    html: pick(
+      lang,
+      `<p>${name} liked your post on ouiKnow.</p><p><a href="${postUrl}">View the feed</a>.</p>`,
+      `<p>أعجب/أعجبت ${name} بمنشورك على ouiKnow.</p><p><a href="${postUrl}">افتح المنشورات</a>.</p>`,
+    ),
+  };
+}
+
 export function postReplyEmail(lang: Lang, fromName: string, snippet: string, postUrl: string) {
   const name = escapeHtml(fromName);
   const body = escapeHtml(snippet);
