@@ -23,6 +23,7 @@ const KNOWN_TYPES = new Set([
   "profile_pending_review",
   "verification_updated",
   "report_resolved",
+  "post_reply",
 ]);
 
 // The app has no per-match detail route — match cards live on the
@@ -42,6 +43,8 @@ function hrefFor(n: Notification): string {
       return "/admin/profiles";
     case "verification_updated":
       return "/profile";
+    case "post_reply":
+      return "/feed";
     default:
       return "/dashboard";
   }

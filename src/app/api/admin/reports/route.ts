@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   const { data, error } = await db
     .from("reports")
     .select(
-      "id, reason, details, status, created_at, resolution_notes, reporter:reporter_user_id(id, email, role), reported:reported_user_id(id, email, role)",
+      "id, reason, details, status, created_at, resolution_notes, reporter:reporter_user_id(id, email, role), reported:reported_user_id(id, email, role), post:post_id(id, kind, caption)",
     )
     .eq("status", status)
     .order("created_at", { ascending: true });

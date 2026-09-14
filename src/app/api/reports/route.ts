@@ -3,8 +3,9 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
-  reportedProfileId: z.string().uuid(),
-  profileType: z.enum(["parent", "nanny"]),
+  reportedProfileId: z.string().uuid().optional(),
+  profileType: z.enum(["parent", "nanny"]).optional(),
+  reportedPostId: z.string().uuid().optional(),
   reason: z.enum(["inappropriate_content", "harassment", "fraud_scam", "fake_profile", "other"]),
   details: z.string().max(1000).optional(),
 });
@@ -24,19 +25,35 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const table = parsed.data.profileType === "parent" ? "parent_profiles" : "nanny_profiles";
-  const { data: profile } = await supabase.from(table).select("user_id").eq("id", parsed.data.reportedProfileId).maybeSingle();
+  let reportedUserId: string;
+  let postId: string | null = null;
 
-  if (!profile) {
-    return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+  if (parsed.data.reportedPostId) {
+    const { data: post } = await supabase.from("posts").select("user_id").eq("id", parsed.data.reportedPostId).maybeSingle();
+    if (!post) {
+      return NextResponse.json({ error: "Post not found" }, { status: 404 });
+    }
+    reportedUserId = post.user_id;
+    postId = parsed.data.reportedPostId;
+  } else if (parsed.data.reportedProfileId && parsed.data.profileType) {
+    const table = parsed.data.profileType === "parent" ? "parent_profiles" : "nanny_profiles";
+    const { data: profile } = await supabase.from(table).select("user_id").eq("id", parsed.data.reportedProfileId).maybeSingle();
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+    reportedUserId = profile.user_id;
+  } else {
+    return NextResponse.json({ error: "Either reportedPostId or reportedProfileId + profileType is required" }, { status: 400 });
   }
-  if (profile.user_id === user.id) {
+
+  if (reportedUserId === user.id) {
     return NextResponse.json({ error: "You cannot report yourself" }, { status: 400 });
   }
 
   const { error } = await supabase.from("reports").insert({
     reporter_user_id: user.id,
-    reported_user_id: profile.user_id,
+    reported_user_id: reportedUserId,
+    post_id: postId,
     reason: parsed.data.reason,
     details: parsed.data.details ?? null,
   });

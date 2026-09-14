@@ -18,6 +18,15 @@ export function GridIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function FeedIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path d="M5 4.5h14v15H5z" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 9h8M8 13h8M8 17h5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function ChatIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
