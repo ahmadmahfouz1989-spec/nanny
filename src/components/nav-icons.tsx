@@ -88,6 +88,24 @@ export function SearchIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function MicIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0" strokeLinecap="round" />
+      <path d="M12 18v3M9 21h6" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function TrashIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path d="M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m-9 0 1 13a1 1 0 0 0 1 .9h8a1 1 0 0 0 1-.9l1-13" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function AdminIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>

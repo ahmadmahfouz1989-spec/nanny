@@ -319,7 +319,15 @@
     "chatEmpty": "No messages yet — say hello!",
     "chatPlaceholder": "Type a message…",
     "chatSend": "Send",
-    "today": "Today"
+    "today": "Today",
+    "recordVoiceNote": "Record a voice note",
+    "recording": "Recording…",
+    "cancelRecording": "Cancel recording",
+    "sendRecording": "Send voice note",
+    "micPermissionDenied": "Microphone access was denied — allow it in your browser settings to record a voice note.",
+    "micNotSupported": "Voice notes aren't supported in this browser.",
+    "voiceNoteUploadError": "Couldn't send the voice note — please try again.",
+    "voiceNoteLoading": "Voice note unavailable — try reloading."
   },
   "Featured": {
     "title": "Get Featured",
