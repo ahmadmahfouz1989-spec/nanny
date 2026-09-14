@@ -25,7 +25,7 @@ export default async function MessagesPage({
   }
 
   return (
-    <AppShell active="messages">
+    <AppShell active="messages" wide>
       <MessagesClient />
     </AppShell>
   );

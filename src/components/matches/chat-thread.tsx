@@ -152,7 +152,7 @@ export default function ChatThread({
                 </p>
               )}
               <div
-                className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
+                className={`max-w-[85%] sm:max-w-md rounded-2xl px-3.5 py-2 text-sm ${
                   own ? "self-end bg-primary text-white" : "self-start bg-surface-sunken text-ink"
                 }`}
               >
