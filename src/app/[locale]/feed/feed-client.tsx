@@ -6,6 +6,7 @@ import { ui } from "@/lib/ui";
 import { DAYS } from "@/lib/validation/profile";
 import ReportButton from "@/components/matches/report-button";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
+import { LogoLoader } from "@/components/animated-logo";
 
 type Location = { id: string; name_en: string; name_ar: string; name_fr: string };
 
@@ -235,7 +236,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
         </div>
       </div>
 
-      {posts === null && <p className="text-sm text-muted text-center py-8">{t("loading")}</p>}
+      {posts === null && <LogoLoader label={t("loading")} />}
       {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-8">{t("empty")}</p>}
 
       <div className="flex flex-col gap-4">

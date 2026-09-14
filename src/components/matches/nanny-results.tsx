@@ -14,6 +14,7 @@ import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
 import { useHashScroll } from "@/components/matches/use-hash-scroll";
+import { LogoLoader } from "@/components/animated-logo";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -101,7 +102,7 @@ export default function NannyResults() {
   return (
     <div className="max-w-2xl mx-auto w-full px-6 py-8">
       <h1 className="font-display text-2xl font-bold mb-6">{t("titleParent")}</h1>
-      {!results && !error && <p className="text-sm text-muted">{t("loading")}</p>}
+      {!results && !error && <LogoLoader label={t("loading")} />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>

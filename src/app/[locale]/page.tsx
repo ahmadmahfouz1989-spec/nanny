@@ -141,7 +141,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 fill
                 priority
                 sizes="(min-width: 1024px) 460px, 90vw"
-                className="object-contain p-10 sm:p-14"
+                className="oui-logo-pop object-contain p-10 sm:p-14"
+                style={{ animationDelay: "0.3s" }}
               />
             </div>
             <div className="oui-float-2 absolute -start-5 top-8 flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 text-sm font-semibold shadow-lg">

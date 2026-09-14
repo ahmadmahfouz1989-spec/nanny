@@ -216,6 +216,40 @@
   animation: oui-float-rev 12s ease-in-out infinite;
 }
 
+/* Logo-specific: a breathing loop for "still loading", and a one-time
+   pop-in with a slight overshoot for a first-appearance moment (e.g. the
+   landing hero). Distinct from .oui-in — this is for the mark itself, not
+   general content reveal. */
+@keyframes oui-logo-pulse {
+  0%,
+  100% {
+    transform: scale(0.94);
+    opacity: 0.82;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes oui-logo-pop {
+  from {
+    transform: scale(0.55) rotate(-6deg);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.oui-logo-pulse {
+  animation: oui-logo-pulse 1.4s ease-in-out infinite;
+}
+.oui-logo-pop {
+  animation: oui-logo-pop 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
 /* Scroll-reveal via scroll-linked animations where supported; content is
    fully visible otherwise. */
 .oui-reveal {
@@ -235,7 +269,9 @@
   .oui-in,
   .oui-float,
   .oui-float-2,
-  .oui-reveal {
+  .oui-reveal,
+  .oui-logo-pulse,
+  .oui-logo-pop {
     animation: none !important;
   }
 }
