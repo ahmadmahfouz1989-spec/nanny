@@ -46,5 +46,16 @@ export async function POST(request: Request) {
 
   const { data: publicUrl } = supabase.storage.from("nanny-photos").getPublicUrl(path);
 
+  // Save immediately rather than only staging the URL in onboarding form
+  // state -- lets the standalone "change photo" control on /profile update
+  // a live profile in one step, with no need to walk the full wizard.
+  // No-op (0 rows affected, not an error) during first-time onboarding,
+  // before the profile row exists yet -- the wizard's own Finish step
+  // still persists profilePhotoUrl as part of profile creation.
+  await supabase
+    .from("nanny_profiles")
+    .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
+    .eq("user_id", user.id);
+
   return NextResponse.json({ url: publicUrl.publicUrl });
 }

@@ -4,6 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import MyRatings from "@/components/matches/my-ratings";
+import ProfilePhotoCard from "@/components/profile-photo-card";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import { ui } from "@/lib/ui";
 
@@ -41,7 +42,7 @@ export default async function ProfilePage({
     redirect({ href: "/admin", locale });
   }
 
-  let matchProfile: { status: string; moderation_status: string } | null = null;
+  let matchProfile: { status: string; moderation_status: string; profile_photo_url?: string | null } | null = null;
   if (profile?.role === "parent") {
     const { data } = await supabase
       .from("parent_profiles")
@@ -52,7 +53,7 @@ export default async function ProfilePage({
   } else if (profile?.role === "nanny") {
     const { data } = await supabase
       .from("nanny_profiles")
-      .select("status, moderation_status")
+      .select("status, moderation_status, profile_photo_url")
       .eq("user_id", user!.id)
       .maybeSingle();
     matchProfile = data;
@@ -98,6 +99,10 @@ export default async function ProfilePage({
             </dd>
           </dl>
         </div>
+
+        {profile?.role === "nanny" && matchProfile && (
+          <ProfilePhotoCard initialPhotoUrl={matchProfile.profile_photo_url ?? null} />
+        )}
 
         <Link
           href="/featured"
