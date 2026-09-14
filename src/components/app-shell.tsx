@@ -20,7 +20,7 @@ export default async function AppShell({
   const t = await getTranslations("Nav");
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen sm:mx-auto sm:max-w-6xl">
       <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5">
         <div className="px-3 mb-5">
           <BrandMark />
