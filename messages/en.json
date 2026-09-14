@@ -41,7 +41,8 @@
     "profile_pending_review": "A new profile is awaiting review",
     "verification_updated": "Your verification status changed",
     "report_resolved": "A report you filed was resolved",
-    "post_reply": "Someone replied to your post"
+    "post_reply": "Someone replied to your post",
+    "post_like": "Someone liked your post"
   },
   "Feed": {
     "title": "Feed",
