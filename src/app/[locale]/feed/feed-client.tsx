@@ -277,8 +277,6 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
               <p className="text-xs text-danger">{interestState[post.id]}</p>
             )}
 
-            {!post.isMine && <ReportButton postId={post.id} />}
-
             {openReplies === post.id && (
               <div className="flex flex-col gap-2 pt-2 border-t border-border">
                 {replies[post.id] === null && <p className="text-xs text-muted">{t("loading")}</p>}
@@ -305,6 +303,8 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                 {replyError[post.id] && <p className="text-xs text-danger">{replyError[post.id]}</p>}
               </div>
             )}
+
+            {!post.isMine && <ReportButton postId={post.id} />}
           </div>
         ))}
       </div>
