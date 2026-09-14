@@ -65,7 +65,9 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
   const [replyError, setReplyError] = useState<Record<string, string>>({});
 
-  const [interestState, setInterestState] = useState<Record<string, "sent" | "error">>({});
+  // "sent", or the server's actual error message so a rejection is
+  // diagnosable instead of hidden behind one generic string.
+  const [interestState, setInterestState] = useState<Record<string, string>>({});
 
   function loadPosts(before?: string) {
     const url = before ? `/api/posts?before=${encodeURIComponent(before)}` : "/api/posts";
@@ -171,7 +173,12 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
 
   async function expressInterest(postId: string) {
     const res = await fetch(`/api/posts/${postId}/interest`, { method: "POST" });
-    setInterestState((prev) => ({ ...prev, [postId]: res.ok ? "sent" : "error" }));
+    if (res.ok) {
+      setInterestState((prev) => ({ ...prev, [postId]: "sent" }));
+      return;
+    }
+    const body = await res.json().catch(() => null);
+    setInterestState((prev) => ({ ...prev, [postId]: typeof body?.error === "string" ? body.error : t("interestError") }));
   }
 
   async function closePost(postId: string) {
@@ -301,7 +308,9 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                 </button>
               )}
             </div>
-            {interestState[post.id] === "error" && <p className="text-xs text-danger">{t("interestError")}</p>}
+            {interestState[post.id] && interestState[post.id] !== "sent" && (
+              <p className="text-xs text-danger">{interestState[post.id]}</p>
+            )}
 
             {!post.isMine && <ReportButton postId={post.id} />}
 
