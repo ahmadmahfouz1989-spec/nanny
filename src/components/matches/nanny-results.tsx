@@ -100,7 +100,7 @@ export default function NannyResults() {
   }, [t]);
 
   return (
-    <div className="max-w-2xl mx-auto w-full px-6 py-8">
+    <div className="max-w-2xl w-full px-6 py-8">
       <h1 className="font-display text-2xl font-bold mb-6">{t("titleParent")}</h1>
       {!results && !error && <LogoLoader label={t("loading")} />}
       {error && <p className="text-sm text-muted">{error}</p>}
