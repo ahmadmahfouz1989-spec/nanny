@@ -29,15 +29,16 @@ export function AnimatedLogo({
 
 /**
  * Drop-in replacement for a plain "Loading…" line, anywhere in the app.
- * `fullHeight` fills the rest of the content pane and centers within it —
- * for a page's initial load, where otherwise the mark sits right under the
- * heading with a wall of empty space below it until content arrives.
+ * `fullHeight` grows to fill whatever vertical space its flex parent gives
+ * it and centers within that — for a page's initial load. The parent must
+ * itself be a flex column with real height (e.g. `min-h-screen flex
+ * flex-col`) while loading, or `flex-1` has nothing to grow into and this
+ * collapses back to the same "stuck under the heading" look it's meant to
+ * fix.
  */
 export function LogoLoader({ label, fullHeight = false }: { label?: string; fullHeight?: boolean }) {
   return (
-    <div
-      className={`flex flex-col items-center justify-center gap-3 ${fullHeight ? "min-h-[50vh]" : "py-10"}`}
-    >
+    <div className={`flex flex-col items-center justify-center gap-3 ${fullHeight ? "flex-1" : "py-10"}`}>
       <AnimatedLogo variant="pulse" size={40} />
       {label && <p className="text-sm text-muted">{label}</p>}
     </div>
