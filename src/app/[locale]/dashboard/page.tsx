@@ -66,7 +66,7 @@ export default async function DashboardPage({
 
   return (
     <AppShell active="nanny">
-      <div className="max-w-lg mx-auto w-full px-6 py-8">
+      <div className="max-w-lg w-full px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 
         <div className={ui.card + " overflow-hidden"}>
