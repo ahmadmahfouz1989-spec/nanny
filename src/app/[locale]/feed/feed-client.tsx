@@ -8,6 +8,7 @@ import ReportButton from "@/components/matches/report-button";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { LogoLoader } from "@/components/animated-logo";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import { ChatIcon, HeartIcon } from "@/components/nav-icons";
 
 type Post = {
   id: string;
@@ -35,11 +36,22 @@ function formatRelative(iso: string, locale: string, justNow: string) {
   return rtf.format(-Math.round(hr / 24), "day");
 }
 
-function Avatar({ photoUrl, className = "" }: { photoUrl: string | null; className?: string }) {
+function Avatar({ photoUrl, size = 44, className = "" }: { photoUrl: string | null; size?: number; className?: string }) {
   return photoUrl ? (
-    <Image src={photoUrl} alt="" width={36} height={36} className={`rounded-full object-cover ${className}`} />
+    <Image
+      src={photoUrl}
+      alt=""
+      width={size}
+      height={size}
+      className={`rounded-full object-cover shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+    />
   ) : (
-    <AvatarIllustration tone="primary" className={`rounded-full overflow-hidden ${className}`} />
+    <AvatarIllustration
+      tone="primary"
+      className={`rounded-full overflow-hidden shrink-0 ${className}`}
+      style={{ width: size, height: size }}
+    />
   );
 }
 
@@ -190,123 +202,145 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
         <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
       </div>
 
-      <div className={ui.card + " p-4 flex flex-col gap-3"}>
-        <label className={ui.label}>{myRole === "parent" ? t("composerLabelParent") : t("composerLabelNanny")}</label>
-        <textarea
-          className={ui.input}
-          rows={3}
-          maxLength={500}
-          placeholder={myRole === "parent" ? t("captionPlaceholderParent") : t("captionPlaceholderNanny")}
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-        />
-        {composerError && <p className="text-sm text-danger">{composerError}</p>}
-        <div className="flex justify-end">
-          <button type="button" onClick={submitPost} disabled={posting || !caption.trim()} className={ui.buttonPrimary}>
-            {posting ? t("posting") : t("post")}
-          </button>
+      <div className={ui.card + " overflow-hidden"}>
+        {/* Composer — avatar + borderless input, X-style */}
+        <div className="flex gap-3 p-4 border-b border-border">
+          <Avatar photoUrl={null} size={44} className="mt-0.5" />
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <textarea
+              className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none"
+              rows={2}
+              maxLength={500}
+              placeholder={myRole === "parent" ? t("captionPlaceholderParent") : t("captionPlaceholderNanny")}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
+            />
+            {composerError && <p className="text-sm text-danger">{composerError}</p>}
+            <div className="flex justify-end">
+              <button type="button" onClick={submitPost} disabled={posting || !caption.trim()} className={ui.buttonPrimary + " px-5! py-2!"}>
+                {posting ? t("posting") : t("post")}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
 
-      {posts === null && <LogoLoader label={t("loading")} />}
-      {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-8">{t("empty")}</p>}
+        {posts === null && <LogoLoader label={t("loading")} />}
+        {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-10">{t("empty")}</p>}
 
-      <div className="flex flex-col gap-4">
-        {posts?.map((post) => (
-          <div key={post.id} className={ui.card + " p-4 flex flex-col gap-3"}>
-            <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2.5">
-                <Avatar photoUrl={post.author?.photoUrl ?? null} className="h-9 w-9 shrink-0" />
-                <div className="flex items-center gap-2 flex-wrap">
+        <div className="divide-y divide-border">
+          {posts?.map((post) => (
+            <article key={post.id} className="flex gap-3 p-4">
+              <Avatar photoUrl={post.author?.photoUrl ?? null} size={44} className="mt-0.5" />
+
+              <div className="flex-1 min-w-0 flex flex-col gap-1">
+                <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
                   {post.author && post.author.role !== myRole ? (
                     <button
                       type="button"
                       onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
-                      className="text-sm font-medium text-primary hover:underline"
+                      className="font-semibold text-ink hover:underline"
                     >
                       {post.author.fullName}
                     </button>
                   ) : (
-                    <span className="text-sm font-medium text-ink">{post.author?.fullName ?? t("someone")}</span>
+                    <span className="font-semibold text-ink">{post.author?.fullName ?? t("someone")}</span>
                   )}
-                  <span className={ui.badge(post.kind === "looking_for" ? "secondary" : "accent")}>
+                  <span className={ui.badge(post.kind === "looking_for" ? "secondary" : "accent") + " py-0!"}>
                     {t(post.kind === "looking_for" ? "kindLookingFor" : "kindOffering")}
                   </span>
-                  {post.featured && <span className={ui.badge("berry")}>★ {t("featuredBadge")}</span>}
-                </div>
-              </div>
-              <span className="text-xs text-muted shrink-0">{formatRelative(post.created_at, locale, t("justNow"))}</span>
-            </div>
+                  {post.featured && <span className={ui.badge("berry") + " py-0!"}>★ {t("featuredBadge")}</span>}
+                  <span className="text-muted">·</span>
+                  <span className="text-muted">{formatRelative(post.created_at, locale, t("justNow"))}</span>
 
-            <p className="text-sm text-ink whitespace-pre-wrap">{post.caption}</p>
-
-            {openProfile === post.id && post.author && (
-              <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
-            )}
-
-            <div className="flex items-center gap-4 pt-1 border-t border-border">
-              <button
-                type="button"
-                onClick={() => toggleLike(post)}
-                className={`flex items-center gap-1.5 text-sm transition ${post.likedByMe ? "text-primary font-semibold" : "text-muted hover:text-ink"}`}
-              >
-                <span aria-hidden>{post.likedByMe ? "♥" : "♡"}</span>
-                {post.likeCount > 0 ? post.likeCount : t("like")}
-              </button>
-              <button type="button" onClick={() => toggleReplies(post.id)} className="text-sm text-muted hover:text-ink transition">
-                {post.replyCount > 0 ? t("repliesCount", { count: post.replyCount }) : t("reply")}
-              </button>
-
-              {!post.isMine && post.author?.role !== myRole && (
-                <button
-                  type="button"
-                  onClick={() => expressInterest(post.id)}
-                  disabled={interestState[post.id] === "sent"}
-                  className={ui.buttonSecondary + " ms-auto px-3! py-1! text-xs"}
-                >
-                  {interestState[post.id] === "sent" ? t("interestSent") : t("imInterested")}
-                </button>
-              )}
-              {post.isMine && (
-                <button type="button" onClick={() => closePost(post.id)} className="ms-auto text-xs text-muted hover:text-danger transition">
-                  {t("closePost")}
-                </button>
-              )}
-            </div>
-            {interestState[post.id] && interestState[post.id] !== "sent" && (
-              <p className="text-xs text-danger">{interestState[post.id]}</p>
-            )}
-
-            {openReplies === post.id && (
-              <div className="flex flex-col gap-2 pt-2 border-t border-border">
-                {replies[post.id] === null && <p className="text-xs text-muted">{t("loading")}</p>}
-                {replies[post.id]?.map((r) => (
-                  <div key={r.id} className="text-sm">
-                    <span className="font-medium text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}: </span>
-                    <span className="text-ink/80">{r.body}</span>
+                  <div className="ms-auto shrink-0">
+                    {!post.isMine && <ReportButton postId={post.id} trigger="icon" />}
+                    {post.isMine && (
+                      <button
+                        type="button"
+                        onClick={() => closePost(post.id)}
+                        className="text-xs text-muted hover:text-danger transition"
+                      >
+                        {t("closePost")}
+                      </button>
+                    )}
                   </div>
-                ))}
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    className={ui.input}
-                    placeholder={t("replyPlaceholder")}
-                    maxLength={500}
-                    value={replyDraft[post.id] ?? ""}
-                    onChange={(e) => setReplyDraft((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                    onKeyDown={(e) => e.key === "Enter" && submitReply(post.id)}
-                  />
-                  <button type="button" onClick={() => submitReply(post.id)} className={ui.buttonSecondary + " px-4! py-1.5! text-xs"}>
-                    {t("send")}
+                </div>
+
+                <p className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
+
+                {openProfile === post.id && post.author && (
+                  <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
+                )}
+
+                <div className="flex items-center justify-between max-w-[280px] mt-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleReplies(post.id)}
+                    className="flex items-center gap-2 text-muted hover:text-ink transition"
+                  >
+                    <ChatIcon className="h-[18px] w-[18px]" />
+                    <span className="text-sm">{post.replyCount > 0 ? post.replyCount : ""}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => toggleLike(post)}
+                    className={`flex items-center gap-2 transition ${post.likedByMe ? "text-primary" : "text-muted hover:text-primary"}`}
+                  >
+                    <HeartIcon className="h-[18px] w-[18px]" fill={post.likedByMe ? "currentColor" : "none"} />
+                    <span className="text-sm">{post.likeCount > 0 ? post.likeCount : ""}</span>
                   </button>
                 </div>
-                {replyError[post.id] && <p className="text-xs text-danger">{replyError[post.id]}</p>}
-              </div>
-            )}
 
-            {!post.isMine && <ReportButton postId={post.id} />}
-          </div>
-        ))}
+                {!post.isMine && post.author?.role !== myRole && (
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => expressInterest(post.id)}
+                      disabled={interestState[post.id] === "sent"}
+                      className={ui.buttonSecondary + " mt-1 px-4! py-1.5! text-xs"}
+                    >
+                      {interestState[post.id] === "sent" ? t("interestSent") : t("imInterested")}
+                    </button>
+                  </div>
+                )}
+                {interestState[post.id] && interestState[post.id] !== "sent" && (
+                  <p className="text-xs text-danger">{interestState[post.id]}</p>
+                )}
+
+                {openReplies === post.id && (
+                  <div className="mt-2 flex flex-col gap-3 border-t border-border pt-3">
+                    {replies[post.id] === null && <p className="text-xs text-muted">{t("loading")}</p>}
+                    {replies[post.id]?.map((r) => (
+                      <div key={r.id} className="flex gap-2.5">
+                        <Avatar photoUrl={null} size={28} />
+                        <div className="min-w-0">
+                          <span className="text-sm font-medium text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))} </span>
+                          <span className="text-sm text-ink/80">{r.body}</span>
+                        </div>
+                      </div>
+                    ))}
+                    <div className="flex gap-2 items-center">
+                      <Avatar photoUrl={null} size={28} />
+                      <input
+                        type="text"
+                        className={ui.input + " py-1.5!"}
+                        placeholder={t("replyPlaceholder")}
+                        maxLength={500}
+                        value={replyDraft[post.id] ?? ""}
+                        onChange={(e) => setReplyDraft((prev) => ({ ...prev, [post.id]: e.target.value }))}
+                        onKeyDown={(e) => e.key === "Enter" && submitReply(post.id)}
+                      />
+                      <button type="button" onClick={() => submitReply(post.id)} className={ui.buttonSecondary + " px-4! py-1.5! text-xs shrink-0"}>
+                        {t("send")}
+                      </button>
+                    </div>
+                    {replyError[post.id] && <p className="text-xs text-danger">{replyError[post.id]}</p>}
+                  </div>
+                )}
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
 
       {nextCursor && (
