@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
 import RatingButton from "@/components/matches/rating-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import { MoreIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
@@ -71,9 +72,9 @@ export default function ConversationHeader({
         type="button"
         onClick={() => setMenuOpen((v) => !v)}
         aria-label={tInbox("menu")}
-        className={ui.buttonGhost + " px-2! py-2! text-lg leading-none"}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink"
       >
-        ⋯
+        <MoreIcon className="h-5 w-5" />
       </button>
 
       {menuOpen && (
