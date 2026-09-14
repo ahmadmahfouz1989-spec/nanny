@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export type PostAuthor = { fullName: string; role: "parent" | "nanny" };
+export type PostAuthor = { fullName: string; role: "parent" | "nanny"; profileId: string };
 
 /**
  * Display name for each post's author, resolved from the role-appropriate
@@ -21,15 +21,15 @@ export async function postAuthors(
   const admin = createAdminClient();
   const [{ data: parents }, { data: nannies }] = await Promise.all([
     parentUserIds.length
-      ? admin.from("parent_profiles").select("user_id, full_name").in("user_id", parentUserIds)
-      : Promise.resolve({ data: [] as { user_id: string; full_name: string }[] }),
+      ? admin.from("parent_profiles").select("id, user_id, full_name").in("user_id", parentUserIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
     nannyUserIds.length
-      ? admin.from("nanny_profiles").select("user_id, full_name").in("user_id", nannyUserIds)
-      : Promise.resolve({ data: [] as { user_id: string; full_name: string }[] }),
+      ? admin.from("nanny_profiles").select("id, user_id, full_name").in("user_id", nannyUserIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
   ]);
 
-  for (const p of parents ?? []) out.set(p.user_id, { fullName: p.full_name, role: "parent" });
-  for (const n of nannies ?? []) out.set(n.user_id, { fullName: n.full_name, role: "nanny" });
+  for (const p of parents ?? []) out.set(p.user_id, { fullName: p.full_name, role: "parent", profileId: p.id });
+  for (const n of nannies ?? []) out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id });
   return out;
 }
 
