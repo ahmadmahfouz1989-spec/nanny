@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       : db
           .from("parent_profiles")
           .select(
-            "id, full_name, status, moderation_status, created_at, updated_at, location_detail, nationality, locations(name_en, name_ar, name_fr), " +
+            "id, full_name, profile_photo_url, status, moderation_status, created_at, updated_at, location_detail, nationality, locations(name_en, name_ar, name_fr), " +
               "num_children, children_age_ranges, schedule_type, live_arrangement, desired_start_date, " +
               "transportation_required, additional_duties, family_description, " +
               "parent_profile_languages(languages(id, name_en, name_ar, name_fr))",

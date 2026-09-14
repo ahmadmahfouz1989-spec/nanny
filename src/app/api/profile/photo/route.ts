@@ -4,6 +4,9 @@ import { createClient } from "@/lib/supabase/server";
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+const BUCKET_BY_ROLE = { nanny: "nanny-photos", parent: "parent-photos" } as const;
+const TABLE_BY_ROLE = { nanny: "nanny_profiles", parent: "parent_profiles" } as const;
+
 export async function POST(request: Request) {
   const supabase = await createClient();
   const {
@@ -15,8 +18,9 @@ export async function POST(request: Request) {
   }
 
   const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-  if (profile?.role !== "nanny") {
-    return NextResponse.json({ error: "Only nanny accounts have a profile photo" }, { status: 403 });
+  const role = profile?.role as "nanny" | "parent" | "admin" | undefined;
+  if (role !== "nanny" && role !== "parent") {
+    return NextResponse.json({ error: "Only parent or nanny accounts have a profile photo" }, { status: 403 });
   }
 
   const formData = await request.formData().catch(() => null);
@@ -34,8 +38,9 @@ export async function POST(request: Request) {
 
   const ext = file.type.split("/")[1];
   const path = `${user.id}/${Date.now()}.${ext}`;
+  const bucket = BUCKET_BY_ROLE[role];
 
-  const { error: uploadError } = await supabase.storage.from("nanny-photos").upload(path, file, {
+  const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
     contentType: file.type,
     upsert: false,
   });
@@ -44,7 +49,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: uploadError.message }, { status: 400 });
   }
 
-  const { data: publicUrl } = supabase.storage.from("nanny-photos").getPublicUrl(path);
+  const { data: publicUrl } = supabase.storage.from(bucket).getPublicUrl(path);
 
   // Save immediately rather than only staging the URL in onboarding form
   // state -- lets the standalone "change photo" control on /profile update
@@ -53,7 +58,7 @@ export async function POST(request: Request) {
   // before the profile row exists yet -- the wizard's own Finish step
   // still persists profilePhotoUrl as part of profile creation.
   await supabase
-    .from("nanny_profiles")
+    .from(TABLE_BY_ROLE[role])
     .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
     .eq("user_id", user.id);
 

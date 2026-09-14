@@ -21,15 +21,15 @@ export async function postAuthors(
   const admin = createAdminClient();
   const [{ data: parents }, { data: nannies }] = await Promise.all([
     parentUserIds.length
-      ? admin.from("parent_profiles").select("id, user_id, full_name").in("user_id", parentUserIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
+      ? admin.from("parent_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", parentUserIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
     nannyUserIds.length
       ? admin.from("nanny_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", nannyUserIds)
       : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
   ]);
 
   for (const p of parents ?? [])
-    out.set(p.user_id, { fullName: p.full_name, role: "parent", profileId: p.id, photoUrl: null });
+    out.set(p.user_id, { fullName: p.full_name, role: "parent", profileId: p.id, photoUrl: p.profile_photo_url });
   for (const n of nannies ?? [])
     out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id, photoUrl: n.profile_photo_url });
   return out;
