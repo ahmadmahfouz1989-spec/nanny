@@ -201,12 +201,16 @@ export default function ChatThread({
   }
 
   async function uploadRecording(mimeType: string) {
-    const blob = new Blob(chunksRef.current, { type: mimeType });
+    // recorder.mimeType comes back with a codec suffix (e.g.
+    // "audio/webm;codecs=opus") -- strip it so the Blob's type is exactly
+    // one of the server/bucket's allowed MIME types, not a variant of one.
+    const baseMimeType = mimeType.split(";")[0]!;
+    const blob = new Blob(chunksRef.current, { type: baseMimeType });
     if (blob.size === 0) return;
 
     setUploadingAudio(true);
     const formData = new FormData();
-    const ext = mimeType.includes("mp4") ? "mp4" : mimeType.includes("ogg") ? "ogg" : "webm";
+    const ext = baseMimeType.includes("mp4") ? "mp4" : baseMimeType.includes("ogg") ? "ogg" : "webm";
     formData.append("file", blob, `voice-note.${ext}`);
     formData.append("durationSeconds", String(recordingSeconds));
 

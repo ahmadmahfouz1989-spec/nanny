@@ -43,7 +43,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing audio file" }, { status: 400 });
   }
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  // Defensive: the client already strips any codec suffix (e.g.
+  // "audio/webm;codecs=opus" -> "audio/webm") before it ever gets here, but
+  // don't depend on every future caller doing that.
+  const baseType = file.type.split(";")[0] ?? file.type;
+  if (!ALLOWED_TYPES.includes(baseType)) {
     return NextResponse.json({ error: "Unsupported audio format" }, { status: 400 });
   }
   if (file.size > MAX_BYTES) {
@@ -54,7 +58,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const path = `${user.id}/${id}-${Date.now()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage.from("voice-notes").upload(path, file, {
-    contentType: file.type,
+    contentType: baseType,
     upsert: false,
   });
   if (uploadError) {
