@@ -1,24 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
-import { DAYS } from "@/lib/validation/profile";
 import ReportButton from "@/components/matches/report-button";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { LogoLoader } from "@/components/animated-logo";
-
-type Location = { id: string; name_en: string; name_ar: string; name_fr: string };
+import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 
 type Post = {
   id: string;
   user_id: string;
   kind: "looking_for" | "offering";
-  days: string[];
   caption: string;
   created_at: string;
-  locations: Location | null;
-  author: { fullName: string; role: "parent" | "nanny"; profileId: string } | null;
+  author: { fullName: string; role: "parent" | "nanny"; profileId: string; photoUrl: string | null } | null;
   likeCount: number;
   likedByMe: boolean;
   replyCount: number;
@@ -27,12 +24,6 @@ type Post = {
 };
 
 type Reply = { id: string; user_id: string; body: string; created_at: string; authorName: string | null; isMine: boolean };
-
-function localizedName(l: Location, locale: string) {
-  if (locale === "ar") return l.name_ar;
-  if (locale === "fr") return l.name_fr;
-  return l.name_en;
-}
 
 function formatRelative(iso: string, locale: string, justNow: string) {
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -44,19 +35,23 @@ function formatRelative(iso: string, locale: string, justNow: string) {
   return rtf.format(-Math.round(hr / 24), "day");
 }
 
+function Avatar({ photoUrl, className = "" }: { photoUrl: string | null; className?: string }) {
+  return photoUrl ? (
+    <Image src={photoUrl} alt="" width={36} height={36} className={`rounded-full object-cover ${className}`} />
+  ) : (
+    <AvatarIllustration tone="primary" className={`rounded-full overflow-hidden ${className}`} />
+  );
+}
+
 export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   const t = useTranslations("Feed");
-  const tDays = useTranslations("Days");
   const locale = useLocale();
 
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [governorates, setGovernorates] = useState<Location[]>([]);
 
   const [caption, setCaption] = useState("");
-  const [days, setDays] = useState<string[]>([]);
-  const [locationId, setLocationId] = useState<string | null>(null);
   const [posting, setPosting] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
 
@@ -85,12 +80,11 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   useEffect(() => {
     let active = true;
     async function init() {
-      const [postsRes, locationsRes] = await Promise.all([fetch("/api/posts"), fetch("/api/locations?level=governorate")]);
-      const [postsBody, locationsBody] = await Promise.all([postsRes.json(), locationsRes.json()]);
+      const res = await fetch("/api/posts");
+      const body = await res.json();
       if (!active) return;
-      setPosts(postsBody.posts ?? []);
-      setNextCursor(postsBody.nextCursor ?? null);
-      setGovernorates((locationsBody.locations ?? []) as Location[]);
+      setPosts(body.posts ?? []);
+      setNextCursor(body.nextCursor ?? null);
     }
     init();
     return () => {
@@ -105,7 +99,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption: caption.trim(), days, locationId }),
+      body: JSON.stringify({ caption: caption.trim() }),
     });
     const body = await res.json();
     setPosting(false);
@@ -115,8 +109,6 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     }
     setPosts((prev) => [body.post as Post, ...(prev ?? [])]);
     setCaption("");
-    setDays([]);
-    setLocationId(null);
   }
 
   async function toggleLike(post: Post) {
@@ -208,26 +200,6 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
         />
-        <div className="flex flex-wrap gap-2">
-          {DAYS.map((day) => (
-            <button
-              type="button"
-              key={day}
-              onClick={() => setDays((prev) => (prev.includes(day) ? prev.filter((d) => d !== day) : [...prev, day]))}
-              className={ui.pill(days.includes(day))}
-            >
-              {tDays(day)}
-            </button>
-          ))}
-        </div>
-        <select className={ui.select} value={locationId ?? ""} onChange={(e) => setLocationId(e.target.value || null)}>
-          <option value="">{t("anyGovernorate")}</option>
-          {governorates.map((g) => (
-            <option key={g.id} value={g.id}>
-              {localizedName(g, locale)}
-            </option>
-          ))}
-        </select>
         {composerError && <p className="text-sm text-danger">{composerError}</p>}
         <div className="flex justify-end">
           <button type="button" onClick={submitPost} disabled={posting || !caption.trim()} className={ui.buttonPrimary}>
@@ -243,38 +215,30 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
         {posts?.map((post) => (
           <div key={post.id} className={ui.card + " p-4 flex flex-col gap-3"}>
             <div className="flex items-start justify-between gap-2">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className={ui.badge(post.kind === "looking_for" ? "secondary" : "accent")}>
-                  {t(post.kind === "looking_for" ? "kindLookingFor" : "kindOffering")}
-                </span>
-                {post.featured && <span className={ui.badge("berry")}>★ {t("featuredBadge")}</span>}
-                {post.author && post.author.role !== myRole ? (
-                  <button
-                    type="button"
-                    onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
-                    className="text-sm font-medium text-primary hover:underline"
-                  >
-                    {post.author.fullName}
-                  </button>
-                ) : (
-                  <span className="text-sm font-medium text-ink">{post.author?.fullName ?? t("someone")}</span>
-                )}
+              <div className="flex items-center gap-2.5">
+                <Avatar photoUrl={post.author?.photoUrl ?? null} className="h-9 w-9 shrink-0" />
+                <div className="flex items-center gap-2 flex-wrap">
+                  {post.author && post.author.role !== myRole ? (
+                    <button
+                      type="button"
+                      onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      {post.author.fullName}
+                    </button>
+                  ) : (
+                    <span className="text-sm font-medium text-ink">{post.author?.fullName ?? t("someone")}</span>
+                  )}
+                  <span className={ui.badge(post.kind === "looking_for" ? "secondary" : "accent")}>
+                    {t(post.kind === "looking_for" ? "kindLookingFor" : "kindOffering")}
+                  </span>
+                  {post.featured && <span className={ui.badge("berry")}>★ {t("featuredBadge")}</span>}
+                </div>
               </div>
               <span className="text-xs text-muted shrink-0">{formatRelative(post.created_at, locale, t("justNow"))}</span>
             </div>
 
             <p className="text-sm text-ink whitespace-pre-wrap">{post.caption}</p>
-
-            {(post.locations || post.days.length > 0) && (
-              <div className="flex flex-wrap gap-2 text-xs text-muted">
-                {post.locations && <span className={ui.badge("secondary")}>{localizedName(post.locations, locale)}</span>}
-                {post.days.map((d) => (
-                  <span key={d} className={ui.badge("secondary")}>
-                    {tDays(d)}
-                  </span>
-                ))}
-              </div>
-            )}
 
             {openProfile === post.id && post.author && (
               <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
