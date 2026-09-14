@@ -11,6 +11,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { ui } from "@/lib/ui";
 import { useHashScroll } from "@/components/matches/use-hash-scroll";
+import { LogoLoader } from "@/components/animated-logo";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -94,7 +95,7 @@ export default function FamilyResults() {
   return (
     <div className="max-w-2xl mx-auto w-full px-6 py-8">
       <h1 className="font-display text-2xl font-bold mb-6">{t("titleNanny")}</h1>
-      {!results && !error && <p className="text-sm text-muted">{t("loading")}</p>}
+      {!results && !error && <LogoLoader label={t("loading")} />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>
