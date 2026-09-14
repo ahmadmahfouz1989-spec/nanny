@@ -182,6 +182,8 @@
     "back": "Back",
     "next": "Next",
     "finish": "Finish",
+    "cancel": "Cancel",
+    "saveChanges": "Save changes",
     "saving": "Saving…",
     "validationError": "Please check the form for errors.",
     "genericError": "Something went wrong. Please try again.",
@@ -257,6 +259,7 @@
     "other": "Other"
   },
   "ParentOnboarding": {
+    "editTitle": "Edit your profile",
     "step1Title": "You and your area",
     "step2Title": "Your children",
     "step3Title": "Schedule",
@@ -443,6 +446,7 @@
     "reportedLabel": "Reported"
   },
   "NannyOnboarding": {
+    "editTitle": "Edit your profile",
     "step1Title": "You and your area",
     "step2Title": "Employment preferences",
     "step3Title": "Availability",
