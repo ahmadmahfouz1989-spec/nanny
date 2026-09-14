@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 import { getPublicOrigin } from "@/lib/site-url";
+import { logLoginEvent } from "@/lib/login-log";
 import { routing } from "@/i18n/routing";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
@@ -46,6 +47,10 @@ export async function GET(request: Request) {
           .from("users")
           .update({ email_verified_at: new Date().toISOString() })
           .eq("id", data.user.id);
+      }
+      if (data.user?.id) {
+        // Fire-and-forget: never delay the redirect for a logging call.
+        void logLoginEvent(request, data.user.id);
       }
       return NextResponse.redirect(`${origin}/${locale}${next}`);
     }

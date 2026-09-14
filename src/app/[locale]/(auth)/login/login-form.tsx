@@ -43,6 +43,9 @@ export default function LoginForm() {
       return;
     }
 
+    // Fire-and-forget — never delay navigation for a logging call.
+    fetch("/api/auth/log-login", { method: "POST" }).catch(() => {});
+
     const meRes = await fetch("/api/auth/me");
     const me = await meRes.json().catch(() => null);
     setSubmitting(false);
