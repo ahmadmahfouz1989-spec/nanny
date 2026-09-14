@@ -27,10 +27,17 @@ export function AnimatedLogo({
   );
 }
 
-/** Drop-in replacement for a plain "Loading…" line, anywhere in the app. */
-export function LogoLoader({ label }: { label?: string }) {
+/**
+ * Drop-in replacement for a plain "Loading…" line, anywhere in the app.
+ * `fullHeight` fills the rest of the content pane and centers within it —
+ * for a page's initial load, where otherwise the mark sits right under the
+ * heading with a wall of empty space below it until content arrives.
+ */
+export function LogoLoader({ label, fullHeight = false }: { label?: string; fullHeight?: boolean }) {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-10">
+    <div
+      className={`flex flex-col items-center justify-center gap-3 ${fullHeight ? "min-h-[50vh]" : "py-10"}`}
+    >
       <AnimatedLogo variant="pulse" size={40} />
       {label && <p className="text-sm text-muted">{label}</p>}
     </div>
