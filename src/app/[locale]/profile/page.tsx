@@ -41,7 +41,7 @@ export default async function ProfilePage({
   if (profile?.role === "parent") {
     const { data } = await supabase
       .from("parent_profiles")
-      .select("status, moderation_status, full_name")
+      .select("status, moderation_status, full_name, profile_photo_url")
       .eq("user_id", user!.id)
       .maybeSingle();
     matchProfile = data;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
@@ -28,6 +29,7 @@ type FamilyResult = {
   parent_profiles: {
     id: string;
     full_name: string;
+    profile_photo_url: string | null;
     num_children: number;
     children_age_ranges: string[];
     schedule_type: string;
@@ -129,7 +131,21 @@ export default function FamilyResults() {
                 style={{ animationDelay: `${Math.min(i, 8) * 0.05}s` }}
               >
                 <div className="relative">
-                  <AvatarIllustration tone={tone} className="h-28 w-full" />
+                  {parent.profile_photo_url ? (
+                    <Image
+                      src={parent.profile_photo_url}
+                      alt=""
+                      width={640}
+                      height={160}
+                      unoptimized
+                      className="h-28 w-full object-cover"
+                    />
+                  ) : (
+                    <AvatarIllustration tone={tone} className="h-28 w-full" />
+                  )}
+                  {parent.profile_photo_url && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                  )}
                   {r.featured && (
                     <span className="absolute top-3 start-3 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
                       <span aria-hidden>★</span>

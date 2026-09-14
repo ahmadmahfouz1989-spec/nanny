@@ -32,6 +32,7 @@ type NannyProfile = {
 type ParentProfile = {
   id: string;
   full_name: string;
+  profile_photo_url: string | null;
   location_detail: string | null;
   nationality: string | null;
   num_children: number;
@@ -110,7 +111,7 @@ export default function ProfileSummaryPanel({ profileType, profileId }: { profil
   return (
     <div className="mt-2 rounded-xl border border-border bg-background p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        {data.type === "nanny" && data.profile.profile_photo_url ? (
+        {data.profile.profile_photo_url ? (
           <Image
             src={data.profile.profile_photo_url}
             alt=""

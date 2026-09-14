@@ -43,6 +43,7 @@ const contactPhone = z
 export const parentProfileSchema = z.object({
   fullName: z.string().min(2).max(80),
   contactPhone,
+  profilePhotoUrl: z.string().url().optional(),
   locationId: uuid,
   locationDetail: z.string().trim().min(2).max(120),
   nationality: z.enum(NATIONALITIES),

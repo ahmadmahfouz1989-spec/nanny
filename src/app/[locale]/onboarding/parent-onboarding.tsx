@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import WizardShell from "@/components/onboarding/wizard-shell";
@@ -17,6 +18,7 @@ const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_hel
 type FormState = {
   fullName: string;
   contactPhone: string;
+  profilePhotoUrl: string | null;
   locationId: string | null;
   locationDetail: string;
   nationality: string;
@@ -35,6 +37,7 @@ type FormState = {
 const initialState: FormState = {
   fullName: "",
   contactPhone: "",
+  profilePhotoUrl: null,
   locationId: null,
   locationDetail: "",
   nationality: "",
@@ -53,6 +56,7 @@ const initialState: FormState = {
 type ExistingParentProfile = {
   full_name: string;
   contact_phone: string | null;
+  profile_photo_url: string | null;
   location_id: string;
   location_detail: string | null;
   nationality: string | null;
@@ -72,6 +76,7 @@ function stateFromExisting(p: ExistingParentProfile): FormState {
   return {
     fullName: p.full_name,
     contactPhone: p.contact_phone ?? "",
+    profilePhotoUrl: p.profile_photo_url,
     locationId: p.location_id,
     locationDetail: p.location_detail ?? "",
     nationality: p.nationality ?? "",
@@ -101,14 +106,37 @@ export default function ParentOnboarding({
   const tLive = useTranslations("LiveArrangementOptions");
   const tDays = useTranslations("Days");
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = !!initialProfile;
   const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
+    setUploading(false);
+
+    if (!res.ok) {
+      setError(tw("genericError"));
+      return;
+    }
+
+    const body = await res.json();
+    update("profilePhotoUrl", body.url);
   }
 
   function toggleAgeRange(range: string) {
@@ -156,6 +184,7 @@ export default function ParentOnboarding({
     const payload = {
       fullName: form.fullName,
       contactPhone: form.contactPhone || undefined,
+      profilePhotoUrl: form.profilePhotoUrl || undefined,
       locationId: form.locationId,
       locationDetail: form.locationDetail,
       nationality: form.nationality,
@@ -230,6 +259,43 @@ export default function ParentOnboarding({
             onChange={(e) => update("contactPhone", e.target.value)}
           />
           <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
+
+          <div className="flex items-center gap-4">
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted overflow-hidden hover:border-primary/50 transition-colors"
+            >
+              {form.profilePhotoUrl ? (
+                <Image
+                  src={form.profilePhotoUrl}
+                  alt=""
+                  width={64}
+                  height={64}
+                  unoptimized
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                </svg>
+              )}
+            </button>
+            <div className="text-sm">
+              <button type="button" onClick={() => fileInputRef.current?.click()} className={ui.link}>
+                {form.profilePhotoUrl ? t("changePhoto") : t("uploadPhoto")}
+              </button>
+              <p className="text-xs text-muted mt-0.5">{uploading ? t("uploading") : t("photoHint")}</p>
+            </div>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handlePhotoChange}
+              className="hidden"
+            />
+          </div>
+
           <LocationPicker
             governorateId={form.locationId}
             detail={form.locationDetail}
