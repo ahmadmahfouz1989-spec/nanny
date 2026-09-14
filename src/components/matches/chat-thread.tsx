@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
+import { SendIcon } from "@/components/nav-icons";
 
 type Message = {
   id: string;
@@ -146,15 +147,13 @@ export default function ChatThread({
           return (
             <div key={m.id} className="flex flex-col">
               {full && showDayDivider && (
-                <div className="flex items-center gap-3 my-3 first:mt-0">
-                  <span className="h-px flex-1 bg-border" />
-                  <span className="text-[11px] font-medium text-muted shrink-0">{formatDayLabel(m.created_at)}</span>
-                  <span className="h-px flex-1 bg-border" />
-                </div>
+                <p className="text-center text-[11px] font-medium text-muted my-3 first:mt-0">
+                  {formatDayLabel(m.created_at)}
+                </p>
               )}
               <div
-                className={`max-w-[75%] rounded-2xl px-3 py-1.5 text-sm ${
-                  own ? "self-end bg-primary text-white" : "self-start bg-surface border border-border"
+                className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-sm ${
+                  own ? "self-end bg-primary text-white" : "self-start bg-surface-sunken text-ink"
                 }`}
               >
                 {m.body}
@@ -172,7 +171,7 @@ export default function ChatThread({
       <div className={full ? "flex items-center gap-2 p-3 border-t border-border shrink-0" : "flex items-center gap-2 p-2 border-t border-border"}>
         <input
           type="text"
-          className={ui.input + " flex-1"}
+          className={ui.input + " flex-1 rounded-full"}
           placeholder={t("chatPlaceholder")}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -184,9 +183,10 @@ export default function ChatThread({
           type="button"
           onClick={send}
           disabled={sending || !draft.trim()}
-          className={ui.buttonPrimary + " px-4! py-2! text-sm"}
+          aria-label={t("chatSend")}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:opacity-50"
         >
-          {t("chatSend")}
+          <SendIcon className="h-4 w-4 rtl:scale-x-[-1]" />
         </button>
       </div>
     </div>

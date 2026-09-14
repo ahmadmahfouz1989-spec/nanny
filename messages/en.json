@@ -339,7 +339,9 @@
     "noMessagesYet": "No messages yet",
     "selectConversation": "Select a conversation to start chatting.",
     "menu": "More options",
-    "backToList": "Back to messages"
+    "backToList": "Back to messages",
+    "search": "Search",
+    "noResults": "No conversations match \"{query}\""
   },
   "Report": {
     "action": "Report",
