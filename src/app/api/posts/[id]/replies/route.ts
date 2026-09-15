@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { containsContactInfo } from "@/lib/content-filter";
 import { getPublicOrigin } from "@/lib/site-url";
-import { sendEmail, postReplyEmail } from "@/lib/email";
+import { sendEmail, postReplyEmail, activityEmailsEnabled } from "@/lib/email";
 
 const createSchema = z.object({
   body: z.string().trim().min(1).max(500),
@@ -123,23 +123,25 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .from("notifications")
       .insert({ user_id: recipientId, type: "post_reply", payload: { post_id: id, reply_id: reply.id } });
 
-    const [{ data: recipient }, { data: myProfile }] = await Promise.all([
-      admin.from("users").select("email, preferred_language").eq("id", recipientId).single(),
-      admin
-        .from("users")
-        .select("role, parent_profiles(full_name), nanny_profiles(full_name)")
-        .eq("id", user.id)
-        .single(),
-    ]);
+    if (activityEmailsEnabled()) {
+      const [{ data: recipient }, { data: myProfile }] = await Promise.all([
+        admin.from("users").select("email, preferred_language").eq("id", recipientId).single(),
+        admin
+          .from("users")
+          .select("role, parent_profiles(full_name), nanny_profiles(full_name)")
+          .eq("id", user.id)
+          .single(),
+      ]);
 
-    if (recipient?.email) {
-      const parent = myProfile?.parent_profiles as unknown as { full_name: string } | null;
-      const nanny = myProfile?.nanny_profiles as unknown as { full_name: string } | null;
-      const fromName = parent?.full_name ?? nanny?.full_name ?? "Someone";
-      const locale = recipient.preferred_language === "ar" ? "ar" : "en";
-      const postUrl = `${getPublicOrigin(request)}/${locale}/feed`;
-      const { subject, html } = postReplyEmail(recipient.preferred_language, fromName, parsed.data.body, postUrl);
-      await sendEmail(recipient.email, subject, html);
+      if (recipient?.email) {
+        const parent = myProfile?.parent_profiles as unknown as { full_name: string } | null;
+        const nanny = myProfile?.nanny_profiles as unknown as { full_name: string } | null;
+        const fromName = parent?.full_name ?? nanny?.full_name ?? "Someone";
+        const locale = recipient.preferred_language === "ar" ? "ar" : "en";
+        const postUrl = `${getPublicOrigin(request)}/${locale}/feed`;
+        const { subject, html } = postReplyEmail(recipient.preferred_language, fromName, parsed.data.body, postUrl);
+        await sendEmail(recipient.email, subject, html);
+      }
     }
   }
 

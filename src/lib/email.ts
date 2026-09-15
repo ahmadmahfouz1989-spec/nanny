@@ -111,6 +111,18 @@ async function sendViaSmtp(to: string, subject: string, html: string, text: stri
  * (so it takes over automatically once a domain is verified there) and
  * falls back to Gmail SMTP on any failure.
  */
+/**
+ * A temporary, reversible kill-switch for the highest-volume activity
+ * emails (chat messages, post replies) -- set DISABLE_ACTIVITY_EMAILS=1 in
+ * Railway to quiet them (e.g. during heavy testing) without touching code,
+ * then unset it to turn them back on. Deliberately scoped to just these
+ * two categories, not sendEmail() itself -- signup confirmation, password
+ * recovery, ratings, interest, and admin review emails are unaffected.
+ */
+export function activityEmailsEnabled() {
+  return process.env.DISABLE_ACTIVITY_EMAILS !== "1";
+}
+
 export async function sendEmail(to: string, subject: string, html: string) {
   if (!resend && !smtpTransport) {
     console.log(`[email] no email provider configured — skipping email to ${to}: ${subject}`);
