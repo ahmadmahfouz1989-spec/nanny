@@ -66,6 +66,7 @@
     "repliesCount": "{count, plural, one {# رد} other {# ردود}}",
     "showReplies": "{count, plural, one {إظهار # رد} other {إظهار # ردود}}",
     "hideReplies": "إخفاء الردود",
+    "deleteReply": "حذف",
     "imInterested": "أنا مهتم/ة",
     "interestSent": "تم إرسال الاهتمام",
     "interestError": "تعذّر إرسال الاهتمام — تأكد أن ملفك الشخصي نشط وحاول مجددًا.",

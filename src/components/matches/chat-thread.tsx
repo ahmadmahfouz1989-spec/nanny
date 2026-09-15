@@ -274,6 +274,7 @@ export default function ChatThread({
                 </p>
               )}
               <div
+                dir="auto"
                 className={`max-w-[85%] sm:max-w-md rounded-2xl text-sm ${
                   m.audio_path ? "p-2" : "px-3.5 py-2"
                 } ${own ? "self-end bg-primary text-white" : "self-start bg-surface-sunken text-ink"}`}
@@ -329,6 +330,7 @@ export default function ChatThread({
           <>
             <input
               type="text"
+              dir="auto"
               className={ui.input + " flex-1 rounded-full"}
               placeholder={t("chatPlaceholder")}
               value={draft}
