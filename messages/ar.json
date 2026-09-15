@@ -70,6 +70,8 @@
     "deletePost": "حذف",
     "you": "أنت",
     "replyPlaceholder": "اكتب ردًا…",
+    "replyingTo": "الرد على {name}.",
+    "cancelReplyTarget": "إلغاء",
     "send": "إرسال",
     "replyError": "تعذّر إرسال الرد — يرجى المحاولة مجددًا.",
     "loadMore": "تحميل المزيد",

@@ -6,7 +6,10 @@ import { containsContactInfo } from "@/lib/content-filter";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postReplyEmail } from "@/lib/email";
 
-const createSchema = z.object({ body: z.string().trim().min(1).max(500) });
+const createSchema = z.object({
+  body: z.string().trim().min(1).max(500),
+  parentReplyId: z.string().uuid().optional(),
+});
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -21,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const { data: replies, error } = await supabase
     .from("post_replies")
-    .select("id, user_id, body, created_at")
+    .select("id, user_id, body, parent_reply_id, created_at")
     .eq("post_id", id)
     .order("created_at", { ascending: true });
 
@@ -31,25 +34,27 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const admin = createAdminClient();
   const userIds = [...new Set((replies ?? []).map((r) => r.user_id))];
-  const { data: names } =
+  const { data: authors } =
     userIds.length > 0
       ? await admin
           .from("users")
-          .select("id, role, parent_profiles(full_name), nanny_profiles(full_name)")
+          .select("id, role, parent_profiles(full_name, profile_photo_url), nanny_profiles(full_name, profile_photo_url)")
           .in("id", userIds)
       : { data: [] as never[] };
 
-  const nameById = new Map(
-    (names ?? []).map((n) => {
-      const parent = n.parent_profiles as unknown as { full_name: string } | null;
-      const nanny = n.nanny_profiles as unknown as { full_name: string } | null;
-      return [n.id, parent?.full_name ?? nanny?.full_name ?? null];
+  const authorById = new Map(
+    (authors ?? []).map((a) => {
+      const parent = a.parent_profiles as unknown as { full_name: string; profile_photo_url: string | null } | null;
+      const nanny = a.nanny_profiles as unknown as { full_name: string; profile_photo_url: string | null } | null;
+      const profile = parent ?? nanny;
+      return [a.id, { name: profile?.full_name ?? null, photoUrl: profile?.profile_photo_url ?? null }];
     }),
   );
 
   const results = (replies ?? []).map((r) => ({
     ...r,
-    authorName: nameById.get(r.user_id) ?? null,
+    authorName: authorById.get(r.user_id)?.name ?? null,
+    authorPhotoUrl: authorById.get(r.user_id)?.photoUrl ?? null,
     isMine: r.user_id === user.id,
   }));
 
@@ -79,26 +84,47 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     );
   }
 
+  const admin = createAdminClient();
+
+  // A reply-to-a-reply's parent has to actually belong to this post --
+  // otherwise the client could stitch together replies from two different
+  // posts into one fabricated thread.
+  let notifyUserId: string | null = null;
+  if (parsed.data.parentReplyId) {
+    const { data: parentReply } = await admin
+      .from("post_replies")
+      .select("post_id, user_id")
+      .eq("id", parsed.data.parentReplyId)
+      .maybeSingle();
+    if (!parentReply || parentReply.post_id !== id) {
+      return NextResponse.json({ error: "Reply not found" }, { status: 404 });
+    }
+    notifyUserId = parentReply.user_id;
+  }
+
   const { data: reply, error } = await supabase
     .from("post_replies")
-    .insert({ post_id: id, user_id: user.id, body: parsed.data.body })
-    .select("id, user_id, body, created_at")
+    .insert({ post_id: id, user_id: user.id, body: parsed.data.body, parent_reply_id: parsed.data.parentReplyId ?? null })
+    .select("id, user_id, body, parent_reply_id, created_at")
     .single();
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const admin = createAdminClient();
   const { data: post } = await admin.from("posts").select("user_id").eq("id", id).maybeSingle();
+  // Notify whoever this reply is actually addressed to: the specific
+  // reply's author when nested, otherwise the post's author -- same as
+  // how a reply on X notifies the person you replied to, not just OP.
+  const recipientId = notifyUserId ?? post?.user_id ?? null;
 
-  if (post && post.user_id !== user.id) {
+  if (recipientId && recipientId !== user.id) {
     await admin
       .from("notifications")
-      .insert({ user_id: post.user_id, type: "post_reply", payload: { post_id: id, reply_id: reply.id } });
+      .insert({ user_id: recipientId, type: "post_reply", payload: { post_id: id, reply_id: reply.id } });
 
     const [{ data: recipient }, { data: myProfile }] = await Promise.all([
-      admin.from("users").select("email, preferred_language").eq("id", post.user_id).single(),
+      admin.from("users").select("email, preferred_language").eq("id", recipientId).single(),
       admin
         .from("users")
         .select("role, parent_profiles(full_name), nanny_profiles(full_name)")
@@ -117,5 +143,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
   }
 
-  return NextResponse.json({ reply: { ...reply, authorName: null, isMine: true } }, { status: 201 });
+  return NextResponse.json({ reply: { ...reply, authorName: null, authorPhotoUrl: null, isMine: true } }, { status: 201 });
 }
