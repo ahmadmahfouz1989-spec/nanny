@@ -75,6 +75,7 @@ function ReplyThread({
   t,
   locale,
   onReplyClick,
+  onDeleteClick,
   collapsed,
   onToggleCollapse,
 }: {
@@ -85,6 +86,7 @@ function ReplyThread({
   t: any;
   locale: string;
   onReplyClick: (reply: Reply) => void;
+  onDeleteClick: (reply: Reply) => void;
   collapsed: Set<string>;
   onToggleCollapse: (replyId: string) => void;
 }) {
@@ -105,7 +107,7 @@ function ReplyThread({
                   <span className="text-sm font-semibold text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}</span>
                   <span className="text-xs text-muted">{formatRelative(r.created_at, locale, t("justNow"))}</span>
                 </div>
-                <p className="text-sm text-ink/90 whitespace-pre-wrap">{r.body}</p>
+                <p dir="auto" className="text-sm text-ink/90 whitespace-pre-wrap">{r.body}</p>
                 <div className="flex items-center gap-3 mt-0.5">
                   <button type="button" onClick={() => onReplyClick(r)} className="text-xs text-muted hover:text-ink transition">
                     {t("reply")}
@@ -119,6 +121,11 @@ function ReplyThread({
                       {isCollapsed ? t("showReplies", { count: descendantCount }) : t("hideReplies")}
                     </button>
                   )}
+                  {r.isMine && (
+                    <button type="button" onClick={() => onDeleteClick(r)} className="text-xs text-muted hover:text-danger transition">
+                      {t("deleteReply")}
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -130,6 +137,7 @@ function ReplyThread({
                 t={t}
                 locale={locale}
                 onReplyClick={onReplyClick}
+                onDeleteClick={onDeleteClick}
                 collapsed={collapsed}
                 onToggleCollapse={onToggleCollapse}
               />
@@ -174,6 +182,8 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
       return next;
     });
   }
+
+  const [sendingReply, setSendingReply] = useState<Record<string, boolean>>({});
 
   // "sent", or the server's actual error message so a rejection is
   // diagnosable instead of hidden behind one generic string.
@@ -260,8 +270,10 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   }
 
   async function submitReply(postId: string) {
+    if (sendingReply[postId]) return; // a click and an Enter keydown can both fire for the same reply
     const body = (replyDraft[postId] ?? "").trim();
     if (!body) return;
+    setSendingReply((prev) => ({ ...prev, [postId]: true }));
     setReplyError((prev) => ({ ...prev, [postId]: "" }));
     const parentReplyId = replyTarget[postId]?.id;
     const res = await fetch(`/api/posts/${postId}/replies`, {
@@ -270,6 +282,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
       body: JSON.stringify({ body, parentReplyId }),
     });
     const data = await res.json();
+    setSendingReply((prev) => ({ ...prev, [postId]: false }));
     if (!res.ok) {
       setReplyError((prev) => ({ ...prev, [postId]: typeof data.error === "string" ? data.error : t("replyError") }));
       return;
@@ -279,6 +292,34 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     setReplyDraft((prev) => ({ ...prev, [postId]: "" }));
     setReplyTarget((prev) => ({ ...prev, [postId]: null }));
     setPosts((prev) => prev?.map((p) => (p.id === postId ? { ...p, replyCount: p.replyCount + 1 } : p)) ?? null);
+  }
+
+  // Removing a reply also removes whatever was nested under it, client-side
+  // mirroring the database's own on-delete-cascade for parent_reply_id.
+  function collectDescendantIds(allReplies: Reply[], rootId: string): Set<string> {
+    const ids = new Set([rootId]);
+    let grew = true;
+    while (grew) {
+      grew = false;
+      for (const r of allReplies) {
+        if (r.parent_reply_id && ids.has(r.parent_reply_id) && !ids.has(r.id)) {
+          ids.add(r.id);
+          grew = true;
+        }
+      }
+    }
+    return ids;
+  }
+
+  async function deleteReply(postId: string, replyId: string) {
+    const res = await fetch(`/api/posts/${postId}/replies/${replyId}`, { method: "DELETE" });
+    if (!res.ok) return;
+    const current = replies[postId] ?? [];
+    const removed = collectDescendantIds(current, replyId);
+    setReplies((prev) => ({ ...prev, [postId]: current.filter((r) => !removed.has(r.id)) }));
+    // The delete cascades to whatever was nested under it too -- decrement
+    // by everything actually removed, not just the one reply clicked.
+    setPosts((prev) => prev?.map((p) => (p.id === postId ? { ...p, replyCount: Math.max(0, p.replyCount - removed.size) } : p)) ?? null);
   }
 
   async function expressInterest(postId: string) {
@@ -316,6 +357,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
           <Avatar photoUrl={null} size={44} className="mt-0.5" />
           <div className="flex-1 min-w-0 flex flex-col gap-2">
             <textarea
+              dir="auto"
               className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none"
               rows={2}
               maxLength={500}
@@ -374,7 +416,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                   </div>
                 </div>
 
-                <p className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
+                <p dir="auto" className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
 
                 {openProfile === post.id && post.author && (
                   <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
@@ -426,6 +468,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                         t={t}
                         locale={locale}
                         onReplyClick={(r) => setReplyTarget((prev) => ({ ...prev, [post.id]: { id: r.id, name: r.isMine ? t("you") : (r.authorName ?? t("someone")) } }))}
+                        onDeleteClick={(r) => deleteReply(post.id, r.id)}
                         collapsed={collapsedReplies}
                         onToggleCollapse={toggleCollapse}
                       />
@@ -447,14 +490,21 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                       <Avatar photoUrl={null} size={28} />
                       <input
                         type="text"
+                        dir="auto"
                         className={ui.input + " py-1.5!"}
                         placeholder={t("replyPlaceholder")}
                         maxLength={500}
                         value={replyDraft[post.id] ?? ""}
+                        disabled={!!sendingReply[post.id]}
                         onChange={(e) => setReplyDraft((prev) => ({ ...prev, [post.id]: e.target.value }))}
                         onKeyDown={(e) => e.key === "Enter" && submitReply(post.id)}
                       />
-                      <button type="button" onClick={() => submitReply(post.id)} className={ui.buttonSecondary + " px-4! py-1.5! text-xs shrink-0"}>
+                      <button
+                        type="button"
+                        onClick={() => submitReply(post.id)}
+                        disabled={!!sendingReply[post.id]}
+                        className={ui.buttonSecondary + " px-4! py-1.5! text-xs shrink-0"}
+                      >
                         {t("send")}
                       </button>
                     </div>

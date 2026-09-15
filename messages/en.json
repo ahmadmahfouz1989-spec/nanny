@@ -66,6 +66,7 @@
     "repliesCount": "{count, plural, one {# reply} other {# replies}}",
     "showReplies": "{count, plural, one {Show # reply} other {Show # replies}}",
     "hideReplies": "Hide replies",
+    "deleteReply": "Delete",
     "imInterested": "I'm interested",
     "interestSent": "Interest sent",
     "interestError": "Couldn't send interest — check your profile is active and try again.",
