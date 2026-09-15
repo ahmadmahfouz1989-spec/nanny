@@ -12,12 +12,15 @@ async function notifyAdminsOfNewSignup(newUserRole: string, newUserEmail: string
     const admin = createAdminClient();
     const { data: admins } = await admin
       .from("users")
-      .select("email, preferred_language")
+      .select("email, preferred_language, notify_new_profiles")
       .eq("role", "admin");
 
+    // Same opt-out as the pending-review email -- an admin who's muted new
+    // profiles doesn't want the even-earlier "someone just signed up" email
+    // either.
     await Promise.all(
       (admins ?? [])
-        .filter((a) => a.email)
+        .filter((a) => a.email && a.notify_new_profiles)
         .map((a) => {
           const { subject, html } = newSignupAdminEmail(
             a.preferred_language,
