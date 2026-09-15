@@ -24,7 +24,16 @@ type Post = {
   isMine: boolean;
 };
 
-type Reply = { id: string; user_id: string; body: string; created_at: string; authorName: string | null; isMine: boolean };
+type Reply = {
+  id: string;
+  user_id: string;
+  body: string;
+  parent_reply_id: string | null;
+  created_at: string;
+  authorName: string | null;
+  authorPhotoUrl: string | null;
+  isMine: boolean;
+};
 
 function formatRelative(iso: string, locale: string, justNow: string) {
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -55,6 +64,53 @@ function Avatar({ photoUrl, size = 44, className = "" }: { photoUrl: string | nu
   );
 }
 
+// Renders one level of the cascade, then recurses into each reply's own
+// children -- matching X's "a reply is a full mini-post, and replying to
+// a reply nests under it" shape, adapted to a page instead of X's
+// click-into-a-new-page navigation.
+function ReplyThread({
+  allReplies,
+  parentId,
+  depth,
+  t,
+  locale,
+  onReplyClick,
+}: {
+  allReplies: Reply[];
+  parentId: string | null;
+  depth: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+  locale: string;
+  onReplyClick: (reply: Reply) => void;
+}) {
+  const children = allReplies.filter((r) => r.parent_reply_id === parentId);
+  if (children.length === 0) return null;
+
+  return (
+    <div className={depth > 0 ? "flex flex-col gap-3 mt-3 ps-4 border-s border-border" : "flex flex-col gap-3"}>
+      {children.map((r) => (
+        <div key={r.id}>
+          <div className="flex gap-2.5">
+            <Avatar photoUrl={r.authorPhotoUrl} size={28} />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-sm font-semibold text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}</span>
+                <span className="text-xs text-muted">{formatRelative(r.created_at, locale, t("justNow"))}</span>
+              </div>
+              <p className="text-sm text-ink/90 whitespace-pre-wrap">{r.body}</p>
+              <button type="button" onClick={() => onReplyClick(r)} className="text-xs text-muted hover:text-ink transition mt-0.5">
+                {t("reply")}
+              </button>
+            </div>
+          </div>
+          <ReplyThread allReplies={allReplies} parentId={r.id} depth={depth + 1} t={t} locale={locale} onReplyClick={onReplyClick} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   const t = useTranslations("Feed");
   const locale = useLocale();
@@ -72,6 +128,10 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   const [replies, setReplies] = useState<Record<string, Reply[] | null>>({});
   const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
   const [replyError, setReplyError] = useState<Record<string, string>>({});
+  // Which specific reply (if any) the next reply in a post's thread is
+  // aimed at -- the cascade: replying to a reply nests under it, not the
+  // post itself.
+  const [replyTarget, setReplyTarget] = useState<Record<string, { id: string; name: string } | null>>({});
 
   // "sent", or the server's actual error message so a rejection is
   // diagnosable instead of hidden behind one generic string.
@@ -161,18 +221,21 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     const body = (replyDraft[postId] ?? "").trim();
     if (!body) return;
     setReplyError((prev) => ({ ...prev, [postId]: "" }));
+    const parentReplyId = replyTarget[postId]?.id;
     const res = await fetch(`/api/posts/${postId}/replies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
+      body: JSON.stringify({ body, parentReplyId }),
     });
     const data = await res.json();
     if (!res.ok) {
       setReplyError((prev) => ({ ...prev, [postId]: typeof data.error === "string" ? data.error : t("replyError") }));
       return;
     }
-    setReplies((prev) => ({ ...prev, [postId]: [...(prev[postId] ?? []), data.reply as Reply] }));
+    const reply = { ...data.reply, parent_reply_id: parentReplyId ?? null } as Reply;
+    setReplies((prev) => ({ ...prev, [postId]: [...(prev[postId] ?? []), reply] }));
     setReplyDraft((prev) => ({ ...prev, [postId]: "" }));
+    setReplyTarget((prev) => ({ ...prev, [postId]: null }));
     setPosts((prev) => prev?.map((p) => (p.id === postId ? { ...p, replyCount: p.replyCount + 1 } : p)) ?? null);
   }
 
@@ -313,15 +376,29 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                 {openReplies === post.id && (
                   <div className="mt-2 flex flex-col gap-3 border-t border-border pt-3">
                     {replies[post.id] === null && <p className="text-xs text-muted">{t("loading")}</p>}
-                    {replies[post.id]?.map((r) => (
-                      <div key={r.id} className="flex gap-2.5">
-                        <Avatar photoUrl={null} size={28} />
-                        <div className="min-w-0">
-                          <span className="text-sm font-medium text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))} </span>
-                          <span className="text-sm text-ink/80">{r.body}</span>
-                        </div>
-                      </div>
-                    ))}
+                    {replies[post.id] && (
+                      <ReplyThread
+                        allReplies={replies[post.id]!}
+                        parentId={null}
+                        depth={0}
+                        t={t}
+                        locale={locale}
+                        onReplyClick={(r) => setReplyTarget((prev) => ({ ...prev, [post.id]: { id: r.id, name: r.isMine ? t("you") : (r.authorName ?? t("someone")) } }))}
+                      />
+                    )}
+
+                    {replyTarget[post.id] && (
+                      <p className="text-xs text-muted">
+                        {t("replyingTo", { name: replyTarget[post.id]!.name })}{" "}
+                        <button
+                          type="button"
+                          onClick={() => setReplyTarget((prev) => ({ ...prev, [post.id]: null }))}
+                          className="text-primary hover:underline"
+                        >
+                          {t("cancelReplyTarget")}
+                        </button>
+                      </p>
+                    )}
                     <div className="flex gap-2 items-center">
                       <Avatar photoUrl={null} size={28} />
                       <input

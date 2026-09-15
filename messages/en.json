@@ -70,6 +70,8 @@
     "deletePost": "Delete",
     "you": "You",
     "replyPlaceholder": "Write a reply…",
+    "replyingTo": "Replying to {name}.",
+    "cancelReplyTarget": "Cancel",
     "send": "Send",
     "replyError": "Couldn't send reply — please try again.",
     "loadMore": "Load more",
