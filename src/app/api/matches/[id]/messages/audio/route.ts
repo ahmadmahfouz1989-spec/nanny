@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMatchAccess } from "@/lib/matching/access";
-import { sendEmail, newMessageEmail } from "@/lib/email";
+import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -85,38 +85,40 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: signed } = await admin.storage.from("voice-notes").createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
   // Same "email once per unread thread" throttle as a text message.
-  try {
-    const { count } = await admin
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("match_id", id)
-      .eq("sender_id", user.id)
-      .is("read_at", null);
+  if (activityEmailsEnabled()) {
+    try {
+      const { count } = await admin
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .eq("match_id", id)
+        .eq("sender_id", user.id)
+        .is("read_at", null);
 
-    if ((count ?? 0) === 1) {
-      const recipientUserId = access.side === "parent" ? access.nannyUserId : access.parentUserId;
-      const senderTable = access.side === "parent" ? "parent_profiles" : "nanny_profiles";
-      const senderProfileId = access.side === "parent" ? access.parentProfileId : access.nannyProfileId;
+      if ((count ?? 0) === 1) {
+        const recipientUserId = access.side === "parent" ? access.nannyUserId : access.parentUserId;
+        const senderTable = access.side === "parent" ? "parent_profiles" : "nanny_profiles";
+        const senderProfileId = access.side === "parent" ? access.parentProfileId : access.nannyProfileId;
 
-      const [{ data: recipient }, { data: senderProfile }] = await Promise.all([
-        admin.from("users").select("email, preferred_language").eq("id", recipientUserId).single(),
-        admin.from(senderTable).select("full_name").eq("id", senderProfileId).single(),
-      ]);
+        const [{ data: recipient }, { data: senderProfile }] = await Promise.all([
+          admin.from("users").select("email, preferred_language").eq("id", recipientUserId).single(),
+          admin.from(senderTable).select("full_name").eq("id", senderProfileId).single(),
+        ]);
 
-      if (recipient?.email) {
-        const lang = recipient.preferred_language as "en" | "ar" | "fr" | null;
-        const locale = lang === "ar" ? "ar" : "en";
-        const { subject, html } = newMessageEmail(
-          lang,
-          senderProfile?.full_name ?? "Someone",
-          PLACEHOLDER_BODY,
-          `${getPublicOrigin(request)}/${locale}/messages`,
-        );
-        await sendEmail(recipient.email, subject, html);
+        if (recipient?.email) {
+          const lang = recipient.preferred_language as "en" | "ar" | "fr" | null;
+          const locale = lang === "ar" ? "ar" : "en";
+          const { subject, html } = newMessageEmail(
+            lang,
+            senderProfile?.full_name ?? "Someone",
+            PLACEHOLDER_BODY,
+            `${getPublicOrigin(request)}/${locale}/messages`,
+          );
+          await sendEmail(recipient.email, subject, html);
+        }
       }
+    } catch (err) {
+      console.error("[messages/audio] new-message email failed:", err);
     }
-  } catch (err) {
-    console.error("[messages/audio] new-message email failed:", err);
   }
 
   return NextResponse.json({ message: { ...message, audioUrl: signed?.signedUrl ?? null } }, { status: 201 });
