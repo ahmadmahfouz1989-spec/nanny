@@ -7,10 +7,15 @@ import { sendEmail, pendingReviewEmail } from "@/lib/email";
 
 async function notifyAdminsOfPendingReview(fullName: string, profileType: "parent" | "nanny") {
   const admin = createAdminClient();
-  const { data: admins } = await admin.from("users").select("id, email, preferred_language").eq("role", "admin");
+  const { data: admins } = await admin
+    .from("users")
+    .select("id, email, preferred_language, notify_new_profiles")
+    .eq("role", "admin");
 
   if (!admins || admins.length === 0) return;
 
+  // The in-app bell entry still goes to every admin -- only the email is
+  // opt-out-able, per-admin (notify_new_profiles).
   await admin.from("notifications").insert(
     admins.map((a) => ({
       user_id: a.id,
@@ -21,7 +26,7 @@ async function notifyAdminsOfPendingReview(fullName: string, profileType: "paren
 
   await Promise.all(
     admins
-      .filter((a) => a.email)
+      .filter((a) => a.email && a.notify_new_profiles)
       .map((a) => {
         const { subject, html } = pendingReviewEmail(a.preferred_language, fullName, profileType);
         return sendEmail(a.email!, subject, html);
