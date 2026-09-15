@@ -75,6 +75,8 @@ function ReplyThread({
   t,
   locale,
   onReplyClick,
+  collapsed,
+  onToggleCollapse,
 }: {
   allReplies: Reply[];
   parentId: string | null;
@@ -83,30 +85,58 @@ function ReplyThread({
   t: any;
   locale: string;
   onReplyClick: (reply: Reply) => void;
+  collapsed: Set<string>;
+  onToggleCollapse: (replyId: string) => void;
 }) {
   const children = allReplies.filter((r) => r.parent_reply_id === parentId);
   if (children.length === 0) return null;
 
   return (
     <div className={depth > 0 ? "flex flex-col gap-3 mt-3 ps-4 border-s border-border" : "flex flex-col gap-3"}>
-      {children.map((r) => (
-        <div key={r.id}>
-          <div className="flex gap-2.5">
-            <Avatar photoUrl={r.authorPhotoUrl} size={28} />
-            <div className="min-w-0 flex-1">
-              <div className="flex items-baseline gap-1.5 flex-wrap">
-                <span className="text-sm font-semibold text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}</span>
-                <span className="text-xs text-muted">{formatRelative(r.created_at, locale, t("justNow"))}</span>
+      {children.map((r) => {
+        const descendantCount = allReplies.filter((x) => x.parent_reply_id === r.id).length;
+        const isCollapsed = collapsed.has(r.id);
+        return (
+          <div key={r.id}>
+            <div className="flex gap-2.5">
+              <Avatar photoUrl={r.authorPhotoUrl} size={28} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-baseline gap-1.5 flex-wrap">
+                  <span className="text-sm font-semibold text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}</span>
+                  <span className="text-xs text-muted">{formatRelative(r.created_at, locale, t("justNow"))}</span>
+                </div>
+                <p className="text-sm text-ink/90 whitespace-pre-wrap">{r.body}</p>
+                <div className="flex items-center gap-3 mt-0.5">
+                  <button type="button" onClick={() => onReplyClick(r)} className="text-xs text-muted hover:text-ink transition">
+                    {t("reply")}
+                  </button>
+                  {descendantCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onToggleCollapse(r.id)}
+                      className="text-xs text-primary hover:underline"
+                    >
+                      {isCollapsed ? t("showReplies", { count: descendantCount }) : t("hideReplies")}
+                    </button>
+                  )}
+                </div>
               </div>
-              <p className="text-sm text-ink/90 whitespace-pre-wrap">{r.body}</p>
-              <button type="button" onClick={() => onReplyClick(r)} className="text-xs text-muted hover:text-ink transition mt-0.5">
-                {t("reply")}
-              </button>
             </div>
+            {!isCollapsed && (
+              <ReplyThread
+                allReplies={allReplies}
+                parentId={r.id}
+                depth={depth + 1}
+                t={t}
+                locale={locale}
+                onReplyClick={onReplyClick}
+                collapsed={collapsed}
+                onToggleCollapse={onToggleCollapse}
+              />
+            )}
           </div>
-          <ReplyThread allReplies={allReplies} parentId={r.id} depth={depth + 1} t={t} locale={locale} onReplyClick={onReplyClick} />
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -132,6 +162,18 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   // aimed at -- the cascade: replying to a reply nests under it, not the
   // post itself.
   const [replyTarget, setReplyTarget] = useState<Record<string, { id: string; name: string } | null>>({});
+  // Reply ids whose own sub-replies are currently hidden -- reply ids are
+  // unique across every post, so one flat set works fine here.
+  const [collapsedReplies, setCollapsedReplies] = useState<Set<string>>(new Set());
+
+  function toggleCollapse(replyId: string) {
+    setCollapsedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(replyId)) next.delete(replyId);
+      else next.add(replyId);
+      return next;
+    });
+  }
 
   // "sent", or the server's actual error message so a rejection is
   // diagnosable instead of hidden behind one generic string.
@@ -384,6 +426,8 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                         t={t}
                         locale={locale}
                         onReplyClick={(r) => setReplyTarget((prev) => ({ ...prev, [post.id]: { id: r.id, name: r.isMine ? t("you") : (r.authorName ?? t("someone")) } }))}
+                        collapsed={collapsedReplies}
+                        onToggleCollapse={toggleCollapse}
                       />
                     )}
 
