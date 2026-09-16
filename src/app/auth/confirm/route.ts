@@ -58,5 +58,10 @@ export async function GET(request: Request) {
     console.error("[auth/confirm] verifyOtp failed:", error.message);
   }
 
-  return NextResponse.redirect(`${origin}/${locale}/login?error=auth_callback_failed`);
+  // Carry the link type along so the login page can tell a failed signup
+  // confirmation apart from a failed password-recovery link and word the
+  // message (and any resend action) accordingly.
+  return NextResponse.redirect(
+    `${origin}/${locale}/login?error=auth_callback_failed&type=${type ?? "signup"}`,
+  );
 }
