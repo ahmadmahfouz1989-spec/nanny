@@ -21,16 +21,32 @@ export default function LoginForm() {
     ? rawNext.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/"
     : null;
 
+  const linkErrorType = searchParams.get("error") === "auth_callback_failed" ? searchParams.get("type") : null;
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(
-    searchParams.get("error") === "account_suspended" ? t("accountSuspended") : null,
-  );
+  const [error, setError] = useState<string | null>(() => {
+    if (searchParams.get("error") === "account_suspended") return t("accountSuspended");
+    // The link may have failed because it was already used (a mail client's
+    // link-scanner opening it before the person clicked it is a common
+    // cause) or simply expired -- either way, tell them plainly rather than
+    // silently dropping them back on a blank login form.
+    if (linkErrorType === "recovery") return t("recoveryLinkFailed");
+    if (linkErrorType) return t("signupLinkFailed");
+    return null;
+  });
+  // Only the signup-confirmation case gets an inline resend button -- a
+  // failed recovery link should go back through "Forgot password?" instead,
+  // since that flow doesn't require knowing the (possibly wrong) password.
+  const [showResend, setShowResend] = useState(linkErrorType === "signup");
+  const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setShowResend(false);
+    setResendState("idle");
     setSubmitting(true);
 
     const supabase = createClient();
@@ -39,7 +55,9 @@ export default function LoginForm() {
 
     if (error) {
       setSubmitting(false);
-      setError(t("invalidCredentials"));
+      const unconfirmed = error.code === "email_not_confirmed" || /not confirmed/i.test(error.message ?? "");
+      setError(unconfirmed ? t("emailNotConfirmed") : t("invalidCredentials"));
+      setShowResend(unconfirmed);
       return;
     }
 
@@ -58,6 +76,14 @@ export default function LoginForm() {
 
     router.push(explicitNext ?? "/dashboard");
     router.refresh();
+  }
+
+  async function handleResend() {
+    if (!email) return;
+    setResendState("sending");
+    const supabase = createClient();
+    const { error } = await supabase.auth.resend({ type: "signup", email });
+    setResendState(error ? "error" : "sent");
   }
 
   return (
@@ -84,7 +110,26 @@ export default function LoginForm() {
         />
 
         {error && (
-          <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+          <div className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+            <p>{error}</p>
+            {showResend && (
+              <>
+                {resendState === "sent" ? (
+                  <p className="mt-1 font-medium">{t("resendSent")}</p>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={handleResend}
+                    disabled={!email || resendState === "sending"}
+                    className="mt-1 font-medium underline underline-offset-2 disabled:opacity-50"
+                  >
+                    {resendState === "sending" ? t("resending") : t("resendConfirmation")}
+                  </button>
+                )}
+                {resendState === "error" && <p className="mt-1">{tAuth("genericError")}</p>}
+              </>
+            )}
+          </div>
         )}
 
         <button type="submit" disabled={submitting} className={ui.buttonPrimary + " w-full"}>
