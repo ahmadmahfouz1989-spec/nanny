@@ -7,7 +7,7 @@ import { getPublicOrigin } from "@/lib/site-url";
 
 // Email every admin when a genuinely new account is created. Best-effort:
 // a failure here must never break the signup response.
-async function notifyAdminsOfNewSignup(newUserRole: string | undefined, newUserEmail: string) {
+async function notifyAdminsOfNewSignup(newUserEmail: string) {
   try {
     const admin = createAdminClient();
     const { data: admins } = await admin
@@ -22,11 +22,7 @@ async function notifyAdminsOfNewSignup(newUserRole: string | undefined, newUserE
       (admins ?? [])
         .filter((a) => a.email && a.notify_new_profiles)
         .map((a) => {
-          const { subject, html } = newSignupAdminEmail(
-            a.preferred_language,
-            newUserRole,
-            newUserEmail,
-          );
+          const { subject, html } = newSignupAdminEmail(a.preferred_language, newUserEmail);
           return sendEmail(a.email!, subject, html);
         }),
     );
@@ -43,16 +39,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { role, email, password, preferredLanguage, next } = parsed.data;
+  const { email, password, preferredLanguage } = parsed.data;
   const supabase = await createClient();
   const origin = getPublicOrigin(request);
-  const metadata = { role: role ?? null, preferred_language: preferredLanguage };
-  const emailRedirectTo = `${origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
+  const metadata = { preferred_language: preferredLanguage };
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: metadata, emailRedirectTo },
+    options: { data: metadata, emailRedirectTo: `${origin}/auth/callback` },
   });
 
   if (error) {
@@ -81,7 +76,7 @@ export async function POST(request: Request) {
     );
     await sendEmail(email!, subject, html);
   } else if (data.user) {
-    await notifyAdminsOfNewSignup(role, email!);
+    await notifyAdminsOfNewSignup(email!);
   }
 
   return NextResponse.json({ user: data.user }, { status: 201 });

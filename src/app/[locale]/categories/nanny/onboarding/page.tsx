@@ -8,15 +8,10 @@ import NannyRolePicker from "./nanny-role-picker";
 // (generic_profiles-based) onboarding flow nursing uses.
 export default async function NannyCategoryOnboardingPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ role?: string }>;
 }) {
   const { locale } = await params;
-  const { role: roleHintParam } = await searchParams;
-  const roleHint = roleHintParam === "parent" || roleHintParam === "nanny" ? roleHintParam : null;
-
   const supabase = await createClient();
   const {
     data: { user },
@@ -35,5 +30,5 @@ export default async function NannyCategoryOnboardingPage({
     redirect({ href: "/onboarding", locale });
   }
 
-  return <NannyRolePicker roleHint={roleHint} />;
+  return <NannyRolePicker />;
 }
