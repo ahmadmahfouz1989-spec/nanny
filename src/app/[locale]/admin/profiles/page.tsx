@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
@@ -12,11 +12,17 @@ type QueueProfile = {
   id: string;
   full_name: string;
   profile_photo_url?: string | null;
-  profileType: "parent" | "nanny";
+  profileType: "parent" | "nanny" | "generic";
   location_detail?: string | null;
   nationality?: string | null;
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
   created_at: string;
+
+  // generic-category only (nursing etc.)
+  role?: "seeker" | "provider";
+  attributes?: Record<string, unknown>;
+  categorySlug?: string | null;
+  categories?: { slug: string; name_en: string; name_ar: string } | null;
 
   // parent-only
   num_children?: number;
@@ -68,6 +74,7 @@ export default function AdminProfilesPage() {
   const tDays = useTranslations("Days");
   const tDuties = useTranslations("Duties");
   const tCerts = useTranslations("Certifications");
+  const tCareSpecialties = useTranslations("CareSpecialties");
   const tSchedule = useTranslations("ScheduleOptions");
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const tNat = useTranslations("Nationality");
@@ -111,6 +118,45 @@ export default function AdminProfilesPage() {
   }
 
   function renderDetails(profile: QueueProfile) {
+    if (profile.profileType === "generic") {
+      const a = profile.attributes ?? {};
+      const specialties = ((a.careSpecialties ?? a.careSpecialtiesNeeded ?? []) as string[]) ?? [];
+      const days = (a.availability as { days?: string[] } | undefined)?.days ?? (a.neededDays as string[] | undefined) ?? [];
+      // Attributes are a category-defined jsonb bag, so this renders
+      // whatever the category's schema put there generically -- days and
+      // specialties get a nicer localized rendering, everything else is a
+      // raw key/value fallback rather than a bespoke field list per category.
+      const skipKeys = new Set(["careSpecialties", "careSpecialtiesNeeded", "availability", "neededDays", "languageIds"]);
+      const otherEntries = Object.entries(a).filter(
+        ([key, value]) => !skipKeys.has(key) && value !== null && value !== undefined && value !== "",
+      );
+
+      return (
+        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+          <dt className="text-muted">{t("typeGenericRole")}</dt>
+          <dd>{profile.role}</dd>
+          {otherEntries.map(([key, value]) => (
+            <Fragment key={key}>
+              <dt className="text-muted">{key}</dt>
+              <dd>{typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}</dd>
+            </Fragment>
+          ))}
+          {days.length > 0 && (
+            <>
+              <dt className="text-muted">{tNanny("availableDays")}</dt>
+              <dd>{days.map((d) => tDays(d as never)).join(", ")}</dd>
+            </>
+          )}
+          {specialties.length > 0 && (
+            <>
+              <dt className="text-muted">{t("careSpecialties")}</dt>
+              <dd>{specialties.map((s) => labelOr(tCareSpecialties, s)).join(", ")}</dd>
+            </>
+          )}
+        </dl>
+      );
+    }
+
     if (profile.profileType === "parent") {
       const langs = (profile.parent_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
       return (
@@ -219,7 +265,10 @@ export default function AdminProfilesPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-display text-lg font-semibold truncate">{profile.full_name}</p>
                   <span className={ui.badge("secondary")}>
-                    {profile.profileType === "parent" ? t("typeParent") : t("typeNanny")}
+                    {profile.profileType === "parent" && t("typeParent")}
+                    {profile.profileType === "nanny" && t("typeNanny")}
+                    {profile.profileType === "generic" &&
+                      `${profile.categories?.slug ?? profile.categorySlug ?? ""} · ${profile.role}`}
                   </span>
                 </div>
                 {area && <p className="text-sm text-muted mb-1">{area}</p>}

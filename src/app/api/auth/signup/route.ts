@@ -7,7 +7,7 @@ import { getPublicOrigin } from "@/lib/site-url";
 
 // Email every admin when a genuinely new account is created. Best-effort:
 // a failure here must never break the signup response.
-async function notifyAdminsOfNewSignup(newUserRole: string, newUserEmail: string) {
+async function notifyAdminsOfNewSignup(newUserRole: string | undefined, newUserEmail: string) {
   try {
     const admin = createAdminClient();
     const { data: admins } = await admin
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
   const { role, email, password, preferredLanguage } = parsed.data;
   const supabase = await createClient();
   const origin = getPublicOrigin(request);
-  const metadata = { role, preferred_language: preferredLanguage };
+  const metadata = { role: role ?? null, preferred_language: preferredLanguage };
 
   const { data, error } = await supabase.auth.signUp({
     email,

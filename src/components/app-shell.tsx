@@ -7,14 +7,22 @@ import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
 import { HomeIcon, ProfileIcon, GridIcon, FeedIcon } from "@/components/nav-icons";
+import CategoryIcon from "@/components/category-icon";
 
-type ActiveKey = "categories" | "nanny" | "feed" | "messages" | "profile";
+type ActiveKey = "categories" | "nanny" | "nursing" | "feed" | "messages" | "profile";
 
 export default async function AppShell({
   active,
+  showNursing,
   children,
 }: {
   active: ActiveKey;
+  // The nanny nav item always shows (it's the live category since launch).
+  // A second category only earns a nav slot once the user actually has a
+  // profile there -- the categories hub stays the discovery surface for
+  // everyone else. See the nursing dashboard/onboarding pages for how this
+  // is computed.
+  showNursing?: boolean;
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
@@ -60,6 +68,19 @@ export default async function AppShell({
             <FeedIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("feed")}</span>
           </Link>
+          {showNursing && (
+            <Link
+              href="/categories/nursing/dashboard"
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+                active === "nursing"
+                  ? "bg-surface-sunken font-semibold text-ink"
+                  : "text-muted hover:bg-surface-sunken hover:text-ink"
+              }`}
+            >
+              <CategoryIcon name="hand" className="h-[22px] w-[22px] shrink-0" />
+              <span>{t("nursing")}</span>
+            </Link>
+          )}
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
           <Link
@@ -122,6 +143,17 @@ export default async function AppShell({
           <FeedIcon className="h-[22px] w-[22px]" />
           {t("feed")}
         </Link>
+        {showNursing && (
+          <Link
+            href="/categories/nursing/dashboard"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+              active === "nursing" ? "font-semibold text-primary" : "text-muted"
+            }`}
+          >
+            <CategoryIcon name="hand" className="h-[22px] w-[22px]" />
+            {t("nursing")}
+          </Link>
+        )}
         <MessagesTabItem active={active === "messages"} />
         <Link
           href="/profile"
