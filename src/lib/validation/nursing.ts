@@ -28,45 +28,45 @@ export const CARE_SPECIALTIES = [
 export const PATIENT_AGE_GROUPS = ["infant", "child", "adult", "elderly"] as const;
 
 export const nursingProviderSchema = z.object({
-  fullName: z.string().min(2).max(80),
+  fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
   contactPhone,
   locationId: uuid,
-  locationDetail: z.string().trim().min(2).max(120),
+  locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
   nationality: z.enum(NATIONALITIES),
-  workRadiusKm: z.number().int().min(1).max(50),
+  workRadiusKm: z.number().int().min(1, "Enter a work radius").max(50, "50 km max"),
   employmentType: z.enum(["full_time", "part_time", "either"]),
   liveArrangementPref: z.enum(["live_in", "live_out", "either"]),
   availability: z.object({
-    days: z.array(z.enum(DAYS)).min(1),
+    days: z.array(z.enum(DAYS)).min(1, "Pick at least one available day"),
     startTime: z.string().regex(/^\d{2}:\d{2}$/),
     endTime: z.string().regex(/^\d{2}:\d{2}$/),
   }),
-  yearsExperience: z.number().min(0),
+  yearsExperience: z.number().min(0, "Enter your years of experience"),
   hasTransportation: z.boolean(),
   canDrive: z.boolean(),
-  licenseNumber: z.string().min(3).max(40),
-  licenseIssuingAuthority: z.string().max(120).optional(),
-  careSpecialties: z.array(z.enum(CARE_SPECIALTIES)).min(1),
-  shortIntro: z.string().max(500).optional(),
+  licenseNumber: z.string().min(3, "Enter your nursing license number").max(40, "That's too long"),
+  licenseIssuingAuthority: z.string().max(120, "That's too long").optional(),
+  careSpecialties: z.array(z.enum(CARE_SPECIALTIES)).min(1, "Pick at least one care specialty"),
+  shortIntro: z.string().max(500, "That's too long").optional(),
   languageIds: z.array(uuid).default([]),
 });
 
 export type NursingProviderInput = z.infer<typeof nursingProviderSchema>;
 
 export const nursingSeekerSchema = z.object({
-  fullName: z.string().min(2).max(80),
+  fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
   contactPhone,
   locationId: uuid,
-  locationDetail: z.string().trim().min(2).max(120),
+  locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
   nationality: z.enum(NATIONALITIES),
   scheduleType: z.enum(["full_time", "part_time", "either"]),
   neededDays: z.array(z.enum(DAYS)).default([]),
   liveArrangement: z.enum(["live_in", "live_out", "either"]),
   desiredStartDate: z.string().refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date"),
   transportationRequired: z.boolean(),
-  patientAgeGroup: z.enum(PATIENT_AGE_GROUPS),
-  careSpecialtiesNeeded: z.array(z.enum(CARE_SPECIALTIES)).min(1),
-  medicalConditionNotes: z.string().max(1000).optional(),
+  patientAgeGroup: z.enum(PATIENT_AGE_GROUPS, "Select who needs care"),
+  careSpecialtiesNeeded: z.array(z.enum(CARE_SPECIALTIES)).min(1, "Pick at least one type of care needed"),
+  medicalConditionNotes: z.string().max(1000, "That's too long").optional(),
   languageIds: z.array(uuid).default([]),
 });
 
