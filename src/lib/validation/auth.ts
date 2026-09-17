@@ -7,8 +7,13 @@ const password = z
   .regex(/[A-Za-z]/, "Password must include a letter")
   .regex(/[0-9]/, "Password must include a number");
 
+// Role is no longer chosen at signup -- an account can hold a profile per
+// category (see generic_profiles), so committing to "parent" or "nanny"
+// up front no longer makes sense. It's optional here only so the existing
+// nanny-category signup/login screens keep working unchanged; omitting it
+// leaves users.role null until the account picks a category.
 export const signupSchema = z.object({
-  role: z.enum(["parent", "nanny"]),
+  role: z.enum(["parent", "nanny"]).optional(),
   email: z.string().email(),
   password,
   preferredLanguage: z.enum(["en", "ar", "fr"]).default("en"),

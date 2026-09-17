@@ -12,11 +12,11 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const moderationStatus = searchParams.get("moderationStatus") ?? "pending";
-  const type = searchParams.get("type"); // 'parent' | 'nanny' | null (both)
+  const type = searchParams.get("type"); // 'parent' | 'nanny' | 'generic' | null (all)
 
   const db = createAdminClient();
 
-  const [parents, nannies] = await Promise.all([
+  const [parents, nannies, generics] = await Promise.all([
     type === "nanny"
       ? Promise.resolve({ data: [] })
       : db
@@ -41,16 +41,33 @@ export async function GET(request: Request) {
           )
           .eq("moderation_status", moderationStatus)
           .order("created_at", { ascending: true }),
+    type === "parent" || type === "nanny"
+      ? Promise.resolve({ data: [] })
+      : db
+          .from("generic_profiles")
+          .select(
+            "id, full_name, role, attributes, status, moderation_status, created_at, updated_at, " +
+              "locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)",
+          )
+          .eq("moderation_status", moderationStatus)
+          .order("created_at", { ascending: true }),
   ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const parentRows = (parents.data ?? []) as any[];
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const nannyRows = (nannies.data ?? []) as any[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const genericRows = (generics.data ?? []) as any[];
 
   const results = [
     ...parentRows.map((p) => ({ ...p, profileType: "parent" as const })),
     ...nannyRows.map((n) => ({ ...n, profileType: "nanny" as const })),
+    ...genericRows.map((g) => ({
+      ...g,
+      profileType: "generic" as const,
+      categorySlug: g.categories?.slug ?? null,
+    })),
   ].sort((a, b) => (a.created_at as string).localeCompare(b.created_at as string));
 
   return NextResponse.json({ profiles: results });
