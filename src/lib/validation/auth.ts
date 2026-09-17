@@ -17,6 +17,15 @@ export const signupSchema = z.object({
   email: z.string().email(),
   password,
   preferredLanguage: z.enum(["en", "ar", "fr"]).default("en"),
+  // Where to land after email confirmation, for entry points other than
+  // the nanny/parent flow (e.g. a category's own onboarding). Must be a
+  // same-site relative path -- never an absolute/protocol-relative URL --
+  // since this ends up in the Supabase confirmation email's redirect link.
+  next: z
+    .string()
+    .max(200)
+    .regex(/^\/(?!\/)\S*$/)
+    .optional(),
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;

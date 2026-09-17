@@ -9,10 +9,14 @@ const SUPPORTED_SLUGS = ["nursing"];
 
 export default async function CategoryOnboardingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ role?: string }>;
 }) {
   const { locale, slug } = await params;
+  const { role: roleHintParam } = await searchParams;
+  const roleHint = roleHintParam === "seeker" || roleHintParam === "provider" ? roleHintParam : null;
   const supabase = await createClient();
   const {
     data: { user },
@@ -54,6 +58,7 @@ export default async function CategoryOnboardingPage({
       categoryName={locale === "ar" ? category!.name_ar : category!.name_en}
       seekerProfile={seekerProfile ? withContact(seekerProfile) : null}
       providerProfile={providerProfile ? withContact(providerProfile) : null}
+      roleHint={roleHint}
     />
   );
 }

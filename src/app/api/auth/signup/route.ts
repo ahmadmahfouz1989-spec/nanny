@@ -43,15 +43,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { role, email, password, preferredLanguage } = parsed.data;
+  const { role, email, password, preferredLanguage, next } = parsed.data;
   const supabase = await createClient();
   const origin = getPublicOrigin(request);
   const metadata = { role: role ?? null, preferred_language: preferredLanguage };
+  const emailRedirectTo = `${origin}/auth/callback${next ? `?next=${encodeURIComponent(next)}` : ""}`;
 
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: metadata, emailRedirectTo: `${origin}/auth/callback` },
+    options: { data: metadata, emailRedirectTo },
   });
 
   if (error) {
