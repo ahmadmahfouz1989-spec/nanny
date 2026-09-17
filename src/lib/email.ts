@@ -161,19 +161,14 @@ export function pendingReviewEmail(lang: Lang, profileName: string, profileType:
   };
 }
 
-export function newSignupAdminEmail(lang: Lang, newUserRole: string | undefined, newUserEmail: string) {
-  const kind = pick(
-    lang,
-    newUserRole === "nanny" ? "nanny" : newUserRole === "parent" ? "parent" : "new account",
-    newUserRole === "nanny" ? "مربية" : newUserRole === "parent" ? "أحد الوالدين" : "حساب جديد",
-  );
+export function newSignupAdminEmail(lang: Lang, newUserEmail: string) {
   const addr = escapeHtml(newUserEmail);
   return {
-    subject: pick(lang, `New sign-up: ${kind}`, `تسجيل جديد: ${kind}`),
+    subject: pick(lang, "New sign-up", "تسجيل جديد"),
     html: pick(
       lang,
-      `<p>A ${kind} just signed up: <strong>${addr}</strong>.</p><p>Their profile will show up in the moderation queue once they finish onboarding.</p>`,
-      `<p>سجّل ${kind} جديد للتو: <strong>${addr}</strong>.</p><p>سيظهر ملفه في قائمة المراجعة بعد إكمال الإعداد.</p>`,
+      `<p>A new account just signed up: <strong>${addr}</strong>.</p><p>Their profile will show up in the moderation queue once they pick a category and finish onboarding.</p>`,
+      `<p>سجّل حساب جديد للتو: <strong>${addr}</strong>.</p><p>سيظهر ملفه في قائمة المراجعة بعد اختيار فئة وإكمال الإعداد.</p>`,
     ),
   };
 }

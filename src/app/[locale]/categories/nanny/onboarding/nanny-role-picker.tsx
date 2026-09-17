@@ -8,7 +8,7 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 
-export default function NannyRolePicker({ roleHint }: { roleHint: "parent" | "nanny" | null }) {
+export default function NannyRolePicker() {
   const t = useTranslations("NannyRolePicker");
   const router = useRouter();
   const [submitting, setSubmitting] = useState<"parent" | "nanny" | null>(null);
@@ -52,7 +52,7 @@ export default function NannyRolePicker({ roleHint }: { roleHint: "parent" | "na
                 type="button"
                 onClick={() => choose("parent")}
                 disabled={submitting !== null}
-                className={ui.cardHover + ` p-5 text-start ${roleHint === "parent" ? "border-primary/50" : ""}`}
+                className={ui.cardHover + " p-5 text-start"}
               >
                 <p className="font-display font-semibold mb-1">{t("roleParentTitle")}</p>
                 <p className="text-sm text-muted">{t("roleParentDescription")}</p>
@@ -61,7 +61,7 @@ export default function NannyRolePicker({ roleHint }: { roleHint: "parent" | "na
                 type="button"
                 onClick={() => choose("nanny")}
                 disabled={submitting !== null}
-                className={ui.cardHover + ` p-5 text-start ${roleHint === "nanny" ? "border-primary/50" : ""}`}
+                className={ui.cardHover + " p-5 text-start"}
               >
                 <p className="font-display font-semibold mb-1">{t("roleNannyTitle")}</p>
                 <p className="text-sm text-muted">{t("roleNannyDescription")}</p>

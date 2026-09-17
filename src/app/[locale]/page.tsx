@@ -124,16 +124,16 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               className="oui-in mt-3 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap"
               style={{ animationDelay: "0.24s" }}
             >
-              <Link href="/signup?category=nanny&role=parent" className={ui.buttonPrimary + " px-6! py-3! text-base!"}>
+              <Link href="/signup" className={ui.buttonPrimary + " px-6! py-3! text-base!"}>
                 {t("ctaParent")}
               </Link>
-              <Link href="/signup?category=nanny&role=nanny" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
+              <Link href="/signup" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNanny")}
               </Link>
-              <Link href="/signup?category=nursing&role=seeker" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
+              <Link href="/signup" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNursingSeeker")}
               </Link>
-              <Link href="/signup?category=nursing&role=provider" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
+              <Link href="/signup" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNursingProvider")}
               </Link>
             </div>
