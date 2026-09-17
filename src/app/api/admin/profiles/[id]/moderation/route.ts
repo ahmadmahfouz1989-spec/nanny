@@ -4,9 +4,10 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
+import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 
 const bodySchema = z.object({
-  profileType: z.enum(["parent", "nanny"]),
+  profileType: z.enum(["parent", "nanny", "generic"]),
   status: z.enum(["approved", "rejected"]),
   notes: z.string().max(1000).optional(),
 });
@@ -26,7 +27,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { profileType, status, notes } = parsed.data;
 
   const db = createAdminClient();
-  const table = profileType === "parent" ? "parent_profiles" : "nanny_profiles";
+  const table = profileType === "parent" ? "parent_profiles" : profileType === "nanny" ? "nanny_profiles" : "generic_profiles";
 
   const { data: updated, error } = await db
     .from(table)
@@ -51,8 +52,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (status === "approved") {
     if (profileType === "parent") {
       await recomputeMatchesForParent(id);
-    } else {
+    } else if (profileType === "nanny") {
       await recomputeMatchesForNanny(id);
+    } else {
+      await recomputeGenericMatchesForProfile(id);
     }
   }
 

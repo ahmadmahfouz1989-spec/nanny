@@ -33,10 +33,15 @@ const KNOWN_TYPES = new Set([
 // profile.
 function hrefFor(n: Notification): string {
   const matchId = typeof n.payload?.match_id === "string" ? n.payload.match_id : null;
+  const genericMatchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
+  const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   switch (n.type) {
     case "interest_accepted":
     case "interest_received":
     case "new_match":
+      if (genericMatchId && categorySlug) {
+        return `/categories/${categorySlug}/dashboard#match-${genericMatchId}`;
+      }
       return matchId ? `/dashboard#match-${matchId}` : "/dashboard";
     case "rating_received":
       return "/profile#ratings";
