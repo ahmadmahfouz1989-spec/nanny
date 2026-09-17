@@ -36,6 +36,10 @@ export default async function ProfilePage({
     redirect({ href: "/admin", locale });
   }
 
+  if (profile?.role !== "parent" && profile?.role !== "nanny") {
+    redirect({ href: "/categories/nanny/onboarding", locale });
+  }
+
   let matchProfile: { status: string; moderation_status: string; full_name: string; profile_photo_url?: string | null } | null =
     null;
   if (profile?.role === "parent") {

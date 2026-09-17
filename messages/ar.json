@@ -301,6 +301,15 @@
     "roleProviderTitle": "أقدّم هذه الخدمة",
     "roleProviderDescription": "أنشئ ملفًا شخصيًا لتتمكن العائلات من إيجادك والتواصل معك."
   },
+  "NannyRolePicker": {
+    "title": "أهلاً بك في فئة المربيات",
+    "subtitle": "هل تبحث عن مربية، أم تبحث عن عمل كمربية؟",
+    "roleParentTitle": "أبحث عن مربية",
+    "roleParentDescription": "ابحث وتواصل مع مربيات بالقرب منك.",
+    "roleNannyTitle": "أبحث عن عمل",
+    "roleNannyDescription": "أنشئ ملفًا شخصيًا لتتمكن العائلات من إيجادك والتواصل معك.",
+    "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  },
   "NursingProviderOnboarding": {
     "createTitle": "أنشئ ملفك كممرض/ة",
     "editTitle": "عدّل ملفك كممرض/ة",

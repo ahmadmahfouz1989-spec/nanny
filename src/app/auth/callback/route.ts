@@ -16,7 +16,10 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const origin = getPublicOrigin(request);
   const code = searchParams.get("code");
-  const next = searchParams.get("next") ?? "/dashboard";
+  // Signup no longer chooses a category up front, so a confirmation link
+  // with no explicit `next` (e.g. a bare /signup with no category hint)
+  // lands on the hub to choose one, not a specific category's dashboard.
+  const next = searchParams.get("next") ?? "/categories";
   const locale = await currentLocale();
 
   if (code) {
