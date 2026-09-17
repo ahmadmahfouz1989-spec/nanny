@@ -36,6 +36,12 @@ export default async function DashboardPage({
     redirect({ href: "/admin", locale });
   }
 
+  // Signup no longer forces a parent/nanny choice -- an account can reach
+  // here (e.g. via the categories hub) with no role yet.
+  if (profile?.role !== "parent" && profile?.role !== "nanny") {
+    redirect({ href: "/categories/nanny/onboarding", locale });
+  }
+
   let matchProfile: { status: string; moderation_status: string } | null = null;
   if (profile?.role === "parent") {
     const { data } = await supabase
