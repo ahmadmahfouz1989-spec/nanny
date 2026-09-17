@@ -51,12 +51,15 @@ type ExistingProfile = {
   location_id: string | null;
   attributes: Record<string, unknown>;
   contact_phone: string | null;
+  status: string;
 };
 
 function stateFromExisting(p: ExistingProfile): FormState {
   const a = p.attributes;
   return {
-    fullName: p.full_name,
+    // A freshly-claimed draft (see /api/generic-profile/claim) has a
+    // placeholder full_name -- show the field empty rather than that.
+    fullName: p.status === "draft" ? "" : p.full_name,
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
@@ -89,6 +92,10 @@ export default function NursingSeekerForm({
   const tPatientAge = useTranslations("PatientAgeGroups");
   const router = useRouter();
   const isEdit = !!initialProfile;
+  // A claimed-but-unfilled draft still needs PATCH (a row already exists),
+  // but should read as "create" to the user, not "edit" -- they haven't
+  // submitted anything yet.
+  const isRealEdit = isEdit && initialProfile!.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -151,7 +158,7 @@ export default function NursingSeekerForm({
 
   return (
     <EditShell
-      title={isEdit ? t("editTitle") : t("createTitle")}
+      title={isRealEdit ? t("editTitle") : t("createTitle")}
       error={error}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}

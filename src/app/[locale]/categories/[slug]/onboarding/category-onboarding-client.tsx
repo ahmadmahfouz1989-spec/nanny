@@ -16,6 +16,7 @@ type ExistingProfile = {
   location_id: string | null;
   attributes: Record<string, unknown>;
   contact_phone: string | null;
+  status: string;
 } | null;
 
 export default function CategoryOnboardingClient({
@@ -30,15 +31,53 @@ export default function CategoryOnboardingClient({
   providerProfile: ExistingProfile;
 }) {
   const t = useTranslations("CategoryOnboarding");
+  const tw = useTranslations("Wizard");
   const [chosenRole, setChosenRole] = useState<"seeker" | "provider" | null>(
     providerProfile ? "provider" : seekerProfile ? "seeker" : null,
   );
+  // Claiming (below) can hand back a brand-new draft row the server-side
+  // props above don't know about yet -- these start from the props and
+  // get filled in once a claim resolves.
+  const [seeker, setSeeker] = useState(seekerProfile);
+  const [provider, setProvider] = useState(providerProfile);
+  const [claiming, setClaiming] = useState<"seeker" | "provider" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Commits to a role the moment it's picked, before any real profile
+  // fields are filled in -- same reasoning as nanny's claim-role: this is
+  // what lets the nav show this category right away instead of only after
+  // the whole form is submitted. Re-picking a role that's already claimed
+  // (or fully onboarded) just reuses that same row -- never overwrites it.
+  async function chooseRole(role: "seeker" | "provider") {
+    if (role === "seeker" && seeker) return setChosenRole("seeker");
+    if (role === "provider" && provider) return setChosenRole("provider");
+
+    setClaiming(role);
+    setError(null);
+    const res = await fetch("/api/generic-profile/claim", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ categorySlug, role }),
+    });
+    setClaiming(null);
+
+    if (!res.ok) {
+      setError(tw("genericError"));
+      return;
+    }
+
+    const { profile } = await res.json();
+    const withContact = { ...profile, contact_phone: null } as NonNullable<ExistingProfile>;
+    if (role === "seeker") setSeeker(withContact);
+    else setProvider(withContact);
+    setChosenRole(role);
+  }
 
   if (chosenRole === "provider") {
-    return <NursingProviderForm categorySlug={categorySlug} initialProfile={providerProfile} />;
+    return <NursingProviderForm categorySlug={categorySlug} initialProfile={provider} />;
   }
   if (chosenRole === "seeker") {
-    return <NursingSeekerForm categorySlug={categorySlug} initialProfile={seekerProfile} />;
+    return <NursingSeekerForm categorySlug={categorySlug} initialProfile={seeker} />;
   }
 
   return (
@@ -56,15 +95,26 @@ export default function CategoryOnboardingClient({
             <h1 className="font-display text-2xl font-semibold mb-2">{t("roleTitle", { category: categoryName })}</h1>
             <p className="text-sm text-muted mb-6">{t("roleSubtitle")}</p>
             <div className="flex flex-col gap-3">
-              <button type="button" onClick={() => setChosenRole("seeker")} className={ui.cardHover + " p-5 text-start"}>
+              <button
+                type="button"
+                onClick={() => chooseRole("seeker")}
+                disabled={claiming !== null}
+                className={ui.cardHover + " p-5 text-start"}
+              >
                 <p className="font-display font-semibold mb-1">{t("roleSeekerTitle")}</p>
                 <p className="text-sm text-muted">{t("roleSeekerDescription")}</p>
               </button>
-              <button type="button" onClick={() => setChosenRole("provider")} className={ui.cardHover + " p-5 text-start"}>
+              <button
+                type="button"
+                onClick={() => chooseRole("provider")}
+                disabled={claiming !== null}
+                className={ui.cardHover + " p-5 text-start"}
+              >
                 <p className="font-display font-semibold mb-1">{t("roleProviderTitle")}</p>
                 <p className="text-sm text-muted">{t("roleProviderDescription")}</p>
               </button>
             </div>
+            {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger mt-4">{error}</p>}
           </div>
         </div>
       </main>
