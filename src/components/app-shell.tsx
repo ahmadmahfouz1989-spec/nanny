@@ -1,5 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { createClient } from "@/lib/supabase/server";
 import BrandMark from "@/components/brand-mark";
 import ThemeSwitcher from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
@@ -11,21 +12,53 @@ import CategoryIcon from "@/components/category-icon";
 
 type ActiveKey = "categories" | "nanny" | "nursing" | "feed" | "messages" | "profile";
 
+/**
+ * A category's nav item only earns a slot once the user actually has a
+ * profile there -- the categories hub stays the discovery surface for
+ * everyone else. Computed here (not passed in by each caller) so it's
+ * automatically correct on every page, including ones like the hub itself
+ * that aren't "inside" any specific category. Only nanny (users.role) and
+ * nursing (generic_profiles) exist as categories today; a third category
+ * needs a similar check added here.
+ */
+async function resolveCategoryNav() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return { showNanny: false, showNursing: false };
+
+  const [{ data: profile }, { data: nursingCategory }] = await Promise.all([
+    supabase.from("users").select("role").eq("id", user.id).single(),
+    supabase.from("categories").select("id").eq("slug", "nursing").maybeSingle(),
+  ]);
+
+  const showNanny = profile?.role === "parent" || profile?.role === "nanny";
+
+  let showNursing = false;
+  if (nursingCategory) {
+    const { data: nursingProfile } = await supabase
+      .from("generic_profiles")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("category_id", nursingCategory.id)
+      .maybeSingle();
+    showNursing = !!nursingProfile;
+  }
+
+  return { showNanny, showNursing };
+}
+
 export default async function AppShell({
   active,
-  showNursing,
   children,
 }: {
   active: ActiveKey;
-  // The nanny nav item always shows (it's the live category since launch).
-  // A second category only earns a nav slot once the user actually has a
-  // profile there -- the categories hub stays the discovery surface for
-  // everyone else. See the nursing dashboard/onboarding pages for how this
-  // is computed.
-  showNursing?: boolean;
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
+  const { showNanny, showNursing } = await resolveCategoryNav();
 
   return (
     <div className="flex min-h-screen">
@@ -46,17 +79,19 @@ export default async function AppShell({
             <GridIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("categories")}</span>
           </Link>
-          <Link
-            href="/dashboard"
-            className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
-              active === "nanny"
-                ? "bg-surface-sunken font-semibold text-ink"
-                : "text-muted hover:bg-surface-sunken hover:text-ink"
-            }`}
-          >
-            <HomeIcon className="h-[22px] w-[22px] shrink-0" />
-            <span>{t("nanny")}</span>
-          </Link>
+          {showNanny && (
+            <Link
+              href="/dashboard"
+              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+                active === "nanny"
+                  ? "bg-surface-sunken font-semibold text-ink"
+                  : "text-muted hover:bg-surface-sunken hover:text-ink"
+              }`}
+            >
+              <HomeIcon className="h-[22px] w-[22px] shrink-0" />
+              <span>{t("nanny")}</span>
+            </Link>
+          )}
           <Link
             href="/feed"
             className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
@@ -125,15 +160,17 @@ export default async function AppShell({
           <GridIcon className="h-[22px] w-[22px]" />
           {t("categories")}
         </Link>
-        <Link
-          href="/dashboard"
-          className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
-            active === "nanny" ? "font-semibold text-primary" : "text-muted"
-          }`}
-        >
-          <HomeIcon className="h-[22px] w-[22px]" />
-          {t("nanny")}
-        </Link>
+        {showNanny && (
+          <Link
+            href="/dashboard"
+            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+              active === "nanny" ? "font-semibold text-primary" : "text-muted"
+            }`}
+          >
+            <HomeIcon className="h-[22px] w-[22px]" />
+            {t("nanny")}
+          </Link>
+        )}
         <Link
           href="/feed"
           className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${

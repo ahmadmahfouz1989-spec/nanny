@@ -43,7 +43,7 @@ export default async function CategoryDashboardPage({
 
   if (myProfile?.moderation_status === "approved") {
     return (
-      <AppShell active="nursing" showNursing>
+      <AppShell active="nursing">
         <GenericResults categorySlug={slug} />
       </AppShell>
     );
@@ -52,7 +52,7 @@ export default async function CategoryDashboardPage({
   const moderationTone = myProfile?.moderation_status === "rejected" ? "danger" : "warning";
 
   return (
-    <AppShell active="nursing" showNursing>
+    <AppShell active="nursing">
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 
