@@ -39,7 +39,10 @@ export default async function CategoryDashboardPage({
     .eq("user_id", user!.id)
     .eq("category_id", category!.id);
 
-  const myProfile = (profiles ?? [])[0] ?? null;
+  // A draft is just a claimed role with nothing filled in yet (see
+  // /api/generic-profile/claim) -- treat it the same as no profile at all,
+  // not as something actually submitted and awaiting review.
+  const myProfile = (profiles ?? []).find((p) => p.status !== "draft") ?? null;
 
   if (myProfile?.moderation_status === "approved") {
     return (

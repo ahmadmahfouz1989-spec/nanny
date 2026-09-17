@@ -35,7 +35,7 @@ export default async function CategoryOnboardingPage({
   const [{ data: profiles }, { data: userRow }] = await Promise.all([
     supabase
       .from("generic_profiles")
-      .select("id, role, full_name, location_id, attributes")
+      .select("id, role, full_name, location_id, attributes, status")
       .eq("user_id", user!.id)
       .eq("category_id", category!.id),
     supabase.from("users").select("contact_phone").eq("id", user!.id).single(),
