@@ -112,7 +112,9 @@
     "checkEmailTitle": "Check your email",
     "checkEmailBody": "We sent a confirmation link to <mark>{email}</mark>. Click it to activate your account.",
     "checkInboxTitle": "Check your inbox",
-    "checkInboxBody": "If an account exists for <mark>{identifier}</mark>, recovery instructions are on their way."
+    "checkInboxBody": "If an account exists for <mark>{identifier}</mark>, recovery instructions are on their way.",
+    "continueWithGoogle": "Continue with Google",
+    "orDivider": "or"
   },
   "Signup": {
     "title": "Create your account",
