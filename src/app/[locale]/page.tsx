@@ -130,10 +130,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <Link href="/signup?category=nanny&role=nanny" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNanny")}
               </Link>
-              <Link href="/signup?category=nursing&role=seeker" className={ui.buttonGhost + " px-6! py-3! text-base!"}>
+              <Link href="/signup?category=nursing&role=seeker" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNursingSeeker")}
               </Link>
-              <Link href="/signup?category=nursing&role=provider" className={ui.buttonGhost + " px-6! py-3! text-base!"}>
+              <Link href="/signup?category=nursing&role=provider" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
                 {t("ctaNursingProvider")}
               </Link>
             </div>
