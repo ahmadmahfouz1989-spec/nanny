@@ -112,7 +112,9 @@
     "checkEmailTitle": "تحقق من بريدك الإلكتروني",
     "checkEmailBody": "أرسلنا رابط تأكيد إلى <mark>{email}</mark>. اضغط عليه لتفعيل حسابك.",
     "checkInboxTitle": "تحقق من بريدك",
-    "checkInboxBody": "إذا كان هناك حساب مرتبط بـ <mark>{identifier}</mark>، فستصلك تعليمات الاسترداد قريبًا."
+    "checkInboxBody": "إذا كان هناك حساب مرتبط بـ <mark>{identifier}</mark>، فستصلك تعليمات الاسترداد قريبًا.",
+    "continueWithGoogle": "المتابعة باستخدام Google",
+    "orDivider": "أو"
   },
   "Signup": {
     "title": "أنشئ حسابك",

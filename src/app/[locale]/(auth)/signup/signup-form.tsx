@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
+import GoogleAuthButton from "@/components/google-auth-button";
 import { ui } from "@/lib/ui";
 
 // No category chooses a role at signup -- see signupSchema in
@@ -85,6 +86,14 @@ export default function SignupForm() {
     <AuthCard>
       <h1 className="font-display text-2xl font-semibold mb-1">{t("title")}</h1>
       <p className="text-muted text-sm mb-6">{t("subheadCategory")}</p>
+
+      <GoogleAuthButton />
+
+      <div className="flex items-center gap-3 my-5">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted">{tAuth("orDivider")}</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
