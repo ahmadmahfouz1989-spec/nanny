@@ -23,15 +23,20 @@ export default function CategoryOnboardingClient({
   categoryName,
   seekerProfile,
   providerProfile,
+  roleHint,
 }: {
   categorySlug: string;
   categoryName: string;
   seekerProfile: ExistingProfile;
   providerProfile: ExistingProfile;
+  roleHint: "seeker" | "provider" | null;
 }) {
   const t = useTranslations("CategoryOnboarding");
+  // An existing profile always wins over the hint (editing beats a stale
+  // link); the hint only skips the picker for a genuine first-time visit,
+  // carried through from the homepage CTA -> signup -> email confirmation.
   const [chosenRole, setChosenRole] = useState<"seeker" | "provider" | null>(
-    providerProfile ? "provider" : seekerProfile ? "seeker" : null,
+    providerProfile ? "provider" : seekerProfile ? "seeker" : roleHint,
   );
 
   if (chosenRole === "provider") {
