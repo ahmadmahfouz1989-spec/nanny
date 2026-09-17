@@ -50,6 +50,11 @@ export async function GET(request: Request) {
               "locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)",
           )
           .eq("moderation_status", moderationStatus)
+          // Excludes the placeholder row created the instant a role is
+          // picked on a category's onboarding screen (see
+          // /api/generic-profile/claim) -- that's not a real submission
+          // yet, just what makes the nav show up early.
+          .neq("status", "draft")
           .order("created_at", { ascending: true }),
   ]);
 
