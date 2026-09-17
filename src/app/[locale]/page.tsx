@@ -120,21 +120,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               ))}
             </ul>
 
-            <div
-              className="oui-in mt-3 flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap"
-              style={{ animationDelay: "0.24s" }}
-            >
-              <Link href="/signup" className={ui.buttonPrimary + " px-6! py-3! text-base!"}>
-                {t("ctaParent")}
-              </Link>
-              <Link href="/signup" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
-                {t("ctaNanny")}
-              </Link>
-              <Link href="/signup" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
-                {t("ctaNursingSeeker")}
-              </Link>
-              <Link href="/signup" className={ui.buttonSecondary + " px-6! py-3! text-base!"}>
-                {t("ctaNursingProvider")}
+            <div className="oui-in mt-3" style={{ animationDelay: "0.24s" }}>
+              <Link href="/signup" className={ui.buttonPrimary + " px-8! py-3! text-base!"}>
+                {t("ctaGetStarted")}
               </Link>
             </div>
           </div>
