@@ -2,26 +2,17 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import { ui } from "@/lib/ui";
 
-// No category chooses a role at signup anymore -- see signupSchema in
-// src/lib/validation/auth.ts. Role (parent/nanny for the nanny category,
-// seeker/provider for nursing) is picked after signing in, inside that
-// category's own onboarding. `category`+`role` here are only a hint,
-// carried through email confirmation (as `next`) to land the visitor
-// straight on the right onboarding screen instead of the categories hub.
-const SUPPORTED_CATEGORIES = new Set(["nanny", "nursing"]);
-
+// No category chooses a role at signup -- see signupSchema in
+// src/lib/validation/auth.ts. Every account lands on /categories after
+// confirming (see the default in src/app/auth/callback/route.ts) and
+// picks a category, then a role within it, from there.
 export default function SignupForm() {
   const t = useTranslations("Signup");
   const tAuth = useTranslations("Auth");
-  const searchParams = useSearchParams();
-  const categoryParam = searchParams.get("category");
-  const category = categoryParam && SUPPORTED_CATEGORIES.has(categoryParam) ? categoryParam : null;
-  const categoryRole = searchParams.get("role");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -39,15 +30,11 @@ export default function SignupForm() {
       return;
     }
 
-    const next = category
-      ? `/categories/${category}/onboarding${categoryRole ? `?role=${categoryRole}` : ""}`
-      : undefined;
-
     setSubmitting(true);
     const res = await fetch("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password, next }),
+      body: JSON.stringify({ email, password }),
     });
     setSubmitting(false);
 
