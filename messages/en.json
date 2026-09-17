@@ -301,6 +301,15 @@
     "roleProviderTitle": "I offer this service",
     "roleProviderDescription": "Create a profile so families can find and match with you."
   },
+  "NannyRolePicker": {
+    "title": "Welcome to Nanny",
+    "subtitle": "Are you looking for a nanny, or looking for work as one?",
+    "roleParentTitle": "I'm looking for a nanny",
+    "roleParentDescription": "Find and match with nannies near you.",
+    "roleNannyTitle": "I'm looking for work",
+    "roleNannyDescription": "Create a profile so families can find and match with you.",
+    "errorGeneric": "Something went wrong. Please try again."
+  },
   "NursingProviderOnboarding": {
     "createTitle": "Create your nursing profile",
     "editTitle": "Edit your nursing profile",

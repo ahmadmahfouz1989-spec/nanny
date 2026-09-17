@@ -24,9 +24,13 @@ export default async function FeedPage({
     redirect({ href: "/admin", locale });
   }
 
+  if (profile?.role !== "parent" && profile?.role !== "nanny") {
+    redirect({ href: "/categories/nanny/onboarding", locale });
+  }
+
   return (
     <AppShell active="feed">
-      <FeedClient myRole={profile?.role === "nanny" ? "nanny" : "parent"} />
+      <FeedClient myRole={profile!.role as "parent" | "nanny"} />
     </AppShell>
   );
 }
