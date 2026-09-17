@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import FeedClient from "./feed-client";
 
+// The feed is a shared timeline open to any authenticated account,
+// regardless of category or role -- no profile/onboarding required.
 export default async function FeedPage({
   params,
 }: {
@@ -24,13 +26,9 @@ export default async function FeedPage({
     redirect({ href: "/admin", locale });
   }
 
-  if (profile?.role !== "parent" && profile?.role !== "nanny") {
-    redirect({ href: "/categories/nanny/onboarding", locale });
-  }
-
   return (
     <AppShell active="feed">
-      <FeedClient myRole={profile!.role as "parent" | "nanny"} />
+      <FeedClient />
     </AppShell>
   );
 }

@@ -16,7 +16,7 @@ type Post = {
   kind: "looking_for" | "offering";
   caption: string;
   created_at: string;
-  author: { fullName: string; role: "parent" | "nanny"; profileId: string; photoUrl: string | null } | null;
+  author: { fullName: string; role?: "parent" | "nanny"; profileId: string | null; photoUrl: string | null } | null;
   likeCount: number;
   likedByMe: boolean;
   replyCount: number;
@@ -149,7 +149,7 @@ function ReplyThread({
   );
 }
 
-export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
+export default function FeedClient() {
   const t = useTranslations("Feed");
   const locale = useLocale();
 
@@ -158,6 +158,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [caption, setCaption] = useState("");
+  const [kind, setKind] = useState<"looking_for" | "offering">("looking_for");
   const [posting, setPosting] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
 
@@ -184,10 +185,6 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
   }
 
   const [sendingReply, setSendingReply] = useState<Record<string, boolean>>({});
-
-  // "sent", or the server's actual error message so a rejection is
-  // diagnosable instead of hidden behind one generic string.
-  const [interestState, setInterestState] = useState<Record<string, string>>({});
 
   function loadPosts(before?: string) {
     const url = before ? `/api/posts?before=${encodeURIComponent(before)}` : "/api/posts";
@@ -223,7 +220,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption: caption.trim() }),
+      body: JSON.stringify({ caption: caption.trim(), kind }),
     });
     const body = await res.json();
     setPosting(false);
@@ -322,16 +319,6 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
     setPosts((prev) => prev?.map((p) => (p.id === postId ? { ...p, replyCount: Math.max(0, p.replyCount - removed.size) } : p)) ?? null);
   }
 
-  async function expressInterest(postId: string) {
-    const res = await fetch(`/api/posts/${postId}/interest`, { method: "POST" });
-    if (res.ok) {
-      setInterestState((prev) => ({ ...prev, [postId]: "sent" }));
-      return;
-    }
-    const body = await res.json().catch(() => null);
-    setInterestState((prev) => ({ ...prev, [postId]: typeof body?.error === "string" ? body.error : t("interestError") }));
-  }
-
   async function deletePost(postId: string) {
     await fetch(`/api/posts/${postId}`, { method: "DELETE" });
     setPosts((prev) => prev?.filter((p) => p.id !== postId) ?? null);
@@ -356,12 +343,20 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
         <div className="flex gap-3 p-4 border-b border-border">
           <Avatar photoUrl={null} size={44} className="mt-0.5" />
           <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <div className="flex gap-2">
+              <button type="button" onClick={() => setKind("looking_for")} className={ui.pill(kind === "looking_for")}>
+                {t("kindLookingFor")}
+              </button>
+              <button type="button" onClick={() => setKind("offering")} className={ui.pill(kind === "offering")}>
+                {t("kindOffering")}
+              </button>
+            </div>
             <textarea
               dir="auto"
               className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none"
               rows={2}
               maxLength={500}
-              placeholder={myRole === "parent" ? t("captionPlaceholderParent") : t("captionPlaceholderNanny")}
+              placeholder={t("captionPlaceholder")}
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
             />
@@ -384,7 +379,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
 
               <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
-                  {post.author && post.author.role !== myRole ? (
+                  {post.author?.role ? (
                     <button
                       type="button"
                       onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
@@ -418,7 +413,7 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
 
                 <p dir="auto" className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
 
-                {openProfile === post.id && post.author && (
+                {openProfile === post.id && post.author?.role && post.author.profileId && (
                   <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
                 )}
 
@@ -440,22 +435,6 @@ export default function FeedClient({ myRole }: { myRole: "parent" | "nanny" }) {
                     <span className="text-sm">{post.likeCount > 0 ? post.likeCount : ""}</span>
                   </button>
                 </div>
-
-                {!post.isMine && post.author?.role !== myRole && (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => expressInterest(post.id)}
-                      disabled={interestState[post.id] === "sent"}
-                      className={ui.buttonSecondary + " mt-1 px-4! py-1.5! text-xs"}
-                    >
-                      {interestState[post.id] === "sent" ? t("interestSent") : t("imInterested")}
-                    </button>
-                  </div>
-                )}
-                {interestState[post.id] && interestState[post.id] !== "sent" && (
-                  <p className="text-xs text-danger">{interestState[post.id]}</p>
-                )}
 
                 {openReplies === post.id && (
                   <div className="mt-2 flex flex-col gap-3 border-t border-border pt-3">

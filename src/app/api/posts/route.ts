@@ -9,6 +9,7 @@ const PAGE_SIZE = 20;
 
 const createSchema = z.object({
   caption: z.string().trim().min(1).max(500),
+  kind: z.enum(["looking_for", "offering"]),
 });
 
 export async function GET(request: Request) {
@@ -82,15 +83,9 @@ export async function POST(request: Request) {
     );
   }
 
-  const { data: me } = await supabase.from("users").select("role").eq("id", user.id).single();
-  if (me?.role !== "parent" && me?.role !== "nanny") {
-    return NextResponse.json({ error: "Only parent or nanny accounts can post" }, { status: 400 });
-  }
-  const kind = me.role === "parent" ? "looking_for" : "offering";
-
   const { data: post, error } = await supabase
     .from("posts")
-    .insert({ user_id: user.id, kind, caption: parsed.data.caption })
+    .insert({ user_id: user.id, kind: parsed.data.kind, caption: parsed.data.caption })
     .select("id, user_id, kind, caption, created_at")
     .single();
 
