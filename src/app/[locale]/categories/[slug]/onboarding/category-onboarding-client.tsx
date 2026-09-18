@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
+import { Link } from "@/i18n/navigation";
 import NursingProviderForm from "./nursing-provider-form";
 import NursingSeekerForm from "./nursing-seeker-form";
 import TutoringProviderForm from "./tutoring-provider-form";
@@ -97,7 +98,12 @@ export default function CategoryOnboardingClient({
   return (
     <>
       <header className="flex items-center justify-between px-6 sm:px-10 py-6">
-        <BrandMark />
+        <div className="flex items-center gap-5">
+          <BrandMark />
+          <Link href="/categories" className={ui.link + " text-sm"}>
+            {t("backToCategories")}
+          </Link>
+        </div>
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
           <LocaleSwitcher />

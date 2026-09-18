@@ -312,6 +312,7 @@
     "other": "Other"
   },
   "CategoryOnboarding": {
+    "backToCategories": "Back to categories",
     "roleTitle": "Welcome to {category}",
     "roleSubtitle": "Are you looking for help, or offering it?",
     "roleSeekerTitle": "I need this",
@@ -320,6 +321,7 @@
     "roleProviderDescription": "Create a profile so people can find and match with you."
   },
   "NannyRolePicker": {
+    "backToCategories": "Back to categories",
     "title": "Welcome to Nanny",
     "subtitle": "Are you looking for a nanny, or looking for work as one?",
     "roleParentTitle": "I'm looking for a nanny",
