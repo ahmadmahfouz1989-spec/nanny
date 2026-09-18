@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
+import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATION_STATUS } from "@/lib/validation/nursing";
+import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 
 type GenericRole = "seeker" | "provider";
 
-// Registry so a future category (tutoring) plugs in its own schemas here
-// without touching the request-handling logic below.
-const CATEGORY_SCHEMAS: Record<string, { seeker: typeof nursingSeekerSchema; provider: typeof nursingProviderSchema }> = {
+// Registry so each category plugs in its own schemas here without
+// touching the request-handling logic below.
+const CATEGORY_SCHEMAS: Record<string, { seeker: z.ZodTypeAny; provider: z.ZodTypeAny }> = {
   nursing: { seeker: nursingSeekerSchema, provider: nursingProviderSchema },
+  tutoring: { seeker: tutoringSeekerSchema, provider: tutoringProviderSchema },
 };
 
 async function notifyAdminsOfPendingReview(fullName: string, profileType: string) {
@@ -115,7 +118,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   // attributes jsonb.
   const { fullName, contactPhone, locationId, ...rest } = p;
   const attributes: Record<string, unknown> = { ...rest };
-  if (role === "provider" && mode === "create") {
+  if (categorySlug === "nursing" && role === "provider" && mode === "create") {
     attributes.licenseVerificationStatus = DEFAULT_LICENSE_VERIFICATION_STATUS;
   }
 
