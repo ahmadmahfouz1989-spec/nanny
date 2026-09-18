@@ -312,6 +312,7 @@
     "other": "أخرى"
   },
   "CategoryOnboarding": {
+    "backToCategories": "العودة إلى الفئات",
     "roleTitle": "أهلاً بك في {category}",
     "roleSubtitle": "هل تبحث عن مساعدة، أم تقدّمها؟",
     "roleSeekerTitle": "أحتاج هذا",
@@ -320,6 +321,7 @@
     "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الآخرون من إيجادك والتواصل معك."
   },
   "NannyRolePicker": {
+    "backToCategories": "العودة إلى الفئات",
     "title": "أهلاً بك في فئة المربيات",
     "subtitle": "هل تبحث عن مربية، أم تبحث عن عمل كمربية؟",
     "roleParentTitle": "أبحث عن مربية",
