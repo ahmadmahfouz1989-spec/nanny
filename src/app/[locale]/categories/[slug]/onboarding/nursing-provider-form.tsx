@@ -28,6 +28,7 @@ type FormState = {
   canDrive: boolean;
   licenseNumber: string;
   licenseIssuingAuthority: string;
+  hasNursingDiploma: boolean;
   careSpecialties: string[];
   shortIntro: string;
   languageIds: string[];
@@ -50,6 +51,7 @@ const initialState: FormState = {
   canDrive: false,
   licenseNumber: "",
   licenseIssuingAuthority: "",
+  hasNursingDiploma: false,
   careSpecialties: [],
   shortIntro: "",
   languageIds: [],
@@ -86,6 +88,10 @@ function stateFromExisting(p: ExistingProfile): FormState {
     canDrive: !!a.canDrive,
     licenseNumber: (a.licenseNumber as string) ?? "",
     licenseIssuingAuthority: (a.licenseIssuingAuthority as string) ?? "",
+    // Existing profiles created before this field was added simply have no
+    // value stored yet -- defaults to false (unanswered reads as "no")
+    // until the nurse opens her profile and sets it explicitly.
+    hasNursingDiploma: !!a.hasNursingDiploma,
     careSpecialties: (a.careSpecialties as string[]) ?? [],
     shortIntro: (a.shortIntro as string) ?? "",
     languageIds: (a.languageIds as string[]) ?? [],
@@ -145,6 +151,7 @@ export default function NursingProviderForm({
       canDrive: form.canDrive,
       licenseNumber: form.licenseNumber,
       licenseIssuingAuthority: form.licenseIssuingAuthority || undefined,
+      hasNursingDiploma: form.hasNursingDiploma,
       careSpecialties: form.careSpecialties,
       shortIntro: form.shortIntro || undefined,
       languageIds: form.languageIds,
@@ -200,6 +207,10 @@ export default function NursingProviderForm({
         <input className={ui.input} value={form.licenseNumber} onChange={(e) => update("licenseNumber", e.target.value)} />
         <label className={ui.label}>{t("licenseIssuingAuthority")}</label>
         <input className={ui.input} value={form.licenseIssuingAuthority} onChange={(e) => update("licenseIssuingAuthority", e.target.value)} />
+        <label className="flex items-center gap-2 text-sm">
+          <input type="checkbox" checked={form.hasNursingDiploma} onChange={(e) => update("hasNursingDiploma", e.target.checked)} className="accent-primary" />
+          {t("hasNursingDiploma")}
+        </label>
       </div>
 
       <div className="flex flex-col gap-3">
