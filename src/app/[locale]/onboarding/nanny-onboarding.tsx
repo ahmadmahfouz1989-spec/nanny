@@ -240,6 +240,15 @@ export default function NannyOnboarding({
     router.push("/profile");
   }
 
+  // "I am a nanny" clicked by mistake, or just changing their mind before
+  // ever submitting -- undoes the users.role claim (see
+  // /api/account/claim-role) and sends them back to the role picker.
+  async function handleExitToRolePicker() {
+    await fetch("/api/account/claim-role", { method: "DELETE" });
+    router.push("/categories/nanny/onboarding");
+    router.refresh();
+  }
+
   const sectionHeading = (n: 1 | 2 | 3 | 4 | 5 | 6 | 7) =>
     isEdit && (
       <h2 className="font-display text-sm font-semibold text-muted uppercase tracking-wide">
@@ -502,6 +511,8 @@ export default function NannyOnboarding({
       error={error}
       onBack={handleBack}
       onNext={handleNext}
+      onExit={handleExitToRolePicker}
+      exitLabel={tw("changeRole")}
       nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
       nextDisabled={!stepValid || uploading}
       submitting={submitting}
