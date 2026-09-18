@@ -2,10 +2,10 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import CategoryOnboardingClient from "./category-onboarding-client";
 
-// v1 only wires up a schema for nursing (see CATEGORY_SCHEMAS in
-// src/app/api/generic-profile/route.ts); a future category needs an entry
-// there before this page can onboard it.
-const SUPPORTED_SLUGS = ["nursing"];
+// Each entry here also needs a schema pair in CATEGORY_SCHEMAS
+// (src/app/api/generic-profile/route.ts) and a form pair rendered by
+// CategoryOnboardingClient before it can actually onboard.
+const SUPPORTED_SLUGS = ["nursing", "tutoring"];
 
 export default async function CategoryOnboardingPage({
   params,

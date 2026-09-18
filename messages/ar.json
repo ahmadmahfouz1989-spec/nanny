@@ -11,6 +11,7 @@
     "admin": "الإدارة",
     "nanny": "مربيات",
     "nursing": "التمريض",
+    "tutoring": "الدروس الخصوصية",
     "feed": "المنشورات",
     "categories": "الفئات",
     "terms": "شروط الخدمة",
@@ -253,6 +254,30 @@
     "adult": "بالغ",
     "elderly": "مسن"
   },
+  "Subjects": {
+    "math": "الرياضيات",
+    "science": "العلوم",
+    "english": "الإنجليزية",
+    "arabic": "العربية",
+    "french": "الفرنسية",
+    "physics": "الفيزياء",
+    "chemistry": "الكيمياء",
+    "biology": "الأحياء",
+    "computer_science": "علوم الحاسوب",
+    "test_prep": "التحضير للامتحانات"
+  },
+  "GradeLevels": {
+    "elementary": "ابتدائي",
+    "middle_school": "متوسط",
+    "high_school": "ثانوي",
+    "university": "جامعي",
+    "adult": "بالغ"
+  },
+  "TutoringFormats": {
+    "online": "عبر الإنترنت",
+    "in_person": "حضوريًا",
+    "either": "كلاهما"
+  },
   "ScheduleOptions": {
     "full_time": "دوام كامل",
     "part_time": "دوام جزئي",
@@ -289,10 +314,10 @@
   "CategoryOnboarding": {
     "roleTitle": "أهلاً بك في {category}",
     "roleSubtitle": "هل تبحث عن مساعدة، أم تقدّمها؟",
-    "roleSeekerTitle": "أبحث عن رعاية",
-    "roleSeekerDescription": "ابحث وتواصل مع مقدّمي الخدمة في هذه الفئة.",
-    "roleProviderTitle": "أقدّم هذه الخدمة",
-    "roleProviderDescription": "أنشئ ملفًا شخصيًا لتتمكن العائلات من إيجادك والتواصل معك."
+    "roleSeekerTitle": "أحتاج هذا",
+    "roleSeekerDescription": "ابحث وتواصل مع من يقدّم هذا في هذه الفئة.",
+    "roleProviderTitle": "أقدّم هذا",
+    "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الآخرون من إيجادك والتواصل معك."
   },
   "NannyRolePicker": {
     "title": "أهلاً بك في فئة المربيات",
@@ -339,6 +364,37 @@
     "transportationRequired": "المواصلات مطلوبة",
     "preferredLanguages": "اللغات المفضلة"
   },
+  "TutoringProviderOnboarding": {
+    "createTitle": "أنشئ ملفك كمدرّس/ة",
+    "editTitle": "عدّل ملفك كمدرّس/ة",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "nationality": "الجنسية",
+    "subjects": "المواد التي تدرّسها",
+    "gradeLevels": "المستويات الدراسية التي تدرّسها",
+    "format": "طريقة التدريس",
+    "availableDays": "الأيام المتاحة",
+    "yearsExperience": "سنوات الخبرة",
+    "hasTransportation": "أستطيع التنقل إلى الطلاب",
+    "preferredLanguages": "اللغات التي تتحدثها",
+    "shortIntro": "نبذة قصيرة عنك"
+  },
+  "TutoringSeekerOnboarding": {
+    "createTitle": "أنشئ طلبك",
+    "editTitle": "عدّل طلبك",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "nationality": "الجنسية",
+    "gradeLevel": "المستوى الدراسي",
+    "gradeLevelPlaceholder": "اختر المستوى الدراسي",
+    "subjectsNeeded": "المواد المطلوبة",
+    "format": "طريقة التدريس",
+    "additionalNotes": "ملاحظات إضافية (اختياري)",
+    "neededDays": "ما هي الأيام التي تحتاج فيها دروسًا؟",
+    "desiredStartDate": "تاريخ البدء المطلوب",
+    "transportationRequired": "يجب أن يأتي المدرّس إليك",
+    "preferredLanguages": "اللغات المفضلة"
+  },
   "ParentOnboarding": {
     "editTitle": "تعديل ملفك الشخصي",
     "step1Title": "بياناتك ومنطقتك",
@@ -375,6 +431,7 @@
   "Matches": {
     "titleParent": "تطابقات المربيات",
     "titleNanny": "تطابقات العائلات",
+    "titleMatches": "تطابقاتك",
     "empty": "لا توجد تطابقات بعد. تحقق لاحقًا، أو عدّل ملفك الشخصي لتوسيع النتائج.",
     "loading": "جارٍ تحميل التطابقات…",
     "errorNoProfile": "أنشئ ملفك الشخصي أولاً لرؤية التطابقات.",
@@ -389,6 +446,9 @@
     "criteriaLanguage": "اللغة",
     "criteriaChildAgeExperience": "الخبرة بعمر الطفل",
     "criteriaSpecialty": "التخصص في الرعاية",
+    "criteriaFormat": "طريقة التدريس",
+    "criteriaSubject": "المادة",
+    "criteriaGradeLevel": "المستوى الدراسي",
     "criteriaTransportation": "المواصلات",
     "yearsExperience": "{years} سنوات خبرة",
     "children": "{count, plural, one {# طفل} other {# أطفال}}",

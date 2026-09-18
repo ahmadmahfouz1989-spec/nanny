@@ -24,7 +24,7 @@ export default async function CategoryMessagesPage({
   }
 
   return (
-    <AppShell active="nursing">
+    <AppShell active={slug as "nursing" | "tutoring"}>
       <GenericMessagesClient categorySlug={slug} />
     </AppShell>
   );
