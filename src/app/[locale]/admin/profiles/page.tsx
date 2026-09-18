@@ -10,13 +10,16 @@ type LangRef = { languages: { id: string; name_en: string; name_ar: string; name
 
 type QueueProfile = {
   id: string;
+  user_id: string;
   full_name: string;
   profile_photo_url?: string | null;
   profileType: "parent" | "nanny" | "generic";
+  moderation_status: "pending" | "approved";
   location_detail?: string | null;
   nationality?: string | null;
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
   created_at: string;
+  users: { email: string | null; contact_phone: string | null; status: string } | null;
 
   // generic-category only (nursing etc.)
   role?: "seeker" | "provider";
@@ -84,16 +87,30 @@ export default function AdminProfilesPage() {
   const [rejecting, setRejecting] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState<string | null>(null);
+  const [categories, setCategories] = useState<{ slug: string; nameEn: string; nameAr: string }[]>([]);
+  const [statusFilter, setStatusFilter] = useState<"pending" | "approved">("pending");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
+
+  useEffect(() => {
+    fetch("/api/admin/analytics")
+      .then((res) => res.json())
+      .then((body) => setCategories(body.categories ?? []));
+  }, []);
 
   function load() {
-    fetch("/api/admin/profiles?moderationStatus=pending")
+    const params = new URLSearchParams({ moderationStatus: statusFilter });
+    if (categoryFilter) params.set("categorySlug", categoryFilter);
+    if (roleFilter) params.set("role", roleFilter);
+    fetch(`/api/admin/profiles?${params}`)
       .then((res) => res.json())
       .then((body) => setProfiles(body.profiles));
   }
 
   useEffect(() => {
     load();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter, categoryFilter, roleFilter]);
 
   function toggleExpanded(id: string) {
     setExpanded((prev) => {
@@ -237,7 +254,29 @@ export default function AdminProfilesPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold mb-8">{t("profilesTitle")}</h1>
+      <h1 className="font-display text-3xl font-semibold mb-6">
+        {statusFilter === "pending" ? t("profilesTitle") : t("directoryTitle")}
+      </h1>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        <select className={ui.select + " w-auto"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "pending" | "approved")}>
+          <option value="pending">{t("moderationPending")}</option>
+          <option value="approved">{t("moderationApproved")}</option>
+        </select>
+        <select className={ui.select + " w-auto"} value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+          <option value="">{t("allCategories")}</option>
+          {categories.map((c) => (
+            <option key={c.slug} value={c.slug}>
+              {locale === "ar" ? c.nameAr : c.nameEn}
+            </option>
+          ))}
+        </select>
+        <select className={ui.select + " w-auto"} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
+          <option value="">{t("allRoles")}</option>
+          <option value="seeker">{t("roleSeeker")}</option>
+          <option value="provider">{t("roleProvider")}</option>
+        </select>
+      </div>
 
       {profiles && profiles.length === 0 && <p className="text-sm text-muted">{t("profilesEmpty")}</p>}
 
@@ -270,7 +309,15 @@ export default function AdminProfilesPage() {
                     {profile.profileType === "generic" &&
                       `${profile.categories?.slug ?? profile.categorySlug ?? ""} · ${profile.role}`}
                   </span>
+                  {profile.users?.status === "suspended" && (
+                    <span className={ui.badge("danger")}>{t("columnStatus")}: {profile.users.status}</span>
+                  )}
                 </div>
+                {(profile.users?.email || profile.users?.contact_phone) && (
+                  <p className="text-sm text-muted mb-1">
+                    {[profile.users?.email, profile.users?.contact_phone].filter(Boolean).join(" · ")}
+                  </p>
+                )}
                 {area && <p className="text-sm text-muted mb-1">{area}</p>}
                 {profile.nationality && (
                   <p className="text-sm text-muted mb-3">
@@ -288,7 +335,7 @@ export default function AdminProfilesPage() {
 
                 {isExpanded && <div className="mb-4">{renderDetails(profile)}</div>}
 
-                {rejecting === profile.id ? (
+                {profile.moderation_status !== "pending" ? null : rejecting === profile.id ? (
                   <div className="flex flex-col gap-2">
                     <textarea
                       className={ui.input}
