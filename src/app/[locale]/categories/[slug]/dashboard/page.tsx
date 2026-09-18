@@ -39,6 +39,14 @@ export default async function CategoryDashboardPage({
     .eq("user_id", user!.id)
     .eq("category_id", category!.id);
 
+  // No row at all (not even a draft) -- straight to the role picker, same
+  // as nanny's /dashboard redirecting to its own picker when users.role
+  // is unset. Without this, this category's flow needed one extra click
+  // (dashboard's "Create profile" button) that nanny's didn't.
+  if (!profiles || profiles.length === 0) {
+    redirect({ href: `/categories/${slug}/onboarding`, locale });
+  }
+
   // A draft is just a claimed role with nothing filled in yet (see
   // /api/generic-profile/claim) -- treat it the same as no profile at all,
   // not as something actually submitted and awaiting review.
