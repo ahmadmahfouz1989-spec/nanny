@@ -143,6 +143,12 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
                     <dd></dd>
                   </>
                 )}
+                {typeof a.hasNursingDiploma === "boolean" && (
+                  <>
+                    <dt className="text-muted">{t("criteriaNursingDiploma")}</dt>
+                    <dd>{a.hasNursingDiploma ? "Yes" : "No"}</dd>
+                  </>
+                )}
                 {typeof a.patientAgeGroup === "string" && (
                   <>
                     <dt className="text-muted">{t("criteriaSpecialty")}</dt>
