@@ -52,8 +52,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <LocaleSwitcher />
           {user ? (
             <>
-              <Link href="/dashboard" className={ui.buttonGhost}>
-                {tNav("dashboard")}
+              <Link href="/categories" className={ui.buttonGhost}>
+                {tNav("categories")}
               </Link>
               <SignOutButton />
             </>
