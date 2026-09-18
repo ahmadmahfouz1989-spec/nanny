@@ -315,10 +315,18 @@
     "backToCategories": "العودة إلى الفئات",
     "roleTitle": "أهلاً بك في {category}",
     "roleSubtitle": "هل تبحث عن مساعدة، أم تقدّمها؟",
-    "roleSeekerTitle": "أحتاج هذا",
-    "roleSeekerDescription": "ابحث وتواصل مع من يقدّم هذا في هذه الفئة.",
-    "roleProviderTitle": "أقدّم هذا",
-    "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الآخرون من إيجادك والتواصل معك."
+    "nursing": {
+      "roleSeekerTitle": "أحتاج إلى ممرض/ة",
+      "roleSeekerDescription": "ابحث وتواصل مع ممرضين وممرضات بالقرب منك.",
+      "roleProviderTitle": "أنا ممرض/ة أبحث عن عمل",
+      "roleProviderDescription": "أنشئ ملفًا شخصيًا لتتمكن العائلات من إيجادك والتواصل معك."
+    },
+    "tutoring": {
+      "roleSeekerTitle": "أحتاج إلى مدرّس/ة خصوصي/ة",
+      "roleSeekerDescription": "ابحث وتواصل مع مدرّسين خصوصيين بالقرب منك.",
+      "roleProviderTitle": "أنا مدرّس/ة خصوصي/ة أبحث عن طلاب",
+      "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الطلاب والعائلات من إيجادك والتواصل معك."
+    }
   },
   "NannyRolePicker": {
     "backToCategories": "العودة إلى الفئات",

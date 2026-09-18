@@ -121,8 +121,9 @@ export default function CategoryOnboardingClient({
                 disabled={claiming !== null}
                 className={ui.cardHover + " p-5 text-start"}
               >
-                <p className="font-display font-semibold mb-1">{t("roleSeekerTitle")}</p>
-                <p className="text-sm text-muted">{t("roleSeekerDescription")}</p>
+                {/* Per-category key, e.g. "nursing.roleSeekerTitle" -- see the nested entries in CategoryOnboarding */}
+                <p className="font-display font-semibold mb-1">{t(`${categorySlug}.roleSeekerTitle`)}</p>
+                <p className="text-sm text-muted">{t(`${categorySlug}.roleSeekerDescription`)}</p>
               </button>
               <button
                 type="button"
@@ -130,8 +131,8 @@ export default function CategoryOnboardingClient({
                 disabled={claiming !== null}
                 className={ui.cardHover + " p-5 text-start"}
               >
-                <p className="font-display font-semibold mb-1">{t("roleProviderTitle")}</p>
-                <p className="text-sm text-muted">{t("roleProviderDescription")}</p>
+                <p className="font-display font-semibold mb-1">{t(`${categorySlug}.roleProviderTitle`)}</p>
+                <p className="text-sm text-muted">{t(`${categorySlug}.roleProviderDescription`)}</p>
               </button>
             </div>
             {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger mt-4">{error}</p>}
