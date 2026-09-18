@@ -1,9 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { redirect } from "@/i18n/navigation";
-import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
-import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import NannyResults from "@/components/matches/nanny-results";
 import FamilyResults from "@/components/matches/family-results";
 import { ui } from "@/lib/ui";
@@ -36,12 +34,6 @@ export default async function DashboardPage({
     redirect({ href: "/admin", locale });
   }
 
-  // Signup no longer forces a parent/nanny choice -- an account can reach
-  // here (e.g. via the categories hub) with no role yet.
-  if (profile?.role !== "parent" && profile?.role !== "nanny") {
-    redirect({ href: "/categories/nanny/onboarding", locale });
-  }
-
   let matchProfile: { status: string; moderation_status: string } | null = null;
   if (profile?.role === "parent") {
     const { data } = await supabase
@@ -59,7 +51,15 @@ export default async function DashboardPage({
     matchProfile = data;
   }
 
-  if (matchProfile?.moderation_status === "approved") {
+  // Nothing real submitted yet -- no role chosen at all, or a role
+  // claimed with no profile behind it -- straight to the role picker
+  // rather than a "no profile yet, click here" dead end.
+  if (!matchProfile) {
+    redirect({ href: "/categories/nanny/onboarding", locale });
+    return;
+  }
+
+  if (matchProfile.moderation_status === "approved") {
     return (
       <AppShell active="nanny">
         {profile?.role === "parent" ? <NannyResults /> : <FamilyResults />}
@@ -68,7 +68,7 @@ export default async function DashboardPage({
   }
 
   const moderationTone =
-    matchProfile?.moderation_status === "rejected" ? "danger" : "warning";
+    matchProfile.moderation_status === "rejected" ? "danger" : "warning";
 
   return (
     <AppShell active="nanny">
@@ -76,36 +76,19 @@ export default async function DashboardPage({
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 
         <div className={ui.card + " overflow-hidden"}>
-          {matchProfile ? (
-            <>
-              <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
-                <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
-                <span className={ui.badge(moderationTone)}>
-                  {matchProfile.moderation_status === "pending" && t("statusPending")}
-                  {matchProfile.moderation_status === "rejected" && t("statusRejected")}
-                </span>
-              </div>
-              <div className="p-6">
-                <p className="text-sm text-muted">
-                  {matchProfile.moderation_status === "pending" && t("descriptionPending")}
-                  {matchProfile.moderation_status === "rejected" && t("descriptionRejected")}
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              <CreateProfileIllustration className="w-full h-36" />
-              <div className="p-6">
-                <p className="font-display text-lg font-semibold mb-1">{t("noProfileTitle")}</p>
-                <p className="text-sm text-muted mb-4">
-                  {profile?.role === "parent" ? t("noProfileParent") : t("noProfileNanny")}
-                </p>
-                <Link href="/onboarding" className={ui.buttonPrimary}>
-                  {t("createProfile")}
-                </Link>
-              </div>
-            </>
-          )}
+          <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
+            <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
+            <span className={ui.badge(moderationTone)}>
+              {matchProfile.moderation_status === "pending" && t("statusPending")}
+              {matchProfile.moderation_status === "rejected" && t("statusRejected")}
+            </span>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-muted">
+              {matchProfile.moderation_status === "pending" && t("descriptionPending")}
+              {matchProfile.moderation_status === "rejected" && t("descriptionRejected")}
+            </p>
+          </div>
         </div>
       </div>
     </AppShell>

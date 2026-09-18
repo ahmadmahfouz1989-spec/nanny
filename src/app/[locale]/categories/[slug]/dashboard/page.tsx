@@ -2,7 +2,6 @@ import { getTranslations } from "next-intl/server";
 import { redirect, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
-import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import GenericResults from "@/components/matches/generic-results";
 import { ui } from "@/lib/ui";
 
@@ -39,20 +38,21 @@ export default async function CategoryDashboardPage({
     .eq("user_id", user!.id)
     .eq("category_id", category!.id);
 
-  // No row at all (not even a draft) -- straight to the role picker, same
-  // as nanny's /dashboard redirecting to its own picker when users.role
-  // is unset. Without this, this category's flow needed one extra click
-  // (dashboard's "Create profile" button) that nanny's didn't.
-  if (!profiles || profiles.length === 0) {
-    redirect({ href: `/categories/${slug}/onboarding`, locale });
-  }
-
   // A draft is just a claimed role with nothing filled in yet (see
   // /api/generic-profile/claim) -- treat it the same as no profile at all,
   // not as something actually submitted and awaiting review.
   const myProfile = (profiles ?? []).find((p) => p.status !== "draft") ?? null;
 
-  if (myProfile?.moderation_status === "approved") {
+  // Nothing real submitted yet (no row at all, or only an abandoned draft)
+  // -- straight to the role picker rather than a "no profile yet, click
+  // here" dead end. The picker itself decides whether to show both
+  // options again or resume the draft's form.
+  if (!myProfile) {
+    redirect({ href: `/categories/${slug}/onboarding`, locale });
+    return;
+  }
+
+  if (myProfile.moderation_status === "approved") {
     return (
       <AppShell active={slug as "nursing" | "tutoring"}>
         <GenericResults categorySlug={slug} />
@@ -60,7 +60,7 @@ export default async function CategoryDashboardPage({
     );
   }
 
-  const moderationTone = myProfile?.moderation_status === "rejected" ? "danger" : "warning";
+  const moderationTone = myProfile.moderation_status === "rejected" ? "danger" : "warning";
 
   return (
     <AppShell active={slug as "nursing" | "tutoring"}>
@@ -68,37 +68,22 @@ export default async function CategoryDashboardPage({
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 
         <div className={ui.card + " overflow-hidden"}>
-          {myProfile ? (
-            <>
-              <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
-                <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
-                <span className={ui.badge(moderationTone)}>
-                  {myProfile.moderation_status === "pending" && t("statusPending")}
-                  {myProfile.moderation_status === "rejected" && t("statusRejected")}
-                </span>
-              </div>
-              <div className="p-6">
-                <p className="text-sm text-muted">
-                  {myProfile.moderation_status === "pending" && t("descriptionPending")}
-                  {myProfile.moderation_status === "rejected" && t("descriptionRejected")}
-                </p>
-                <Link href={`/categories/${slug}/onboarding`} className={ui.link + " text-sm mt-3 inline-block"}>
-                  {t("editProfileLink")}
-                </Link>
-              </div>
-            </>
-          ) : (
-            <>
-              <CreateProfileIllustration className="w-full h-36" />
-              <div className="p-6">
-                <p className="font-display text-lg font-semibold mb-1">{t("noProfileTitle")}</p>
-                <p className="text-sm text-muted mb-4">{t("noProfileGeneric")}</p>
-                <Link href={`/categories/${slug}/onboarding`} className={ui.buttonPrimary}>
-                  {t("createProfile")}
-                </Link>
-              </div>
-            </>
-          )}
+          <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
+            <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
+            <span className={ui.badge(moderationTone)}>
+              {myProfile.moderation_status === "pending" && t("statusPending")}
+              {myProfile.moderation_status === "rejected" && t("statusRejected")}
+            </span>
+          </div>
+          <div className="p-6">
+            <p className="text-sm text-muted">
+              {myProfile.moderation_status === "pending" && t("descriptionPending")}
+              {myProfile.moderation_status === "rejected" && t("descriptionRejected")}
+            </p>
+            <Link href={`/categories/${slug}/onboarding`} className={ui.link + " text-sm mt-3 inline-block"}>
+              {t("editProfileLink")}
+            </Link>
+          </div>
         </div>
       </div>
     </AppShell>
