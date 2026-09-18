@@ -13,6 +13,8 @@ export default function WizardShell({
   error,
   onBack,
   onNext,
+  onExit,
+  exitLabel,
   nextLabel,
   nextDisabled,
   submitting,
@@ -24,6 +26,8 @@ export default function WizardShell({
   error?: string | null;
   onBack: () => void;
   onNext: () => void;
+  onExit?: () => void;
+  exitLabel?: string;
   nextLabel?: string;
   nextDisabled?: boolean;
   submitting?: boolean;
@@ -34,7 +38,14 @@ export default function WizardShell({
   return (
     <>
       <header className="flex items-center justify-between px-6 sm:px-10 py-6">
-        <BrandMark />
+        <div className="flex items-center gap-5">
+          <BrandMark />
+          {onExit && (
+            <button type="button" onClick={onExit} className={ui.link + " text-sm"}>
+              {exitLabel}
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
           <LocaleSwitcher />
