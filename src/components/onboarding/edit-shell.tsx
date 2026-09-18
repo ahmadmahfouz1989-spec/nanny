@@ -17,6 +17,8 @@ export default function EditShell({
   error,
   onCancel,
   onSave,
+  onBack,
+  backLabel,
   submitting,
   children,
 }: {
@@ -24,6 +26,8 @@ export default function EditShell({
   error?: string | null;
   onCancel: () => void;
   onSave: () => void;
+  onBack?: () => void;
+  backLabel?: string;
   submitting?: boolean;
   children: React.ReactNode;
 }) {
@@ -32,7 +36,14 @@ export default function EditShell({
   return (
     <>
       <header className="flex items-center justify-between px-6 sm:px-10 py-6">
-        <BrandMark />
+        <div className="flex items-center gap-5">
+          <BrandMark />
+          {onBack && (
+            <button type="button" onClick={onBack} className={ui.link + " text-sm"}>
+              {backLabel}
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-4">
           <ThemeSwitcher />
           <LocaleSwitcher />
