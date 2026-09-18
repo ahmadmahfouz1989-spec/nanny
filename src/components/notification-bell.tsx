@@ -45,6 +45,9 @@ function hrefFor(n: Notification): string {
       return matchId ? `/dashboard#match-${matchId}` : "/dashboard";
     case "rating_received":
       return "/profile#ratings";
+    case "profile_approved":
+    case "profile_rejected":
+      return categorySlug ? `/categories/${categorySlug}/dashboard` : "/dashboard";
     case "profile_pending_review":
       return "/admin/profiles";
     case "verification_updated":
@@ -197,21 +200,25 @@ export default function NotificationBell({
               {items && items.length === 0 && (
                 <p className="px-4 py-6 text-center text-sm text-muted">{t("empty")}</p>
               )}
-              {items?.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => openRow(n)}
-                  className={`flex w-full flex-col gap-0.5 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background ${
-                    n.read_at ? "" : "bg-primary-soft/30"
-                  }`}
-                >
-                  <span className="text-sm text-ink">{label(n)}</span>
-                  <span className="text-[11px] text-muted">
-                    {formatRelative(n.created_at, locale, t("justNow"))}
-                  </span>
-                </button>
-              ))}
+              {items?.map((n) => {
+                const notes = typeof n.payload?.notes === "string" && n.payload.notes.trim() ? n.payload.notes : null;
+                return (
+                  <button
+                    key={n.id}
+                    type="button"
+                    onClick={() => openRow(n)}
+                    className={`flex w-full flex-col gap-0.5 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background ${
+                      n.read_at ? "" : "bg-primary-soft/30"
+                    }`}
+                  >
+                    <span className="text-sm text-ink">{label(n)}</span>
+                    {notes && <span className="text-xs text-muted line-clamp-2">{notes}</span>}
+                    <span className="text-[11px] text-muted">
+                      {formatRelative(n.created_at, locale, t("justNow"))}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </>
