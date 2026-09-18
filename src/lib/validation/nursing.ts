@@ -46,6 +46,7 @@ export const nursingProviderSchema = z.object({
   canDrive: z.boolean(),
   licenseNumber: z.string().min(3, "Enter your nursing license number").max(40, "That's too long"),
   licenseIssuingAuthority: z.string().max(120, "That's too long").optional(),
+  hasNursingDiploma: z.boolean(),
   careSpecialties: z.array(z.enum(CARE_SPECIALTIES)).min(1, "Pick at least one care specialty"),
   shortIntro: z.string().max(500, "That's too long").optional(),
   languageIds: z.array(uuid).default([]),
