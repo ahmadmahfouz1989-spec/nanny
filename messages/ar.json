@@ -194,6 +194,7 @@
   "Wizard": {
     "step": "الخطوة {step} من {total}",
     "back": "رجوع",
+    "changeRole": "اختر دورًا مختلفًا",
     "next": "التالي",
     "finish": "إنهاء",
     "cancel": "إلغاء",
