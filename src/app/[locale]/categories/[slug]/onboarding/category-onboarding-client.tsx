@@ -43,8 +43,15 @@ export default function CategoryOnboardingClient({
 }) {
   const t = useTranslations("CategoryOnboarding");
   const tw = useTranslations("Wizard");
+  // Only a real, already-submitted profile skips straight past the
+  // picker -- an abandoned draft (claimed, nothing filled in) always
+  // shows both options again, same as never having chosen at all.
   const [chosenRole, setChosenRole] = useState<"seeker" | "provider" | null>(
-    providerProfile ? "provider" : seekerProfile ? "seeker" : null,
+    providerProfile && providerProfile.status !== "draft"
+      ? "provider"
+      : seekerProfile && seekerProfile.status !== "draft"
+        ? "seeker"
+        : null,
   );
   // Claiming (below) can hand back a brand-new draft row the server-side
   // props above don't know about yet -- these start from the props and

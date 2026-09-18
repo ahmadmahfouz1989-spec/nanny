@@ -23,12 +23,23 @@ export default async function NannyCategoryOnboardingPage({
 
   const { data: profile } = await supabase.from("users").select("role").eq("id", user!.id).single();
 
-  // Already oriented (either from the legacy signup-time choice, or a
-  // previous visit here) -- the existing /onboarding route already
-  // branches correctly on a set role, no need to duplicate that here.
-  if (profile?.role === "parent" || profile?.role === "nanny") {
+  let hasRealProfile = false;
+  if (profile?.role === "parent") {
+    const { data } = await supabase.from("parent_profiles").select("id").eq("user_id", user!.id).maybeSingle();
+    hasRealProfile = !!data;
+  } else if (profile?.role === "nanny") {
+    const { data } = await supabase.from("nanny_profiles").select("id").eq("user_id", user!.id).maybeSingle();
+    hasRealProfile = !!data;
+  }
+
+  // A real, already-submitted profile means there's nothing left to
+  // pick -- go straight to it. Otherwise (no role yet, or a role
+  // claimed with nothing filled in) always show both options again,
+  // never auto-skip just because a role was claimed.
+  if (hasRealProfile) {
     redirect({ href: "/onboarding", locale });
   }
 
-  return <NannyRolePicker />;
+  const currentRole = profile?.role === "parent" || profile?.role === "nanny" ? profile.role : null;
+  return <NannyRolePicker currentRole={currentRole} />;
 }
