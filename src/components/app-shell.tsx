@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { createClient } from "@/lib/supabase/server";
 import BrandMark from "@/components/brand-mark";
 import ThemeSwitcher from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
@@ -12,52 +11,21 @@ import CategoryIcon from "@/components/category-icon";
 
 type ActiveKey = "categories" | "nanny" | "nursing" | "tutoring" | "feed" | "messages" | "profile";
 
-// Every generic_profiles-based category gets an entry here (icon matches
-// the one seeded on its categories row -- see category-icon.tsx). Nanny
-// isn't here since it's not generic_profiles-based; it's handled by
-// showNanny separately below.
+// The generic_profiles-based categories' nav entries (icon matches the one
+// seeded on that category's row -- see category-icon.tsx). Nanny is
+// handled separately below since it predates generic_profiles and uses
+// its own icon/route shape.
 const GENERIC_CATEGORY_NAV = [
   { slug: "nursing", icon: "hand" },
   { slug: "tutoring", icon: "book" },
 ] as const;
 
 /**
- * A category's nav item only earns a slot once the user actually has a
- * profile there -- the categories hub stays the discovery surface for
- * everyone else. Computed here (not passed in by each caller) so it's
- * automatically correct on every page, including ones like the hub itself
- * that aren't "inside" any specific category.
+ * The sidebar shows the category you're currently in, not every category
+ * you've ever touched -- on the hub, feed, messages, or profile, none of
+ * the category items show at all. Purely a function of `active`, no data
+ * fetching needed: navigate back to /categories to switch.
  */
-async function resolveCategoryNav() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) return { showNanny: false, visibleGenericSlugs: new Set<string>() };
-
-  const [{ data: profile }, { data: categories }, { data: myProfiles }] = await Promise.all([
-    supabase.from("users").select("role").eq("id", user.id).single(),
-    supabase
-      .from("categories")
-      .select("id, slug")
-      .in(
-        "slug",
-        GENERIC_CATEGORY_NAV.map((c) => c.slug),
-      ),
-    supabase.from("generic_profiles").select("category_id").eq("user_id", user.id),
-  ]);
-
-  const showNanny = profile?.role === "parent" || profile?.role === "nanny";
-
-  const myCategoryIds = new Set((myProfiles ?? []).map((p) => p.category_id));
-  const visibleGenericSlugs = new Set(
-    (categories ?? []).filter((c) => myCategoryIds.has(c.id)).map((c) => c.slug),
-  );
-
-  return { showNanny, visibleGenericSlugs };
-}
-
 export default async function AppShell({
   active,
   children,
@@ -66,8 +34,7 @@ export default async function AppShell({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
-  const { showNanny, visibleGenericSlugs } = await resolveCategoryNav();
-  const visibleGenericCategories = GENERIC_CATEGORY_NAV.filter((c) => visibleGenericSlugs.has(c.slug));
+  const currentGenericCategory = GENERIC_CATEGORY_NAV.find((c) => c.slug === active);
 
   return (
     <div className="flex min-h-screen">
@@ -88,14 +55,10 @@ export default async function AppShell({
             <GridIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("categories")}</span>
           </Link>
-          {showNanny && (
+          {active === "nanny" && (
             <Link
               href="/dashboard"
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
-                active === "nanny"
-                  ? "bg-surface-sunken font-semibold text-ink"
-                  : "text-muted hover:bg-surface-sunken hover:text-ink"
-              }`}
+              className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] bg-surface-sunken font-semibold text-ink"
             >
               <HomeIcon className="h-[22px] w-[22px] shrink-0" />
               <span>{t("nanny")}</span>
@@ -112,20 +75,15 @@ export default async function AppShell({
             <FeedIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("feed")}</span>
           </Link>
-          {visibleGenericCategories.map((c) => (
+          {currentGenericCategory && (
             <Link
-              key={c.slug}
-              href={`/categories/${c.slug}/dashboard`}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
-                active === c.slug
-                  ? "bg-surface-sunken font-semibold text-ink"
-                  : "text-muted hover:bg-surface-sunken hover:text-ink"
-              }`}
+              href={`/categories/${currentGenericCategory.slug}/dashboard`}
+              className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] bg-surface-sunken font-semibold text-ink"
             >
-              <CategoryIcon name={c.icon} className="h-[22px] w-[22px] shrink-0" />
-              <span>{t(c.slug)}</span>
+              <CategoryIcon name={currentGenericCategory.icon} className="h-[22px] w-[22px] shrink-0" />
+              <span>{t(currentGenericCategory.slug)}</span>
             </Link>
-          ))}
+          )}
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
           <Link
@@ -170,13 +128,8 @@ export default async function AppShell({
           <GridIcon className="h-[22px] w-[22px]" />
           {t("categories")}
         </Link>
-        {showNanny && (
-          <Link
-            href="/dashboard"
-            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
-              active === "nanny" ? "font-semibold text-primary" : "text-muted"
-            }`}
-          >
+        {active === "nanny" && (
+          <Link href="/dashboard" className="flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-semibold text-primary">
             <HomeIcon className="h-[22px] w-[22px]" />
             {t("nanny")}
           </Link>
@@ -190,18 +143,15 @@ export default async function AppShell({
           <FeedIcon className="h-[22px] w-[22px]" />
           {t("feed")}
         </Link>
-        {visibleGenericCategories.map((c) => (
+        {currentGenericCategory && (
           <Link
-            key={c.slug}
-            href={`/categories/${c.slug}/dashboard`}
-            className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
-              active === c.slug ? "font-semibold text-primary" : "text-muted"
-            }`}
+            href={`/categories/${currentGenericCategory.slug}/dashboard`}
+            className="flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-semibold text-primary"
           >
-            <CategoryIcon name={c.icon} className="h-[22px] w-[22px]" />
-            {t(c.slug)}
+            <CategoryIcon name={currentGenericCategory.icon} className="h-[22px] w-[22px]" />
+            {t(currentGenericCategory.slug)}
           </Link>
-        ))}
+        )}
         <MessagesTabItem active={active === "messages"} />
         <Link
           href="/profile"
