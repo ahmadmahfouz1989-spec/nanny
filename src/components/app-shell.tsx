@@ -10,16 +10,23 @@ import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messa
 import { HomeIcon, ProfileIcon, GridIcon, FeedIcon } from "@/components/nav-icons";
 import CategoryIcon from "@/components/category-icon";
 
-type ActiveKey = "categories" | "nanny" | "nursing" | "feed" | "messages" | "profile";
+type ActiveKey = "categories" | "nanny" | "nursing" | "tutoring" | "feed" | "messages" | "profile";
+
+// Every generic_profiles-based category gets an entry here (icon matches
+// the one seeded on its categories row -- see category-icon.tsx). Nanny
+// isn't here since it's not generic_profiles-based; it's handled by
+// showNanny separately below.
+const GENERIC_CATEGORY_NAV = [
+  { slug: "nursing", icon: "hand" },
+  { slug: "tutoring", icon: "book" },
+] as const;
 
 /**
  * A category's nav item only earns a slot once the user actually has a
  * profile there -- the categories hub stays the discovery surface for
  * everyone else. Computed here (not passed in by each caller) so it's
  * automatically correct on every page, including ones like the hub itself
- * that aren't "inside" any specific category. Only nanny (users.role) and
- * nursing (generic_profiles) exist as categories today; a third category
- * needs a similar check added here.
+ * that aren't "inside" any specific category.
  */
 async function resolveCategoryNav() {
   const supabase = await createClient();
@@ -27,27 +34,28 @@ async function resolveCategoryNav() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return { showNanny: false, showNursing: false };
+  if (!user) return { showNanny: false, visibleGenericSlugs: new Set<string>() };
 
-  const [{ data: profile }, { data: nursingCategory }] = await Promise.all([
+  const [{ data: profile }, { data: categories }, { data: myProfiles }] = await Promise.all([
     supabase.from("users").select("role").eq("id", user.id).single(),
-    supabase.from("categories").select("id").eq("slug", "nursing").maybeSingle(),
+    supabase
+      .from("categories")
+      .select("id, slug")
+      .in(
+        "slug",
+        GENERIC_CATEGORY_NAV.map((c) => c.slug),
+      ),
+    supabase.from("generic_profiles").select("category_id").eq("user_id", user.id),
   ]);
 
   const showNanny = profile?.role === "parent" || profile?.role === "nanny";
 
-  let showNursing = false;
-  if (nursingCategory) {
-    const { data: nursingProfile } = await supabase
-      .from("generic_profiles")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("category_id", nursingCategory.id)
-      .maybeSingle();
-    showNursing = !!nursingProfile;
-  }
+  const myCategoryIds = new Set((myProfiles ?? []).map((p) => p.category_id));
+  const visibleGenericSlugs = new Set(
+    (categories ?? []).filter((c) => myCategoryIds.has(c.id)).map((c) => c.slug),
+  );
 
-  return { showNanny, showNursing };
+  return { showNanny, visibleGenericSlugs };
 }
 
 export default async function AppShell({
@@ -58,7 +66,8 @@ export default async function AppShell({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
-  const { showNanny, showNursing } = await resolveCategoryNav();
+  const { showNanny, visibleGenericSlugs } = await resolveCategoryNav();
+  const visibleGenericCategories = GENERIC_CATEGORY_NAV.filter((c) => visibleGenericSlugs.has(c.slug));
 
   return (
     <div className="flex min-h-screen">
@@ -103,19 +112,20 @@ export default async function AppShell({
             <FeedIcon className="h-[22px] w-[22px] shrink-0" />
             <span>{t("feed")}</span>
           </Link>
-          {showNursing && (
+          {visibleGenericCategories.map((c) => (
             <Link
-              href="/categories/nursing/dashboard"
+              key={c.slug}
+              href={`/categories/${c.slug}/dashboard`}
               className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
-                active === "nursing"
+                active === c.slug
                   ? "bg-surface-sunken font-semibold text-ink"
                   : "text-muted hover:bg-surface-sunken hover:text-ink"
               }`}
             >
-              <CategoryIcon name="hand" className="h-[22px] w-[22px] shrink-0" />
-              <span>{t("nursing")}</span>
+              <CategoryIcon name={c.icon} className="h-[22px] w-[22px] shrink-0" />
+              <span>{t(c.slug)}</span>
             </Link>
-          )}
+          ))}
           <MessagesSidebarItem active={active === "messages"} />
           <NotificationBell variant="sidebar" />
           <Link
@@ -180,17 +190,18 @@ export default async function AppShell({
           <FeedIcon className="h-[22px] w-[22px]" />
           {t("feed")}
         </Link>
-        {showNursing && (
+        {visibleGenericCategories.map((c) => (
           <Link
-            href="/categories/nursing/dashboard"
+            key={c.slug}
+            href={`/categories/${c.slug}/dashboard`}
             className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
-              active === "nursing" ? "font-semibold text-primary" : "text-muted"
+              active === c.slug ? "font-semibold text-primary" : "text-muted"
             }`}
           >
-            <CategoryIcon name="hand" className="h-[22px] w-[22px]" />
-            {t("nursing")}
+            <CategoryIcon name={c.icon} className="h-[22px] w-[22px]" />
+            {t(c.slug)}
           </Link>
-        )}
+        ))}
         <MessagesTabItem active={active === "messages"} />
         <Link
           href="/profile"

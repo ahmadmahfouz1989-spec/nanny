@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import GenericCriteriaChecklist from "@/components/matches/generic-criteria-checklist";
 import GenericMatchActions from "@/components/matches/generic-match-actions";
-import type { CareCriterion, CriterionResult } from "@/lib/matching/generic-engine";
+import type { CriterionResult } from "@/lib/matching/generic-engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
@@ -21,7 +21,7 @@ type OtherProfile = {
 type GenericMatch = {
   id: string;
   score: number;
-  score_breakdown: Record<CareCriterion, CriterionResult>;
+  score_breakdown: Record<string, CriterionResult>;
   status: string;
   interest_expires_at: string | null;
   other: OtherProfile;
@@ -40,8 +40,11 @@ function localizedLocationName(
 export default function GenericResults({ categorySlug }: { categorySlug: string }) {
   const t = useTranslations("Matches");
   const tCare = useTranslations("CareSpecialties");
+  const tSubject = useTranslations("Subjects");
+  const tGrade = useTranslations("GradeLevels");
   const tSchedule = useTranslations("ScheduleOptions");
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
+  const tFormat = useTranslations("TutoringFormats");
   const tDays = useTranslations("Days");
   const tPatientAge = useTranslations("PatientAgeGroups");
   const locale = useLocale();
@@ -65,9 +68,7 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
 
   return (
     <div className={`max-w-2xl w-full mx-auto px-6 py-8 ${!results && !error ? "min-h-screen flex flex-col" : ""}`}>
-      <h1 className="font-display text-2xl font-bold mb-6">
-        {myRole === "seeker" ? t("titleParent") : t("titleNanny")}
-      </h1>
+      <h1 className="font-display text-2xl font-bold mb-6">{t("titleMatches")}</h1>
       {!results && !error && <LogoLoader label={t("loading")} fullHeight />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
@@ -81,8 +82,9 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
           const other = r.other;
           const a = other.attributes ?? {};
           const gov = localizedLocationName(other.locations, locale);
-          const availableDays = (a.availability as { days?: string[] } | undefined)?.days ?? [];
+          const availableDays = ((a.availability as { days?: string[] } | undefined)?.days ?? a.neededDays ?? []) as string[];
           const specialties = ((a.careSpecialties ?? a.careSpecialtiesNeeded ?? []) as string[]) ?? [];
+          const subjects = ((a.subjects ?? a.subjectsNeeded ?? []) as string[]) ?? [];
 
           return (
             <div key={r.id} id={`match-${r.id}`} className={ui.cardHover + " oui-in overflow-hidden scroll-mt-6 p-5"}>
@@ -129,6 +131,12 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
                     <dd>{tLiveArrangement(a.liveArrangement as never)}</dd>
                   </>
                 )}
+                {typeof a.format === "string" && (
+                  <>
+                    <dt className="text-muted">{t("criteriaFormat")}</dt>
+                    <dd>{tFormat(a.format as never)}</dd>
+                  </>
+                )}
                 {typeof a.yearsExperience === "number" && (
                   <>
                     <dt className="text-muted">{t("yearsExperience", { years: a.yearsExperience })}</dt>
@@ -141,10 +149,28 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
                     <dd>{tPatientAge(a.patientAgeGroup as never)}</dd>
                   </>
                 )}
+                {typeof a.gradeLevel === "string" && (
+                  <>
+                    <dt className="text-muted">{t("criteriaGradeLevel")}</dt>
+                    <dd>{tGrade(a.gradeLevel as never)}</dd>
+                  </>
+                )}
+                {Array.isArray(a.gradeLevels) && a.gradeLevels.length > 0 && (
+                  <>
+                    <dt className="text-muted">{t("criteriaGradeLevel")}</dt>
+                    <dd>{(a.gradeLevels as string[]).map((g) => tGrade(g as never)).join(", ")}</dd>
+                  </>
+                )}
                 {specialties.length > 0 && (
                   <>
                     <dt className="text-muted">{t("criteriaSpecialty")}</dt>
                     <dd>{specialties.map((s) => labelOr(tCare, s)).join(", ")}</dd>
+                  </>
+                )}
+                {subjects.length > 0 && (
+                  <>
+                    <dt className="text-muted">{t("criteriaSubject")}</dt>
+                    <dd>{subjects.map((s) => labelOr(tSubject, s)).join(", ")}</dd>
                   </>
                 )}
               </dl>

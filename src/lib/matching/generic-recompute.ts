@@ -6,6 +6,12 @@ import {
   type LiveArrangement,
   type ScheduleType,
 } from "./generic-engine";
+import {
+  computeTutoringMatchScore,
+  type TutoringFormat,
+  type TutoringProviderMatchInput,
+  type TutoringSeekerMatchInput,
+} from "./tutoring-engine";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
@@ -20,10 +26,11 @@ type GenericProfileRow = {
 
 const govRef = (locationId: string | null) => ({ governorateId: locationId });
 
-// Only nursing exists today; a future category with a genuinely different
-// rubric gets its own branch here (or its own input-builder pair) rather
-// than forcing every category through the same criteria.
-function seekerInputFromAttributes(profile: GenericProfileRow): CareSeekerMatchInput {
+// Each category with a genuinely different rubric gets its own
+// input-builder pair + scoring function, rather than forcing every
+// category through the same criteria (see generic-engine.ts vs
+// tutoring-engine.ts for why nursing and tutoring don't share one).
+function nursingSeekerInput(profile: GenericProfileRow): CareSeekerMatchInput {
   const a = profile.attributes;
   return {
     location: govRef(profile.location_id),
@@ -36,7 +43,7 @@ function seekerInputFromAttributes(profile: GenericProfileRow): CareSeekerMatchI
   };
 }
 
-function providerInputFromAttributes(profile: GenericProfileRow): CareProviderMatchInput {
+function nursingProviderInput(profile: GenericProfileRow): CareProviderMatchInput {
   const a = profile.attributes;
   return {
     location: govRef(profile.location_id),
@@ -47,6 +54,41 @@ function providerInputFromAttributes(profile: GenericProfileRow): CareProviderMa
     careSpecialties: (a.careSpecialties as string[]) ?? [],
     languageIds: (a.languageIds as string[]) ?? [],
   };
+}
+
+function tutoringSeekerInput(profile: GenericProfileRow): TutoringSeekerMatchInput {
+  const a = profile.attributes;
+  return {
+    location: govRef(profile.location_id),
+    neededDays: (a.neededDays as string[]) ?? [],
+    format: a.format as TutoringFormat,
+    transportationRequired: !!a.transportationRequired,
+    subjectsNeeded: (a.subjectsNeeded as string[]) ?? [],
+    gradeLevel: (a.gradeLevel as string) ?? "",
+    languageIds: (a.languageIds as string[]) ?? [],
+  };
+}
+
+function tutoringProviderInput(profile: GenericProfileRow): TutoringProviderMatchInput {
+  const a = profile.attributes;
+  return {
+    location: govRef(profile.location_id),
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    format: a.format as TutoringFormat,
+    hasTransportation: !!a.hasTransportation,
+    subjects: (a.subjects as string[]) ?? [],
+    gradeLevels: (a.gradeLevels as string[]) ?? [],
+    languageIds: (a.languageIds as string[]) ?? [],
+  };
+}
+
+function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
+  if (categorySlug === "tutoring") {
+    return computeTutoringMatchScore(tutoringSeekerInput(seeker), tutoringProviderInput(provider));
+  }
+  // nursing is the default/fallback -- the only other category wired up
+  // when this was written. A third category needs its own branch here.
+  return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));
 }
 
 async function loadActiveApproved(admin: Admin, categoryId: string, role: "seeker" | "provider") {
@@ -81,18 +123,18 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
 
   const { data: profile } = await admin
     .from("generic_profiles")
-    .select("id, category_id, role, location_id, attributes, status, moderation_status")
+    .select("id, category_id, role, location_id, attributes, status, moderation_status, categories(slug)")
     .eq("id", profileId)
     .single();
 
   if (!profile || profile.status !== "active") return;
   const row = profile as GenericProfileRow;
+  const categorySlug = (profile.categories as unknown as { slug: string } | null)?.slug ?? "";
 
   if (row.role === "seeker") {
-    const seekerInput = seekerInputFromAttributes(row);
     const providers = await loadActiveApproved(admin, row.category_id, "provider");
     const rows = providers.map((p) => {
-      const { score, breakdown } = computeCareMatchScore(seekerInput, providerInputFromAttributes(p));
+      const { score, breakdown } = scoreFor(categorySlug, row, p);
       return {
         category_id: row.category_id,
         seeker_profile_id: row.id,
@@ -105,10 +147,9 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
     return;
   }
 
-  const providerInput = providerInputFromAttributes(row);
   const seekers = await loadActiveApproved(admin, row.category_id, "seeker");
   const rows = seekers.map((s) => {
-    const { score, breakdown } = computeCareMatchScore(seekerInputFromAttributes(s), providerInput);
+    const { score, breakdown } = scoreFor(categorySlug, s, row);
     return {
       category_id: row.category_id,
       seeker_profile_id: s.id,

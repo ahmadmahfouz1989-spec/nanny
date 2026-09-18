@@ -7,7 +7,17 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
 import NursingProviderForm from "./nursing-provider-form";
 import NursingSeekerForm from "./nursing-seeker-form";
+import TutoringProviderForm from "./tutoring-provider-form";
+import TutoringSeekerForm from "./tutoring-seeker-form";
 import { ui } from "@/lib/ui";
+
+// Each category's form pair is registered here -- also needs a schema
+// pair in CATEGORY_SCHEMAS (src/app/api/generic-profile/route.ts) and a
+// SUPPORTED_SLUGS entry (../page.tsx) before it's reachable at all.
+const FORMS: Record<string, { provider: typeof NursingProviderForm; seeker: typeof NursingSeekerForm }> = {
+  nursing: { provider: NursingProviderForm, seeker: NursingSeekerForm },
+  tutoring: { provider: TutoringProviderForm, seeker: TutoringSeekerForm },
+};
 
 type ExistingProfile = {
   id: string;
@@ -73,11 +83,15 @@ export default function CategoryOnboardingClient({
     setChosenRole(role);
   }
 
-  if (chosenRole === "provider") {
-    return <NursingProviderForm categorySlug={categorySlug} initialProfile={provider} />;
+  const forms = FORMS[categorySlug];
+
+  if (chosenRole === "provider" && forms) {
+    const ProviderForm = forms.provider;
+    return <ProviderForm categorySlug={categorySlug} initialProfile={provider} />;
   }
-  if (chosenRole === "seeker") {
-    return <NursingSeekerForm categorySlug={categorySlug} initialProfile={seeker} />;
+  if (chosenRole === "seeker" && forms) {
+    const SeekerForm = forms.seeker;
+    return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} />;
   }
 
   return (
