@@ -159,7 +159,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         <div className="oui-reveal mx-auto max-w-5xl">
           <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">{tCat("landingTitle")}</h2>
           <p className="mx-auto mb-10 max-w-lg text-center text-muted">{tCat("landingSubtitle")}</p>
-          <CategoryGrid categories={categories} locale={locale} comingSoonLabel={tCat("comingSoon")} />
+          <CategoryGrid categories={categories} locale={locale} comingSoonLabel={tCat("comingSoon")} exploreLabel={tCat("explore")} />
           <p className="mt-6 text-center text-xs text-muted">{tCat("moreComingSoon")}</p>
         </div>
       </section>
