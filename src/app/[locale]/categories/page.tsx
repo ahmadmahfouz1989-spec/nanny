@@ -25,10 +25,10 @@ export default async function CategoriesPage({
 
   return (
     <AppShell active="categories">
-      <div className="max-w-3xl w-full mx-auto px-6 py-8">
+      <div className="max-w-4xl w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-1">{t("hubTitle")}</h1>
         <p className="text-muted text-sm mb-6">{t("hubSubtitle")}</p>
-        <CategoryGrid categories={categories} locale={locale} comingSoonLabel={t("comingSoon")} />
+        <CategoryGrid categories={categories} locale={locale} comingSoonLabel={t("comingSoon")} exploreLabel={t("explore")} />
         <p className="text-center text-xs text-muted mt-6">{t("moreComingSoon")}</p>
       </div>
     </AppShell>
