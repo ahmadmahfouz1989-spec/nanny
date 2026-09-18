@@ -315,10 +315,18 @@
     "backToCategories": "Back to categories",
     "roleTitle": "Welcome to {category}",
     "roleSubtitle": "Are you looking for help, or offering it?",
-    "roleSeekerTitle": "I need this",
-    "roleSeekerDescription": "Find and connect with people offering this in this category.",
-    "roleProviderTitle": "I offer this",
-    "roleProviderDescription": "Create a profile so people can find and match with you."
+    "nursing": {
+      "roleSeekerTitle": "I need a nurse",
+      "roleSeekerDescription": "Find and connect with nurses near you.",
+      "roleProviderTitle": "I'm a nurse looking for work",
+      "roleProviderDescription": "Create a profile so families can find and match with you."
+    },
+    "tutoring": {
+      "roleSeekerTitle": "I need a tutor",
+      "roleSeekerDescription": "Find and connect with tutors near you.",
+      "roleProviderTitle": "I'm a tutor looking for students",
+      "roleProviderDescription": "Create a profile so students and families can find and match with you."
+    }
   },
   "NannyRolePicker": {
     "backToCategories": "Back to categories",
