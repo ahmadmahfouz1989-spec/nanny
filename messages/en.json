@@ -194,6 +194,7 @@
   "Wizard": {
     "step": "Step {step} of {total}",
     "back": "Back",
+    "changeRole": "Choose a different role",
     "next": "Next",
     "finish": "Finish",
     "cancel": "Cancel",

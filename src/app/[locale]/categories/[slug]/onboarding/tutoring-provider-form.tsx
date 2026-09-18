@@ -83,9 +83,11 @@ function stateFromExisting(p: ExistingProfile): FormState {
 export default function TutoringProviderForm({
   categorySlug,
   initialProfile,
+  onBack,
 }: {
   categorySlug: string;
   initialProfile: ExistingProfile | null;
+  onBack?: () => void;
 }) {
   const t = useTranslations("TutoringProviderOnboarding");
   const tw = useTranslations("Wizard");
@@ -164,6 +166,8 @@ export default function TutoringProviderForm({
       error={error}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
+      onBack={onBack}
+      backLabel={tw("changeRole")}
       submitting={submitting}
     >
       <div className="flex flex-col gap-3">

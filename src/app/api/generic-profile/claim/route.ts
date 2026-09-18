@@ -79,3 +79,47 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ profile: created }, { status: 201 });
 }
+
+/**
+ * Undoes a claim made by mistake -- "I need a nurse" clicked when they
+ * meant "I am a nurse", or just changing their mind before filling
+ * anything in. Only ever deletes a still-empty draft (see POST above);
+ * a real submitted profile has to go through the normal moderation path,
+ * never silently disappears because someone clicked "change role".
+ */
+export async function DELETE(request: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+
+  const parsed = bodySchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+  const { categorySlug, role } = parsed.data;
+
+  const { data: category } = await supabase
+    .from("categories")
+    .select("id")
+    .eq("slug", categorySlug)
+    .maybeSingle();
+  if (!category) {
+    return NextResponse.json({ error: "Unknown category" }, { status: 404 });
+  }
+
+  const db = createAdminClient();
+  await db
+    .from("generic_profiles")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("category_id", category.id)
+    .eq("role", role)
+    .eq("status", "draft");
+
+  return NextResponse.json({ status: "ok" });
+}

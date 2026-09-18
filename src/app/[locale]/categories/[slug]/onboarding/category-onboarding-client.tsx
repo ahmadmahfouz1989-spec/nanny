@@ -84,15 +84,34 @@ export default function CategoryOnboardingClient({
     setChosenRole(role);
   }
 
+  // "I need a nurse" clicked by mistake, meaning "I am a nurse" -- or just
+  // changing their mind before submitting anything. If nothing was ever
+  // filled in (still a draft), delete it so they're back to never having
+  // chosen at all; a real submitted profile is left untouched either way,
+  // this just shows the picker again.
+  async function changeRole(current: "seeker" | "provider") {
+    const profile = current === "seeker" ? seeker : provider;
+    if (profile && profile.status === "draft") {
+      await fetch("/api/generic-profile/claim", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ categorySlug, role: current }),
+      });
+      if (current === "seeker") setSeeker(null);
+      else setProvider(null);
+    }
+    setChosenRole(null);
+  }
+
   const forms = FORMS[categorySlug];
 
   if (chosenRole === "provider" && forms) {
     const ProviderForm = forms.provider;
-    return <ProviderForm categorySlug={categorySlug} initialProfile={provider} />;
+    return <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={() => changeRole("provider")} />;
   }
   if (chosenRole === "seeker" && forms) {
     const SeekerForm = forms.seeker;
-    return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} />;
+    return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={() => changeRole("seeker")} />;
   }
 
   return (
