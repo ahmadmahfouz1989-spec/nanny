@@ -8,7 +8,7 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 
-export default function NannyRolePicker() {
+export default function NannyRolePicker({ currentRole }: { currentRole: "parent" | "nanny" | null }) {
   const t = useTranslations("NannyRolePicker");
   const router = useRouter();
   const [submitting, setSubmitting] = useState<"parent" | "nanny" | null>(null);
@@ -17,16 +17,25 @@ export default function NannyRolePicker() {
   async function choose(role: "parent" | "nanny") {
     setSubmitting(role);
     setError(null);
-    const res = await fetch("/api/account/claim-role", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ role }),
-    });
 
-    if (!res.ok) {
-      setSubmitting(null);
-      setError(t("errorGeneric"));
-      return;
+    // Re-picking the role already claimed needs no API call at all. A
+    // switch, when nothing's been submitted yet (the only way this
+    // picker is ever shown -- see page.tsx), undoes the old claim first
+    // so the one-time users.role guard doesn't reject the new one.
+    if (role !== currentRole) {
+      if (currentRole) {
+        await fetch("/api/account/claim-role", { method: "DELETE" });
+      }
+      const res = await fetch("/api/account/claim-role", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ role }),
+      });
+      if (!res.ok) {
+        setSubmitting(null);
+        setError(t("errorGeneric"));
+        return;
+      }
     }
 
     router.push("/onboarding");
