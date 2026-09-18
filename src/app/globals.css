@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* Tailwind v4's preflight resets buttons to `cursor: default` -- every
+   clickable <button> in the app (role pickers, pills, cards) needs the
+   hand cursor back, not just the ones that happen to set it explicitly. */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]) {
+  cursor: pointer;
+}
+
 :root {
   --background: #fbf8f4;
   --surface: #ffffff;
