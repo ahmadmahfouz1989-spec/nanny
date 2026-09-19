@@ -34,6 +34,10 @@ export const NATIONALITIES = [
 ] as const;
 
 const uuid = z.string().uuid();
+// A bare `uuid` here reports Zod's generic "expected string, received null"
+// when the governorate select is left on its blank option -- give it a
+// message that actually points at the field.
+const locationId = z.string({ message: "Choose your governorate" }).uuid("Choose your governorate");
 const contactPhone = z
   .string()
   .min(6, "Enter a valid phone number")
@@ -44,7 +48,7 @@ export const parentProfileSchema = z.object({
   fullName: z.string().min(2).max(80),
   contactPhone,
   profilePhotoUrl: z.string().url().optional(),
-  locationId: uuid,
+  locationId,
   locationDetail: z.string().trim().min(2).max(120),
   nationality: z.enum(NATIONALITIES),
   numChildren: z.number().int().min(1).max(10),
@@ -70,7 +74,7 @@ export const nannyProfileSchema = z.object({
   fullName: z.string().min(2).max(80),
   contactPhone,
   profilePhotoUrl: z.string().url(),
-  locationId: uuid,
+  locationId,
   locationDetail: z.string().trim().min(2).max(120),
   nationality: z.enum(NATIONALITIES),
   workRadiusKm: z.number().int().min(1).max(50),
