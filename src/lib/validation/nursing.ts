@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { DAYS, NATIONALITIES } from "@/lib/validation/profile";
+import { DAYS, nationality } from "@/lib/validation/profile";
 
 // generic_profiles only has top-level `full_name` / `location_id` columns --
 // everything else (including locationDetail/nationality/photo, which are
@@ -36,7 +36,7 @@ export const nursingProviderSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
-  nationality: z.enum(NATIONALITIES),
+  nationality,
   workRadiusKm: z.number().int().min(1, "Enter a work radius").max(50, "50 km max"),
   employmentType: z.enum(["full_time", "part_time", "either"]),
   liveArrangementPref: z.enum(["live_in", "live_out", "either"]),
@@ -63,7 +63,7 @@ export const nursingSeekerSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
-  nationality: z.enum(NATIONALITIES),
+  nationality,
   scheduleType: z.enum(["full_time", "part_time", "either"]),
   neededDays: z.array(z.enum(DAYS)).default([]),
   liveArrangement: z.enum(["live_in", "live_out", "either"]),

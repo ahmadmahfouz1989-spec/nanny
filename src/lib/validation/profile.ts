@@ -33,6 +33,13 @@ export const NATIONALITIES = [
   "other",
 ] as const;
 
+// A bare `z.enum(NATIONALITIES)` dumps every nationality value into the
+// error text when the select is left on its blank option -- same failure
+// mode as the bare `locationId` uuid below, just uglier since it's an
+// enum. Shared across every category's schemas since they all reuse the
+// same NationalitySelect component.
+export const nationality = z.enum(NATIONALITIES, "Select a nationality");
+
 const uuid = z.string().uuid();
 // A bare `uuid` here reports Zod's generic "expected string, received null"
 // when the governorate select is left on its blank option -- give it a
@@ -50,7 +57,7 @@ export const parentProfileSchema = z.object({
   profilePhotoUrl: z.string().url().optional(),
   locationId,
   locationDetail: z.string().trim().min(2).max(120),
-  nationality: z.enum(NATIONALITIES),
+  nationality,
   numChildren: z.number().int().min(1).max(10),
   childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
   scheduleType: z.enum(["full_time", "part_time", "either"]),
@@ -76,7 +83,7 @@ export const nannyProfileSchema = z.object({
   profilePhotoUrl: z.string().url(),
   locationId,
   locationDetail: z.string().trim().min(2).max(120),
-  nationality: z.enum(NATIONALITIES),
+  nationality,
   workRadiusKm: z.number().int().min(1).max(50),
   employmentType: z.enum(["full_time", "part_time", "either"]),
   liveArrangementPref: z.enum(["live_in", "live_out", "either"]),
