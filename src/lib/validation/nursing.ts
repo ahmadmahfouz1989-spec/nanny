@@ -7,6 +7,10 @@ import { DAYS, NATIONALITIES } from "@/lib/validation/profile";
 // jsonb here, same as the category-specific fields below.
 
 const uuid = z.string().uuid();
+// A bare `uuid` here reports Zod's generic "expected string, received null"
+// when the governorate select is left on its blank option -- give it a
+// message that actually points at the field.
+const locationId = z.string({ message: "Choose your governorate" }).uuid("Choose your governorate");
 const contactPhone = z
   .string()
   .min(6, "Enter a valid phone number")
@@ -30,7 +34,7 @@ export const PATIENT_AGE_GROUPS = ["infant", "child", "adult", "elderly"] as con
 export const nursingProviderSchema = z.object({
   fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
   contactPhone,
-  locationId: uuid,
+  locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
   nationality: z.enum(NATIONALITIES),
   workRadiusKm: z.number().int().min(1, "Enter a work radius").max(50, "50 km max"),
@@ -57,7 +61,7 @@ export type NursingProviderInput = z.infer<typeof nursingProviderSchema>;
 export const nursingSeekerSchema = z.object({
   fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
   contactPhone,
-  locationId: uuid,
+  locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
   nationality: z.enum(NATIONALITIES),
   scheduleType: z.enum(["full_time", "part_time", "either"]),

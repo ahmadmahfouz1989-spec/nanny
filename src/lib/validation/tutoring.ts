@@ -6,6 +6,10 @@ import { DAYS, NATIONALITIES } from "@/lib/validation/profile";
 // `attributes` jsonb.
 
 const uuid = z.string().uuid();
+// A bare `uuid` here reports Zod's generic "expected string, received null"
+// when the governorate select is left on its blank option -- give it a
+// message that actually points at the field.
+const locationId = z.string({ message: "Choose your governorate" }).uuid("Choose your governorate");
 const contactPhone = z
   .string()
   .min(6, "Enter a valid phone number")
@@ -32,7 +36,7 @@ export const TUTORING_FORMATS = ["online", "in_person", "either"] as const;
 export const tutoringProviderSchema = z.object({
   fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
   contactPhone,
-  locationId: uuid,
+  locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
   nationality: z.enum(NATIONALITIES),
   subjects: z.array(z.enum(SUBJECTS)).min(1, "Pick at least one subject"),
@@ -54,7 +58,7 @@ export type TutoringProviderInput = z.infer<typeof tutoringProviderSchema>;
 export const tutoringSeekerSchema = z.object({
   fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
   contactPhone,
-  locationId: uuid,
+  locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
   nationality: z.enum(NATIONALITIES),
   subjectsNeeded: z.array(z.enum(SUBJECTS)).min(1, "Pick at least one subject"),
