@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 
@@ -36,6 +36,20 @@ export default function AdminUsersPage() {
   useEffect(() => {
     load("");
   }, []);
+
+  // Live search rather than requiring Enter -- relying on a keydown
+  // handler meant it silently did nothing if the keypress from a mobile
+  // keyboard's "Go"/"Search" action button was never actually reported as
+  // "Enter", with no visible hint that a key was needed at all.
+  const isFirstRun = useRef(true);
+  useEffect(() => {
+    if (isFirstRun.current) {
+      isFirstRun.current = false;
+      return;
+    }
+    const handle = setTimeout(() => load(q), 300);
+    return () => clearTimeout(handle);
+  }, [q]);
 
   async function toggleStatus(user: AdminUser) {
     const nextStatus = user.status === "suspended" ? "active" : "suspended";
@@ -93,7 +107,6 @@ export default function AdminUsersPage() {
         placeholder={t("searchPlaceholder")}
         value={q}
         onChange={(e) => setQ(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && load(q)}
       />
 
       {users && users.length === 0 && <p className="text-sm text-muted">{t("usersEmpty")}</p>}
