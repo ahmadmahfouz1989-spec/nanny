@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 const bodySchema = z.object({
   reportedProfileId: z.string().uuid().optional(),
-  profileType: z.enum(["parent", "nanny"]).optional(),
+  profileType: z.enum(["parent", "nanny", "generic"]).optional(),
   reportedPostId: z.string().uuid().optional(),
   reason: z.enum(["inappropriate_content", "harassment", "fraud_scam", "fake_profile", "other"]),
   details: z.string().max(1000).optional(),
@@ -36,7 +36,12 @@ export async function POST(request: Request) {
     reportedUserId = post.user_id;
     postId = parsed.data.reportedPostId;
   } else if (parsed.data.reportedProfileId && parsed.data.profileType) {
-    const table = parsed.data.profileType === "parent" ? "parent_profiles" : "nanny_profiles";
+    const table =
+      parsed.data.profileType === "parent"
+        ? "parent_profiles"
+        : parsed.data.profileType === "nanny"
+          ? "nanny_profiles"
+          : "generic_profiles";
     const { data: profile } = await supabase.from(table).select("user_id").eq("id", parsed.data.reportedProfileId).maybeSingle();
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
