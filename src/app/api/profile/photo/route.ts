@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { storagePathFromPublicUrl } from "@/lib/storage-cleanup";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -39,6 +40,13 @@ export async function POST(request: Request) {
   const ext = file.type.split("/")[1];
   const path = `${user.id}/${Date.now()}.${ext}`;
   const bucket = BUCKET_BY_ROLE[role];
+  const table = TABLE_BY_ROLE[role];
+
+  // Grab whatever photo is live now so it can be cleaned up after the new
+  // one is safely in place -- every re-upload otherwise leaves the old
+  // file sitting in the bucket forever with nothing pointing to it.
+  const { data: existing } = await supabase.from(table).select("profile_photo_url").eq("user_id", user.id).maybeSingle();
+  const previousUrl = existing?.profile_photo_url ?? null;
 
   const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
     contentType: file.type,
@@ -58,9 +66,17 @@ export async function POST(request: Request) {
   // before the profile row exists yet -- the wizard's own Finish step
   // still persists profilePhotoUrl as part of profile creation.
   await supabase
-    .from(TABLE_BY_ROLE[role])
+    .from(table)
     .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
     .eq("user_id", user.id);
+
+  // Only remove the old file once the new one is uploaded and saved --
+  // never delete before we're sure the user ends up with a working photo.
+  // Best-effort: this is cleanup, not the point of the request.
+  if (previousUrl) {
+    const previousPath = storagePathFromPublicUrl(previousUrl, bucket);
+    if (previousPath) await supabase.storage.from(bucket).remove([previousPath]).catch(() => {});
+  }
 
   return NextResponse.json({ url: publicUrl.publicUrl });
 }
