@@ -10,8 +10,8 @@ type AdminReport = {
   details: string | null;
   status: string;
   created_at: string;
-  reporter: { id: string; email: string | null; role: string } | null;
-  reported: { id: string; email: string | null; role: string } | null;
+  reporter: { id: string; email: string | null; role: string | null; name?: string; category?: string | null } | null;
+  reported: { id: string; email: string | null; role: string | null; name?: string; category?: string | null } | null;
   post: { id: string; kind: string; caption: string } | null;
 };
 
@@ -85,10 +85,16 @@ export default function AdminReportsPage() {
               <span className={ui.badge("warning")}>{tReport(REASON_LABEL_KEY[report.reason] ?? "reasonOther")}</span>
             </div>
             <p className="text-sm text-muted mb-1">
-              {t("reportedBy")}: {report.reporter?.email ?? "—"} ({report.reporter?.role})
+              {t("reportedBy")}: {report.reporter?.name ?? report.reporter?.email ?? "—"}
+              {report.reporter?.email && report.reporter?.name && ` (${report.reporter.email})`}
+              {" · "}
+              {report.reporter?.category ?? report.reporter?.role ?? "—"}
             </p>
             <p className="text-sm text-muted mb-3">
-              {t("against")}: {report.reported?.email ?? "—"} ({report.reported?.role})
+              {t("against")}: {report.reported?.name ?? report.reported?.email ?? "—"}
+              {report.reported?.email && report.reported?.name && ` (${report.reported.email})`}
+              {" · "}
+              {report.reported?.category ?? report.reported?.role ?? "—"}
             </p>
             {report.post && (
               <p className="text-sm text-ink/80 mb-3 rounded-lg bg-surface-sunken px-3 py-2">
