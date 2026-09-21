@@ -6,6 +6,8 @@ import { Link } from "@/i18n/navigation";
 import RatingButton from "./rating-button";
 import { ui } from "@/lib/ui";
 
+type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
+
 function effectiveStatus(status: string, interestExpiresAt: string | null) {
   const pending = status === "seeker_interested" || status === "provider_interested";
   if (pending && interestExpiresAt && new Date(interestExpiresAt) < new Date()) return "expired";
@@ -13,10 +15,10 @@ function effectiveStatus(status: string, interestExpiresAt: string | null) {
 }
 
 /**
- * The generic-category equivalent of MatchActions, scoped down for v1: no
- * contact-reveal -- once mutual, this links out to the unified /messages
- * inbox (same one nanny/parent uses), plus the same rate-your-match
- * widget legacy matches have.
+ * The generic-category equivalent of MatchActions: once mutual, this
+ * offers the same contact-reveal as nanny/parent (phone/email/WhatsApp),
+ * plus a link into the unified /messages inbox (same one nanny/parent
+ * uses) and the same rate-your-match widget legacy matches have.
  */
 export default function GenericMatchActions({
   matchId,
@@ -32,6 +34,7 @@ export default function GenericMatchActions({
   const t = useTranslations("Matches");
   const [current, setCurrent] = useState(effectiveStatus(status, interestExpiresAt));
   const [loading, setLoading] = useState(false);
+  const [contact, setContact] = useState<ContactInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const otherSide = viewerSide === "seeker" ? "provider" : "seeker";
@@ -52,6 +55,19 @@ export default function GenericMatchActions({
 
     const body = await res.json();
     setCurrent(body.match.status);
+  }
+
+  async function loadContact() {
+    setLoading(true);
+    setError(null);
+    const res = await fetch(`/api/generic-matches/${matchId}/contact`);
+    setLoading(false);
+
+    if (!res.ok) {
+      setError(t("actionError"));
+      return;
+    }
+    setContact(await res.json());
   }
 
   if (current === "suggested" || current === "expired") {
@@ -89,9 +105,28 @@ export default function GenericMatchActions({
   if (current === "mutual") {
     return (
       <div className="mt-3">
-        <Link href={`/messages?match=${matchId}`} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
-          {t("openChat")}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href={`/messages?match=${matchId}`} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
+            {t("openChat")}
+          </Link>
+          {!contact && (
+            <button onClick={loadContact} disabled={loading} className={ui.buttonSecondary + " px-5! py-2! text-sm"}>
+              {t("viewContact")}
+            </button>
+          )}
+        </div>
+        {contact && (
+          <div className="rounded-xl bg-secondary-soft p-3 text-sm flex flex-col gap-1 mt-2">
+            {contact.phone && <span>{contact.phone}</span>}
+            {contact.email && <span>{contact.email}</span>}
+            {contact.whatsappUrl && (
+              <a href={contact.whatsappUrl} target="_blank" rel="noopener noreferrer" className={ui.link}>
+                {t("openWhatsapp")}
+              </a>
+            )}
+          </div>
+        )}
+        {error && <p className="text-xs text-danger mt-1">{error}</p>}
         <RatingButton matchId={matchId} apiBase="/api/generic-matches" />
       </div>
     );
