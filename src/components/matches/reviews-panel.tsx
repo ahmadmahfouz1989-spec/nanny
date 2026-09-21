@@ -8,7 +8,7 @@ type ReviewsResponse = {
   average: number | null;
   count: number;
   reviews: Review[];
-  raterRole: "parent" | "nanny";
+  raterRole: "parent" | "nanny" | null;
 };
 
 function Stars({ score }: { score: number }) {
@@ -29,7 +29,7 @@ export default function ReviewsPanel({
   profileType,
 }: {
   profileId: string;
-  profileType: "parent" | "nanny";
+  profileType: "parent" | "nanny" | "generic";
 }) {
   const t = useTranslations("Rating");
   const locale = useLocale();
@@ -62,7 +62,11 @@ export default function ReviewsPanel({
     return <p className="mt-2 text-xs text-muted">{t("reviewsLoading")}</p>;
   }
 
-  const raterLabel = data.raterRole === "parent" ? t("raterParent") : t("raterNanny");
+  // Ratings are per-account, not per-category -- a generic profile's
+  // reviews can come from any category or role, so there's no single
+  // label to put on them the way a nanny profile is always rated by
+  // parents specifically.
+  const raterLabel = data.raterRole === "parent" ? t("raterParent") : data.raterRole === "nanny" ? t("raterNanny") : null;
 
   return (
     <div className="mt-2 rounded-xl border border-border bg-background p-3 flex flex-col divide-y divide-border">
@@ -74,7 +78,7 @@ export default function ReviewsPanel({
             <span className="text-[11px] text-muted shrink-0">{monthYear(r.createdAt)}</span>
           </div>
           {r.comment && <p className="text-sm text-ink/80">{r.comment}</p>}
-          <span className="text-[11px] text-muted">{raterLabel}</span>
+          {raterLabel && <span className="text-[11px] text-muted">{raterLabel}</span>}
         </div>
       ))}
     </div>

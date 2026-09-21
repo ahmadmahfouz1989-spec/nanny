@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import GenericCriteriaChecklist from "@/components/matches/generic-criteria-checklist";
 import GenericMatchActions from "@/components/matches/generic-match-actions";
+import ProfileRating from "@/components/matches/profile-rating";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -25,6 +26,7 @@ type GenericMatch = {
   status: string;
   interest_expires_at: string | null;
   other: OtherProfile;
+  rating: { average: number | null; count: number };
 };
 
 function localizedLocationName(
@@ -91,6 +93,14 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
               <div className="flex items-center justify-between mb-2">
                 <p className="font-display text-lg font-bold">{other.full_name}</p>
                 <span className={ui.badge(ui.scoreTone(r.score))}>{t("scoreLabel", { score: Math.round(r.score) })}</span>
+              </div>
+              <div className="mb-3">
+                <ProfileRating
+                  profileId={other.id}
+                  profileType="generic"
+                  average={r.rating?.average ?? null}
+                  count={r.rating?.count ?? 0}
+                />
               </div>
               {gov && <p className="text-sm text-muted mb-3">{gov}</p>}
 
