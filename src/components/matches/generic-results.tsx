@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import GenericCriteriaChecklist from "@/components/matches/generic-criteria-checklist";
 import GenericMatchActions from "@/components/matches/generic-match-actions";
 import ProfileRating from "@/components/matches/profile-rating";
+import GovernorateSelect from "@/components/matches/governorate-select";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -53,9 +54,17 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
   const [myRole, setMyRole] = useState<"seeker" | "provider" | null>(null);
   const [results, setResults] = useState<GenericMatch[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [governorateId, setGovernorateId] = useState("");
+  const [day, setDay] = useState("");
+  const [minYearsExperience, setMinYearsExperience] = useState("");
 
   useEffect(() => {
-    fetch(`/api/generic-matches?categorySlug=${categorySlug}`)
+    const params = new URLSearchParams({ categorySlug });
+    if (governorateId) params.set("governorateId", governorateId);
+    if (day) params.set("day", day);
+    if (minYearsExperience) params.set("minYearsExperience", minYearsExperience);
+
+    fetch(`/api/generic-matches?${params}`)
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
@@ -66,16 +75,55 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
         setResults(body.results);
       })
       .catch(() => setError(t("errorNoProfile")));
-  }, [categorySlug, t]);
+  }, [categorySlug, t, governorateId, day, minYearsExperience]);
+
+  // Minimum experience only makes sense filtering providers (a seeker has
+  // no years-of-experience field), so only show it once we know the
+  // viewer is a seeker looking at providers.
+  const showExperienceFilter = myRole === "seeker";
+  const hasFilters = !!(governorateId || day || (showExperienceFilter && minYearsExperience));
+  function clearFilters() {
+    setGovernorateId("");
+    setDay("");
+    setMinYearsExperience("");
+  }
 
   return (
     <div className={`max-w-2xl w-full mx-auto px-6 py-8 ${!results && !error ? "min-h-screen flex flex-col" : ""}`}>
-      <h1 className="font-display text-2xl font-bold mb-6">{t("titleMatches")}</h1>
+      <h1 className="font-display text-2xl font-bold mb-4">{t("titleMatches")}</h1>
+
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <GovernorateSelect value={governorateId} onChange={setGovernorateId} placeholder={t("filterAllAreas")} />
+        <select className={ui.select + " w-auto"} value={day} onChange={(e) => setDay(e.target.value)}>
+          <option value="">{t("filterAnyDay")}</option>
+          {DAYS.map((d) => (
+            <option key={d} value={d}>
+              {tDays(d)}
+            </option>
+          ))}
+        </select>
+        {showExperienceFilter && (
+          <input
+            type="number"
+            min={0}
+            className={ui.input + " w-auto"}
+            placeholder={t("filterMinExperience")}
+            value={minYearsExperience}
+            onChange={(e) => setMinYearsExperience(e.target.value)}
+          />
+        )}
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className={ui.buttonGhost + " text-sm"}>
+            {t("clearFilters")}
+          </button>
+        )}
+      </div>
+
       {!results && !error && <LogoLoader label={t("loading")} fullHeight />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " p-6"}>
-          <p className="text-sm text-muted">{t("empty")}</p>
+          <p className="text-sm text-muted">{hasFilters ? t("emptyFiltered") : t("empty")}</p>
         </div>
       )}
 

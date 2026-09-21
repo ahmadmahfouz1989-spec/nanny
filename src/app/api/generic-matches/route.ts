@@ -61,6 +61,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  type OtherProfile = {
+    id: string;
+    full_name: string;
+    location_id: string | null;
+    attributes: Record<string, unknown>;
+    locations: { name_en: string; name_ar: string; name_fr: string } | null;
+  };
+
   const otherIds = (matches ?? []).map(otherIdOf);
   const { data: otherProfiles } =
     otherIds.length > 0
@@ -68,7 +76,7 @@ export async function GET(request: Request) {
           .from("generic_profiles")
           .select("id, full_name, location_id, attributes, locations(name_en, name_ar, name_fr)")
           .in("id", otherIds)
-      : { data: [] as { id: string }[] };
+      : { data: [] as OtherProfile[] };
 
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
@@ -94,5 +102,28 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json({ myRole: myProfile.role, results });
+  // Manual overrides on top of the algorithm's score order, same as
+  // /api/search/nannies -- narrows the already-complete match set rather
+  // than querying a separate index. availability lives under different
+  // attribute keys depending on category/role (availability.days vs
+  // neededDays), so both are checked.
+  const governorateId = searchParams.get("governorateId");
+  const day = searchParams.get("day");
+  const minYearsExperience = searchParams.get("minYearsExperience");
+
+  const filtered = results.filter((r) => {
+    if (!r.other) return false;
+    const a = r.other.attributes ?? {};
+    if (governorateId && r.other.location_id !== governorateId) return false;
+    if (day) {
+      const days = ((a.availability as { days?: string[] } | undefined)?.days ?? a.neededDays ?? []) as string[];
+      if (!days.includes(day)) return false;
+    }
+    if (minYearsExperience && !(typeof a.yearsExperience === "number" && a.yearsExperience >= Number(minYearsExperience))) {
+      return false;
+    }
+    return true;
+  });
+
+  return NextResponse.json({ myRole: myProfile.role, results: filtered, total: filtered.length });
 }

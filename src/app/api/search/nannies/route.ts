@@ -4,6 +4,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
 import { featuredProfileIds } from "@/lib/featured";
 
+type NannyProfile = {
+  id: string;
+  location_id: string | null;
+  years_experience: number;
+  availability: { days?: string[] } | null;
+};
+
 export async function GET(request: Request) {
   const supabase = await createClient();
   const {
@@ -32,8 +39,13 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  // Manual overrides on top of the algorithm's score order -- narrows the
+  // same fully-materialized match set every parent already has (a row per
+  // approved nanny, see recomputeMatchesForParent), rather than a separate
+  // search index.
+  const governorateId = searchParams.get("governorateId");
+  const day = searchParams.get("day");
+  const minYearsExperience = searchParams.get("minYearsExperience");
 
   const { data, error } = await supabase
     .from("matches")
@@ -41,16 +53,26 @@ export async function GET(request: Request) {
       "id, score, score_breakdown, status, interest_expires_at, nanny_profiles!inner(id, full_name, profile_photo_url, location_id, location_detail, nationality, work_radius_km, employment_type, live_arrangement_pref, availability, years_experience, has_transportation, can_drive, certifications, short_intro, locations(name_en, name_ar, name_fr), nanny_profile_languages(languages(id, name_en, name_ar, name_fr)), nanny_experience(age_group, years_experience))",
     )
     .eq("parent_profile_id", parentProfile.id)
-    .order("score", { ascending: false })
-    .range(from, to);
+    .order("score", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  const filtered = (data ?? []).filter((r) => {
+    const nanny = r.nanny_profiles as unknown as NannyProfile;
+    if (governorateId && nanny.location_id !== governorateId) return false;
+    if (day && !(nanny.availability?.days ?? []).includes(day)) return false;
+    if (minYearsExperience && nanny.years_experience < Number(minYearsExperience)) return false;
+    return true;
+  });
+
+  const from = (page - 1) * pageSize;
+  const paged = filtered.slice(from, from + pageSize);
+
   // Attach each nanny's aggregate rating. The profile→user_id mapping stays
   // server-side (user_id is never part of the search response).
-  const nannyProfileIds = (data ?? [])
+  const nannyProfileIds = paged
     .map((r) => (r.nanny_profiles as unknown as { id: string } | null)?.id)
     .filter((v): v is string => Boolean(v));
 
@@ -69,7 +91,7 @@ export async function GET(request: Request) {
 
   const featuredIds = await featuredProfileIds("nanny", nannyProfileIds);
 
-  const results = (data ?? []).map((r) => {
+  const results = paged.map((r) => {
     const id = (r.nanny_profiles as unknown as { id: string }).id;
     return {
       ...r,
@@ -78,5 +100,5 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json({ results });
+  return NextResponse.json({ results, total: filtered.length });
 }
