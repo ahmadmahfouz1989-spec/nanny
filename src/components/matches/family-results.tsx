@@ -7,9 +7,11 @@ import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
 import ProfileRating from "@/components/matches/profile-rating";
+import GovernorateSelect from "@/components/matches/governorate-select";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
+import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 import { useHashScroll } from "@/components/matches/use-hash-scroll";
 import { LogoLoader } from "@/components/animated-logo";
@@ -73,6 +75,7 @@ export default function FamilyResults() {
   const tParent = useTranslations("ParentOnboarding");
   const tAgeGroups = useTranslations("AgeGroups");
   const tDuties = useTranslations("Duties");
+  const tDays = useTranslations("Days");
   const tSchedule = useTranslations("ScheduleOptions");
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const tNat = useTranslations("Nationality");
@@ -80,9 +83,19 @@ export default function FamilyResults() {
   const [results, setResults] = useState<FamilyResult[] | null>(null);
   useHashScroll(!!results);
   const [error, setError] = useState<string | null>(null);
+  const [governorateId, setGovernorateId] = useState("");
+  const [day, setDay] = useState("");
+  const [scheduleType, setScheduleType] = useState("");
+  const [liveArrangement, setLiveArrangement] = useState("");
 
   useEffect(() => {
-    fetch("/api/search/families")
+    const params = new URLSearchParams();
+    if (governorateId) params.set("governorateId", governorateId);
+    if (day) params.set("day", day);
+    if (scheduleType) params.set("scheduleType", scheduleType);
+    if (liveArrangement) params.set("liveArrangement", liveArrangement);
+
+    fetch(`/api/search/families?${params}`)
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
@@ -92,17 +105,55 @@ export default function FamilyResults() {
         setResults(body.results);
       })
       .catch(() => setError(t("errorNoProfile")));
-  }, [t]);
+  }, [t, governorateId, day, scheduleType, liveArrangement]);
+
+  const hasFilters = !!(governorateId || day || scheduleType || liveArrangement);
+  function clearFilters() {
+    setGovernorateId("");
+    setDay("");
+    setScheduleType("");
+    setLiveArrangement("");
+  }
 
   return (
     <div className={`max-w-2xl w-full mx-auto px-6 py-8 ${!results && !error ? "min-h-screen flex flex-col" : ""}`}>
-      <h1 className="font-display text-2xl font-bold mb-6">{t("titleNanny")}</h1>
+      <h1 className="font-display text-2xl font-bold mb-4">{t("titleNanny")}</h1>
+
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <GovernorateSelect value={governorateId} onChange={setGovernorateId} placeholder={t("filterAllAreas")} />
+        <select className={ui.select + " w-auto"} value={day} onChange={(e) => setDay(e.target.value)}>
+          <option value="">{t("filterAnyDay")}</option>
+          {DAYS.map((d) => (
+            <option key={d} value={d}>
+              {tDays(d)}
+            </option>
+          ))}
+        </select>
+        <select className={ui.select + " w-auto"} value={scheduleType} onChange={(e) => setScheduleType(e.target.value)}>
+          <option value="">{t("filterAnySchedule")}</option>
+          <option value="full_time">{tSchedule("full_time")}</option>
+          <option value="part_time">{tSchedule("part_time")}</option>
+          <option value="either">{tSchedule("either")}</option>
+        </select>
+        <select className={ui.select + " w-auto"} value={liveArrangement} onChange={(e) => setLiveArrangement(e.target.value)}>
+          <option value="">{t("filterAnyLiveArrangement")}</option>
+          <option value="live_in">{tLiveArrangement("live_in")}</option>
+          <option value="live_out">{tLiveArrangement("live_out")}</option>
+          <option value="either">{tLiveArrangement("either")}</option>
+        </select>
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className={ui.buttonGhost + " text-sm"}>
+            {t("clearFilters")}
+          </button>
+        )}
+      </div>
+
       {!results && !error && <LogoLoader label={t("loading")} fullHeight />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>
           <CreateProfileIllustration className="w-full h-32" />
-          <p className="text-sm text-muted p-6">{t("empty")}</p>
+          <p className="text-sm text-muted p-6">{hasFilters ? t("emptyFiltered") : t("empty")}</p>
         </div>
       )}
 

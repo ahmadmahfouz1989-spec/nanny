@@ -7,6 +7,7 @@ import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
 import ProfileRating from "@/components/matches/profile-rating";
+import GovernorateSelect from "@/components/matches/governorate-select";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
@@ -85,9 +86,17 @@ export default function NannyResults() {
   const [results, setResults] = useState<NannyResult[] | null>(null);
   useHashScroll(!!results);
   const [error, setError] = useState<string | null>(null);
+  const [governorateId, setGovernorateId] = useState("");
+  const [day, setDay] = useState("");
+  const [minYearsExperience, setMinYearsExperience] = useState("");
 
   useEffect(() => {
-    fetch("/api/search/nannies")
+    const params = new URLSearchParams();
+    if (governorateId) params.set("governorateId", governorateId);
+    if (day) params.set("day", day);
+    if (minYearsExperience) params.set("minYearsExperience", minYearsExperience);
+
+    fetch(`/api/search/nannies?${params}`)
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
@@ -97,17 +106,50 @@ export default function NannyResults() {
         setResults(body.results);
       })
       .catch(() => setError(t("errorNoProfile")));
-  }, [t]);
+  }, [t, governorateId, day, minYearsExperience]);
+
+  const hasFilters = !!(governorateId || day || minYearsExperience);
+  function clearFilters() {
+    setGovernorateId("");
+    setDay("");
+    setMinYearsExperience("");
+  }
 
   return (
     <div className={`max-w-2xl w-full mx-auto px-6 py-8 ${!results && !error ? "min-h-screen flex flex-col" : ""}`}>
-      <h1 className="font-display text-2xl font-bold mb-6">{t("titleParent")}</h1>
+      <h1 className="font-display text-2xl font-bold mb-4">{t("titleParent")}</h1>
+
+      <div className="flex flex-wrap items-center gap-2 mb-6">
+        <GovernorateSelect value={governorateId} onChange={setGovernorateId} placeholder={t("filterAllAreas")} />
+        <select className={ui.select + " w-auto"} value={day} onChange={(e) => setDay(e.target.value)}>
+          <option value="">{t("filterAnyDay")}</option>
+          {DAYS.map((d) => (
+            <option key={d} value={d}>
+              {tDays(d)}
+            </option>
+          ))}
+        </select>
+        <input
+          type="number"
+          min={0}
+          className={ui.input + " w-auto"}
+          placeholder={t("filterMinExperience")}
+          value={minYearsExperience}
+          onChange={(e) => setMinYearsExperience(e.target.value)}
+        />
+        {hasFilters && (
+          <button type="button" onClick={clearFilters} className={ui.buttonGhost + " text-sm"}>
+            {t("clearFilters")}
+          </button>
+        )}
+      </div>
+
       {!results && !error && <LogoLoader label={t("loading")} fullHeight />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>
           <CreateProfileIllustration className="w-full h-32" />
-          <p className="text-sm text-muted p-6">{t("empty")}</p>
+          <p className="text-sm text-muted p-6">{hasFilters ? t("emptyFiltered") : t("empty")}</p>
         </div>
       )}
 
