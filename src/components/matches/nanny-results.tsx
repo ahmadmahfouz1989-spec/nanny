@@ -117,9 +117,10 @@ export default function NannyResults() {
 
   return (
     <div className={`max-w-2xl w-full mx-auto px-6 py-8 ${!results && !error ? "min-h-screen flex flex-col" : ""}`}>
-      <h1 className="font-display text-2xl font-bold mb-4">{t("titleParent")}</h1>
+      <h1 className="font-display text-2xl font-bold mb-1">{t("titleParent")}</h1>
+      <p className="text-sm text-muted mb-4">{t("resultsSubtitle")}</p>
 
-      <div className="flex flex-wrap items-center gap-2 mb-6">
+      <div className="flex flex-wrap items-center gap-2 mb-6 rounded-2xl border border-border bg-surface-sunken/50 p-3">
         <GovernorateSelect value={governorateId} onChange={setGovernorateId} placeholder={t("filterAllAreas")} />
         <select className={ui.select + " w-auto"} value={day} onChange={(e) => setDay(e.target.value)}>
           <option value="">{t("filterAnyDay")}</option>
