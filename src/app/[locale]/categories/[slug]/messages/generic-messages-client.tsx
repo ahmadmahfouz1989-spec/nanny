@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
-import { SendIcon } from "@/components/nav-icons";
+import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
+import { MAX_RECORDING_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
 
 type Conversation = {
   matchId: string;
@@ -13,16 +14,26 @@ type Conversation = {
   unreadCount: number;
 };
 
-type ThreadMessage = { id: string; sender_id: string; body: string; created_at: string };
+type ThreadMessage = {
+  id: string;
+  sender_id: string;
+  body: string;
+  audio_path: string | null;
+  audio_duration_seconds: number | null;
+  audioUrl?: string | null;
+  created_at: string;
+};
 
 const POLL_MS = 4000;
 
 /**
- * Deliberately simple v1: polling instead of realtime, no voice notes, no
- * read-receipts UI beyond the unread badge -- see the plan's messaging
- * scope note. ChatThread (used by the nanny messages page) is tightly
- * coupled to the `messages` table's realtime channel and audio pipeline,
- * so this is a fresh, minimal component rather than a generalization of it.
+ * Deliberately simple v1: polling instead of realtime, no read-receipts UI
+ * beyond the unread badge -- see the plan's messaging scope note.
+ * ChatThread (used by the nanny messages page) is tightly coupled to the
+ * `messages` table's realtime channel, so this stays a fresh, minimal
+ * component rather than a generalization of it -- but the recording flow
+ * itself reuses the same shared helpers/constants (@/lib/voice-notes) so
+ * the two don't drift.
  */
 export default function GenericMessagesClient({ categorySlug }: { categorySlug: string }) {
   const t = useTranslations("Matches");
@@ -34,7 +45,15 @@ export default function GenericMessagesClient({ categorySlug }: { categorySlug: 
   const [userId, setUserId] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const [recording, setRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
+  const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const cancelledRef = useRef(false);
 
   useEffect(() => {
     fetch("/api/auth/me")
@@ -91,6 +110,84 @@ export default function GenericMessagesClient({ categorySlug }: { categorySlug: 
     }
   }
 
+  async function startRecording() {
+    setAudioError(null);
+    if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
+      setAudioError(t("micNotSupported"));
+      return;
+    }
+
+    let stream: MediaStream;
+    try {
+      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    } catch {
+      setAudioError(t("micPermissionDenied"));
+      return;
+    }
+
+    cancelledRef.current = false;
+    chunksRef.current = [];
+    const mimeType = pickAudioMimeType();
+    const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+    mediaRecorderRef.current = recorder;
+
+    recorder.ondataavailable = (e) => {
+      if (e.data.size > 0) chunksRef.current.push(e.data);
+    };
+    recorder.onstop = () => {
+      stream.getTracks().forEach((track) => track.stop());
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (!cancelledRef.current) uploadRecording(recorder.mimeType || mimeType || "audio/webm");
+      setRecording(false);
+      setRecordingSeconds(0);
+    };
+
+    recorder.start();
+    setRecording(true);
+    setRecordingSeconds(0);
+    recordingTimerRef.current = setInterval(() => {
+      setRecordingSeconds((s) => {
+        if (s + 1 >= MAX_RECORDING_SECONDS) {
+          mediaRecorderRef.current?.stop();
+        }
+        return s + 1;
+      });
+    }, 1000);
+  }
+
+  function stopRecording() {
+    mediaRecorderRef.current?.stop();
+  }
+
+  function cancelRecording() {
+    cancelledRef.current = true;
+    mediaRecorderRef.current?.stop();
+  }
+
+  async function uploadRecording(mimeType: string) {
+    if (!selected) return;
+    const baseMimeType = mimeType.split(";")[0]!;
+    const blob = new Blob(chunksRef.current, { type: baseMimeType });
+    if (blob.size === 0) return;
+
+    setUploadingAudio(true);
+    const formData = new FormData();
+    const ext = baseMimeType.includes("mp4") ? "mp4" : baseMimeType.includes("ogg") ? "ogg" : "webm";
+    formData.append("file", blob, `voice-note.${ext}`);
+    formData.append("durationSeconds", String(recordingSeconds));
+
+    const res = await fetch(`/api/generic-matches/${selected}/messages/audio`, { method: "POST", body: formData });
+    setUploadingAudio(false);
+
+    if (!res.ok) {
+      setAudioError(t("voiceNoteUploadError"));
+      return;
+    }
+
+    loadThread(selected);
+    loadConversations();
+  }
+
   const selectedConversation = conversations?.find((c) => c.matchId === selected) ?? null;
 
   return (
@@ -129,26 +226,78 @@ export default function GenericMessagesClient({ categorySlug }: { categorySlug: 
               {messages?.map((m) => (
                 <div
                   key={m.id}
-                  className={`max-w-[70%] rounded-2xl px-4 py-2 text-sm ${
+                  className={`max-w-[70%] rounded-2xl text-sm ${m.audio_path ? "p-2" : "px-4 py-2"} ${
                     m.sender_id === userId ? "self-end bg-primary text-white" : "self-start bg-surface-sunken"
                   }`}
                 >
-                  {m.body}
+                  {m.audio_path ? (
+                    m.audioUrl ? (
+                      <audio controls preload="metadata" src={m.audioUrl} className="h-9 w-56 max-w-full" />
+                    ) : (
+                      <span className="text-xs opacity-80 px-1.5">{t("voiceNoteLoading")}</span>
+                    )
+                  ) : (
+                    m.body
+                  )}
                 </div>
               ))}
               {messages?.length === 0 && <p className="text-sm text-muted">{t("chatEmpty")}</p>}
             </div>
+
+            {audioError && <p className="px-4 pt-2 text-xs text-danger">{audioError}</p>}
+
             <div className="flex items-center gap-2 px-4 py-4 border-t border-border">
-              <input
-                className={ui.input}
-                placeholder={t("chatPlaceholder")}
-                value={draft}
-                onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && send()}
-              />
-              <button onClick={send} disabled={sending || !draft.trim()} className={ui.buttonPrimary + " px-4! py-2.5!"}>
-                <SendIcon className="h-4 w-4" />
-              </button>
+              {recording ? (
+                <>
+                  <button
+                    type="button"
+                    onClick={cancelRecording}
+                    aria-label={t("cancelRecording")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-danger-soft hover:text-danger"
+                  >
+                    <TrashIcon className="h-4 w-4" />
+                  </button>
+                  <div className="flex-1 flex items-center gap-2 rounded-full bg-danger-soft px-4 py-2">
+                    <span className="h-2 w-2 rounded-full bg-danger animate-pulse" />
+                    <span className="text-sm text-danger font-medium">{t("recording")}</span>
+                    <span className="text-sm text-danger/80 tabular-nums ms-auto">{formatAudioDuration(recordingSeconds)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    aria-label={t("sendRecording")}
+                    className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover"
+                  >
+                    <SendIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <input
+                    className={ui.input}
+                    placeholder={t("chatPlaceholder")}
+                    value={draft}
+                    disabled={uploadingAudio}
+                    onChange={(e) => setDraft(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && send()}
+                  />
+                  {draft.trim() ? (
+                    <button onClick={send} disabled={sending} className={ui.buttonPrimary + " px-4! py-2.5!"}>
+                      <SendIcon className="h-4 w-4 rtl:scale-x-[-1]" />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={startRecording}
+                      disabled={uploadingAudio}
+                      aria-label={t("recordVoiceNote")}
+                      className={ui.buttonPrimary + " px-4! py-2.5! disabled:opacity-50"}
+                    >
+                      <MicIcon className="h-4 w-4" />
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </>
         ) : (
