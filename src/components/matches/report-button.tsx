@@ -16,7 +16,7 @@ const REASON_LABEL_KEY: Record<(typeof REASONS)[number], string> = {
 };
 
 type ReportButtonProps = (
-  | { profileId: string; profileType: "parent" | "nanny"; postId?: undefined }
+  | { profileId: string; profileType: "parent" | "nanny" | "generic"; postId?: undefined }
   | { postId: string; profileId?: undefined; profileType?: undefined }
 ) & { trigger?: "text" | "icon" };
 

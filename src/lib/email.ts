@@ -149,14 +149,15 @@ function escapeHtml(s: string) {
     .replace(/'/g, "&#39;");
 }
 
-export function pendingReviewEmail(lang: Lang, profileName: string, profileType: "parent" | "nanny") {
-  const kind = pick(lang, profileType === "parent" ? "parent" : "nanny", profileType === "parent" ? "أحد الوالدين" : "مربية");
+export function pendingReviewEmail(lang: Lang, profileName: string, kind: { en: string; ar: string }) {
+  const name = escapeHtml(profileName);
+  const kindLabel = pick(lang, kind.en, kind.ar);
   return {
     subject: pick(lang, "New profile awaiting review", "ملف جديد بانتظار المراجعة"),
     html: pick(
       lang,
-      `<p>${profileName} (${kind}) just submitted a profile for review.</p><p>Head to the admin console to approve or reject it.</p>`,
-      `<p>قام/قامت ${profileName} (${kind}) بإرسال ملف شخصي للمراجعة.</p><p>توجّه إلى لوحة الإدارة للموافقة عليه أو رفضه.</p>`,
+      `<p>${name} (${kindLabel}) just submitted a profile for review.</p><p>Head to the admin console to approve or reject it.</p>`,
+      `<p>قام/قامت ${name} (${kindLabel}) بإرسال ملف شخصي للمراجعة.</p><p>توجّه إلى لوحة الإدارة للموافقة عليه أو رفضه.</p>`,
     ),
   };
 }
