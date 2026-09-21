@@ -16,6 +16,7 @@ import {
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
   id: string;
+  user_id: string;
   category_id: string;
   role: "seeker" | "provider";
   location_id: string | null;
@@ -94,7 +95,7 @@ function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: Gen
 async function loadActiveApproved(admin: Admin, categoryId: string, role: "seeker" | "provider") {
   const { data } = await admin
     .from("generic_profiles")
-    .select("id, category_id, role, location_id, attributes, status, moderation_status")
+    .select("id, user_id, category_id, role, location_id, attributes, status, moderation_status")
     .eq("category_id", categoryId)
     .eq("role", role)
     .eq("status", "active")
@@ -123,7 +124,7 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
 
   const { data: profile } = await admin
     .from("generic_profiles")
-    .select("id, category_id, role, location_id, attributes, status, moderation_status, categories(slug)")
+    .select("id, user_id, category_id, role, location_id, attributes, status, moderation_status, categories(slug)")
     .eq("id", profileId)
     .single();
 
@@ -132,7 +133,13 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
   const categorySlug = (profile.categories as unknown as { slug: string } | null)?.slug ?? "";
 
   if (row.role === "seeker") {
-    const providers = await loadActiveApproved(admin, row.category_id, "provider");
+    // Exclude the same account's own provider profile in this category --
+    // one user_id can hold both roles (e.g. tutors who also seek a tutor
+    // for their own kid), and nothing about "opposite role, same
+    // category" should include matching with yourself.
+    const providers = (await loadActiveApproved(admin, row.category_id, "provider")).filter(
+      (p) => p.user_id !== row.user_id,
+    );
     const rows = providers.map((p) => {
       const { score, breakdown } = scoreFor(categorySlug, row, p);
       return {
@@ -147,7 +154,7 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
     return;
   }
 
-  const seekers = await loadActiveApproved(admin, row.category_id, "seeker");
+  const seekers = (await loadActiveApproved(admin, row.category_id, "seeker")).filter((s) => s.user_id !== row.user_id);
   const rows = seekers.map((s) => {
     const { score, breakdown } = scoreFor(categorySlug, s, row);
     return {
