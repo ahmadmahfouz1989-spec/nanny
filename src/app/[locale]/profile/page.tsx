@@ -36,8 +36,13 @@ export default async function ProfilePage({
     redirect({ href: "/admin", locale });
   }
 
+  // This page only has an account view for the nanny/parent track --
+  // unlike /dashboard (nanny's own route, reached by choosing "Nanny" on
+  // the hub), "Profile" is a global nav tab that any category's user can
+  // land on, so it must never assume nanny. Nursing/tutoring accounts
+  // manage their profile from their own category dashboard instead.
   if (profile?.role !== "parent" && profile?.role !== "nanny") {
-    redirect({ href: "/categories/nanny/onboarding", locale });
+    redirect({ href: "/categories", locale });
   }
 
   let matchProfile: { status: string; moderation_status: string; full_name: string; profile_photo_url?: string | null } | null =
