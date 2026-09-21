@@ -5,7 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import MyRatings from "@/components/matches/my-ratings";
 import MyPostsCard from "@/components/my-posts-card";
-import ProfileHeaderCard from "@/components/profile-header-card";
+import ProfileTabs, { type ProfileTabDef } from "@/components/profile-tabs";
 import { ui } from "@/lib/ui";
 
 export default async function ProfilePage({
@@ -15,6 +15,7 @@ export default async function ProfilePage({
 }) {
   const { locale } = await params;
   const t = await getTranslations("Dashboard");
+  const tNav = await getTranslations("Nav");
   const supabase = await createClient();
   const {
     data: { user },
@@ -36,14 +37,7 @@ export default async function ProfilePage({
     redirect({ href: "/admin", locale });
   }
 
-  // This page only has an account view for the nanny/parent track --
-  // unlike /dashboard (nanny's own route, reached by choosing "Nanny" on
-  // the hub), "Profile" is a global nav tab that any category's user can
-  // land on, so it must never assume nanny. Nursing/tutoring accounts
-  // manage their profile from their own category dashboard instead.
-  if (profile?.role !== "parent" && profile?.role !== "nanny") {
-    redirect({ href: "/categories", locale });
-  }
+  const hasNannyTrack = profile?.role === "parent" || profile?.role === "nanny";
 
   let matchProfile: { status: string; moderation_status: string; full_name: string; profile_photo_url?: string | null } | null =
     null;
@@ -63,20 +57,64 @@ export default async function ProfilePage({
     matchProfile = data;
   }
 
+  const { data: genericRows } = await supabase
+    .from("generic_profiles")
+    .select("id, role, full_name, status, moderation_status, categories(slug, name_en, name_ar)")
+    .eq("user_id", user!.id);
+
+  // A draft is just a claimed role with nothing filled in yet -- same
+  // "not really a profile" rule used everywhere else this shows up
+  // (categories/[slug]/dashboard, the admin queue).
+  const genericProfiles = (genericRows ?? []).filter((p) => p.status !== "draft");
+
+  // "Profile" is a global nav tab, not scoped to a category -- unlike
+  // /dashboard (nanny's own route, reached by choosing "Nanny" on the
+  // hub), it must never assume nanny. Only bounce out to the hub when
+  // there's truly nothing to show on any track yet.
+  if (!hasNannyTrack && genericProfiles.length === 0) {
+    redirect({ href: "/categories", locale });
+    return;
+  }
+
   const roleLabel = profile?.role === "nanny" ? t("roleNanny") : t("roleParent");
+
+  const tabs: ProfileTabDef[] = [
+    ...(hasNannyTrack
+      ? [
+          {
+            kind: "nanny" as const,
+            key: "nanny",
+            label: tNav("nanny"),
+            fullName: matchProfile?.full_name ?? null,
+            roleLabel,
+            isNanny: profile?.role === "nanny",
+            initialPhotoUrl: matchProfile?.profile_photo_url ?? null,
+            matchProfile,
+          },
+        ]
+      : []),
+    ...genericProfiles.map((p) => {
+      const category = p.categories as unknown as { slug: string; name_en: string; name_ar: string } | null;
+      const categoryLabel = category ? (locale === "ar" ? category.name_ar : category.name_en) : "";
+      return {
+        kind: "generic" as const,
+        key: p.id,
+        label: categoryLabel,
+        slug: category?.slug ?? "",
+        categoryLabel,
+        roleLabel: p.role === "provider" ? t("roleProvider") : t("roleSeeker"),
+        fullName: p.full_name,
+        moderationStatus: p.moderation_status,
+      };
+    }),
+  ];
 
   return (
     <AppShell active="profile">
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("yourProfile")}</h1>
 
-        <ProfileHeaderCard
-          fullName={matchProfile?.full_name ?? null}
-          roleLabel={roleLabel}
-          isNanny={profile?.role === "nanny"}
-          initialPhotoUrl={matchProfile?.profile_photo_url ?? null}
-          matchProfile={matchProfile}
-        />
+        <ProfileTabs tabs={tabs} />
 
         <div className={ui.card + " p-6 mb-5"}>
           <p className="text-xs font-medium uppercase tracking-wide text-muted mb-4">{t("accountLabel")}</p>

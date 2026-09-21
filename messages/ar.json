@@ -167,6 +167,8 @@
     "role": "الدور",
     "roleParent": "أحد الوالدين",
     "roleNanny": "مربية",
+    "roleSeeker": "باحث عن الخدمة",
+    "roleProvider": "مقدّم الخدمة",
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
     "verified": "موثّق",
