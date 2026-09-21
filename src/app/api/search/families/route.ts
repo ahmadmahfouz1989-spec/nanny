@@ -4,6 +4,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
 import { featuredProfileIds } from "@/lib/featured";
 
+type ParentProfile = {
+  id: string;
+  location_id: string | null;
+  schedule_type: string;
+  live_arrangement: string;
+  needed_days?: string[] | null;
+};
+
 export async function GET(request: Request) {
   const supabase = await createClient();
   const {
@@ -32,25 +40,38 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
+  const governorateId = searchParams.get("governorateId");
+  const day = searchParams.get("day");
+  const scheduleType = searchParams.get("scheduleType");
+  const liveArrangement = searchParams.get("liveArrangement");
 
   const { data, error } = await supabase
     .from("matches")
     .select(
-      "id, score, score_breakdown, status, interest_expires_at, parent_profiles!inner(id, full_name, profile_photo_url, location_id, location_detail, nationality, num_children, children_age_ranges, schedule_type, live_arrangement, desired_start_date, transportation_required, additional_duties, family_description, locations(name_en, name_ar, name_fr), parent_profile_languages(languages(id, name_en, name_ar, name_fr)))",
+      "id, score, score_breakdown, status, interest_expires_at, parent_profiles!inner(id, full_name, profile_photo_url, location_id, location_detail, nationality, num_children, children_age_ranges, schedule_type, live_arrangement, needed_days, desired_start_date, transportation_required, additional_duties, family_description, locations(name_en, name_ar, name_fr), parent_profile_languages(languages(id, name_en, name_ar, name_fr)))",
     )
     .eq("nanny_profile_id", nannyProfile.id)
-    .order("score", { ascending: false })
-    .range(from, to);
+    .order("score", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  const filtered = (data ?? []).filter((r) => {
+    const parent = r.parent_profiles as unknown as ParentProfile;
+    if (governorateId && parent.location_id !== governorateId) return false;
+    if (day && !(parent.needed_days ?? []).includes(day)) return false;
+    if (scheduleType && parent.schedule_type !== scheduleType) return false;
+    if (liveArrangement && parent.live_arrangement !== liveArrangement) return false;
+    return true;
+  });
+
+  const from = (page - 1) * pageSize;
+  const paged = filtered.slice(from, from + pageSize);
+
   // Attach each family's aggregate rating. The profile→user_id mapping
   // stays server-side (user_id is never part of the search response).
-  const parentProfileIds = (data ?? [])
+  const parentProfileIds = paged
     .map((r) => (r.parent_profiles as unknown as { id: string } | null)?.id)
     .filter((v): v is string => Boolean(v));
 
@@ -69,7 +90,7 @@ export async function GET(request: Request) {
 
   const featuredIds = await featuredProfileIds("parent", parentProfileIds);
 
-  const results = (data ?? []).map((r) => {
+  const results = paged.map((r) => {
     const id = (r.parent_profiles as unknown as { id: string }).id;
     return {
       ...r,
@@ -78,5 +99,5 @@ export async function GET(request: Request) {
     };
   });
 
-  return NextResponse.json({ results });
+  return NextResponse.json({ results, total: filtered.length });
 }
