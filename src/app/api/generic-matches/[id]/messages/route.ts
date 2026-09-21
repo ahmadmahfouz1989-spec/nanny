@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveGenericMatchAccess } from "@/lib/matching/generic-access";
+import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
+import { getPublicOrigin } from "@/lib/site-url";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -69,6 +72,49 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
+  }
+
+  // Email the recipient — but only for the first still-unread message in
+  // the thread, same debounce rule as the legacy matches/[id]/messages
+  // route, so an active back-and-forth doesn't send an email per line.
+  if (activityEmailsEnabled()) {
+    try {
+      const admin = createAdminClient();
+      const { count } = await admin
+        .from("generic_messages")
+        .select("id", { count: "exact", head: true })
+        .eq("match_id", id)
+        .eq("sender_id", user.id)
+        .is("read_at", null);
+
+      if ((count ?? 0) === 1) {
+        const recipientUserId = access.side === "seeker" ? access.providerUserId : access.seekerUserId;
+        const senderProfileId = access.side === "seeker" ? access.seekerProfileId : access.providerProfileId;
+
+        const [{ data: recipient }, { data: senderProfile }, { data: match }] = await Promise.all([
+          admin.from("users").select("email, preferred_language").eq("id", recipientUserId).single(),
+          admin.from("generic_profiles").select("full_name").eq("id", senderProfileId).single(),
+          admin.from("generic_matches").select("categories(slug)").eq("id", id).single(),
+        ]);
+
+        if (recipient?.email) {
+          const categorySlug = (match?.categories as unknown as { slug: string } | null)?.slug ?? "";
+          const lang = recipient.preferred_language as "en" | "ar" | "fr" | null;
+          const locale = lang === "ar" ? "ar" : "en";
+          const snippet =
+            parsed.data.body.length > 140 ? `${parsed.data.body.slice(0, 140)}…` : parsed.data.body;
+          const { subject, html } = newMessageEmail(
+            lang,
+            senderProfile?.full_name ?? "Someone",
+            snippet,
+            `${getPublicOrigin(request)}/${locale}/categories/${categorySlug}/messages`,
+          );
+          await sendEmail(recipient.email, subject, html);
+        }
+      }
+    } catch (err) {
+      console.error("[generic-matches messages] new-message email failed:", err);
+    }
   }
 
   return NextResponse.json({ message: data }, { status: 201 });

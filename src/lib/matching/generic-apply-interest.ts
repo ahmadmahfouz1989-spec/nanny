@@ -1,15 +1,16 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { genericEffectiveStatus, type GenericMatchAccess } from "@/lib/matching/generic-access";
+import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
+import { getPublicOrigin } from "@/lib/site-url";
 
 const INTEREST_WINDOW_DAYS = 14;
 
 /**
  * Same interest state-machine as applyInterest in ./apply-interest.ts, for
- * generic_matches. No email notifications yet for nursing (v1 messaging
- * scope is deliberately minimal) -- in-app notifications only.
+ * generic_matches.
  */
-export async function applyGenericInterest(access: GenericMatchAccess, categorySlug: string) {
+export async function applyGenericInterest(request: Request, access: GenericMatchAccess, categorySlug: string) {
   const status = genericEffectiveStatus(access);
   const otherSide = access.side === "seeker" ? "provider" : "seeker";
   const ownPending = `${access.side}_interested`;
@@ -57,6 +58,44 @@ export async function applyGenericInterest(access: GenericMatchAccess, categoryS
         ...n,
         payload: { generic_match_id: access.id, category_slug: categorySlug },
       })),
+    );
+
+    const [{ data: recipients }, { data: profiles }] = await Promise.all([
+      admin
+        .from("users")
+        .select("id, email, preferred_language")
+        .in(
+          "id",
+          notify.map((n) => n.user_id),
+        ),
+      // Unlike parent_profiles/nanny_profiles, both sides here are rows in
+      // the same table, so one query covers whichever names are needed.
+      admin.from("generic_profiles").select("id, full_name").in("id", [access.seekerProfileId, access.providerProfileId]),
+    ]);
+
+    const recipientById = new Map((recipients ?? []).map((r) => [r.id, r]));
+    const nameByProfileId = new Map((profiles ?? []).map((p) => [p.id, p.full_name]));
+    const seekerName = nameByProfileId.get(access.seekerProfileId);
+    const providerName = nameByProfileId.get(access.providerProfileId);
+
+    await Promise.all(
+      notify.map((n) => {
+        const recipient = recipientById.get(n.user_id);
+        if (!recipient?.email) return Promise.resolve();
+
+        if (n.type === "interest_received") {
+          const fromName = access.side === "seeker" ? seekerName : providerName;
+          const { subject, html } = interestReceivedEmail(recipient.preferred_language, fromName ?? "Someone");
+          return sendEmail(recipient.email, subject, html);
+        }
+
+        const isSeekerRecipient = n.user_id === access.seekerUserId;
+        const otherName = isSeekerRecipient ? providerName : seekerName;
+        const locale = recipient.preferred_language === "ar" ? "ar" : "en";
+        const matchUrl = `${getPublicOrigin(request)}/${locale}/categories/${categorySlug}/messages`;
+        const { subject, html } = mutualMatchEmail(recipient.preferred_language, otherName ?? "your match", matchUrl);
+        return sendEmail(recipient.email, subject, html);
+      }),
     );
   }
 
