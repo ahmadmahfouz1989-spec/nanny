@@ -186,7 +186,6 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
               <GenericCriteriaChecklist breakdown={r.score_breakdown} />
               {myRole && (
                 <GenericMatchActions
-                  categorySlug={categorySlug}
                   matchId={r.id}
                   status={r.status}
                   interestExpiresAt={r.interest_expires_at}
