@@ -28,5 +28,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     .single();
   const categorySlug = (match?.categories as unknown as { slug: string } | null)?.slug ?? "";
 
-  return applyGenericInterest(access, categorySlug);
+  return applyGenericInterest(request, access, categorySlug);
 }
