@@ -16,7 +16,7 @@ export default function ProfileRating({
   count,
 }: {
   profileId: string;
-  profileType: "parent" | "nanny";
+  profileType: "parent" | "nanny" | "generic";
   average: number | null;
   count: number;
 }) {
