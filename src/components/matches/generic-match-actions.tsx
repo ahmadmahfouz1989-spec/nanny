@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import RatingButton from "./rating-button";
 import { ui } from "@/lib/ui";
 
 function effectiveStatus(status: string, interestExpiresAt: string | null) {
@@ -13,8 +14,9 @@ function effectiveStatus(status: string, interestExpiresAt: string | null) {
 
 /**
  * The generic-category equivalent of MatchActions, scoped down for v1: no
- * contact-reveal or in-place chat thread or ratings -- once mutual, this
- * just links out to the category's own messages page.
+ * contact-reveal or in-place chat thread -- once mutual, this links out to
+ * the category's own messages page, plus the same rate-your-match widget
+ * legacy matches have.
  */
 export default function GenericMatchActions({
   categorySlug,
@@ -92,6 +94,7 @@ export default function GenericMatchActions({
         <Link href={`/categories/${categorySlug}/messages?match=${matchId}`} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
           {t("openChat")}
         </Link>
+        <RatingButton matchId={matchId} apiBase="/api/generic-matches" />
       </div>
     );
   }
