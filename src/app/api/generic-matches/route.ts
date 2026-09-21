@@ -2,13 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
+import { featuredUserIds } from "@/lib/featured";
 
 /**
  * Lists matches for the caller's own generic_profiles row in a category --
  * the generic-category equivalent of /api/search/nannies /
- * /api/search/families. No pagination/featured layer yet (see the plan's
- * v1 messaging scope note); this is intentionally the minimal version of
- * those richer nanny-side endpoints.
+ * /api/search/families.
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -80,16 +79,21 @@ export async function GET(request: Request) {
 
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
-  // Attach each counterpart's aggregate rating -- the profile→user_id
-  // mapping stays server-side (user_id is never part of the response),
-  // same pattern as /api/search/nannies.
+  // Attach each counterpart's aggregate rating and Featured status -- the
+  // profile→user_id mapping stays server-side (user_id is never part of
+  // the response), same pattern as /api/search/nannies.
   const ratingByProfileId = new Map<string, { average: number | null; count: number }>();
+  const featuredProfileIds = new Set<string>();
   if (otherIds.length > 0) {
     const admin = createAdminClient();
     const { data: owners } = await admin.from("generic_profiles").select("id, user_id").in("id", otherIds);
-    const aggregates = await ratingAggregatesByUser((owners ?? []).map((o) => o.user_id));
+    const [aggregates, featuredUsers] = await Promise.all([
+      ratingAggregatesByUser((owners ?? []).map((o) => o.user_id)),
+      featuredUserIds((owners ?? []).map((o) => o.user_id)),
+    ]);
     for (const owner of owners ?? []) {
       ratingByProfileId.set(owner.id, aggregates.get(owner.user_id) ?? { average: null, count: 0 });
+      if (featuredUsers.has(owner.user_id)) featuredProfileIds.add(owner.id);
     }
   }
 
@@ -99,6 +103,7 @@ export async function GET(request: Request) {
       ...m,
       other: otherById.get(otherId) ?? null,
       rating: ratingByProfileId.get(otherId) ?? { average: null, count: 0 },
+      featured: featuredProfileIds.has(otherId),
     };
   });
 

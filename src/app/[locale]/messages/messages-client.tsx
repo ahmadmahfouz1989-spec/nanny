@@ -9,6 +9,7 @@ import ConversationHeader from "@/components/matches/conversation-header";
 import GenericChatThread from "@/components/matches/generic-chat-thread";
 import GenericConversationHeader from "@/components/matches/generic-conversation-header";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import ConnectIllustration from "@/components/illustrations/connect-illustration";
 import { SearchIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
 
@@ -110,7 +111,10 @@ export default function MessagesClient() {
         <div className="flex-1 min-h-0 overflow-y-auto">
           {!conversations && <p className="text-sm text-muted p-4">{tMatches("loading")}</p>}
           {conversations && conversations.length === 0 && (
-            <p className="text-sm text-muted p-4">{t("empty")}</p>
+            <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
+              <ConnectIllustration className="h-24 w-auto" />
+              <p className="text-sm text-muted">{t("empty")}</p>
+            </div>
           )}
           {conversations && conversations.length > 0 && filteredConversations?.length === 0 && (
             <p className="text-sm text-muted p-4">{t("noResults", { query })}</p>
@@ -204,7 +208,8 @@ export default function MessagesClient() {
             </>
           )
         ) : (
-          <div className="flex-1 flex items-center justify-center p-6">
+          <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
+            <ConnectIllustration className="h-28 w-auto opacity-80" />
             <p className="text-sm text-muted text-center">{t("selectConversation")}</p>
           </div>
         )}

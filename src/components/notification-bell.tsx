@@ -198,7 +198,12 @@ export default function NotificationBell({
             <div className="max-h-[22rem] overflow-y-auto">
               {!items && <p className="px-4 py-6 text-center text-sm text-muted">{t("loading")}</p>}
               {items && items.length === 0 && (
-                <p className="px-4 py-6 text-center text-sm text-muted">{t("empty")}</p>
+                <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-sunken text-muted">
+                    <HeartIcon className="h-4 w-4" />
+                  </span>
+                  <p className="text-sm text-muted">{t("empty")}</p>
+                </div>
               )}
               {items?.map((n) => {
                 const notes = typeof n.payload?.notes === "string" && n.payload.notes.trim() ? n.payload.notes : null;
