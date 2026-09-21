@@ -23,9 +23,9 @@
     "hubSubtitle": "Pick a category to find people offering that service — or offering to do the work.",
     "comingSoon": "Coming soon",
     "explore": "Explore",
-    "moreComingSoon": "More categories coming soon",
+    "moreComingSoon": "New categories are added regularly",
     "landingTitle": "One place for every kind of help",
-    "landingSubtitle": "Nanny and nursing are live now. Tutoring and more are on the way."
+    "landingSubtitle": "Nanny, nursing, and tutoring are all live — pick one to get started."
   },
   "Notifications": {
     "title": "Notifications",
@@ -446,6 +446,7 @@
     "titleParent": "Nanny matches",
     "titleNanny": "Family matches",
     "titleMatches": "Your matches",
+    "resultsSubtitle": "People who match your profile, ranked by fit.",
     "empty": "No matches yet. Check back soon, or adjust your profile to widen your results.",
     "filterAllAreas": "All areas",
     "filterAnyDay": "Any day",
