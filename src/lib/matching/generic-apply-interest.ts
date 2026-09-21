@@ -41,14 +41,21 @@ export async function applyGenericInterest(request: Request, access: GenericMatc
     return NextResponse.json({ error: "This match is no longer active" }, { status: 409 });
   }
 
+  // Compare-and-swap on the raw status, not the derived `status` --
+  // same guard, and the same "expired" pitfall, as applyInterest in
+  // ./apply-interest.ts.
   const { data: updated, error } = await admin
     .from("generic_matches")
     .update(updatePayload)
     .eq("id", access.id)
+    .eq("status", access.status)
     .select("id, status, initiated_by, interest_expires_at, responded_at")
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return NextResponse.json({ error: "This match just changed — please refresh and try again." }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 

@@ -43,14 +43,25 @@ export async function applyInterest(request: Request, access: MatchAccess) {
     return NextResponse.json({ error: "This match is no longer active" }, { status: 409 });
   }
 
+  // Compare-and-swap on the raw status this decision was based on -- NOT
+  // the derived `status` (effectiveStatus can read "expired" off a row
+  // whose literal column is still "parent_interested"/"nanny_interested",
+  // which would never match a real row and break every expiry re-open).
+  // Without this guard at all, two requests racing on the same stale read
+  // (e.g. both sides clicking interest at once) would each blindly
+  // overwrite the other's transition instead of one landing on "mutual".
   const { data: updated, error } = await admin
     .from("matches")
     .update(updatePayload)
     .eq("id", access.id)
+    .eq("status", access.status)
     .select("id, status, initiated_by, interest_expires_at, responded_at")
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return NextResponse.json({ error: "This match just changed — please refresh and try again." }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
