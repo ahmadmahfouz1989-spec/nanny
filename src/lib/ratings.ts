@@ -4,9 +4,13 @@ export type RatingAggregate = { average: number | null; count: number };
 
 /**
  * Average + count of the ratings *received* by each of `rateeUserIds`,
- * keyed by user id. Goes through the service role: `ratings` RLS only
- * exposes a user's own rows, but the aggregate is shown on other people's
- * match cards (same reasoning as the contact-details route).
+ * keyed by user id. Merges `ratings` (nanny/parent) and `generic_ratings`
+ * (nursing, tutoring, ...) -- a person's reputation is per-account, not
+ * per-category, same as how a single users.id can hold profiles in
+ * several categories at once. Goes through the service role: RLS on both
+ * tables only exposes a user's own rows, but the aggregate is shown on
+ * other people's match cards (same reasoning as the contact-details
+ * route).
  */
 export async function ratingAggregatesByUser(
   rateeUserIds: string[],
@@ -16,10 +20,13 @@ export async function ratingAggregatesByUser(
   if (ids.length === 0) return out;
 
   const admin = createAdminClient();
-  const { data } = await admin.from("ratings").select("ratee_user_id, score").in("ratee_user_id", ids);
+  const [{ data: legacy }, { data: generic }] = await Promise.all([
+    admin.from("ratings").select("ratee_user_id, score").in("ratee_user_id", ids),
+    admin.from("generic_ratings").select("ratee_user_id, score").in("ratee_user_id", ids),
+  ]);
 
   const totals = new Map<string, { total: number; count: number }>();
-  for (const row of data ?? []) {
+  for (const row of [...(legacy ?? []), ...(generic ?? [])]) {
     const agg = totals.get(row.ratee_user_id) ?? { total: 0, count: 0 };
     agg.total += row.score;
     agg.count += 1;
@@ -39,9 +46,34 @@ export async function ratingAggregateForUser(rateeUserId: string): Promise<Ratin
 export type ProfileReview = { score: number; comment: string | null; createdAt: string };
 
 /**
+ * Every rating a user has received, from either table — aggregate plus
+ * the individual reviews, newest first. Service role, since RLS on both
+ * tables only exposes the caller's own rows.
+ */
+export async function reviewsReceivedByUser(
+  userId: string,
+): Promise<RatingAggregate & { reviews: ProfileReview[] }> {
+  const admin = createAdminClient();
+  const [{ data: legacy }, { data: generic }] = await Promise.all([
+    admin.from("ratings").select("score, comment, created_at").eq("ratee_user_id", userId),
+    admin.from("generic_ratings").select("score, comment, created_at").eq("ratee_user_id", userId),
+  ]);
+
+  const reviews: ProfileReview[] = [...(legacy ?? []), ...(generic ?? [])]
+    .map((r) => ({ score: r.score, comment: r.comment, createdAt: r.created_at }))
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
+  const count = reviews.length;
+  const average = count
+    ? Math.round((reviews.reduce((s, r) => s + r.score, 0) / count) * 10) / 10
+    : null;
+
+  return { average, count, reviews };
+}
+
+/**
  * Every rating a profile has received — aggregate plus the individual
  * reviews, newest first — for the profile-card "see all reviews" view.
- * Service role, since `ratings` RLS only exposes the caller's own rows.
  * Returns null when the profile doesn't exist.
  */
 export async function reviewsForProfile(
@@ -54,21 +86,5 @@ export async function reviewsForProfile(
   const { data: profile } = await admin.from(table).select("user_id").eq("id", profileId).maybeSingle();
   if (!profile) return null;
 
-  const { data: rows } = await admin
-    .from("ratings")
-    .select("score, comment, created_at")
-    .eq("ratee_user_id", profile.user_id)
-    .order("created_at", { ascending: false });
-
-  const reviews: ProfileReview[] = (rows ?? []).map((r) => ({
-    score: r.score,
-    comment: r.comment,
-    createdAt: r.created_at,
-  }));
-  const count = reviews.length;
-  const average = count
-    ? Math.round((reviews.reduce((s, r) => s + r.score, 0) / count) * 10) / 10
-    : null;
-
-  return { average, count, reviews };
+  return reviewsReceivedByUser(profile.user_id);
 }
