@@ -10,7 +10,7 @@ function useUnreadCount() {
 
   useEffect(() => {
     function load() {
-      fetch("/api/messages/inbox")
+      fetch("/api/inbox")
         .then((res) => res.json())
         .then((body) => {
           const total = (body.conversations ?? []).reduce(

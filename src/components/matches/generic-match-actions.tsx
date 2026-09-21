@@ -14,18 +14,16 @@ function effectiveStatus(status: string, interestExpiresAt: string | null) {
 
 /**
  * The generic-category equivalent of MatchActions, scoped down for v1: no
- * contact-reveal or in-place chat thread -- once mutual, this links out to
- * the category's own messages page, plus the same rate-your-match widget
- * legacy matches have.
+ * contact-reveal -- once mutual, this links out to the unified /messages
+ * inbox (same one nanny/parent uses), plus the same rate-your-match
+ * widget legacy matches have.
  */
 export default function GenericMatchActions({
-  categorySlug,
   matchId,
   status,
   interestExpiresAt,
   viewerSide,
 }: {
-  categorySlug: string;
   matchId: string;
   status: string;
   interestExpiresAt: string | null;
@@ -91,7 +89,7 @@ export default function GenericMatchActions({
   if (current === "mutual") {
     return (
       <div className="mt-3">
-        <Link href={`/categories/${categorySlug}/messages?match=${matchId}`} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
+        <Link href={`/messages?match=${matchId}`} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
           {t("openChat")}
         </Link>
         <RatingButton matchId={matchId} apiBase="/api/generic-matches" />
