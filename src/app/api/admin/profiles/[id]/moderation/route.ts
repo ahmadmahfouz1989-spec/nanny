@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
+import { storagePathFromPublicUrl } from "@/lib/storage-cleanup";
 
 const bodySchema = z.object({
   profileType: z.enum(["parent", "nanny", "generic"]),
@@ -103,13 +104,29 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ profile: updated, deleted: false });
     }
 
-    const { data: deleted, error } = await db.from(table).delete().eq("id", id).select(selectCols).single();
+    // generic_profiles has no photo column -- only parent/nanny need their
+    // storage file cleaned up alongside the DB row.
+    const deleteSelectCols = profileType === "generic" ? selectCols : `${selectCols}, profile_photo_url`;
+
+    const { data: deleted, error } = await db.from(table).delete().eq("id", id).select(deleteSelectCols).single();
 
     if (error || !deleted) {
       return NextResponse.json({ error: error?.message ?? "Profile not found" }, { status: 404 });
     }
 
-    const row = deleted as unknown as { user_id: string; categories?: { slug: string } | null };
+    const row = deleted as unknown as {
+      user_id: string;
+      categories?: { slug: string } | null;
+      profile_photo_url?: string | null;
+    };
+
+    if (row.profile_photo_url) {
+      const bucket = profileType === "parent" ? "parent-photos" : "nanny-photos";
+      const path = storagePathFromPublicUrl(row.profile_photo_url, bucket);
+      // Best-effort: a storage hiccup here shouldn't fail a moderation
+      // decision that already succeeded in the database.
+      if (path) await db.storage.from(bucket).remove([path]).catch(() => {});
+    }
 
     await db.from("notifications").insert({
       user_id: row.user_id,
