@@ -197,6 +197,7 @@ export default function MessagesClient() {
               <GenericConversationHeader
                 matchId={selectedConversation.matchId}
                 name={selectedConversation.counterpart.name}
+                profileId={selectedConversation.counterpart.id}
                 tone={TONES[selectedIndex % TONES.length]}
                 onBack={() => setSelected(null)}
               />

@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATION_STATUS } from "@/lib/validation/nursing";
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
+import { sendEmail, pendingReviewEmail } from "@/lib/email";
 
 type GenericRole = "seeker" | "provider";
 
@@ -15,15 +16,29 @@ const CATEGORY_SCHEMAS: Record<string, { seeker: z.ZodTypeAny; provider: z.ZodTy
   tutoring: { seeker: tutoringSeekerSchema, provider: tutoringProviderSchema },
 };
 
-async function notifyAdminsOfPendingReview(fullName: string, profileType: string) {
+const ROLE_LABEL: Record<GenericRole, { en: string; ar: string }> = {
+  seeker: { en: "seeker", ar: "باحث عن الخدمة" },
+  provider: { en: "provider", ar: "مقدّم الخدمة" },
+};
+
+async function notifyAdminsOfPendingReview(
+  fullName: string,
+  profileType: string,
+  category: { name_en: string; name_ar: string },
+  role: GenericRole,
+) {
   const admin = createAdminClient();
   const { data: admins } = await admin
     .from("users")
-    .select("id, notify_new_profiles")
+    .select("id, email, preferred_language, notify_new_profiles")
     .eq("role", "admin");
 
   if (!admins || admins.length === 0) return;
 
+  // The in-app bell entry still goes to every admin -- only the email is
+  // opt-out-able, per-admin (notify_new_profiles). Same convention as the
+  // nanny/parent side in /api/profile/route.ts, which this mirrors --
+  // this route used to skip the email entirely.
   await admin.from("notifications").insert(
     admins.map((a) => ({
       user_id: a.id,
@@ -31,10 +46,28 @@ async function notifyAdminsOfPendingReview(fullName: string, profileType: string
       payload: { profile_type: profileType, full_name: fullName },
     })),
   );
+
+  const kind = {
+    en: `${category.name_en} · ${ROLE_LABEL[role].en}`,
+    ar: `${category.name_ar} · ${ROLE_LABEL[role].ar}`,
+  };
+
+  await Promise.all(
+    admins
+      .filter((a) => a.email && a.notify_new_profiles)
+      .map((a) => {
+        const { subject, html } = pendingReviewEmail(a.preferred_language, fullName, kind);
+        return sendEmail(a.email!, subject, html);
+      }),
+  );
 }
 
 async function resolveCategory(supabase: Awaited<ReturnType<typeof createClient>>, slug: string) {
-  const { data } = await supabase.from("categories").select("id, slug, status").eq("slug", slug).maybeSingle();
+  const { data } = await supabase
+    .from("categories")
+    .select("id, slug, status, name_en, name_ar")
+    .eq("slug", slug)
+    .maybeSingle();
   return data;
 }
 
@@ -183,7 +216,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
   await recomputeGenericMatchesForProfile(data.id);
-  await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`);
+  await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
 
   return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
 }

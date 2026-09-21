@@ -8,6 +8,7 @@ import ProfileRating from "@/components/matches/profile-rating";
 import GovernorateSelect from "@/components/matches/governorate-select";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import ReportButton from "@/components/matches/report-button";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -290,6 +291,7 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
                       viewerSide={myRole}
                     />
                   )}
+                  <ReportButton profileId={other.id} profileType="generic" />
                 </div>
               </div>
             </div>

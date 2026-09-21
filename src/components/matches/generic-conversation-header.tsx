@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import RatingButton from "@/components/matches/rating-button";
+import ReportButton from "@/components/matches/report-button";
 import { useState } from "react";
 import { MoreIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
@@ -11,18 +12,20 @@ type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: st
 
 /**
  * The generic-category equivalent of ConversationHeader. Still scoped
- * down from it in one way: no report or profile-summary panel here yet
- * -- those are still nanny/parent-only. Contact-reveal now matches
+ * down from it in one way: no profile-summary panel here yet -- that's
+ * still nanny/parent-only. Contact-reveal and reporting now match
  * nanny/parent exactly.
  */
 export default function GenericConversationHeader({
   matchId,
   name,
+  profileId,
   tone,
   onBack,
 }: {
   matchId: string;
   name: string;
+  profileId: string;
   tone: "primary" | "secondary" | "berry";
   onBack?: () => void;
 }) {
@@ -93,6 +96,9 @@ export default function GenericConversationHeader({
               )}
               <div className="border-t border-border pt-2">
                 <RatingButton matchId={matchId} counterpartName={name} apiBase="/api/generic-matches" />
+              </div>
+              <div className="border-t border-border pt-2">
+                <ReportButton profileId={profileId} profileType="generic" />
               </div>
             </div>
           </>

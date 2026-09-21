@@ -5,6 +5,11 @@ import { parentProfileSchema, nannyProfileSchema } from "@/lib/validation/profil
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
 import { sendEmail, pendingReviewEmail } from "@/lib/email";
 
+const KIND_LABEL: Record<"parent" | "nanny", { en: string; ar: string }> = {
+  parent: { en: "parent", ar: "أحد الوالدين" },
+  nanny: { en: "nanny", ar: "مربية" },
+};
+
 async function notifyAdminsOfPendingReview(fullName: string, profileType: "parent" | "nanny") {
   const admin = createAdminClient();
   const { data: admins } = await admin
@@ -28,7 +33,7 @@ async function notifyAdminsOfPendingReview(fullName: string, profileType: "paren
     admins
       .filter((a) => a.email && a.notify_new_profiles)
       .map((a) => {
-        const { subject, html } = pendingReviewEmail(a.preferred_language, fullName, profileType);
+        const { subject, html } = pendingReviewEmail(a.preferred_language, fullName, KIND_LABEL[profileType]);
         return sendEmail(a.email!, subject, html);
       }),
   );
