@@ -27,14 +27,23 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const admin = createAdminClient();
+  // Compare-and-swap on the raw status this decision was based on -- same
+  // guard as applyInterest, and the same reason: without it, a decline
+  // racing against a concurrent interest/accept on the same row could
+  // silently clobber the other side's transition instead of one erroring
+  // out with a clean "this changed, refresh" response.
   const { data: updated, error } = await admin
     .from("matches")
     .update({ status: `declined_by_${access.side}` })
     .eq("id", id)
+    .eq("status", access.status)
     .select("id, status")
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return NextResponse.json({ error: "This match just changed — please refresh and try again." }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 

@@ -25,14 +25,20 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const admin = createAdminClient();
+  // Compare-and-swap on the raw status -- same guard as the nanny/parent
+  // decline route and applyInterest, for the same race-condition reason.
   const { data: updated, error } = await admin
     .from("generic_matches")
     .update({ status: `declined_by_${access.side}`, responded_at: new Date().toISOString() })
     .eq("id", id)
+    .eq("status", access.status)
     .select("id, status")
     .single();
 
   if (error) {
+    if (error.code === "PGRST116") {
+      return NextResponse.json({ error: "This match just changed — please refresh and try again." }, { status: 409 });
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
