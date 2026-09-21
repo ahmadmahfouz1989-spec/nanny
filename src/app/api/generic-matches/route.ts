@@ -1,12 +1,14 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { ratingAggregatesByUser } from "@/lib/ratings";
 
 /**
  * Lists matches for the caller's own generic_profiles row in a category --
  * the generic-category equivalent of /api/search/nannies /
- * /api/search/families. No pagination/rating/featured layer yet (see the
- * plan's v1 messaging scope note); this is intentionally the minimal
- * version of those richer nanny-side endpoints.
+ * /api/search/families. No pagination/featured layer yet (see the plan's
+ * v1 messaging scope note); this is intentionally the minimal version of
+ * those richer nanny-side endpoints.
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -69,7 +71,28 @@ export async function GET(request: Request) {
       : { data: [] as { id: string }[] };
 
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
-  const results = (matches ?? []).map((m) => ({ ...m, other: otherById.get(otherIdOf(m)) ?? null }));
+
+  // Attach each counterpart's aggregate rating -- the profile→user_id
+  // mapping stays server-side (user_id is never part of the response),
+  // same pattern as /api/search/nannies.
+  const ratingByProfileId = new Map<string, { average: number | null; count: number }>();
+  if (otherIds.length > 0) {
+    const admin = createAdminClient();
+    const { data: owners } = await admin.from("generic_profiles").select("id, user_id").in("id", otherIds);
+    const aggregates = await ratingAggregatesByUser((owners ?? []).map((o) => o.user_id));
+    for (const owner of owners ?? []) {
+      ratingByProfileId.set(owner.id, aggregates.get(owner.user_id) ?? { average: null, count: 0 });
+    }
+  }
+
+  const results = (matches ?? []).map((m) => {
+    const otherId = otherIdOf(m);
+    return {
+      ...m,
+      other: otherById.get(otherId) ?? null,
+      rating: ratingByProfileId.get(otherId) ?? { average: null, count: 0 },
+    };
+  });
 
   return NextResponse.json({ myRole: myProfile.role, results });
 }

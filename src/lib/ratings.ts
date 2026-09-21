@@ -88,3 +88,14 @@ export async function reviewsForProfile(
 
   return reviewsReceivedByUser(profile.user_id);
 }
+
+/** Same as reviewsForProfile, resolving a generic_profiles row instead. */
+export async function reviewsForGenericProfile(
+  profileId: string,
+): Promise<(RatingAggregate & { reviews: ProfileReview[] }) | null> {
+  const admin = createAdminClient();
+  const { data: profile } = await admin.from("generic_profiles").select("user_id").eq("id", profileId).maybeSingle();
+  if (!profile) return null;
+
+  return reviewsReceivedByUser(profile.user_id);
+}
