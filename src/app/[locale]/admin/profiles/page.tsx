@@ -91,6 +91,7 @@ export default function AdminProfilesPage() {
   const [statusFilter, setStatusFilter] = useState<"pending" | "approved">("pending");
   const [categoryFilter, setCategoryFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/analytics")
@@ -123,7 +124,7 @@ export default function AdminProfilesPage() {
 
   async function decide(profile: QueueProfile, status: "approved" | "rejected", rejectNotes?: string) {
     setSubmitting(profile.id);
-    await fetch(`/api/admin/profiles/${profile.id}/moderation`, {
+    const res = await fetch(`/api/admin/profiles/${profile.id}/moderation`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ profileType: profile.profileType, status, notes: rejectNotes }),
@@ -132,6 +133,14 @@ export default function AdminProfilesPage() {
     setRejecting(null);
     setNotes("");
     setProfiles((prev) => prev?.filter((p) => p.id !== profile.id) ?? null);
+
+    if (status === "rejected" && res.ok) {
+      const body = await res.json().catch(() => null);
+      if (body?.deleted === false) {
+        setNotice(t("rejectedNotDeletedNotice", { name: profile.full_name }));
+        setTimeout(() => setNotice(null), 8000);
+      }
+    }
   }
 
   function renderDetails(profile: QueueProfile) {
@@ -257,6 +266,10 @@ export default function AdminProfilesPage() {
       <h1 className="font-display text-3xl font-semibold mb-6">
         {statusFilter === "pending" ? t("profilesTitle") : t("directoryTitle")}
       </h1>
+
+      {notice && (
+        <div className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning mb-4">{notice}</div>
+      )}
 
       <div className="flex flex-wrap gap-2 mb-6">
         <select className={ui.select + " w-auto"} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as "pending" | "approved")}>
