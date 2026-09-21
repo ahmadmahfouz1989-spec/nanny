@@ -45,9 +45,12 @@ function Stars({
 export default function RatingButton({
   matchId,
   counterpartName,
+  apiBase = "/api/matches",
 }: {
   matchId: string;
   counterpartName?: string;
+  /** Nursing/tutoring matches rate through /api/generic-matches instead. */
+  apiBase?: string;
 }) {
   const t = useTranslations("Rating");
   const [data, setData] = useState<RatingResponse | null>(null);
@@ -59,7 +62,7 @@ export default function RatingButton({
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/matches/${matchId}/rating`)
+    fetch(`${apiBase}/${matchId}/rating`)
       .then((res) => (res.ok ? res.json() : null))
       .then((body: RatingResponse | null) => {
         if (!active || !body) return;
@@ -72,13 +75,13 @@ export default function RatingButton({
     return () => {
       active = false;
     };
-  }, [matchId]);
+  }, [apiBase, matchId]);
 
   async function submit() {
     if (score < 1) return;
     setSubmitting(true);
     setError(null);
-    const res = await fetch(`/api/matches/${matchId}/rating`, {
+    const res = await fetch(`${apiBase}/${matchId}/rating`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ score, comment: comment.trim() || undefined }),
