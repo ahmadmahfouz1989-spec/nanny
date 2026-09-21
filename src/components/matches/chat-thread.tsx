@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
+import { MAX_RECORDING_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
 
 type Message = {
   id: string;
@@ -16,22 +17,8 @@ type Message = {
   created_at: string;
 };
 
-const MAX_RECORDING_SECONDS = 120;
-const AUDIO_MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
-
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
-function pickMimeType(): string | undefined {
-  if (typeof MediaRecorder === "undefined") return undefined;
-  return AUDIO_MIME_CANDIDATES.find((t) => MediaRecorder.isTypeSupported(t));
-}
-
-function formatDuration(totalSeconds: number) {
-  const m = Math.floor(totalSeconds / 60);
-  const s = Math.floor(totalSeconds % 60);
-  return `${m}:${String(s).padStart(2, "0")}`;
 }
 
 export default function ChatThread({
@@ -163,7 +150,7 @@ export default function ChatThread({
 
     cancelledRef.current = false;
     chunksRef.current = [];
-    const mimeType = pickMimeType();
+    const mimeType = pickAudioMimeType();
     const recorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
     mediaRecorderRef.current = recorder;
 
@@ -315,7 +302,7 @@ export default function ChatThread({
             <div className="flex-1 flex items-center gap-2 rounded-full bg-danger-soft px-4 py-2">
               <span className="h-2 w-2 rounded-full bg-danger animate-pulse" />
               <span className="text-sm text-danger font-medium">{t("recording")}</span>
-              <span className="text-sm text-danger/80 tabular-nums ms-auto">{formatDuration(recordingSeconds)}</span>
+              <span className="text-sm text-danger/80 tabular-nums ms-auto">{formatAudioDuration(recordingSeconds)}</span>
             </div>
             <button
               type="button"

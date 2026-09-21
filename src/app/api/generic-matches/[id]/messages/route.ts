@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveGenericMatchAccess } from "@/lib/matching/generic-access";
 import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
+import { SIGNED_URL_TTL_SECONDS } from "@/lib/voice-notes";
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,7 +28,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const { data, error } = await supabase
     .from("generic_messages")
-    .select("id, sender_id, body, created_at, read_at")
+    .select("id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at")
     .eq("match_id", id)
     .order("created_at", { ascending: true });
 
@@ -35,7 +36,26 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  return NextResponse.json({ messages: data ?? [] });
+  // Voice notes live in a private bucket with no select policy -- only the
+  // service role can sign a URL for one, which is exactly the point: a
+  // client only ever gets a playable link by going through this
+  // match-participancy check first (same as the legacy matches route).
+  const audioPaths = (data ?? []).map((m) => m.audio_path).filter((p): p is string => !!p);
+  const signedByPath = new Map<string, string>();
+  if (audioPaths.length > 0) {
+    const admin = createAdminClient();
+    const { data: signed } = await admin.storage.from("voice-notes").createSignedUrls(audioPaths, SIGNED_URL_TTL_SECONDS);
+    for (const s of signed ?? []) {
+      if (s.signedUrl && !s.error) signedByPath.set(s.path ?? "", s.signedUrl);
+    }
+  }
+
+  const messages = (data ?? []).map((m) => ({
+    ...m,
+    audioUrl: m.audio_path ? (signedByPath.get(m.audio_path) ?? null) : null,
+  }));
+
+  return NextResponse.json({ messages });
 }
 
 const bodySchema = z.object({ body: z.string().trim().min(1).max(2000) });

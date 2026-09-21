@@ -4,17 +4,13 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { resolveMatchAccess } from "@/lib/matching/access";
 import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
-
-const MAX_BYTES = 5 * 1024 * 1024;
-const MAX_DURATION_SECONDS = 120;
-const ALLOWED_TYPES = ["audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg"];
-const SIGNED_URL_TTL_SECONDS = 3600;
-
-// A voice note still needs *something* in the not-null, 1-2000-char body
-// column -- kept as a plain, unlocalized fallback for any code path that
-// only ever reads .body (the new-message email snippet, for instance),
-// not shown to a viewer whose client understands audio_path.
-const PLACEHOLDER_BODY = "🎤 Voice note";
+import {
+  MAX_AUDIO_BYTES as MAX_BYTES,
+  MAX_RECORDING_SECONDS as MAX_DURATION_SECONDS,
+  ALLOWED_AUDIO_TYPES as ALLOWED_TYPES,
+  SIGNED_URL_TTL_SECONDS,
+  VOICE_NOTE_PLACEHOLDER_BODY as PLACEHOLDER_BODY,
+} from "@/lib/voice-notes";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
