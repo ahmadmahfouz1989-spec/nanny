@@ -167,6 +167,8 @@
     "role": "Role",
     "roleParent": "Parent",
     "roleNanny": "Nanny",
+    "roleSeeker": "Seeker",
+    "roleProvider": "Provider",
     "email": "Email",
     "phone": "Phone",
     "verified": "Verified",
