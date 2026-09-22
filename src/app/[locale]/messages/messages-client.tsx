@@ -177,6 +177,7 @@ export default function MessagesClient() {
           selectedConversation.source === "nanny" ? (
             <>
               <ConversationHeader
+                key={`header-${selectedConversation.matchId}`}
                 matchId={selectedConversation.matchId}
                 name={selectedConversation.counterpart.name}
                 photoUrl={selectedConversation.counterpart.photoUrl}
@@ -186,7 +187,7 @@ export default function MessagesClient() {
                 onBack={() => setSelected(null)}
               />
               <ChatThread
-                key={selectedConversation.matchId}
+                key={`thread-${selectedConversation.matchId}`}
                 matchId={selectedConversation.matchId}
                 variant="full"
                 onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
@@ -195,6 +196,7 @@ export default function MessagesClient() {
           ) : (
             <>
               <GenericConversationHeader
+                key={`header-${selectedConversation.matchId}`}
                 matchId={selectedConversation.matchId}
                 name={selectedConversation.counterpart.name}
                 profileId={selectedConversation.counterpart.id}
@@ -202,7 +204,7 @@ export default function MessagesClient() {
                 onBack={() => setSelected(null)}
               />
               <GenericChatThread
-                key={selectedConversation.matchId}
+                key={`thread-${selectedConversation.matchId}`}
                 matchId={selectedConversation.matchId}
                 onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
               />
