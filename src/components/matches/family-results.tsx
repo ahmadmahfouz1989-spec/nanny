@@ -63,12 +63,7 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
   return l.name_en;
 }
 
-// Featured profiles surface first regardless of match score — a stable
-// sort keeps the existing score order within each group.
-function sortedByFeatured(results: FamilyResult[] | null) {
-  if (!results) return null;
-  return [...results].sort((a, b) => Number(b.featured) - Number(a.featured));
-}
+const PAGE_SIZE = 20;
 
 export default function FamilyResults() {
   const t = useTranslations("Matches");
@@ -82,6 +77,8 @@ export default function FamilyResults() {
   const locale = useLocale();
   const [results, setResults] = useState<FamilyResult[] | null>(null);
   useHashScroll(!!results);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [governorateId, setGovernorateId] = useState("");
   const [day, setDay] = useState("");
@@ -103,9 +100,31 @@ export default function FamilyResults() {
           return;
         }
         setResults(body.results);
+        setTotal(body.total);
       })
       .catch(() => setError(t("errorNoProfile")));
   }, [t, governorateId, day, scheduleType, liveArrangement]);
+
+  function loadMore() {
+    if (!results) return;
+    setLoadingMore(true);
+    const params = new URLSearchParams();
+    if (governorateId) params.set("governorateId", governorateId);
+    if (day) params.set("day", day);
+    if (scheduleType) params.set("scheduleType", scheduleType);
+    if (liveArrangement) params.set("liveArrangement", liveArrangement);
+    params.set("page", String(Math.floor(results.length / PAGE_SIZE) + 1));
+
+    fetch(`/api/search/families?${params}`)
+      .then(async (res) => {
+        const body = await res.json();
+        setLoadingMore(false);
+        if (!res.ok) return;
+        setResults((prev) => [...(prev ?? []), ...body.results]);
+        setTotal(body.total);
+      })
+      .catch(() => setLoadingMore(false));
+  }
 
   const hasFilters = !!(governorateId || day || scheduleType || liveArrangement);
   function clearFilters() {
@@ -159,7 +178,7 @@ export default function FamilyResults() {
       )}
 
       <div className="flex flex-col gap-5">
-        {sortedByFeatured(results)?.map((r, i, arr) => {
+        {results?.map((r, i, arr) => {
           const parent = r.parent_profiles;
           const gov = localizedLocationName(parent.locations, locale);
           const area = [gov, parent.location_detail].filter(Boolean).join(", ");
@@ -270,6 +289,17 @@ export default function FamilyResults() {
           );
         })}
       </div>
+
+      {results && results.length > 0 && results.length < total && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className={ui.buttonGhost + " mt-6 w-full"}
+        >
+          {loadingMore ? t("loadingMore") : t("loadMore")}
+        </button>
+      )}
     </div>
   );
 }

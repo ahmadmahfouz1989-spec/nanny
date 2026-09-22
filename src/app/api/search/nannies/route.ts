@@ -66,6 +66,20 @@ export async function GET(request: Request) {
     return true;
   });
 
+  // Featured has to be known -- and applied -- before slicing to a page,
+  // or a Featured nanny ranked below the page cutoff by score alone would
+  // never surface. Array#sort is stable, so this only pulls Featured
+  // profiles forward and leaves the existing score order within each group.
+  const allNannyProfileIds = filtered
+    .map((r) => (r.nanny_profiles as unknown as { id: string } | null)?.id)
+    .filter((v): v is string => Boolean(v));
+  const allFeaturedIds = await featuredProfileIds("nanny", allNannyProfileIds);
+  filtered.sort((a, b) => {
+    const aId = (a.nanny_profiles as unknown as { id: string } | null)?.id;
+    const bId = (b.nanny_profiles as unknown as { id: string } | null)?.id;
+    return Number(bId && allFeaturedIds.has(bId)) - Number(aId && allFeaturedIds.has(aId));
+  });
+
   const from = (page - 1) * pageSize;
   const paged = filtered.slice(from, from + pageSize);
 
@@ -88,14 +102,12 @@ export async function GET(request: Request) {
     }
   }
 
-  const featuredIds = await featuredProfileIds("nanny", nannyProfileIds);
-
   const results = paged.map((r) => {
     const id = (r.nanny_profiles as unknown as { id: string }).id;
     return {
       ...r,
       rating: ratingByProfileId.get(id) ?? { average: null, count: 0 },
-      featured: featuredIds.has(id),
+      featured: allFeaturedIds.has(id),
     };
   });
 
