@@ -282,7 +282,7 @@ export default function FamilyResults() {
                   interestExpiresAt={r.interest_expires_at}
                   viewerSide="nanny"
                 />
-                <ReportButton profileId={parent.id} profileType="parent" />
+                <ReportButton profileId={parent.id} profileType="parent" matchId={r.id} matchSource="nanny" />
               </div>
               </div>
             </div>

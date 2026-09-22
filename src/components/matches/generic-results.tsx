@@ -301,7 +301,7 @@ export default function GenericResults({
                       viewerSide={myRole}
                     />
                   )}
-                  <ReportButton profileId={other.id} profileType="generic" />
+                  <ReportButton profileId={other.id} profileType="generic" matchId={r.id} matchSource={categorySlug} />
                 </div>
               </div>
             </div>

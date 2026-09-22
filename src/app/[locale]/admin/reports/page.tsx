@@ -20,6 +20,8 @@ type ConversationMessage = {
   body: string;
   created_at: string;
   isReporter: boolean;
+  audioUrl: string | null;
+  audioDurationSeconds: number | null;
 };
 
 const REASON_LABEL_KEY: Record<string, string> = {
@@ -139,7 +141,11 @@ export default function AdminReportsPage() {
                     <p className="text-[10px] uppercase tracking-wide opacity-70 mb-0.5">
                       {m.isReporter ? t("reporterLabel") : t("reportedLabel")}
                     </p>
-                    {m.body}
+                    {m.audioUrl ? (
+                      <audio controls preload="metadata" src={m.audioUrl} className="h-9 w-56 max-w-full" />
+                    ) : (
+                      m.body
+                    )}
                     <p className="text-[10px] opacity-70 mt-0.5">{formatTimestamp(m.created_at, locale)}</p>
                   </div>
                 ))}

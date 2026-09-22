@@ -300,7 +300,7 @@ export default function NannyResults() {
                   interestExpiresAt={r.interest_expires_at}
                   viewerSide="parent"
                 />
-                <ReportButton profileId={nanny.id} profileType="nanny" />
+                <ReportButton profileId={nanny.id} profileType="nanny" matchId={r.id} matchSource="nanny" />
               </div>
               </div>
             </div>

@@ -110,7 +110,7 @@ export default function ConversationHeader({
                 <RatingButton matchId={matchId} counterpartName={name} />
               </div>
               <div className="border-t border-border pt-2">
-                <ReportButton profileId={profileId} profileType={profileType} />
+                <ReportButton profileId={profileId} profileType={profileType} matchId={matchId} matchSource="nanny" />
               </div>
             </div>
           </>
@@ -119,7 +119,7 @@ export default function ConversationHeader({
 
       {profileOpen && (
         <div className="px-4 pb-3">
-          <ProfileSummaryPanel profileType={profileType} profileId={profileId} />
+          <ProfileSummaryPanel profileType={profileType} profileId={profileId} matchId={matchId} />
         </div>
       )}
     </div>
