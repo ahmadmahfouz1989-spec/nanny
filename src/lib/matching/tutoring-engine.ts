@@ -89,8 +89,24 @@ function gradeLevelScore(seeker: TutoringSeekerMatchInput, provider: TutoringPro
   return provider.gradeLevels.includes(seeker.gradeLevel) ? 1 : 0;
 }
 
-function transportationScore(seeker: TutoringSeekerMatchInput, provider: TutoringProviderMatchInput): number {
-  if (!seeker.transportationRequired) return 1;
+// True only when the session can't just happen online -- if either side
+// is strictly "in_person", the other side (whatever it prefers) ends up
+// travelling or hosting in person; if neither is strictly "in_person",
+// an online session is always an option and no one needs transportation.
+// A mismatched pairing (one "online", one "in_person") reads as
+// "in person" here too, but that's moot: eitherMatch already scores that
+// combination's format as 0, so multiplying by any transportation score
+// still leaves the format criterion at 0.
+function requiresInPerson(seeker: TutoringFormat, provider: TutoringFormat): boolean {
+  return seeker === "in_person" || provider === "in_person";
+}
+
+function transportationScore(
+  seeker: TutoringSeekerMatchInput,
+  provider: TutoringProviderMatchInput,
+  inPerson: boolean,
+): number {
+  if (!inPerson || !seeker.transportationRequired) return 1;
   return provider.hasTransportation ? 1 : 0;
 }
 
@@ -101,7 +117,8 @@ export function computeTutoringMatchScore(
   // Transportation only matters for in-person tutoring, but there's no
   // dedicated weight slot for it -- fold it into the format score instead
   // of adding a 7th criterion just for this one case.
-  const formatRaw = eitherMatch(seeker.format, provider.format) * transportationScore(seeker, provider);
+  const inPerson = requiresInPerson(seeker.format, provider.format);
+  const formatRaw = eitherMatch(seeker.format, provider.format) * transportationScore(seeker, provider, inPerson);
 
   const raw: Record<TutoringCriterion, number> = {
     location: locationScore(seeker.location, provider.location),

@@ -54,7 +54,16 @@ function localizedLocationName(
   return loc.name_en;
 }
 
-export default function GenericResults({ categorySlug }: { categorySlug: string }) {
+export default function GenericResults({
+  categorySlug,
+  role,
+}: {
+  categorySlug: string;
+  // Only needed when the account holds both a seeker and a provider
+  // profile in this category -- otherwise the API resolves the single
+  // profile on its own.
+  role?: "seeker" | "provider";
+}) {
   const t = useTranslations("Matches");
   const tCare = useTranslations("CareSpecialties");
   const tSubject = useTranslations("Subjects");
@@ -74,6 +83,7 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
 
   useEffect(() => {
     const params = new URLSearchParams({ categorySlug });
+    if (role) params.set("role", role);
     if (governorateId) params.set("governorateId", governorateId);
     if (day) params.set("day", day);
     if (minYearsExperience) params.set("minYearsExperience", minYearsExperience);
@@ -89,7 +99,7 @@ export default function GenericResults({ categorySlug }: { categorySlug: string 
         setResults(body.results);
       })
       .catch(() => setError(t("errorNoProfile")));
-  }, [categorySlug, t, governorateId, day, minYearsExperience]);
+  }, [categorySlug, role, t, governorateId, day, minYearsExperience]);
 
   // Minimum experience only makes sense filtering providers (a seeker has
   // no years-of-experience field), so only show it once we know the

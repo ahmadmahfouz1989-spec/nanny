@@ -29,12 +29,27 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unknown category" }, { status: 404 });
   }
 
-  const { data: myProfile } = await supabase
+  // The schema allows one seeker AND one provider profile per user per
+  // category (someone who tutors and also seeks a tutor for their own
+  // kid) -- .maybeSingle() on user+category alone would error on two rows
+  // and get misread as "no profile" below. Fetch every non-draft row and
+  // let an explicit ?role= pick between them when there's more than one.
+  const requestedRole = searchParams.get("role");
+  const { data: myProfiles, error: myProfilesError } = await supabase
     .from("generic_profiles")
     .select("id, role")
     .eq("user_id", user.id)
     .eq("category_id", category.id)
-    .maybeSingle();
+    .neq("status", "draft");
+
+  if (myProfilesError) {
+    return NextResponse.json({ error: myProfilesError.message }, { status: 400 });
+  }
+
+  const myProfile =
+    (myProfiles ?? []).length <= 1
+      ? (myProfiles ?? [])[0]
+      : (myProfiles ?? []).find((p) => p.role === requestedRole);
 
   if (!myProfile) {
     return NextResponse.json({ error: "Create your profile before browsing matches" }, { status: 404 });

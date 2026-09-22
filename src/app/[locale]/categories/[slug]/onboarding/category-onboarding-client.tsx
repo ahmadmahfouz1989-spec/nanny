@@ -35,11 +35,13 @@ export default function CategoryOnboardingClient({
   categoryName,
   seekerProfile,
   providerProfile,
+  accountContactPhone,
 }: {
   categorySlug: string;
   categoryName: string;
   seekerProfile: ExistingProfile;
   providerProfile: ExistingProfile;
+  accountContactPhone: string | null;
 }) {
   const t = useTranslations("CategoryOnboarding");
   const tw = useTranslations("Wizard");
@@ -85,7 +87,12 @@ export default function CategoryOnboardingClient({
     }
 
     const { profile } = await res.json();
-    const withContact = { ...profile, contact_phone: null } as NonNullable<ExistingProfile>;
+    // The claim response is a brand-new generic_profiles row, which has no
+    // contact_phone column of its own (that's shared account state on
+    // users) -- fall back to whatever this account already has saved via
+    // another profile/category, not null, or a blank resubmission of this
+    // form would wipe it out everywhere.
+    const withContact = { ...profile, contact_phone: accountContactPhone } as NonNullable<ExistingProfile>;
     if (role === "seeker") setSeeker(withContact);
     else setProvider(withContact);
     setChosenRole(role);
