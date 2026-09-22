@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { parentProfileSchema, nannyProfileSchema } from "@/lib/validation/profile";
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
@@ -46,9 +47,7 @@ async function getRole(supabase: Awaited<ReturnType<typeof createClient>>, userI
 
 export async function GET() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -89,9 +88,7 @@ export async function PATCH(request: Request) {
 
 async function upsertProfile(request: Request, mode: "create" | "update") {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

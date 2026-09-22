@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 const bodySchema = z.object({ role: z.enum(["parent", "nanny"]) });
@@ -14,9 +15,7 @@ const bodySchema = z.object({ role: z.enum(["parent", "nanny"]) });
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -55,9 +54,7 @@ export async function POST(request: Request) {
  */
 export async function DELETE() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

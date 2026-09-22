@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/session";
 import { logLoginEvent } from "@/lib/login-log";
 
 // Password sign-in happens client-side, straight against Supabase's own
@@ -8,9 +9,7 @@ import { logLoginEvent } from "@/lib/login-log";
 // there's still one authenticated request per login to log from.
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

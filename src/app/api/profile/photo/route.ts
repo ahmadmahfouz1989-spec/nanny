@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/session";
 import { storagePathFromPublicUrl } from "@/lib/storage-cleanup";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -10,9 +11,7 @@ const TABLE_BY_ROLE = { nanny: "nanny_profiles", parent: "parent_profiles" } as 
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

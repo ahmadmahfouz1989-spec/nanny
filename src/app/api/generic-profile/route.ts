@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATION_STATUS } from "@/lib/validation/nursing";
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
@@ -73,9 +74,7 @@ async function resolveCategory(supabase: Awaited<ReturnType<typeof createClient>
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
@@ -111,9 +110,7 @@ export async function PATCH(request: Request) {
 
 async function upsertGenericProfile(request: Request, mode: "create" | "update") {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
