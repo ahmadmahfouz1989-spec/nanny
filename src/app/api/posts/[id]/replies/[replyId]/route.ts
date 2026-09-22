@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { requireActiveUser } from "@/lib/session";
 
 // RLS (post_replies_delete: user_id = auth.uid()) already confines this to
 // the caller's own reply. Deleting a reply that has its own nested replies
@@ -8,9 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string; replyId: string }> }) {
   const { replyId } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await requireActiveUser(supabase);
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
