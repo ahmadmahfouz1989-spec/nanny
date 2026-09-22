@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,6 +14,7 @@ import { SearchIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
 
 const TONES = ["primary", "secondary", "berry"] as const;
+const INBOX_POLL_MS = 6000;
 
 type Conversation = {
   matchId: string;
@@ -49,13 +50,39 @@ export default function MessagesClient() {
   const [selected, setSelected] = useState<string | null>(searchParams.get("match"));
   const [query, setQuery] = useState("");
 
+  // A ref, not the `selected` state directly, so the polling interval
+  // (set up once) always reads the current selection instead of whatever
+  // it was when the interval was created.
+  const selectedRef = useRef(selected);
   useEffect(() => {
-    fetch("/api/inbox")
-      .then((res) => res.json())
-      .then((body) => {
-        setRole(body.role ?? null);
-        setConversations(body.conversations ?? []);
-      });
+    selectedRef.current = selected;
+  }, [selected]);
+
+  useEffect(() => {
+    function loadInbox() {
+      fetch("/api/inbox")
+        .then((res) => res.json())
+        .then((body) => {
+          setRole(body.role ?? null);
+          const fresh: Conversation[] = body.conversations ?? [];
+          // The open thread already marks its own messages read as they
+          // arrive, but there's a brief window between that happening and
+          // this poll picking it up server-side -- don't let a poll that
+          // lands in that window flash the badge back on for the
+          // conversation the user is already looking at.
+          setConversations(
+            fresh.map((c) => (c.matchId === selectedRef.current ? { ...c, unreadCount: 0 } : c)),
+          );
+        });
+    }
+
+    loadInbox();
+    // Without this, only the thread the user has open ever updates (via
+    // handleMessage) -- every other conversation's preview, ordering, and
+    // unread badge, plus any new match that becomes mutual after this page
+    // loaded, would stay stale until a full reload.
+    const interval = setInterval(loadInbox, INBOX_POLL_MS);
+    return () => clearInterval(interval);
   }, []);
 
   function handleMessage(matchId: string, message: ThreadMessage) {

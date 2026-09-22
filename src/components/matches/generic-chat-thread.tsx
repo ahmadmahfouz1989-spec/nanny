@@ -41,12 +41,23 @@ export default function GenericChatThread({
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onMessageRef = useRef(onMessage);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // The interval closure and the onstop handler (bound once, at the moment
+  // recording starts) both need the live elapsed time -- recordingSeconds
+  // (state) is only current as of whichever render captured it, so
+  // uploadRecording's closure over that state would always see whatever it
+  // was at the very start of the recording, not the actual final duration.
+  const recordingSecondsRef = useRef(0);
   const cancelledRef = useRef(false);
+  // Chat auto-scrolls to the bottom on new messages, but only when the
+  // reader was already there -- otherwise polling would keep yanking
+  // someone back down while they're scrolled up reading older history.
+  const isNearBottomRef = useRef(true);
 
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -71,7 +82,24 @@ export default function GenericChatThread({
   function loadMessages() {
     fetch(`/api/generic-matches/${matchId}/messages`)
       .then((res) => res.json())
-      .then((body) => setMessages(body.messages ?? []));
+      .then((body) => {
+        const next: Message[] = body.messages ?? [];
+        setMessages((prev) => {
+          // Keep the same array reference when nothing actually changed --
+          // a poll tick that just re-confirms the same messages shouldn't
+          // re-trigger the scroll effect below and yank a reader who has
+          // scrolled up back down to the bottom.
+          if (prev && prev.length === next.length && prev.every((m, i) => m.id === next[i]?.id)) {
+            return prev;
+          }
+          // New content arrived while the thread is open -- re-mark read
+          // rather than only doing it once on mount, or messages received
+          // during this session would stay unread server-side until the
+          // thread is closed and reopened.
+          if (prev) fetch(`/api/generic-matches/${matchId}/messages`, { method: "PATCH" });
+          return next;
+        });
+      });
   }
 
   useEffect(() => {
@@ -89,28 +117,45 @@ export default function GenericChatThread({
 
   useEffect(() => {
     const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  function handleScroll() {
+    const el = listRef.current;
+    if (!el) return;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
 
   async function send() {
     const body = draft.trim();
     if (!body || sending) return;
     setSending(true);
+    setSendError(null);
     setDraft("");
-    const res = await fetch(`/api/generic-matches/${matchId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
-    });
-    setSending(false);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/generic-matches/${matchId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) {
+        setDraft(body);
+        setSendError(t("messageSendError"));
+        return;
+      }
       const { message } = await res.json();
+      isNearBottomRef.current = true;
       setMessages((prev) => {
         const withoutOptimistic = prev ?? [];
         if (withoutOptimistic.some((m) => m.id === message.id)) return withoutOptimistic;
         return [...withoutOptimistic, message];
       });
       onMessageRef.current?.(message);
+    } catch {
+      setDraft(body);
+      setSendError(t("messageSendError"));
+    } finally {
+      setSending(false);
     }
   }
 
@@ -148,14 +193,14 @@ export default function GenericChatThread({
 
     recorder.start();
     setRecording(true);
+    recordingSecondsRef.current = 0;
     setRecordingSeconds(0);
     recordingTimerRef.current = setInterval(() => {
-      setRecordingSeconds((s) => {
-        if (s + 1 >= MAX_RECORDING_SECONDS) {
-          mediaRecorderRef.current?.stop();
-        }
-        return s + 1;
-      });
+      recordingSecondsRef.current += 1;
+      if (recordingSecondsRef.current >= MAX_RECORDING_SECONDS) {
+        mediaRecorderRef.current?.stop();
+      }
+      setRecordingSeconds(recordingSecondsRef.current);
     }, 1000);
   }
 
@@ -177,7 +222,7 @@ export default function GenericChatThread({
     const formData = new FormData();
     const ext = baseMimeType.includes("mp4") ? "mp4" : baseMimeType.includes("ogg") ? "ogg" : "webm";
     formData.append("file", blob, `voice-note.${ext}`);
-    formData.append("durationSeconds", String(recordingSeconds));
+    formData.append("durationSeconds", String(recordingSecondsRef.current));
 
     const res = await fetch(`/api/generic-matches/${matchId}/messages/audio`, { method: "POST", body: formData });
     setUploadingAudio(false);
@@ -188,6 +233,7 @@ export default function GenericChatThread({
     }
 
     const { message } = await res.json();
+    isNearBottomRef.current = true;
     setMessages((prev) => {
       const withoutOptimistic = prev ?? [];
       if (withoutOptimistic.some((m) => m.id === message.id)) return withoutOptimistic;
@@ -198,7 +244,7 @@ export default function GenericChatThread({
 
   return (
     <div className="flex flex-col h-full">
-      <div ref={listRef} className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-4">
+      <div ref={listRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-4">
         {messages && messages.length === 0 && (
           <p className="text-sm text-muted text-center py-4">{t("chatEmpty")}</p>
         )}
@@ -223,6 +269,7 @@ export default function GenericChatThread({
       </div>
 
       {audioError && <p className="px-4 pt-2 text-xs text-danger">{audioError}</p>}
+      {sendError && <p className="px-4 pt-2 text-xs text-danger">{sendError}</p>}
 
       <div className="flex items-center gap-2 p-3 border-t border-border shrink-0">
         {recording ? (
