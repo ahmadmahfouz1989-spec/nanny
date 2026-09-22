@@ -123,15 +123,24 @@ export function activityEmailsEnabled() {
   return process.env.DISABLE_ACTIVITY_EMAILS !== "1";
 }
 
-export async function sendEmail(to: string, subject: string, html: string) {
+/**
+ * Returns whether the email actually went out through a configured
+ * provider. Every existing caller already just `await`s or fire-and-forgets
+ * this (chat/reply/rating/interest notifications, where a missed email
+ * genuinely doesn't matter) and can keep ignoring the result -- the one
+ * caller that must not ignore it is the auth email hook, where "we told
+ * Supabase this succeeded" while both providers silently failed means a
+ * signup/recovery link that never arrives with no error shown anywhere.
+ */
+export async function sendEmail(to: string, subject: string, html: string): Promise<boolean> {
   if (!resend && !smtpTransport) {
     console.log(`[email] no email provider configured — skipping email to ${to}: ${subject}`);
-    return;
+    return false;
   }
   const doc = wrapHtml(html);
   const text = htmlToText(html);
-  if (await sendViaResend(to, subject, doc, text)) return;
-  await sendViaSmtp(to, subject, doc, text);
+  if (await sendViaResend(to, subject, doc, text)) return true;
+  return sendViaSmtp(to, subject, doc, text);
 }
 
 type Lang = "en" | "ar" | "fr" | null | undefined;
