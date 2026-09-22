@@ -51,11 +51,32 @@ export default async function DashboardPage({
     matchProfile = data;
   }
 
-  // Nothing real submitted yet -- no role chosen at all, or a role
-  // claimed with no profile behind it -- straight to the role picker
-  // rather than a "no profile yet, click here" dead end.
-  if (!matchProfile) {
+  // A role already claimed (nanny/parent) but nothing filled in yet --
+  // straight to the role picker rather than a "no profile yet, click
+  // here" dead end. Same nanny-only flow as before: claiming nanny/parent
+  // already commits to this category specifically.
+  if ((profile?.role === "parent" || profile?.role === "nanny") && !matchProfile) {
     redirect({ href: "/categories/nanny/onboarding", locale });
+    return;
+  }
+
+  // No nanny/parent role at all -- this account may still have a real
+  // profile in another category (nursing, tutoring) from generic_profiles,
+  // which this legacy nanny-only dashboard has no way to render. Send them
+  // to wherever they actually belong instead of forcing nanny onboarding
+  // on a returning nursing/tutoring user, or defaulting a genuinely new
+  // account into nanny specifically now that categories are ala carte.
+  if (!matchProfile) {
+    const { data: genericProfiles } = await supabase
+      .from("generic_profiles")
+      .select("categories(slug)")
+      .eq("user_id", user!.id)
+      .neq("status", "draft");
+    const slugs = [...new Set((genericProfiles ?? []).map((p) => (p.categories as unknown as { slug: string } | null)?.slug).filter((s): s is string => !!s))];
+    if (slugs.length === 1) {
+      redirect({ href: `/categories/${slugs[0]}/dashboard`, locale });
+    }
+    redirect({ href: "/categories", locale });
     return;
   }
 
