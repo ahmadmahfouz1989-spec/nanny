@@ -13,6 +13,50 @@ export type InboxConversation = {
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
+const RECENT_MESSAGES_LIMIT = 1000;
+
+/**
+ * Per-match last-message and unread-count, without pulling a whole
+ * (potentially huge) message history oldest-first into app code first --
+ * that pattern silently drops the newest rows once a user's total message
+ * count across all their matches exceeds PostgREST's max_rows cap
+ * (supabase/config.toml), corrupting exactly the "what's the latest
+ * message" preview this is for. Unread messages are fetched by their own
+ * targeted, naturally-small query (read messages don't accumulate) rather
+ * than sharing the recency-limited one.
+ */
+export async function messageSummariesByMatch(
+  supabase: Supabase,
+  table: "messages" | "generic_messages",
+  matchIds: string[],
+  userId: string,
+) {
+  const lastMessageByMatch = new Map<string, { body: string; createdAt: string }>();
+  const unreadCountByMatch = new Map<string, number>();
+  if (matchIds.length === 0) return { lastMessageByMatch, unreadCountByMatch };
+
+  const [{ data: recentMessages }, { data: unreadMessages }] = await Promise.all([
+    supabase
+      .from(table)
+      .select("match_id, body, created_at")
+      .in("match_id", matchIds)
+      .order("created_at", { ascending: false })
+      .limit(RECENT_MESSAGES_LIMIT),
+    supabase.from(table).select("match_id").in("match_id", matchIds).neq("sender_id", userId).is("read_at", null),
+  ]);
+
+  for (const msg of recentMessages ?? []) {
+    if (!lastMessageByMatch.has(msg.match_id)) {
+      lastMessageByMatch.set(msg.match_id, { body: msg.body, createdAt: msg.created_at });
+    }
+  }
+  for (const msg of unreadMessages ?? []) {
+    unreadCountByMatch.set(msg.match_id, (unreadCountByMatch.get(msg.match_id) ?? 0) + 1);
+  }
+
+  return { lastMessageByMatch, unreadCountByMatch };
+}
+
 /** Mutual nanny/parent conversations -- same query /api/messages/inbox used before unification. */
 export async function nannyConversations(supabase: Supabase, userId: string): Promise<InboxConversation[]> {
   const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
@@ -44,18 +88,11 @@ export async function nannyConversations(supabase: Supabase, userId: string): Pr
   }
 
   const matchIds = matches.map((m) => m.id);
-  const { data: allMessages } = await supabase
-    .from("messages")
-    .select("id, match_id, sender_id, body, created_at, read_at")
-    .in("match_id", matchIds)
-    .order("created_at", { ascending: true });
+  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(supabase, "messages", matchIds, userId);
 
   type Counterpart = { id: string; full_name: string; profile_photo_url: string | null };
 
   return matches.map((m) => {
-    const msgs = (allMessages ?? []).filter((msg) => msg.match_id === m.id);
-    const lastMessage = msgs[msgs.length - 1] ?? null;
-    const unreadCount = msgs.filter((msg) => msg.sender_id !== userId && !msg.read_at).length;
     const counterpart =
       role === "parent"
         ? (m as unknown as { nanny_profiles: Counterpart }).nanny_profiles
@@ -69,8 +106,8 @@ export async function nannyConversations(supabase: Supabase, userId: string): Pr
         name: counterpart?.full_name ?? "",
         photoUrl: counterpart?.profile_photo_url ?? null,
       },
-      lastMessage: lastMessage ? { body: lastMessage.body, createdAt: lastMessage.created_at } : null,
-      unreadCount,
+      lastMessage: lastMessageByMatch.get(m.id) ?? null,
+      unreadCount: unreadCountByMatch.get(m.id) ?? 0,
     };
   });
 }
@@ -130,24 +167,22 @@ export async function genericConversations(supabase: Supabase, userId: string): 
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
   const matchIds = matches.map((m) => m.match.id);
-  const { data: allMessages } = await supabase
-    .from("generic_messages")
-    .select("id, match_id, sender_id, body, created_at, read_at")
-    .in("match_id", matchIds)
-    .order("created_at", { ascending: true });
+  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(
+    supabase,
+    "generic_messages",
+    matchIds,
+    userId,
+  );
 
   return matches.map(({ match, myProfileId, otherProfileId }) => {
-    const msgs = (allMessages ?? []).filter((msg) => msg.match_id === match.id);
-    const lastMessage = msgs[msgs.length - 1] ?? null;
-    const unreadCount = msgs.filter((msg) => msg.sender_id !== userId && !msg.read_at).length;
     const other = otherById.get(otherProfileId);
 
     return {
       matchId: match.id,
       source: categorySlugById.get(myProfileId) ?? "",
       counterpart: { id: other?.id ?? "", name: other?.full_name ?? "", photoUrl: null },
-      lastMessage: lastMessage ? { body: lastMessage.body, createdAt: lastMessage.created_at } : null,
-      unreadCount,
+      lastMessage: lastMessageByMatch.get(match.id) ?? null,
+      unreadCount: unreadCountByMatch.get(match.id) ?? 0,
     };
   });
 }

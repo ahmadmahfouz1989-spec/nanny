@@ -491,6 +491,7 @@
     "actionError": "Something went wrong. Please try again.",
     "chatTitle": "Chat",
     "chatEmpty": "No messages yet — say hello!",
+    "loadEarlierMessages": "Load earlier messages",
     "chatPlaceholder": "Type a message…",
     "chatSend": "Send",
     "today": "Today",
