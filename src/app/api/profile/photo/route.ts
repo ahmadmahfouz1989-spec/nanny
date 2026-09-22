@@ -25,6 +25,14 @@ export async function POST(request: Request) {
 
   const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");
+  // The edit wizard uploads a preview before its own Save/Cancel is
+  // resolved -- staged skips writing the profile row (and deleting the
+  // still-live previous photo) so Cancel leaves the saved profile
+  // untouched. The wizard's own Save then commits profilePhotoUrl as part
+  // of its full payload (see /api/profile), which is what actually cleans
+  // up the old file. The standalone "change photo" control on /profile has
+  // no separate Save step, so it keeps committing immediately.
+  const stage = formData?.get("stage") === "true";
 
   if (!(file instanceof File)) {
     return NextResponse.json({ error: "Missing file" }, { status: 400 });
@@ -58,21 +66,22 @@ export async function POST(request: Request) {
 
   const { data: publicUrl } = supabase.storage.from(bucket).getPublicUrl(path);
 
-  // Save immediately rather than only staging the URL in onboarding form
-  // state -- lets the standalone "change photo" control on /profile update
-  // a live profile in one step, with no need to walk the full wizard.
+  if (stage) {
+    return NextResponse.json({ url: publicUrl.publicUrl });
+  }
+
   // No-op (0 rows affected, not an error) during first-time onboarding,
   // before the profile row exists yet -- the wizard's own Finish step
   // still persists profilePhotoUrl as part of profile creation.
-  await supabase
+  const { error: updateError } = await supabase
     .from(table)
     .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
     .eq("user_id", user.id);
 
-  // Only remove the old file once the new one is uploaded and saved --
-  // never delete before we're sure the user ends up with a working photo.
-  // Best-effort: this is cleanup, not the point of the request.
-  if (previousUrl) {
+  // Only remove the old file once the new one is uploaded AND the profile
+  // row actually points at it -- a failed update must never leave the
+  // profile pointing at a file that's already been deleted.
+  if (!updateError && previousUrl) {
     const previousPath = storagePathFromPublicUrl(previousUrl, bucket);
     if (previousPath) await supabase.storage.from(bucket).remove([previousPath]).catch(() => {});
   }

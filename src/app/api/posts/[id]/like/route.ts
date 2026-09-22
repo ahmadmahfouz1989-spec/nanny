@@ -4,6 +4,7 @@ import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postLikeEmail } from "@/lib/email";
+import { postAuthors } from "@/lib/posts";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,19 +39,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (post && post.user_id !== user.id) {
     await admin.from("notifications").insert({ user_id: post.user_id, type: "post_like", payload: { post_id: id } });
 
-    const [{ data: recipient }, { data: myProfile }] = await Promise.all([
+    const [{ data: recipient }, myAuthors] = await Promise.all([
       admin.from("users").select("email, preferred_language").eq("id", post.user_id).single(),
-      admin
-        .from("users")
-        .select("role, parent_profiles(full_name), nanny_profiles(full_name)")
-        .eq("id", user.id)
-        .single(),
+      postAuthors([{ user_id: user.id }]),
     ]);
 
     if (recipient?.email) {
-      const parent = myProfile?.parent_profiles as unknown as { full_name: string } | null;
-      const nanny = myProfile?.nanny_profiles as unknown as { full_name: string } | null;
-      const fromName = parent?.full_name ?? nanny?.full_name ?? "Someone";
+      const fromName = myAuthors.get(user.id)?.fullName ?? "Someone";
       const locale = recipient.preferred_language === "ar" ? "ar" : "en";
       const postUrl = `${getPublicOrigin(request)}/${locale}/feed`;
       const { subject, html } = postLikeEmail(recipient.preferred_language, fromName, postUrl);

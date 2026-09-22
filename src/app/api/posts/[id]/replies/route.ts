@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { containsContactInfo } from "@/lib/content-filter";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postReplyEmail, activityEmailsEnabled } from "@/lib/email";
+import { postAuthors } from "@/lib/posts";
 
 const createSchema = z.object({
   body: z.string().trim().min(1).max(500),
@@ -31,28 +32,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const admin = createAdminClient();
-  const userIds = [...new Set((replies ?? []).map((r) => r.user_id))];
-  const { data: authors } =
-    userIds.length > 0
-      ? await admin
-          .from("users")
-          .select("id, role, parent_profiles(full_name, profile_photo_url), nanny_profiles(full_name, profile_photo_url)")
-          .in("id", userIds)
-      : { data: [] as never[] };
-
-  const authorById = new Map(
-    (authors ?? []).map((a) => {
-      const parent = a.parent_profiles as unknown as { full_name: string; profile_photo_url: string | null } | null;
-      const nanny = a.nanny_profiles as unknown as { full_name: string; profile_photo_url: string | null } | null;
-      const profile = parent ?? nanny;
-      return [a.id, { name: profile?.full_name ?? null, photoUrl: profile?.profile_photo_url ?? null }];
-    }),
-  );
+  const authorById = await postAuthors(replies ?? []);
 
   const results = (replies ?? []).map((r) => ({
     ...r,
-    authorName: authorById.get(r.user_id)?.name ?? null,
+    authorName: authorById.get(r.user_id)?.fullName ?? null,
     authorPhotoUrl: authorById.get(r.user_id)?.photoUrl ?? null,
     isMine: r.user_id === user.id,
   }));
@@ -121,19 +105,13 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       .insert({ user_id: recipientId, type: "post_reply", payload: { post_id: id, reply_id: reply.id } });
 
     if (activityEmailsEnabled()) {
-      const [{ data: recipient }, { data: myProfile }] = await Promise.all([
+      const [{ data: recipient }, myAuthors] = await Promise.all([
         admin.from("users").select("email, preferred_language").eq("id", recipientId).single(),
-        admin
-          .from("users")
-          .select("role, parent_profiles(full_name), nanny_profiles(full_name)")
-          .eq("id", user.id)
-          .single(),
+        postAuthors([{ user_id: user.id }]),
       ]);
 
       if (recipient?.email) {
-        const parent = myProfile?.parent_profiles as unknown as { full_name: string } | null;
-        const nanny = myProfile?.nanny_profiles as unknown as { full_name: string } | null;
-        const fromName = parent?.full_name ?? nanny?.full_name ?? "Someone";
+        const fromName = myAuthors.get(user.id)?.fullName ?? "Someone";
         const locale = recipient.preferred_language === "ar" ? "ar" : "en";
         const postUrl = `${getPublicOrigin(request)}/${locale}/feed`;
         const { subject, html } = postReplyEmail(recipient.preferred_language, fromName, parsed.data.body, postUrl);
