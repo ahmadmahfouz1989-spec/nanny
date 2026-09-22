@@ -40,11 +40,17 @@ export default function ChatThread({
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const onMessageRef = useRef(onMessage);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const recordingTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // uploadRecording's closure over recordingSeconds (state) is only ever as
+  // current as whichever render captured it -- onstop is bound once, at the
+  // moment recording starts, so it always saw 0. Track the live value here
+  // instead.
+  const recordingSecondsRef = useRef(0);
   const cancelledRef = useRef(false);
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -131,14 +137,19 @@ export default function ChatThread({
     const body = draft.trim();
     if (!body || sending) return;
     setSending(true);
+    setSendError(null);
     setDraft("");
-    const res = await fetch(`/api/matches/${matchId}/messages`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body }),
-    });
-    setSending(false);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/matches/${matchId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ body }),
+      });
+      if (!res.ok) {
+        setDraft(body);
+        setSendError(t("messageSendError"));
+        return;
+      }
       const { message } = await res.json();
       setMessages((prev) => {
         const withoutOptimistic = prev ?? [];
@@ -146,6 +157,11 @@ export default function ChatThread({
         return [...withoutOptimistic, message];
       });
       onMessageRef.current?.(message);
+    } catch {
+      setDraft(body);
+      setSendError(t("messageSendError"));
+    } finally {
+      setSending(false);
     }
   }
 
@@ -183,14 +199,14 @@ export default function ChatThread({
 
     recorder.start();
     setRecording(true);
+    recordingSecondsRef.current = 0;
     setRecordingSeconds(0);
     recordingTimerRef.current = setInterval(() => {
-      setRecordingSeconds((s) => {
-        if (s + 1 >= MAX_RECORDING_SECONDS) {
-          mediaRecorderRef.current?.stop();
-        }
-        return s + 1;
-      });
+      recordingSecondsRef.current += 1;
+      if (recordingSecondsRef.current >= MAX_RECORDING_SECONDS) {
+        mediaRecorderRef.current?.stop();
+      }
+      setRecordingSeconds(recordingSecondsRef.current);
     }, 1000);
   }
 
@@ -215,7 +231,7 @@ export default function ChatThread({
     const formData = new FormData();
     const ext = baseMimeType.includes("mp4") ? "mp4" : baseMimeType.includes("ogg") ? "ogg" : "webm";
     formData.append("file", blob, `voice-note.${ext}`);
-    formData.append("durationSeconds", String(recordingSeconds));
+    formData.append("durationSeconds", String(recordingSecondsRef.current));
 
     const res = await fetch(`/api/matches/${matchId}/messages/audio`, { method: "POST", body: formData });
     setUploadingAudio(false);
@@ -303,6 +319,7 @@ export default function ChatThread({
       </div>
 
       {audioError && <p className="px-3 pt-2 text-xs text-danger">{audioError}</p>}
+      {sendError && <p className="px-3 pt-2 text-xs text-danger">{sendError}</p>}
 
       <div className={full ? "flex items-center gap-2 p-3 border-t border-border shrink-0" : "flex items-center gap-2 p-2 border-t border-border"}>
         {recording ? (
