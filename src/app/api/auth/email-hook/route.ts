@@ -72,7 +72,21 @@ export async function POST(request: Request) {
         ? passwordRecoveryEmail(lang, verifyUrl)
         : genericAuthEmail(lang, email_action_type, verifyUrl);
 
-  await sendEmail(user.email, subject, html);
+  const delivered = await sendEmail(user.email, subject, html);
+
+  if (!delivered) {
+    // Supabase's documented Auth Hook error shape: a non-2xx response here
+    // propagates as a real error back to whichever signUp()/
+    // resetPasswordForEmail() call triggered this hook, instead of that
+    // call succeeding while the user never receives anything. This only
+    // covers auth (signup/recovery) email -- activity emails elsewhere in
+    // the app already treat a failed send as best-effort by design.
+    console.error(`[email-hook] delivery failed for action=${email_action_type} recipient=${user.email}`);
+    return NextResponse.json(
+      { error: { http_code: 500, message: "Failed to send authentication email" } },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({});
 }
