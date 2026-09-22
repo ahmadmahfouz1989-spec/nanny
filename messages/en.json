@@ -607,6 +607,7 @@
     "rejectNotesPlaceholder": "Reason for rejection (sent to the user)",
     "confirmReject": "Confirm rejection",
     "rejectedNotDeletedNotice": "Rejected {name}, but kept the profile since it already has a mutual match — their existing conversations are unaffected. It's just hidden from new matching now.",
+    "moderationActionError": "Something went wrong and this action wasn't saved. Please try again.",
     "cancel": "Cancel",
     "usersTitle": "Users",
     "searchPlaceholder": "Search by email or phone",

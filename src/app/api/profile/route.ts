@@ -5,6 +5,33 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { parentProfileSchema, nannyProfileSchema } from "@/lib/validation/profile";
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
 import { sendEmail, pendingReviewEmail } from "@/lib/email";
+import { storagePathFromPublicUrl } from "@/lib/storage-cleanup";
+
+const PHOTO_BUCKET_BY_ROLE: Record<"parent" | "nanny", string> = {
+  parent: "parent-photos",
+  nanny: "nanny-photos",
+};
+
+// The edit wizard stages photo uploads (see /api/profile/photo) so Cancel
+// never touches the live profile -- these two helpers are what actually
+// deletes the previous photo, now that Save has confirmed the new one is
+// wanted. previousPhotoUrl must be read before the update overwrites it.
+async function previousPhotoUrl(supabase: Awaited<ReturnType<typeof createClient>>, role: "parent" | "nanny", userId: string) {
+  const table = role === "parent" ? "parent_profiles" : "nanny_profiles";
+  const { data } = await supabase.from(table).select("profile_photo_url").eq("user_id", userId).maybeSingle();
+  return data?.profile_photo_url ?? null;
+}
+
+async function cleanupPreviousPhoto(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  role: "parent" | "nanny",
+  previousUrl: string | null,
+  newPhotoUrl: string | null | undefined,
+) {
+  if (!previousUrl || previousUrl === newPhotoUrl) return;
+  const previousPath = storagePathFromPublicUrl(previousUrl, PHOTO_BUCKET_BY_ROLE[role]);
+  if (previousPath) await supabase.storage.from(PHOTO_BUCKET_BY_ROLE[role]).remove([previousPath]).catch(() => {});
+}
 
 const KIND_LABEL: Record<"parent" | "nanny", { en: string; ar: string }> = {
   parent: { en: "parent", ar: "أحد الوالدين" },
@@ -103,6 +130,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
     const p = parsed.data;
+    const oldPhotoUrl = mode === "update" ? await previousPhotoUrl(supabase, "parent", user.id) : null;
     const fn = mode === "create" ? "create_parent_profile" : "update_parent_profile";
     const { data, error } = await supabase.rpc(fn, {
       p_full_name: p.fullName,
@@ -128,6 +156,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       .from("parent_profiles")
       .update({ nationality: p.nationality, profile_photo_url: p.profilePhotoUrl ?? null })
       .eq("user_id", user.id);
+    await cleanupPreviousPhoto(supabase, "parent", oldPhotoUrl, p.profilePhotoUrl ?? null);
     await recomputeMatchesForParent((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "parent");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
@@ -139,6 +168,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
       return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
     }
     const p = parsed.data;
+    const oldPhotoUrl = mode === "update" ? await previousPhotoUrl(supabase, "nanny", user.id) : null;
     const fn = mode === "create" ? "create_nanny_profile" : "update_nanny_profile";
     const { data, error } = await supabase.rpc(fn, {
       p_full_name: p.fullName,
@@ -163,6 +193,7 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
     }
     await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
     await supabase.from("nanny_profiles").update({ nationality: p.nationality }).eq("user_id", user.id);
+    await cleanupPreviousPhoto(supabase, "nanny", oldPhotoUrl, p.profilePhotoUrl);
     await recomputeMatchesForNanny((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "nanny");
     return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
