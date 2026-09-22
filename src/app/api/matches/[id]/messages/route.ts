@@ -7,6 +7,8 @@ import { resolveMatchAccess } from "@/lib/matching/access";
 import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
 
+const MESSAGE_PAGE_SIZE = 200;
+
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -24,21 +26,35 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Chat unlocks once both sides say yes" }, { status: 403 });
   }
 
-  const { data, error } = await supabase
+  // Fetched newest-first and reversed, rather than oldest-first with no
+  // bound -- PostgREST's max_rows cap (supabase/config.toml) otherwise
+  // silently truncates a long thread to its OLDEST rows, hiding whatever
+  // conversation is actually happening now. `before` pages further back
+  // in history from there.
+  const { searchParams } = new URL(request.url);
+  const before = searchParams.get("before");
+
+  let query = supabase
     .from("messages")
     .select("id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at")
     .eq("match_id", id)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(MESSAGE_PAGE_SIZE);
+  if (before) query = query.lt("created_at", before);
+
+  const { data, error } = await query;
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
+  const page = (data ?? []).slice().reverse();
+
   // Voice notes live in a private bucket with no select policy -- only the
   // service role can sign a URL for one, which is exactly the point: a
   // client only ever gets a playable link by going through this
   // match-participancy check first.
-  const audioPaths = (data ?? []).map((m) => m.audio_path).filter((p): p is string => !!p);
+  const audioPaths = page.map((m) => m.audio_path).filter((p): p is string => !!p);
   const signedByPath = new Map<string, string>();
   if (audioPaths.length > 0) {
     const admin = createAdminClient();
@@ -48,12 +64,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     }
   }
 
-  const messages = (data ?? []).map((m) => ({
+  const messages = page.map((m) => ({
     ...m,
     audioUrl: m.audio_path ? (signedByPath.get(m.audio_path) ?? null) : null,
   }));
 
-  return NextResponse.json({ messages });
+  return NextResponse.json({ messages, hasMore: (data ?? []).length === MESSAGE_PAGE_SIZE });
 }
 
 const bodySchema = z.object({ body: z.string().trim().min(1).max(2000) });

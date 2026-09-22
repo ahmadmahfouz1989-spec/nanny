@@ -33,6 +33,9 @@ export default function ChatThread({
   const t = useTranslations("Matches");
   const locale = useLocale();
   const [messages, setMessages] = useState<Message[] | null>(null);
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
+  const suppressAutoScrollRef = useRef(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -75,7 +78,31 @@ export default function ChatThread({
   function refreshMessages() {
     fetch(`/api/matches/${matchId}/messages`)
       .then((res) => res.json())
-      .then((body) => setMessages(body.messages ?? []));
+      .then((body) => {
+        setMessages(body.messages ?? []);
+        setHasMoreOlder(body.hasMore ?? false);
+      });
+  }
+
+  function loadOlder() {
+    if (!messages || messages.length === 0 || loadingOlder) return;
+    setLoadingOlder(true);
+    const oldest = messages[0]!.created_at;
+    const el = listRef.current;
+    const prevScrollHeight = el?.scrollHeight ?? 0;
+    fetch(`/api/matches/${matchId}/messages?before=${encodeURIComponent(oldest)}`)
+      .then((res) => res.json())
+      .then((body) => {
+        suppressAutoScrollRef.current = true;
+        setMessages((prev) => [...(body.messages ?? []), ...(prev ?? [])]);
+        setHasMoreOlder(body.hasMore ?? false);
+        // Keep the same messages in view instead of jumping to the bottom
+        // (the default scroll effect) or the very top after prepending.
+        requestAnimationFrame(() => {
+          if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+        });
+      })
+      .finally(() => setLoadingOlder(false));
   }
 
   useEffect(() => {
@@ -128,7 +155,12 @@ export default function ChatThread({
   useEffect(() => {
     // Scroll only this thread's own container to the bottom — never
     // scrollIntoView, which would also scroll the page (the compact widget
-    // is embedded mid-page on the dashboard).
+    // is embedded mid-page on the dashboard). Skipped right after loading
+    // older history, which restores its own scroll position instead.
+    if (suppressAutoScrollRef.current) {
+      suppressAutoScrollRef.current = false;
+      return;
+    }
     const el = listRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages]);
@@ -280,6 +312,16 @@ export default function ChatThread({
       >
         {messages && messages.length === 0 && (
           <p className="text-sm text-muted text-center py-4">{t("chatEmpty")}</p>
+        )}
+        {full && hasMoreOlder && (
+          <button
+            type="button"
+            onClick={loadOlder}
+            disabled={loadingOlder}
+            className={ui.buttonGhost + " text-xs mx-auto mb-2"}
+          >
+            {loadingOlder ? t("loadingMore") : t("loadEarlierMessages")}
+          </button>
         )}
         {messages?.map((m, i) => {
           const own = m.sender_id === userId;
