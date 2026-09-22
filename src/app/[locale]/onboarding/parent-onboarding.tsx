@@ -126,6 +126,10 @@ export default function ParentOnboarding({
     setError(null);
     const formData = new FormData();
     formData.append("file", file);
+    // Editing an existing profile: stage the upload so Cancel doesn't leave
+    // the live profile pointing at a new (unsaved) photo with its previous
+    // one already deleted. Save commits it as part of the full payload below.
+    if (isEdit) formData.append("stage", "true");
 
     const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
     setUploading(false);

@@ -130,11 +130,18 @@ export default function AdminProfilesPage() {
       body: JSON.stringify({ profileType: profile.profileType, status, notes: rejectNotes }),
     });
     setSubmitting(null);
+
+    if (!res.ok) {
+      setNotice(t("moderationActionError"));
+      setTimeout(() => setNotice(null), 8000);
+      return;
+    }
+
     setRejecting(null);
     setNotes("");
     setProfiles((prev) => prev?.filter((p) => p.id !== profile.id) ?? null);
 
-    if (status === "rejected" && res.ok) {
+    if (status === "rejected") {
       const body = await res.json().catch(() => null);
       if (body?.deleted === false) {
         setNotice(t("rejectedNotDeletedNotice", { name: profile.full_name }));

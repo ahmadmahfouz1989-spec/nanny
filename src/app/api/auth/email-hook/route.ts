@@ -35,9 +35,9 @@ export async function POST(request: Request) {
   }
 
   const { user, email_data } = parsed;
-  const { token_hash, redirect_to, email_action_type } = email_data;
+  const { token_hash, email_action_type } = email_data;
 
-  // email_data.redirect_to reflects whatever redirectTo the original
+  // email_data.redirect_to (unused below) reflects whatever redirectTo the original
   // resetPasswordForEmail()/signUp() call sent — which, before the
   // getPublicOrigin fix, was itself built from the container's internal
   // address, so it never matched Supabase's allow-list and silently fell
@@ -53,9 +53,11 @@ export async function POST(request: Request) {
   const dest = email_action_type === "recovery" ? "/reset-password" : "/dashboard";
   const verifyUrl = `${origin}/auth/confirm?token_hash=${token_hash}&type=${email_action_type}&next=${encodeURIComponent(dest)}`;
 
-  console.log(
-    `[email-hook] action=${email_action_type} original_redirect_to=${redirect_to} verifyUrl=${verifyUrl}`,
-  );
+  // Never log token_hash or the full verifyUrl -- either one is a live,
+  // unexpired credential (signup confirmation or password recovery) that
+  // verifyOtp() accepts on its own, so anyone with log access could use it
+  // to complete the flow as that user.
+  console.log(`[email-hook] action=${email_action_type} recipient=${user.email}`);
 
   const admin = createAdminClient();
   const { data: existing } = await admin

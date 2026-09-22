@@ -43,6 +43,7 @@ export default function AdminReportsPage() {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [conversations, setConversations] = useState<Record<string, ConversationMessage[] | null>>({});
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/reports?status=open")
@@ -52,12 +53,19 @@ export default function AdminReportsPage() {
 
   async function decide(report: AdminReport, status: "resolved" | "dismissed") {
     setSubmitting(report.id);
-    await fetch(`/api/admin/reports/${report.id}`, {
+    const res = await fetch(`/api/admin/reports/${report.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, resolutionNotes: notes[report.id] }),
     });
     setSubmitting(null);
+
+    if (!res.ok) {
+      setNotice(t("moderationActionError"));
+      setTimeout(() => setNotice(null), 8000);
+      return;
+    }
+
     setReports((prev) => prev?.filter((r) => r.id !== report.id) ?? null);
   }
 
@@ -75,6 +83,10 @@ export default function AdminReportsPage() {
   return (
     <>
       <h1 className="font-display text-3xl font-semibold mb-8">{t("reportsTitle")}</h1>
+
+      {notice && (
+        <div className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning mb-4">{notice}</div>
+      )}
 
       {reports && reports.length === 0 && <p className="text-sm text-muted">{t("reportsEmpty")}</p>}
 
