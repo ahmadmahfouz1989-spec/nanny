@@ -18,12 +18,14 @@ type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: st
  */
 export default function GenericConversationHeader({
   matchId,
+  matchSource,
   name,
   profileId,
   tone,
   onBack,
 }: {
   matchId: string;
+  matchSource: string;
   name: string;
   profileId: string;
   tone: "primary" | "secondary" | "berry";
@@ -98,7 +100,7 @@ export default function GenericConversationHeader({
                 <RatingButton matchId={matchId} counterpartName={name} apiBase="/api/generic-matches" />
               </div>
               <div className="border-t border-border pt-2">
-                <ReportButton profileId={profileId} profileType="generic" />
+                <ReportButton profileId={profileId} profileType="generic" matchId={matchId} matchSource={matchSource} />
               </div>
             </div>
           </>
