@@ -34,6 +34,8 @@ export default function GenericChatThread({
 }) {
   const t = useTranslations("Matches");
   const [messages, setMessages] = useState<Message[] | null>(null);
+  const [hasMoreOlder, setHasMoreOlder] = useState(false);
+  const [loadingOlder, setLoadingOlder] = useState(false);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -84,6 +86,7 @@ export default function GenericChatThread({
       .then((res) => res.json())
       .then((body) => {
         const next: Message[] = body.messages ?? [];
+        setHasMoreOlder(body.hasMore ?? false);
         setMessages((prev) => {
           // Keep the same array reference when nothing actually changed --
           // a poll tick that just re-confirms the same messages shouldn't
@@ -100,6 +103,28 @@ export default function GenericChatThread({
           return next;
         });
       });
+  }
+
+  function loadOlder() {
+    if (!messages || messages.length === 0 || loadingOlder) return;
+    setLoadingOlder(true);
+    const oldest = messages[0]!.created_at;
+    const el = listRef.current;
+    const prevScrollHeight = el?.scrollHeight ?? 0;
+    fetch(`/api/generic-matches/${matchId}/messages?before=${encodeURIComponent(oldest)}`)
+      .then((res) => res.json())
+      .then((body) => {
+        setMessages((prev) => [...(body.messages ?? []), ...(prev ?? [])]);
+        setHasMoreOlder(body.hasMore ?? false);
+        // isNearBottomRef stays false here (the user has to be scrolled up
+        // to reach this button), so the auto-scroll effect below leaves the
+        // browser's own scroll position alone -- restore it manually so the
+        // prepended content doesn't shift what's on screen out of view.
+        requestAnimationFrame(() => {
+          if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
+        });
+      })
+      .finally(() => setLoadingOlder(false));
   }
 
   useEffect(() => {
@@ -247,6 +272,16 @@ export default function GenericChatThread({
       <div ref={listRef} onScroll={handleScroll} className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-4">
         {messages && messages.length === 0 && (
           <p className="text-sm text-muted text-center py-4">{t("chatEmpty")}</p>
+        )}
+        {hasMoreOlder && (
+          <button
+            type="button"
+            onClick={loadOlder}
+            disabled={loadingOlder}
+            className={ui.buttonGhost + " text-xs mx-auto mb-2"}
+          >
+            {loadingOlder ? t("loadingMore") : t("loadEarlierMessages")}
+          </button>
         )}
         {messages?.map((m) => (
           <div

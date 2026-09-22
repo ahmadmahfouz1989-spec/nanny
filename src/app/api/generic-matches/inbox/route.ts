@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
+import { messageSummariesByMatch } from "@/lib/inbox";
 
 /**
  * The generic-category equivalent of /api/messages/inbox, scoped to one
@@ -56,23 +57,21 @@ export async function GET(request: Request) {
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
   const matchIds = matches.map((m) => m.id);
-  const { data: allMessages } = await supabase
-    .from("generic_messages")
-    .select("id, match_id, sender_id, body, created_at, read_at")
-    .in("match_id", matchIds)
-    .order("created_at", { ascending: true });
+  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(
+    supabase,
+    "generic_messages",
+    matchIds,
+    user.id,
+  );
 
   const conversations = matches.map((m) => {
-    const msgs = (allMessages ?? []).filter((msg) => msg.match_id === m.id);
-    const lastMessage = msgs[msgs.length - 1] ?? null;
-    const unreadCount = msgs.filter((msg) => msg.sender_id !== user.id && !msg.read_at).length;
     const other = otherById.get(otherIdOf(m));
 
     return {
       matchId: m.id,
       counterpart: { id: other?.id ?? "", name: other?.full_name ?? "" },
-      lastMessage: lastMessage ? { body: lastMessage.body, createdAt: lastMessage.created_at } : null,
-      unreadCount,
+      lastMessage: lastMessageByMatch.get(m.id) ?? null,
+      unreadCount: unreadCountByMatch.get(m.id) ?? 0,
     };
   });
 
