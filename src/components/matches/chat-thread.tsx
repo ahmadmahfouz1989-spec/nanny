@@ -50,6 +50,22 @@ export default function ChatThread({
     onMessageRef.current = onMessage;
   }, [onMessage]);
 
+  // Stop everything if this thread unmounts mid-recording -- e.g. the user
+  // switches to another conversation (this thread is keyed by matchId, so
+  // that's an unmount, not a prop update). Without this the mic track
+  // keeps running, and if the max-duration timer later fires the stale
+  // MediaRecorder's onstop handler, it would still upload a voice note
+  // against this now-defunct matchId closure.
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+      if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        mediaRecorderRef.current.stop();
+      }
+    };
+  }, []);
+
   function refreshMessages() {
     fetch(`/api/matches/${matchId}/messages`)
       .then((res) => res.json())
