@@ -458,6 +458,8 @@
     "clearFilters": "مسح الفلاتر",
     "emptyFiltered": "لا توجد نتائج مطابقة لهذه الفلاتر. حاول توسيعها.",
     "loading": "جارٍ تحميل التطابقات…",
+    "loadMore": "عرض المزيد",
+    "loadingMore": "جارٍ التحميل…",
     "errorNoProfile": "أنشئ ملفك الشخصي أولاً لرؤية التطابقات.",
     "scoreLabel": "تطابق {score}٪",
     "featuredSection": "مميّز",

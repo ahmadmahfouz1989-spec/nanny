@@ -458,6 +458,8 @@
     "clearFilters": "Clear filters",
     "emptyFiltered": "No matches with these filters. Try widening them.",
     "loading": "Loading matches…",
+    "loadMore": "Load more",
+    "loadingMore": "Loading…",
     "errorNoProfile": "Create your profile first to see matches.",
     "scoreLabel": "{score}% match",
     "featuredSection": "Featured",

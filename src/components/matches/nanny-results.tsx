@@ -66,12 +66,7 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
   return l.name_en;
 }
 
-// Featured profiles surface first regardless of match score — a stable
-// sort keeps the existing score order within each group.
-function sortedByFeatured(results: NannyResult[] | null) {
-  if (!results) return null;
-  return [...results].sort((a, b) => Number(b.featured) - Number(a.featured));
-}
+const PAGE_SIZE = 20;
 
 export default function NannyResults() {
   const t = useTranslations("Matches");
@@ -85,6 +80,8 @@ export default function NannyResults() {
   const locale = useLocale();
   const [results, setResults] = useState<NannyResult[] | null>(null);
   useHashScroll(!!results);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [governorateId, setGovernorateId] = useState("");
   const [day, setDay] = useState("");
@@ -104,9 +101,30 @@ export default function NannyResults() {
           return;
         }
         setResults(body.results);
+        setTotal(body.total);
       })
       .catch(() => setError(t("errorNoProfile")));
   }, [t, governorateId, day, minYearsExperience]);
+
+  function loadMore() {
+    if (!results) return;
+    setLoadingMore(true);
+    const params = new URLSearchParams();
+    if (governorateId) params.set("governorateId", governorateId);
+    if (day) params.set("day", day);
+    if (minYearsExperience) params.set("minYearsExperience", minYearsExperience);
+    params.set("page", String(Math.floor(results.length / PAGE_SIZE) + 1));
+
+    fetch(`/api/search/nannies?${params}`)
+      .then(async (res) => {
+        const body = await res.json();
+        setLoadingMore(false);
+        if (!res.ok) return;
+        setResults((prev) => [...(prev ?? []), ...body.results]);
+        setTotal(body.total);
+      })
+      .catch(() => setLoadingMore(false));
+  }
 
   const hasFilters = !!(governorateId || day || minYearsExperience);
   function clearFilters() {
@@ -155,7 +173,7 @@ export default function NannyResults() {
       )}
 
       <div className="flex flex-col gap-5">
-        {sortedByFeatured(results)?.map((r, i, arr) => {
+        {results?.map((r, i, arr) => {
           const nanny = r.nanny_profiles;
           const gov = localizedLocationName(nanny.locations, locale);
           const area = [gov, nanny.location_detail].filter(Boolean).join(", ");
@@ -289,6 +307,17 @@ export default function NannyResults() {
           );
         })}
       </div>
+
+      {results && results.length > 0 && results.length < total && (
+        <button
+          type="button"
+          onClick={loadMore}
+          disabled={loadingMore}
+          className={ui.buttonGhost + " mt-6 w-full"}
+        >
+          {loadingMore ? t("loadingMore") : t("loadMore")}
+        </button>
+      )}
     </div>
   );
 }
