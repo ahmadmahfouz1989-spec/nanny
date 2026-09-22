@@ -18,9 +18,16 @@ const REASON_LABEL_KEY: Record<(typeof REASONS)[number], string> = {
 type ReportButtonProps = (
   | { profileId: string; profileType: "parent" | "nanny" | "generic"; postId?: undefined }
   | { postId: string; profileId?: undefined; profileType?: undefined }
-) & { trigger?: "text" | "icon" };
+) & { trigger?: "text" | "icon"; matchId?: string; matchSource?: string };
 
-export default function ReportButton({ profileId, profileType, postId, trigger = "text" }: ReportButtonProps) {
+export default function ReportButton({
+  profileId,
+  profileType,
+  postId,
+  trigger = "text",
+  matchId,
+  matchSource,
+}: ReportButtonProps) {
   const t = useTranslations("Report");
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<(typeof REASONS)[number]>("inappropriate_content");
@@ -36,7 +43,7 @@ export default function ReportButton({ profileId, profileType, postId, trigger =
       body: JSON.stringify(
         postId
           ? { reportedPostId: postId, reason, details: details || undefined }
-          : { reportedProfileId: profileId, profileType, reason, details: details || undefined },
+          : { reportedProfileId: profileId, profileType, reason, details: details || undefined, matchId, matchSource },
       ),
     });
     setSubmitting(false);

@@ -225,6 +225,7 @@ export default function MessagesClient() {
               <GenericConversationHeader
                 key={`header-${selectedConversation.matchId}`}
                 matchId={selectedConversation.matchId}
+                matchSource={selectedConversation.source}
                 name={selectedConversation.counterpart.name}
                 profileId={selectedConversation.counterpart.id}
                 tone={TONES[selectedIndex % TONES.length]}

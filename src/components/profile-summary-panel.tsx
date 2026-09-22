@@ -69,7 +69,15 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
  * would show minus the score/criteria/connect actions, which only make
  * sense next to an actual match.
  */
-export default function ProfileSummaryPanel({ profileType, profileId }: { profileType: "parent" | "nanny"; profileId: string }) {
+export default function ProfileSummaryPanel({
+  profileType,
+  profileId,
+  matchId,
+}: {
+  profileType: "parent" | "nanny";
+  profileId: string;
+  matchId?: string;
+}) {
   const t = useTranslations("Feed");
   const tNanny = useTranslations("NannyOnboarding");
   const tParent = useTranslations("ParentOnboarding");
@@ -196,7 +204,7 @@ export default function ProfileSummaryPanel({ profileType, profileId }: { profil
         </>
       )}
 
-      <ReportButton profileId={data.profile.id} profileType={data.type} />
+      <ReportButton profileId={data.profile.id} profileType={data.type} matchId={matchId} matchSource={matchId ? "nanny" : undefined} />
     </div>
   );
 }
