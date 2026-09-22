@@ -41,9 +41,10 @@ export default async function CategoryOnboardingPage({
     supabase.from("users").select("contact_phone").eq("id", user!.id).single(),
   ]);
 
+  const accountContactPhone = userRow?.contact_phone ?? null;
   const withContact = (p: NonNullable<typeof profiles>[number]) => ({
     ...p,
-    contact_phone: userRow?.contact_phone ?? null,
+    contact_phone: accountContactPhone,
   });
   const seekerProfile = (profiles ?? []).find((p) => p.role === "seeker");
   const providerProfile = (profiles ?? []).find((p) => p.role === "provider");
@@ -54,6 +55,12 @@ export default async function CategoryOnboardingPage({
       categoryName={locale === "ar" ? category!.name_ar : category!.name_en}
       seekerProfile={seekerProfile ? withContact(seekerProfile) : null}
       providerProfile={providerProfile ? withContact(providerProfile) : null}
+      // The account's shared contact_phone, independent of whether a
+      // profile already exists in *this* category -- without this,
+      // claiming a role in a brand-new category has no way to know the
+      // phone already saved via another category, and would submit this
+      // form's blank field as a real update, wiping it out account-wide.
+      accountContactPhone={accountContactPhone}
     />
   );
 }
