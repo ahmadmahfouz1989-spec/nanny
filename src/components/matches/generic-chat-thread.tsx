@@ -56,6 +56,20 @@ export default function GenericChatThread({
   // was at the very start of the recording, not the actual final duration.
   const recordingSecondsRef = useRef(0);
   const cancelledRef = useRef(false);
+  // getUserMedia's permission prompt can still be pending when the user
+  // leaves this thread (it's keyed by matchId, so that's an unmount, not a
+  // prop update) -- the unmount cleanup below can only stop a MediaRecorder
+  // that already exists, not cancel a still-in-flight promise. Checked
+  // right after that await resolves so a late grant can never start a
+  // recorder (against this now-stale matchId closure) after the thread is
+  // already gone.
+  const mountedRef = useRef(true);
+  const requestingMicRef = useRef(false);
+  // Only the dedicated older-history fetch (loadOlder) should ever narrow
+  // hasMoreOlder once it's been used -- otherwise every poll tick's
+  // newest-window fetch stomps it back to whatever that window alone
+  // implies, ignoring how much further back the reader has actually paged.
+  const olderLoadedRef = useRef(false);
   // Chat auto-scrolls to the bottom on new messages, but only when the
   // reader was already there -- otherwise polling would keep yanking
   // someone back down while they're scrolled up reading older history.
@@ -73,6 +87,7 @@ export default function GenericChatThread({
   // against this now-defunct matchId closure.
   useEffect(() => {
     return () => {
+      mountedRef.current = false;
       cancelledRef.current = true;
       if (recordingTimerRef.current) clearInterval(recordingTimerRef.current);
       if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
@@ -86,21 +101,34 @@ export default function GenericChatThread({
       .then((res) => res.json())
       .then((body) => {
         const next: Message[] = body.messages ?? [];
-        setHasMoreOlder(body.hasMore ?? false);
+        // This fetch always returns the newest window, regardless of how
+        // far back loadOlder has already paged -- its own hasMore is only
+        // trustworthy as the initial value, before there's any older
+        // history loaded to contradict it.
+        if (!olderLoadedRef.current) setHasMoreOlder(body.hasMore ?? false);
         setMessages((prev) => {
+          if (!prev) return next;
+          // Merge, don't replace: prev may hold history loaded further
+          // back via loadOlder that this newest-window fetch knows nothing
+          // about. Keep anything older than what this fetch covers, then
+          // splice in the (possibly updated) newest window.
+          const nextIds = new Set(next.map((m) => m.id));
+          const cutoff = next[0]?.created_at;
+          const older = prev.filter((m) => !nextIds.has(m.id) && (!cutoff || m.created_at < cutoff));
+          const merged = [...older, ...next];
           // Keep the same array reference when nothing actually changed --
           // a poll tick that just re-confirms the same messages shouldn't
           // re-trigger the scroll effect below and yank a reader who has
           // scrolled up back down to the bottom.
-          if (prev && prev.length === next.length && prev.every((m, i) => m.id === next[i]?.id)) {
+          if (prev.length === merged.length && prev.every((m, i) => m.id === merged[i]?.id)) {
             return prev;
           }
           // New content arrived while the thread is open -- re-mark read
           // rather than only doing it once on mount, or messages received
           // during this session would stay unread server-side until the
           // thread is closed and reopened.
-          if (prev) fetch(`/api/generic-matches/${matchId}/messages`, { method: "PATCH" });
-          return next;
+          fetch(`/api/generic-matches/${matchId}/messages`, { method: "PATCH" });
+          return merged;
         });
       });
   }
@@ -108,6 +136,7 @@ export default function GenericChatThread({
   function loadOlder() {
     if (!messages || messages.length === 0 || loadingOlder) return;
     setLoadingOlder(true);
+    olderLoadedRef.current = true;
     const oldest = messages[0]!.created_at;
     const el = listRef.current;
     const prevScrollHeight = el?.scrollHeight ?? 0;
@@ -186,16 +215,27 @@ export default function GenericChatThread({
 
   async function startRecording() {
     setAudioError(null);
+    if (requestingMicRef.current) return;
     if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setAudioError(t("micNotSupported"));
       return;
     }
 
+    requestingMicRef.current = true;
     let stream: MediaStream;
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
+      requestingMicRef.current = false;
       setAudioError(t("micPermissionDenied"));
+      return;
+    }
+    requestingMicRef.current = false;
+
+    if (!mountedRef.current) {
+      // The thread was left while the permission prompt was pending --
+      // never start a recorder against this now-stale matchId closure.
+      stream.getTracks().forEach((track) => track.stop());
       return;
     }
 
@@ -249,22 +289,30 @@ export default function GenericChatThread({
     formData.append("file", blob, `voice-note.${ext}`);
     formData.append("durationSeconds", String(recordingSecondsRef.current));
 
-    const res = await fetch(`/api/generic-matches/${matchId}/messages/audio`, { method: "POST", body: formData });
-    setUploadingAudio(false);
+    // A network failure rejects fetch() itself (not just a non-ok
+    // response) -- without try/finally that skips setUploadingAudio(false)
+    // and leaves the composer disabled until the page is reloaded, with no
+    // way to retry.
+    try {
+      const res = await fetch(`/api/generic-matches/${matchId}/messages/audio`, { method: "POST", body: formData });
+      if (!res.ok) {
+        setAudioError(t("voiceNoteUploadError"));
+        return;
+      }
 
-    if (!res.ok) {
+      const { message } = await res.json();
+      isNearBottomRef.current = true;
+      setMessages((prev) => {
+        const withoutOptimistic = prev ?? [];
+        if (withoutOptimistic.some((m) => m.id === message.id)) return withoutOptimistic;
+        return [...withoutOptimistic, message];
+      });
+      onMessageRef.current?.(message);
+    } catch {
       setAudioError(t("voiceNoteUploadError"));
-      return;
+    } finally {
+      setUploadingAudio(false);
     }
-
-    const { message } = await res.json();
-    isNearBottomRef.current = true;
-    setMessages((prev) => {
-      const withoutOptimistic = prev ?? [];
-      if (withoutOptimistic.some((m) => m.id === message.id)) return withoutOptimistic;
-      return [...withoutOptimistic, message];
-    });
-    onMessageRef.current?.(message);
   }
 
   return (
