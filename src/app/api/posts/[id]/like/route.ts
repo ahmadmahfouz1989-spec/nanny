@@ -4,7 +4,7 @@ import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postLikeEmail } from "@/lib/email";
-import { postAuthors } from "@/lib/posts";
+import { defaultIdentityByUser } from "@/lib/posts";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -41,7 +41,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const [{ data: recipient }, myAuthors] = await Promise.all([
       admin.from("users").select("email, preferred_language").eq("id", post.user_id).single(),
-      postAuthors([{ user_id: user.id }]),
+      defaultIdentityByUser([{ user_id: user.id }]),
     ]);
 
     if (recipient?.email) {

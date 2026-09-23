@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { containsContactInfo } from "@/lib/content-filter";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postReplyEmail, activityEmailsEnabled } from "@/lib/email";
-import { postAuthors } from "@/lib/posts";
+import { defaultIdentityByUser } from "@/lib/posts";
 
 const createSchema = z.object({
   body: z.string().trim().min(1).max(500),
@@ -32,7 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const authorById = await postAuthors(replies ?? []);
+  const authorById = await defaultIdentityByUser(replies ?? []);
 
   const results = (replies ?? []).map((r) => ({
     ...r,
@@ -107,7 +107,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (activityEmailsEnabled()) {
       const [{ data: recipient }, myAuthors] = await Promise.all([
         admin.from("users").select("email, preferred_language").eq("id", recipientId).single(),
-        postAuthors([{ user_id: user.id }]),
+        defaultIdentityByUser([{ user_id: user.id }]),
       ]);
 
       if (recipient?.email) {

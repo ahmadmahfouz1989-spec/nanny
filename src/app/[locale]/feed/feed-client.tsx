@@ -9,6 +9,7 @@ import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { LogoLoader } from "@/components/animated-logo";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { ChatIcon, HeartIcon } from "@/components/nav-icons";
+import type { PostIdentityOption, PostIdentityType } from "@/lib/post-identities";
 
 type Post = {
   id: string;
@@ -151,7 +152,18 @@ function ReplyThread({
 
 export default function FeedClient() {
   const t = useTranslations("Feed");
+  const tNav = useTranslations("Nav");
+  const tSaved = useTranslations("SavedProfiles");
   const locale = useLocale();
+
+  function identityLabel(identity: PostIdentityOption) {
+    if (identity.type === "generic") {
+      const categoryName = locale === "ar" ? identity.categoryNameAr : identity.categoryNameEn;
+      const roleLabel = identity.genericRole === "provider" ? tSaved("roleOffering") : tSaved("roleSeeking");
+      return `${categoryName} · ${roleLabel} — ${identity.fullName}`;
+    }
+    return `${tNav("nanny")} — ${identity.fullName}`;
+  }
 
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -161,6 +173,13 @@ export default function FeedClient() {
   const [kind, setKind] = useState<"looking_for" | "offering">("looking_for");
   const [posting, setPosting] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
+  // null = still loading -- the Post button stays disabled meanwhile, or a
+  // fast submit could go out with no chosen identity even for an account
+  // that has more than one.
+  const [identities, setIdentities] = useState<PostIdentityOption[] | null>(null);
+  const [selectedIdentity, setSelectedIdentity] = useState<{ type: PostIdentityType; profileId: string } | null>(null);
+  const selectedIdentityOption =
+    identities?.find((i) => selectedIdentity && i.type === selectedIdentity.type && i.profileId === selectedIdentity.profileId) ?? null;
 
   const [openProfile, setOpenProfile] = useState<string | null>(null);
   const [openReplies, setOpenReplies] = useState<string | null>(null);
@@ -201,11 +220,13 @@ export default function FeedClient() {
   useEffect(() => {
     let active = true;
     async function init() {
-      const res = await fetch("/api/posts");
-      const body = await res.json();
+      const [postsRes, identitiesRes] = await Promise.all([fetch("/api/posts"), fetch("/api/posts/identities")]);
+      const [postsBody, identitiesBody] = await Promise.all([postsRes.json(), identitiesRes.json()]);
       if (!active) return;
-      setPosts(body.posts ?? []);
-      setNextCursor(body.nextCursor ?? null);
+      setPosts(postsBody.posts ?? []);
+      setNextCursor(postsBody.nextCursor ?? null);
+      setIdentities(identitiesBody.identities ?? []);
+      setSelectedIdentity(identitiesBody.defaultIdentity ?? null);
     }
     init();
     return () => {
@@ -215,12 +236,12 @@ export default function FeedClient() {
 
   async function submitPost() {
     setComposerError(null);
-    if (!caption.trim()) return;
+    if (!caption.trim() || identities === null) return;
     setPosting(true);
     const res = await fetch("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption: caption.trim(), kind }),
+      body: JSON.stringify({ caption: caption.trim(), kind, postedAs: selectedIdentity }),
     });
     const body = await res.json();
     setPosting(false);
@@ -341,8 +362,24 @@ export default function FeedClient() {
         <div className={ui.card + ` overflow-hidden ${posts === null ? "flex flex-col flex-1" : ""}`}>
         {/* Composer — avatar + borderless input, X-style */}
         <div className="flex gap-3 p-4 border-b border-border">
-          <Avatar photoUrl={null} size={44} className="mt-0.5" />
+          <Avatar photoUrl={selectedIdentityOption?.photoUrl ?? null} size={44} className="mt-0.5" />
           <div className="flex-1 min-w-0 flex flex-col gap-2">
+            {identities && identities.length > 1 && (
+              <select
+                className={ui.select + " w-auto text-xs py-1.5"}
+                value={selectedIdentity ? `${selectedIdentity.type}:${selectedIdentity.profileId}` : ""}
+                onChange={(e) => {
+                  const [type, profileId] = e.target.value.split(":");
+                  setSelectedIdentity({ type: type as PostIdentityType, profileId: profileId! });
+                }}
+              >
+                {identities.map((identity) => (
+                  <option key={`${identity.type}:${identity.profileId}`} value={`${identity.type}:${identity.profileId}`}>
+                    {identityLabel(identity)}
+                  </option>
+                ))}
+              </select>
+            )}
             <div className="flex gap-2">
               <button type="button" onClick={() => setKind("looking_for")} className={ui.pill(kind === "looking_for")}>
                 {t("kindLookingFor")}
@@ -362,7 +399,7 @@ export default function FeedClient() {
             />
             {composerError && <p className="text-sm text-danger">{composerError}</p>}
             <div className="flex justify-end">
-              <button type="button" onClick={submitPost} disabled={posting || !caption.trim()} className={ui.buttonPrimary + " px-5! py-2!"}>
+              <button type="button" onClick={submitPost} disabled={posting || !caption.trim() || identities === null} className={ui.buttonPrimary + " px-5! py-2!"}>
                 {posting ? t("posting") : t("post")}
               </button>
             </div>
