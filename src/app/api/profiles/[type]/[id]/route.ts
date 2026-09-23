@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { ratingAggregateForUser } from "@/lib/ratings";
 import { featuredUserIds } from "@/lib/featured";
+import { savedProfileIds } from "@/lib/saved-profiles";
 
 const NANNY_FIELDS =
   "id, user_id, full_name, profile_photo_url, location_detail, nationality, work_radius_km, employment_type, live_arrangement_pref, availability, years_experience, has_transportation, can_drive, certifications, short_intro, locations(name_en, name_ar, name_fr), nanny_profile_languages(languages(id, name_en, name_ar, name_fr)), nanny_experience(age_group, years_experience)";
@@ -41,7 +42,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ type
   }
 
   const userId = (profile as unknown as { user_id: string }).user_id;
-  const [rating, featured] = await Promise.all([ratingAggregateForUser(userId), featuredUserIds([userId])]);
+  const [rating, featured, saved] = await Promise.all([
+    ratingAggregateForUser(userId),
+    featuredUserIds([userId]),
+    savedProfileIds(supabase, user.id, type, [id]),
+  ]);
 
-  return NextResponse.json({ type, profile, rating, featured: featured.has(userId) });
+  return NextResponse.json({ type, profile, rating, featured: featured.has(userId), isSaved: saved.has(id) });
 }

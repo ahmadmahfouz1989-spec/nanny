@@ -157,6 +157,11 @@ export default async function ProfilePage({
           <span className={ui.link + " text-sm shrink-0"}>{t("manageFeatured")}</span>
         </Link>
 
+        <Link href="/saved" className={`${ui.cardHover} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 sm:hidden`}>
+          <p className="text-sm font-medium">{tNav("saved")}</p>
+          <span aria-hidden className="text-muted rtl:scale-x-[-1]">→</span>
+        </Link>
+
         <MyRatings />
 
         <MyPostsCard />

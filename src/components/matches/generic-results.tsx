@@ -9,6 +9,7 @@ import GovernorateSelect from "@/components/matches/governorate-select";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ReportButton from "@/components/matches/report-button";
+import SaveProfileButton from "@/components/save-profile-button";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -34,6 +35,7 @@ type GenericMatch = {
   other: OtherProfile;
   rating: { average: number | null; count: number };
   featured: boolean;
+  isSaved: boolean;
 };
 
 // Featured profiles surface first regardless of match score -- a stable
@@ -187,6 +189,12 @@ export default function GenericResults({
                   <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
                     {t("scoreLabel", { score: Math.round(r.score) })}
                   </span>
+                  <SaveProfileButton
+                    profileType="generic"
+                    profileId={other.id}
+                    initialSaved={r.isSaved}
+                    className="absolute bottom-3 end-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface"
+                  />
                   <div className="absolute bottom-0 start-0 p-4">
                     <p className="font-display text-lg font-bold text-white drop-shadow">{other.full_name}</p>
                     {gov && <p className="text-xs text-white/90 drop-shadow">{gov}</p>}

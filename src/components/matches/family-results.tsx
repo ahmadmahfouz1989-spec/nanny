@@ -6,6 +6,7 @@ import { useLocale, useTranslations } from "next-intl";
 import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
 import ReportButton from "@/components/matches/report-button";
+import SaveProfileButton from "@/components/save-profile-button";
 import ProfileRating from "@/components/matches/profile-rating";
 import GovernorateSelect from "@/components/matches/governorate-select";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
@@ -28,6 +29,7 @@ type FamilyResult = {
   interest_expires_at: string | null;
   rating: { average: number | null; count: number };
   featured: boolean;
+  isSaved: boolean;
   parent_profiles: {
     id: string;
     full_name: string;
@@ -226,6 +228,12 @@ export default function FamilyResults() {
                   <span className={ui.badge(ui.scoreTone(r.score)) + " absolute top-3 end-3 bg-surface/90!"}>
                     {t("scoreLabel", { score: Math.round(r.score) })}
                   </span>
+                  <SaveProfileButton
+                    profileType="parent"
+                    profileId={parent.id}
+                    initialSaved={r.isSaved}
+                    className="absolute bottom-3 end-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface"
+                  />
                   <div className="absolute bottom-0 start-0 p-4">
                     <p className="font-display text-lg font-bold text-white drop-shadow">{parent.full_name}</p>
                     <p className="text-xs text-white/90 drop-shadow">
