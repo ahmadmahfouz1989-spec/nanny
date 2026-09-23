@@ -53,7 +53,13 @@ export default function CategoryDashboardTabs({
     return (
       <>
         <div className="max-w-2xl w-full mx-auto px-6 pt-8">{tabBar}</div>
-        <GenericResults categorySlug={categorySlug} role={active.role} />
+        {/* Keyed by role: GenericResults owns its own filter state
+            (governorate/day/minYearsExperience), and switching tabs must
+            reset all of it, not carry it into the other role's search --
+            a stale minYearsExperience in particular silently hid every
+            seeker result once applied to a provider search, which has no
+            such field. */}
+        <GenericResults key={active.role} categorySlug={categorySlug} role={active.role} />
       </>
     );
   }
@@ -78,7 +84,10 @@ export default function CategoryDashboardTabs({
             {active.moderationStatus === "pending" && t("descriptionPending")}
             {active.moderationStatus === "rejected" && t("descriptionRejected")}
           </p>
-          <Link href={`/categories/${categorySlug}/onboarding`} className={ui.link + " text-sm mt-3 inline-block"}>
+          <Link
+            href={`/categories/${categorySlug}/onboarding?role=${active.role}`}
+            className={ui.link + " text-sm mt-3 inline-block"}
+          >
             {t("editProfileLink")}
           </Link>
         </div>
