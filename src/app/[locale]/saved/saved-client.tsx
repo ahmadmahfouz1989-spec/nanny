@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import SavedProfileCard from "@/components/matches/saved-profile-card";
@@ -22,8 +22,15 @@ export default function SavedClient() {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<"" | (typeof CATEGORIES)[number]>("");
   const [role, setRole] = useState<"" | "seeking" | "offering">("");
+  // Bumped on every filter change and captured by each fetch at the moment
+  // it's sent -- a response only gets applied if this still matches when it
+  // arrives. Without it, an older filter's slower response (or a load-more
+  // request in flight when filters change) can land after a newer one and
+  // overwrite it with the wrong category's results.
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
+    const requestId = ++requestIdRef.current;
     const params = new URLSearchParams();
     if (category) params.set("category", category);
     if (role) params.set("role", role);
@@ -31,15 +38,20 @@ export default function SavedClient() {
     fetch(`/api/saved-profiles?${params}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed"))))
       .then((body) => {
+        if (requestIdRef.current !== requestId) return;
         setItems(body.items ?? []);
         setNextCursor(body.nextCursor ?? null);
       })
-      .catch(() => setError(t("loading")));
+      .catch(() => {
+        if (requestIdRef.current !== requestId) return;
+        setError(t("loading"));
+      });
   }, [category, role, t]);
 
   function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
+    const requestId = requestIdRef.current;
     const params = new URLSearchParams();
     if (category) params.set("category", category);
     if (role) params.set("role", role);
@@ -48,6 +60,7 @@ export default function SavedClient() {
     fetch(`/api/saved-profiles?${params}`)
       .then((res) => res.json())
       .then((body) => {
+        if (requestIdRef.current !== requestId) return;
         setItems((prev) => [...(prev ?? []), ...(body.items ?? [])]);
         setNextCursor(body.nextCursor ?? null);
       })

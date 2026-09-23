@@ -1,11 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileRating from "@/components/matches/profile-rating";
 import MatchActions from "@/components/matches/match-actions";
 import GenericMatchActions from "@/components/matches/generic-match-actions";
+import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { ui } from "@/lib/ui";
 import { useToast } from "@/components/toast-provider";
 import type { SavedListItem } from "@/lib/saved-profiles";
@@ -32,15 +34,30 @@ export default function SavedProfileCard({
   const tNav = useTranslations("Nav");
   const locale = useLocale();
   const { show } = useToast();
+  const [open, setOpen] = useState(false);
 
+  // Both mutations update the list optimistically for a snappy toggle, but
+  // must roll back on failure -- previously they always kept the optimistic
+  // state and never checked the response, so a failed request looked
+  // identical to a successful one until the next reload silently reversed
+  // it.
   async function undo() {
     onRestored(item);
-    await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "PUT" });
+    const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "PUT" }).catch(() => null);
+    if (!res || !res.ok) {
+      onRemoved(item);
+      show({ message: t("saveError"), tone: "error" });
+    }
   }
 
   async function remove() {
     onRemoved(item);
-    await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "DELETE" });
+    const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "DELETE" }).catch(() => null);
+    if (!res || !res.ok) {
+      onRestored(item);
+      show({ message: t("removeError"), tone: "error" });
+      return;
+    }
     show({ message: t("removedToast"), actionLabel: t("undo"), onAction: undo });
   }
 
@@ -76,13 +93,20 @@ export default function SavedProfileCard({
             {t("scoreLabel", { score: Math.round(match.score) })}
           </span>
         )}
-        <div className="absolute bottom-0 start-0 p-4">
-          <p className="font-display text-lg font-bold text-white drop-shadow">{profile.displayName}</p>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="absolute bottom-0 start-0 p-4 text-start"
+          aria-expanded={open}
+        >
+          <p className="font-display text-lg font-bold text-white drop-shadow underline-offset-2 hover:underline">
+            {profile.displayName}
+          </p>
           <p className="text-xs text-white/90 drop-shadow">
             {categoryLabel}
             {area ? ` · ${area}` : ""}
           </p>
-        </div>
+        </button>
       </div>
 
       <div className="p-5">
@@ -90,6 +114,12 @@ export default function SavedProfileCard({
           <span className={ui.badge("secondary")}>{profile.role === "seeking" ? t("roleSeeking") : t("roleOffering")}</span>
           <ProfileRating profileId={profile.id} profileType={profile.type} average={profile.rating.average} count={profile.rating.count} />
         </div>
+
+        <button type="button" onClick={() => setOpen((v) => !v)} className={ui.buttonGhost + " text-sm mb-3"}>
+          {open ? t("hideProfile") : t("viewProfile")}
+        </button>
+
+        {open && <ProfileSummaryPanel profileType={profile.type} profileId={profile.id} />}
 
         {match && item.type !== "generic" && (
           <MatchActions

@@ -59,8 +59,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ t
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  // Idempotent by nature -- deleting zero matching rows is still success.
-  await supabase.from("favorites").delete().eq("user_id", user.id).eq(column, profileId);
+  // Idempotent by nature -- deleting zero matching rows is still success --
+  // but a genuine DB/network failure must not be reported as one, or the
+  // client's optimistic removal never gets rolled back.
+  const { error } = await supabase.from("favorites").delete().eq("user_id", user.id).eq(column, profileId);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 
   return NextResponse.json({ status: "removed" });
 }

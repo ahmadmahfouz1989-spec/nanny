@@ -696,6 +696,7 @@
     "unavailableTitle": "This profile is currently unavailable",
     "unavailableBody": "You can remove it from your saved profiles.",
     "viewProfile": "View profile",
+    "hideProfile": "Hide profile",
     "remove": "Remove",
     "loadMore": "Load more",
     "loadingMore": "Loading…",
