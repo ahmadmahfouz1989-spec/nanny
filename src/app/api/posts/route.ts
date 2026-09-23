@@ -3,14 +3,31 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
-import { postAuthors, postEngagement } from "@/lib/posts";
+import { resolvePostAuthors, postEngagement } from "@/lib/posts";
 import { featuredUserIds } from "@/lib/featured";
 
 const PAGE_SIZE = 20;
 
+const POST_IDENTITY_COLUMN = {
+  parent: "posted_as_parent_profile_id",
+  nanny: "posted_as_nanny_profile_id",
+  generic: "posted_as_generic_profile_id",
+} as const;
+
+const POST_IDENTITY_TABLE = {
+  parent: "parent_profiles",
+  nanny: "nanny_profiles",
+  generic: "generic_profiles",
+} as const;
+
 const createSchema = z.object({
   caption: z.string().trim().min(1).max(500),
   kind: z.enum(["looking_for", "offering"]),
+  // Omitted or null always means "no chosen identity" (the legacy
+  // display path) -- the server never guesses one on the caller's behalf.
+  // See src/lib/post-identities.ts for how the client learns what's
+  // eligible and which one to default to.
+  postedAs: z.object({ type: z.enum(["parent", "nanny", "generic"]), profileId: z.string().uuid() }).nullable().optional(),
 });
 
 export async function GET(request: Request) {
@@ -27,7 +44,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("posts")
-    .select("id, user_id, kind, caption, status, created_at")
+    .select("id, user_id, kind, caption, status, created_at, posted_as_parent_profile_id, posted_as_nanny_profile_id, posted_as_generic_profile_id")
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
 
@@ -44,14 +61,14 @@ export async function GET(request: Request) {
   }
 
   const [authors, engagement, featured] = await Promise.all([
-    postAuthors(posts ?? []),
+    resolvePostAuthors(posts ?? []),
     postEngagement((posts ?? []).map((p) => p.id) as string[], user.id),
     featuredUserIds((posts ?? []).map((p) => p.user_id as string)),
   ]);
 
   const results = (posts ?? []).map((p) => ({
     ...p,
-    author: authors.get(p.user_id as string) ?? null,
+    author: authors.get(p.id as string) ?? null,
     ...(engagement.get(p.id as string) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
     featured: featured.has(p.user_id as string),
     isMine: p.user_id === user.id,
@@ -80,10 +97,34 @@ export async function POST(request: Request) {
     );
   }
 
+  const insertPayload: Record<string, unknown> = {
+    user_id: user.id,
+    kind: parsed.data.kind,
+    caption: parsed.data.caption,
+  };
+
+  if (parsed.data.postedAs) {
+    const { type, profileId } = parsed.data.postedAs;
+    // Re-verified here (not just left to RLS) so a bad postedAs value gets
+    // a clean 400 instead of a raw permission-denied error -- RLS
+    // (posts_insert) is still the real backstop against a forged request.
+    const { data: owned } = await supabase
+      .from(POST_IDENTITY_TABLE[type])
+      .select("id")
+      .eq("id", profileId)
+      .eq("user_id", user.id)
+      .neq("status", "draft")
+      .maybeSingle();
+    if (!owned) {
+      return NextResponse.json({ error: "Invalid postedAs identity" }, { status: 400 });
+    }
+    insertPayload[POST_IDENTITY_COLUMN[type]] = profileId;
+  }
+
   const { data: post, error } = await supabase
     .from("posts")
-    .insert({ user_id: user.id, kind: parsed.data.kind, caption: parsed.data.caption })
-    .select("id, user_id, kind, caption, created_at")
+    .insert(insertPayload)
+    .select("id, user_id, kind, caption, created_at, posted_as_parent_profile_id, posted_as_nanny_profile_id, posted_as_generic_profile_id")
     .single();
 
   if (error) {
@@ -91,7 +132,7 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json(
-    { post: { ...post, author: (await postAuthors([post])).get(user.id) ?? null, likeCount: 0, likedByMe: false, replyCount: 0, featured: false, isMine: true } },
+    { post: { ...post, author: (await resolvePostAuthors([post])).get(post.id) ?? null, likeCount: 0, likedByMe: false, replyCount: 0, featured: false, isMine: true } },
     { status: 201 },
   );
 }
