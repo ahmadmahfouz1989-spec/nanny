@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
-import { storagePathFromPublicUrl } from "@/lib/storage-cleanup";
+import { storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -72,17 +72,35 @@ export async function POST(request: Request) {
 
   // No-op (0 rows affected, not an error) during first-time onboarding,
   // before the profile row exists yet -- the wizard's own Finish step
-  // still persists profilePhotoUrl as part of profile creation.
+  // still persists profilePhotoUrl as part of profile creation. A genuine
+  // failure here (as opposed to that legitimate 0-row case) still sets
+  // updateError, though -- Postgres/PostgREST only report zero-rows-matched
+  // as success with an empty result, never as an error.
   const { error: updateError } = await supabase
     .from(table)
     .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
     .eq("user_id", user.id);
 
+  if (updateError) {
+    // The upload already succeeded and the file is live in storage, but the
+    // profile row was never updated to point at it -- reporting success
+    // here would show the new photo until the next reload silently
+    // reverted it, with the just-uploaded file now orphaned either way.
+    // Clean it up rather than leaving it to accumulate with nothing
+    // pointing at it.
+    await supabase.storage.from(bucket).remove([path]).catch(() => {});
+    return NextResponse.json({ error: updateError.message }, { status: 400 });
+  }
+
   // Only remove the old file once the new one is uploaded AND the profile
   // row actually points at it -- a failed update must never leave the
   // profile pointing at a file that's already been deleted.
-  if (!updateError && previousUrl) {
-    const previousPath = storagePathFromPublicUrl(previousUrl, bucket);
+  if (previousUrl) {
+    // previousUrl is read back from this profile's own row, but that
+    // column is client-submitted elsewhere and only validated as a URL --
+    // an earlier forged submission could name another account's real
+    // photo. Only ever delete a path under this user's own folder.
+    const previousPath = storageOwnPathFromPublicUrl(previousUrl, bucket, user.id);
     if (previousPath) await supabase.storage.from(bucket).remove([previousPath]).catch(() => {});
   }
 
