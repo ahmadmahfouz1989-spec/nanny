@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
-import { storagePathFromPublicUrl } from "@/lib/storage-cleanup";
+import { storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 
 const bodySchema = z.object({
   profileType: z.enum(["parent", "nanny", "generic"]),
@@ -122,7 +122,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     if (row.profile_photo_url) {
       const bucket = profileType === "parent" ? "parent-photos" : "nanny-photos";
-      const path = storagePathFromPublicUrl(row.profile_photo_url, bucket);
+      // profile_photo_url is client-submitted and only validated as a URL --
+      // it could name another account's real photo. Only ever delete a
+      // path that actually lives under this profile's own owner folder.
+      const path = storageOwnPathFromPublicUrl(row.profile_photo_url, bucket, row.user_id);
       // Best-effort: a storage hiccup here shouldn't fail a moderation
       // decision that already succeeded in the database.
       if (path) await db.storage.from(bucket).remove([path]).catch(() => {});
