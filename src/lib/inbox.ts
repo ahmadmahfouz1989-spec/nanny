@@ -13,17 +13,15 @@ export type InboxConversation = {
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
-const RECENT_MESSAGES_LIMIT = 1000;
-
 /**
- * Per-match last-message and unread-count, without pulling a whole
- * (potentially huge) message history oldest-first into app code first --
- * that pattern silently drops the newest rows once a user's total message
- * count across all their matches exceeds PostgREST's max_rows cap
- * (supabase/config.toml), corrupting exactly the "what's the latest
- * message" preview this is for. Unread messages are fetched by their own
- * targeted, naturally-small query (read messages don't accumulate) rather
- * than sharing the recency-limited one.
+ * Per-match last-message and unread-count. Computed in SQL (see
+ * message_summaries_for_matches / generic_message_summaries_for_matches,
+ * 20260923000008_inbox_message_summaries_rpc.sql) via DISTINCT ON rather
+ * than fetching a page of "recent" messages across every match combined
+ * app-side -- that approach silently dropped a match's last message
+ * entirely once some OTHER busy conversation's messages filled the whole
+ * page first, corrupting exactly the "what's the latest message" preview
+ * this is for. A true per-match aggregate has no such cap to exceed.
  */
 export async function messageSummariesByMatch(
   supabase: Supabase,
@@ -35,23 +33,16 @@ export async function messageSummariesByMatch(
   const unreadCountByMatch = new Map<string, number>();
   if (matchIds.length === 0) return { lastMessageByMatch, unreadCountByMatch };
 
-  const [{ data: recentMessages }, { data: unreadMessages }] = await Promise.all([
-    supabase
-      .from(table)
-      .select("match_id, body, created_at")
-      .in("match_id", matchIds)
-      .order("created_at", { ascending: false })
-      .limit(RECENT_MESSAGES_LIMIT),
-    supabase.from(table).select("match_id").in("match_id", matchIds).neq("sender_id", userId).is("read_at", null),
-  ]);
+  const rpcName = table === "messages" ? "message_summaries_for_matches" : "generic_message_summaries_for_matches";
+  const { data: summaries } = await supabase.rpc(rpcName, { p_match_ids: matchIds, p_user_id: userId });
 
-  for (const msg of recentMessages ?? []) {
-    if (!lastMessageByMatch.has(msg.match_id)) {
-      lastMessageByMatch.set(msg.match_id, { body: msg.body, createdAt: msg.created_at });
+  for (const row of summaries ?? []) {
+    if (row.last_body !== null && row.last_created_at !== null) {
+      lastMessageByMatch.set(row.match_id, { body: row.last_body, createdAt: row.last_created_at });
     }
-  }
-  for (const msg of unreadMessages ?? []) {
-    unreadCountByMatch.set(msg.match_id, (unreadCountByMatch.get(msg.match_id) ?? 0) + 1);
+    if (row.unread_count > 0) {
+      unreadCountByMatch.set(row.match_id, Number(row.unread_count));
+    }
   }
 
   return { lastMessageByMatch, unreadCountByMatch };
