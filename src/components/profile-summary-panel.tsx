@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import ProfileRating from "@/components/matches/profile-rating";
 import ReportButton from "@/components/matches/report-button";
+import SaveProfileButton from "@/components/save-profile-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { labelOr } from "@/lib/i18n-fallback";
 
@@ -47,8 +48,8 @@ type ParentProfile = {
 };
 
 type Response =
-  | { type: "nanny"; profile: NannyProfile; rating: { average: number | null; count: number }; featured: boolean }
-  | { type: "parent"; profile: ParentProfile; rating: { average: number | null; count: number }; featured: boolean };
+  | { type: "nanny"; profile: NannyProfile; rating: { average: number | null; count: number }; featured: boolean; isSaved: boolean }
+  | { type: "parent"; profile: ParentProfile; rating: { average: number | null; count: number }; featured: boolean; isSaved: boolean };
 
 function localizedLocationName(loc: LocationRef, locale: string) {
   if (!loc) return null;
@@ -137,7 +138,15 @@ export default function ProfileSummaryPanel({
             {data.profile.location_detail ? ` · ${data.profile.location_detail}` : ""}
           </p>
         </div>
-        {data.featured && <span className="ms-auto shrink-0 text-xs font-semibold text-berry">★ {t("featuredBadge")}</span>}
+        <div className="ms-auto flex items-center gap-2 shrink-0">
+          {data.featured && <span className="text-xs font-semibold text-berry">★ {t("featuredBadge")}</span>}
+          <SaveProfileButton
+            profileType={data.type}
+            profileId={data.profile.id}
+            initialSaved={data.isSaved}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink"
+          />
+        </div>
       </div>
 
       <ProfileRating profileId={data.profile.id} profileType={data.type} average={data.rating.average} count={data.rating.count} />

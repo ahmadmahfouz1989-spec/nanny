@@ -4,6 +4,7 @@ import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
 import { featuredProfileIds } from "@/lib/featured";
+import { savedProfileIds } from "@/lib/saved-profiles";
 
 type NannyProfile = {
   id: string;
@@ -102,12 +103,15 @@ export async function GET(request: Request) {
     }
   }
 
+  const savedIds = await savedProfileIds(supabase, user.id, "nanny", nannyProfileIds);
+
   const results = paged.map((r) => {
     const id = (r.nanny_profiles as unknown as { id: string }).id;
     return {
       ...r,
       rating: ratingByProfileId.get(id) ?? { average: null, count: 0 },
       featured: allFeaturedIds.has(id),
+      isSaved: savedIds.has(id),
     };
   });
 

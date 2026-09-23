@@ -60,6 +60,14 @@ export function HeartIcon({ className = "", fill = "none" }: { className?: strin
   );
 }
 
+export function BookmarkIcon({ className = "", fill = "none" }: { className?: string; fill?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill={fill} stroke="currentColor" strokeWidth={1.8}>
+      <path d="M6 3.5h12a1 1 0 0 1 1 1V21l-7-4.2L5 21V4.5a1 1 0 0 1 1-1Z" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function MoreIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="currentColor">

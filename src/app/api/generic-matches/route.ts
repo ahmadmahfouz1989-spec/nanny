@@ -4,6 +4,7 @@ import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
 import { featuredUserIds } from "@/lib/featured";
+import { savedProfileIds } from "@/lib/saved-profiles";
 
 /**
  * Lists matches for the caller's own generic_profiles row in a category --
@@ -111,6 +112,8 @@ export async function GET(request: Request) {
     }
   }
 
+  const savedIds = await savedProfileIds(supabase, user.id, "generic", otherIds);
+
   const results = (matches ?? []).map((m) => {
     const otherId = otherIdOf(m);
     return {
@@ -118,6 +121,7 @@ export async function GET(request: Request) {
       other: otherById.get(otherId) ?? null,
       rating: ratingByProfileId.get(otherId) ?? { average: null, count: 0 },
       featured: featuredProfileIds.has(otherId),
+      isSaved: savedIds.has(otherId),
     };
   });
 
