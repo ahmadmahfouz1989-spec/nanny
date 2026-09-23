@@ -2,44 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
-
-type Supabase = Awaited<ReturnType<typeof createClient>>;
-
-async function verifyMatchParticipants(
-  supabase: Supabase,
-  matchSource: string,
-  matchId: string,
-  reporterUserId: string,
-  reportedUserId: string,
-): Promise<boolean> {
-  if (matchSource === "nanny") {
-    const { data: match } = await supabase
-      .from("matches")
-      .select("parent_profile_id, nanny_profile_id")
-      .eq("id", matchId)
-      .maybeSingle();
-    if (!match) return false;
-    const [{ data: parent }, { data: nanny }] = await Promise.all([
-      supabase.from("parent_profiles").select("user_id").eq("id", match.parent_profile_id).single(),
-      supabase.from("nanny_profiles").select("user_id").eq("id", match.nanny_profile_id).single(),
-    ]);
-    const participants = new Set([parent?.user_id, nanny?.user_id]);
-    return participants.has(reporterUserId) && participants.has(reportedUserId);
-  }
-
-  const { data: match } = await supabase
-    .from("generic_matches")
-    .select("seeker_profile_id, provider_profile_id")
-    .eq("id", matchId)
-    .maybeSingle();
-  if (!match) return false;
-  const { data: profiles } = await supabase
-    .from("generic_profiles")
-    .select("id, user_id")
-    .in("id", [match.seeker_profile_id, match.provider_profile_id]);
-  const participants = new Set((profiles ?? []).map((p) => p.user_id));
-  return participants.has(reporterUserId) && participants.has(reportedUserId);
-}
+import { verifyMatchParticipants } from "@/lib/reports";
 
 const bodySchema = z.object({
   reportedProfileId: z.string().uuid().optional(),
