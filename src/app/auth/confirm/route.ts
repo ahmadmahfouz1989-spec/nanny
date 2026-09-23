@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { logLoginEvent } from "@/lib/login-log";
 import { routing } from "@/i18n/routing";
@@ -43,7 +44,10 @@ export async function GET(request: Request) {
 
     if (!error) {
       if (type === "signup" && data.user?.id) {
-        await supabase
+        // email_verified_at is locked to service_role only (see
+        // 20260923000006_lock_verification_fields.sql) -- the user's own
+        // session client can no longer write it, by design.
+        await createAdminClient()
           .from("users")
           .update({ email_verified_at: new Date().toISOString() })
           .eq("id", data.user.id);

@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 import { SIGNED_URL_TTL_SECONDS } from "@/lib/voice-notes";
+import { verifyMatchParticipants } from "@/lib/reports";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type ConversationMessage = {
@@ -63,10 +64,18 @@ async function directConversation(
   matchId: string,
   matchSource: string,
   reporterUserId: string,
+  reportedUserId: string,
 ): Promise<{ matchId: string; messages: ConversationMessage[] } | null> {
   const table = matchSource === "nanny" ? "matches" : "generic_matches";
   const { data: match } = await db.from(table).select("id").eq("id", matchId).maybeSingle();
   if (!match) return null;
+  // report_match_participants_valid (20260923000005) now enforces this at
+  // insert time, but re-verify independently here too rather than trusting
+  // a stored match_id outright -- a report inserted before that migration,
+  // or any future insert path that forgets it, must never surface an
+  // unrelated couple's conversation as evidence against the reported user.
+  const isValid = await verifyMatchParticipants(db, matchSource, matchId, reporterUserId, reportedUserId);
+  if (!isValid) return null;
 
   const messages = await messagesForMatch(db, matchSource === "nanny" ? "messages" : "generic_messages", matchId, reporterUserId);
   return { matchId, messages };
@@ -175,7 +184,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   let conversation =
     report.match_id && report.match_source
-      ? await directConversation(db, report.match_id, report.match_source, report.reporter_user_id)
+      ? await directConversation(db, report.match_id, report.match_source, report.reporter_user_id, report.reported_user_id)
       : null;
 
   if (!conversation) {
