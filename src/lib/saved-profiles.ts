@@ -84,52 +84,6 @@ function targetOf(row: FavoritesRow): { type: SavedProfileType; id: string } {
 }
 
 /**
- * Resolves category/role filters into a concrete set of eligible FK
- * columns (and, for generic, a concrete list of eligible generic_profile
- * ids) *before* querying favorites -- favorites itself has no
- * category/role column, so this has to happen up front rather than as a
- * post-filter after paginating, or a page could come back with fewer
- * than `limit` items even though more matching rows exist further down.
- */
-async function resolveEligibility(
-  supabase: Supabase,
-  category: "nanny" | "nursing" | "tutoring" | undefined,
-  role: "seeking" | "offering" | undefined,
-): Promise<{ includeParent: boolean; includeNanny: boolean; genericIds: string[] | null }> {
-  if (category === "nanny") {
-    return {
-      includeParent: role !== "offering",
-      includeNanny: role !== "seeking",
-      genericIds: [],
-    };
-  }
-
-  if (category === "nursing" || category === "tutoring") {
-    const { data: cat } = await supabase.from("categories").select("id").eq("slug", category).maybeSingle();
-    if (!cat) return { includeParent: false, includeNanny: false, genericIds: [] };
-    let q = supabase.from("generic_profiles").select("id").eq("category_id", cat.id);
-    if (role === "seeking") q = q.eq("role", "seeker");
-    if (role === "offering") q = q.eq("role", "provider");
-    const { data: rows } = await q;
-    return { includeParent: false, includeNanny: false, genericIds: (rows ?? []).map((r) => r.id) };
-  }
-
-  // No category filter ("All") -- role, if given, still narrows both the
-  // nanny/parent columns and which generic profiles are eligible.
-  if (role === "seeking" || role === "offering") {
-    const genericRole = role === "seeking" ? "seeker" : "provider";
-    const { data: rows } = await supabase.from("generic_profiles").select("id").eq("role", genericRole);
-    return {
-      includeParent: role === "seeking",
-      includeNanny: role === "offering",
-      genericIds: (rows ?? []).map((r) => r.id),
-    };
-  }
-
-  return { includeParent: true, includeNanny: true, genericIds: null };
-}
-
-/**
  * Core of GET /api/saved-profiles. Paginates the favorites rows first
  * (keyset on created_at+id, so ordering stays stable even with rows
  * inserted concurrently), then batch-fetches profile details across at
@@ -150,35 +104,19 @@ export async function listSavedProfiles(
     cursor: { createdAt: string; id: string } | null;
   },
 ): Promise<{ items: SavedListItem[]; nextCursor: { createdAt: string; id: string } | null }> {
-  const { includeParent, includeNanny, genericIds } = await resolveEligibility(supabase, opts.category, opts.role);
-
-  const orParts: string[] = [];
-  if (includeParent) orParts.push("parent_profile_id.not.is.null");
-  if (includeNanny) orParts.push("nanny_profile_id.not.is.null");
-  if (genericIds === null) {
-    orParts.push("generic_profile_id.not.is.null");
-  } else if (genericIds.length > 0) {
-    orParts.push(`generic_profile_id.in.(${genericIds.join(",")})`);
-  }
-
-  if (orParts.length === 0) {
-    return { items: [], nextCursor: null };
-  }
-
-  let query = supabase
-    .from("favorites")
-    .select("id, created_at, parent_profile_id, nanny_profile_id, generic_profile_id")
-    .eq("user_id", userId)
-    .or(orParts.join(","))
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(opts.limit + 1);
-
-  if (opts.cursor) {
-    query = query.or(`created_at.lt.${opts.cursor.createdAt},and(created_at.eq.${opts.cursor.createdAt},id.lt.${opts.cursor.id})`);
-  }
-
-  const { data: rows } = await query;
+  // Filters + join to generic_profiles/categories, applied and paginated
+  // server-side in one query -- see list_saved_favorites
+  // (20260923000007_saved_profiles_filter_rpc.sql) for why this can't be
+  // expressed as a plain PostgREST OR-filter across favorites' three FK
+  // columns once one of them also needs a category/role join.
+  const { data: rows } = await supabase.rpc("list_saved_favorites", {
+    p_user_id: userId,
+    p_category: opts.category ?? null,
+    p_role: opts.role ?? null,
+    p_cursor_created_at: opts.cursor?.createdAt ?? null,
+    p_cursor_id: opts.cursor?.id ?? null,
+    p_limit: opts.limit + 1,
+  });
   const favRows = (rows ?? []) as FavoritesRow[];
   const hasMore = favRows.length > opts.limit;
   const page = hasMore ? favRows.slice(0, opts.limit) : favRows;

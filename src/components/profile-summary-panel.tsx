@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import ProfileRating from "@/components/matches/profile-rating";
@@ -8,6 +8,7 @@ import ReportButton from "@/components/matches/report-button";
 import SaveProfileButton from "@/components/save-profile-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { labelOr } from "@/lib/i18n-fallback";
+import { ui } from "@/lib/ui";
 
 type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
 type LocationRef = { name_en: string; name_ar: string; name_fr: string } | null;
@@ -47,9 +48,19 @@ type ParentProfile = {
   parent_profile_languages: LangRef[];
 };
 
+type GenericProfile = {
+  id: string;
+  full_name: string;
+  role: "seeker" | "provider";
+  attributes: Record<string, unknown>;
+  locations: LocationRef;
+  categories: { name_en: string; name_ar: string } | null;
+};
+
 type Response =
   | { type: "nanny"; profile: NannyProfile; rating: { average: number | null; count: number }; featured: boolean; isSaved: boolean }
-  | { type: "parent"; profile: ParentProfile; rating: { average: number | null; count: number }; featured: boolean; isSaved: boolean };
+  | { type: "parent"; profile: ParentProfile; rating: { average: number | null; count: number }; featured: boolean; isSaved: boolean }
+  | { type: "generic"; profile: GenericProfile; rating: { average: number | null; count: number }; featured: boolean; isSaved: boolean };
 
 function localizedLocationName(loc: LocationRef, locale: string) {
   if (!loc) return null;
@@ -64,6 +75,31 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
   return l.name_en;
 }
 
+// generic_profiles.attributes is a free-form jsonb blob whose shape is
+// specific to each category (nursing/tutoring/...) -- there's no shared
+// schema to render field-by-field the way nanny/parent get above, so this
+// is a plain, best-effort key/value fallback rather than the specialized
+// per-category display generic-results.tsx builds for its own scored
+// match cards. Good enough to actually inspect a saved profile's details,
+// not a replica of that richer view.
+function humanizeAttributeKey(key: string): string {
+  return key
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .replace(/^./, (c) => c.toUpperCase());
+}
+
+function formatAttributeValue(value: unknown): string {
+  if (value === null || value === undefined || value === "") return "—";
+  if (Array.isArray(value)) return value.length ? value.map((v) => formatAttributeValue(v)).join(", ") : "—";
+  if (typeof value === "boolean") return value ? "✓" : "✗";
+  if (typeof value === "object") {
+    return Object.entries(value as Record<string, unknown>)
+      .map(([k, v]) => `${humanizeAttributeKey(k)}: ${formatAttributeValue(v)}`)
+      .join(" · ");
+  }
+  return String(value);
+}
+
 /**
  * Compact read-only profile view opened by clicking a name outside the
  * scored-match context (currently: the feed). Same content a match card
@@ -75,13 +111,14 @@ export default function ProfileSummaryPanel({
   profileId,
   matchId,
 }: {
-  profileType: "parent" | "nanny";
+  profileType: "parent" | "nanny" | "generic";
   profileId: string;
   matchId?: string;
 }) {
   const t = useTranslations("Feed");
   const tNanny = useTranslations("NannyOnboarding");
   const tParent = useTranslations("ParentOnboarding");
+  const tSaved = useTranslations("SavedProfiles");
   const tNat = useTranslations("Nationality");
   const tAgeGroups = useTranslations("AgeGroups");
   const tDuties = useTranslations("Duties");
@@ -115,19 +152,17 @@ export default function ProfileSummaryPanel({
   const langs =
     data.type === "nanny"
       ? data.profile.nanny_profile_languages.map((l) => localizedLangName(l.languages, locale))
-      : data.profile.parent_profile_languages.map((l) => localizedLangName(l.languages, locale));
+      : data.type === "parent"
+        ? data.profile.parent_profile_languages.map((l) => localizedLangName(l.languages, locale))
+        : [];
+  // generic_profiles has no photo column (see saved-profile-card.tsx).
+  const photoUrl = data.type !== "generic" ? data.profile.profile_photo_url : null;
 
   return (
     <div className="mt-2 rounded-xl border border-border bg-background p-4 flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        {data.profile.profile_photo_url ? (
-          <Image
-            src={data.profile.profile_photo_url}
-            alt=""
-            width={48}
-            height={48}
-            className="h-12 w-12 rounded-full object-cover shrink-0"
-          />
+        {photoUrl ? (
+          <Image src={photoUrl} alt="" width={48} height={48} className="h-12 w-12 rounded-full object-cover shrink-0" />
         ) : (
           <AvatarIllustration tone="primary" className="h-12 w-12 rounded-full overflow-hidden shrink-0" />
         )}
@@ -135,7 +170,7 @@ export default function ProfileSummaryPanel({
           <p className="font-display font-semibold text-ink truncate">{data.profile.full_name}</p>
           <p className="text-xs text-muted truncate">
             {area}
-            {data.profile.location_detail ? ` · ${data.profile.location_detail}` : ""}
+            {data.type !== "generic" && data.profile.location_detail ? ` · ${data.profile.location_detail}` : ""}
           </p>
         </div>
         <div className="ms-auto flex items-center gap-2 shrink-0">
@@ -185,7 +220,7 @@ export default function ProfileSummaryPanel({
             )}
           </dl>
         </>
-      ) : (
+      ) : data.type === "parent" ? (
         <>
           {data.profile.family_description && <p className="text-sm text-ink/80">{data.profile.family_description}</p>}
           <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
@@ -210,6 +245,27 @@ export default function ProfileSummaryPanel({
               </>
             )}
           </dl>
+        </>
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <span className={ui.badge("secondary")}>{data.profile.role === "seeker" ? tSaved("roleSeeking") : tSaved("roleOffering")}</span>
+            {data.profile.categories && (
+              <span className="text-xs text-muted">
+                {locale === "ar" ? data.profile.categories.name_ar : data.profile.categories.name_en}
+              </span>
+            )}
+          </div>
+          {Object.keys(data.profile.attributes ?? {}).length > 0 && (
+            <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">
+              {Object.entries(data.profile.attributes).map(([key, value]) => (
+                <Fragment key={key}>
+                  <dt className="text-muted">{humanizeAttributeKey(key)}</dt>
+                  <dd>{formatAttributeValue(value)}</dd>
+                </Fragment>
+              ))}
+            </dl>
+          )}
         </>
       )}
 
