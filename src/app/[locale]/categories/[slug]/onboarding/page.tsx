@@ -9,10 +9,13 @@ const SUPPORTED_SLUGS = ["nursing", "tutoring"];
 
 export default async function CategoryOnboardingPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ role?: string }>;
 }) {
   const { locale, slug } = await params;
+  const { role } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -48,6 +51,14 @@ export default async function CategoryOnboardingPage({
   });
   const seekerProfile = (profiles ?? []).find((p) => p.role === "seeker");
   const providerProfile = (profiles ?? []).find((p) => p.role === "provider");
+  // The dashboard's per-role tabs (category-dashboard-tabs.tsx) link here
+  // with ?role= so Edit always reopens the exact role being viewed --
+  // without it, an account holding both roles always lands on the
+  // provider form (CategoryOnboardingClient's own default), regardless of
+  // which tab Edit was clicked from. Only trusted when that role's own
+  // profile actually exists; otherwise falls through to that same default.
+  const initialRole =
+    role === "seeker" && seekerProfile ? "seeker" : role === "provider" && providerProfile ? "provider" : null;
 
   return (
     <CategoryOnboardingClient
@@ -55,6 +66,7 @@ export default async function CategoryOnboardingPage({
       categoryName={locale === "ar" ? category!.name_ar : category!.name_en}
       seekerProfile={seekerProfile ? withContact(seekerProfile) : null}
       providerProfile={providerProfile ? withContact(providerProfile) : null}
+      initialRole={initialRole}
       // The account's shared contact_phone, independent of whether a
       // profile already exists in *this* category -- without this,
       // claiming a role in a brand-new category has no way to know the

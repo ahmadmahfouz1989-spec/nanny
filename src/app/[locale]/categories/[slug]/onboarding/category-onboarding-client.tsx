@@ -36,12 +36,17 @@ export default function CategoryOnboardingClient({
   seekerProfile,
   providerProfile,
   accountContactPhone,
+  initialRole,
 }: {
   categorySlug: string;
   categoryName: string;
   seekerProfile: ExistingProfile;
   providerProfile: ExistingProfile;
   accountContactPhone: string | null;
+  // Set when arriving from a specific dashboard tab's Edit link -- takes
+  // priority over the provider-first default below, which otherwise has
+  // no way to know which of the two an Edit click actually meant.
+  initialRole?: "seeker" | "provider" | null;
 }) {
   const t = useTranslations("CategoryOnboarding");
   const tw = useTranslations("Wizard");
@@ -49,11 +54,15 @@ export default function CategoryOnboardingClient({
   // picker -- an abandoned draft (claimed, nothing filled in) always
   // shows both options again, same as never having chosen at all.
   const [chosenRole, setChosenRole] = useState<"seeker" | "provider" | null>(
-    providerProfile && providerProfile.status !== "draft"
+    initialRole === "provider" && providerProfile
       ? "provider"
-      : seekerProfile && seekerProfile.status !== "draft"
+      : initialRole === "seeker" && seekerProfile
         ? "seeker"
-        : null,
+        : providerProfile && providerProfile.status !== "draft"
+          ? "provider"
+          : seekerProfile && seekerProfile.status !== "draft"
+            ? "seeker"
+            : null,
   );
   // Claiming (below) can hand back a brand-new draft row the server-side
   // props above don't know about yet -- these start from the props and
