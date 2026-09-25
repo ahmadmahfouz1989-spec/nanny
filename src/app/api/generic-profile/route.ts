@@ -5,15 +5,17 @@ import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATION_STATUS } from "@/lib/validation/nursing";
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
+import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { sendEmail, pendingReviewEmail } from "@/lib/email";
-import { storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
+import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 
 type GenericRole = "seeker" | "provider";
 
 // Registry so each category plugs in its own schemas here without
 // touching the request-handling logic below.
 const CATEGORY_SCHEMAS: Record<string, { seeker: z.ZodTypeAny; provider: z.ZodTypeAny }> = {
+  nanny: { seeker: nannySeekerSchema, provider: nannyProviderSchema },
   nursing: { seeker: nursingSeekerSchema, provider: nursingProviderSchema },
   tutoring: { seeker: tutoringSeekerSchema, provider: tutoringProviderSchema },
 };
@@ -102,6 +104,9 @@ export async function GET(request: Request) {
 }
 
 const PHOTO_BUCKET = "generic-photos";
+// Profiles that can't be submitted without a photo (nannies always had to
+// have one before going active).
+const PHOTO_REQUIRED = new Set(["nanny:provider"]);
 
 export async function POST(request: Request) {
   return upsertGenericProfile(request, "create");
@@ -145,9 +150,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   const p = parsed.data as typeof parsed.data & { fullName: string; contactPhone?: string; locationId: string };
 
   // fullName/locationId are real generic_profiles columns; contactPhone is
-  // shared per-account state on users; everything else (including
-  // locationDetail/nationality, which are real columns on
-  // parent_profiles/nanny_profiles but not on this generic table) lives in
+  // shared per-account state on users; everything else lives in
   // attributes jsonb.
   const { fullName, contactPhone, locationId, ...rest } = p;
   const attributes: Record<string, unknown> = { ...rest };
@@ -155,23 +158,10 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     attributes.licenseVerificationStatus = DEFAULT_LICENSE_VERIFICATION_STATUS;
   }
 
-  // Optional; omitted means "leave the current photo alone". Checked here
-  // rather than left to the generic_profiles_protect_photo trigger, since
-  // the upsert below runs as the service role, which that trigger skips:
-  // only a URL into this user's own generic-photos folder (what
-  // /api/profile/photo hands back) is accepted.
-  const rawPhotoUrl = body?.profilePhotoUrl;
-  let profilePhotoUrl: string | undefined;
-  if (rawPhotoUrl !== undefined) {
-    if (typeof rawPhotoUrl !== "string" || !storageOwnPathFromPublicUrl(rawPhotoUrl, PHOTO_BUCKET, user.id)) {
-      return NextResponse.json({ error: "Invalid profile photo" }, { status: 400 });
-    }
-    profilePhotoUrl = rawPhotoUrl;
-  }
-
   const db = createAdminClient();
 
-  // Read before the write so a replaced photo's old file can be removed
+  // Read before the write: the current photo decides whether a submitted
+  // profilePhotoUrl is a change, and a replaced photo's old file is removed
   // once the new one is saved. The row usually exists even on "create"
   // (claimed as a draft when the role was picked).
   const { data: before } = await db
@@ -181,6 +171,26 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     .eq("category_id", category.id)
     .eq("role", role)
     .maybeSingle();
+  const previousPhotoUrl = before?.profile_photo_url ?? null;
+
+  // Optional; omitted (or unchanged) means "leave the current photo alone".
+  // A new one is checked here rather than left to the
+  // generic_profiles_protect_photo trigger, since the upsert below runs as
+  // the service role, which that trigger skips: only a URL into this
+  // user's own generic-photos folder (what /api/profile/photo hands back)
+  // is accepted.
+  const rawPhotoUrl = body?.profilePhotoUrl;
+  let profilePhotoUrl: string | undefined;
+  if (rawPhotoUrl !== undefined && rawPhotoUrl !== previousPhotoUrl) {
+    if (typeof rawPhotoUrl !== "string" || !storageOwnPathFromPublicUrl(rawPhotoUrl, PHOTO_BUCKET, user.id)) {
+      return NextResponse.json({ error: "Invalid profile photo" }, { status: 400 });
+    }
+    profilePhotoUrl = rawPhotoUrl;
+  }
+
+  if (PHOTO_REQUIRED.has(`${categorySlug}:${role}`) && !(profilePhotoUrl ?? previousPhotoUrl)) {
+    return NextResponse.json({ error: "A profile photo is required" }, { status: 400 });
+  }
 
   if (mode === "create") {
     const { data: existing } = await db
@@ -240,12 +250,11 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
   }
 
-  const previousPhotoUrl = before?.profile_photo_url ?? null;
-  if (profilePhotoUrl !== undefined && previousPhotoUrl && previousPhotoUrl !== profilePhotoUrl) {
+  if (profilePhotoUrl !== undefined && previousPhotoUrl) {
     // Only ever delete a path under this user's own folder -- same guard as
     // /api/profile/photo. Best-effort: never fails a save that succeeded.
-    const previousPath = storageOwnPathFromPublicUrl(previousPhotoUrl, PHOTO_BUCKET, user.id);
-    if (previousPath) await db.storage.from(PHOTO_BUCKET).remove([previousPath]).catch(() => {});
+    const previous = ownProfilePhotoObject(previousPhotoUrl, user.id);
+    if (previous) await db.storage.from(previous.bucket).remove([previous.path]).catch(() => {});
   }
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);

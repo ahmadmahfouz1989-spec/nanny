@@ -7,18 +7,6 @@ import { resolvePostAuthors, decoratePosts, POST_FEED_COLUMNS } from "@/lib/post
 
 const PAGE_SIZE = 20;
 
-const POST_IDENTITY_COLUMN = {
-  parent: "posted_as_parent_profile_id",
-  nanny: "posted_as_nanny_profile_id",
-  generic: "posted_as_generic_profile_id",
-} as const;
-
-const POST_IDENTITY_TABLE = {
-  parent: "parent_profiles",
-  nanny: "nanny_profiles",
-  generic: "generic_profiles",
-} as const;
-
 const createSchema = z.object({
   caption: z.string().trim().min(1).max(500),
   kind: z.enum(["looking_for", "offering"]),
@@ -26,7 +14,7 @@ const createSchema = z.object({
   // display path) -- the server never guesses one on the caller's behalf.
   // See src/lib/post-identities.ts for how the client learns what's
   // eligible and which one to default to.
-  postedAs: z.object({ type: z.enum(["parent", "nanny", "generic"]), profileId: z.string().uuid() }).nullable().optional(),
+  postedAs: z.object({ profileId: z.string().uuid() }).nullable().optional(),
 });
 
 export async function GET(request: Request) {
@@ -91,12 +79,12 @@ export async function POST(request: Request) {
   };
 
   if (parsed.data.postedAs) {
-    const { type, profileId } = parsed.data.postedAs;
+    const { profileId } = parsed.data.postedAs;
     // Re-verified here (not just left to RLS) so a bad postedAs value gets
     // a clean 400 instead of a raw permission-denied error -- RLS
     // (posts_insert) is still the real backstop against a forged request.
     const { data: owned } = await supabase
-      .from(POST_IDENTITY_TABLE[type])
+      .from("generic_profiles")
       .select("id")
       .eq("id", profileId)
       .eq("user_id", user.id)
@@ -105,13 +93,13 @@ export async function POST(request: Request) {
     if (!owned) {
       return NextResponse.json({ error: "Invalid postedAs identity" }, { status: 400 });
     }
-    insertPayload[POST_IDENTITY_COLUMN[type]] = profileId;
+    insertPayload.posted_as_generic_profile_id = profileId;
   }
 
   const { data: post, error } = await supabase
     .from("posts")
     .insert(insertPayload)
-    .select("id, user_id, kind, caption, created_at, posted_as_parent_profile_id, posted_as_nanny_profile_id, posted_as_generic_profile_id")
+    .select("id, user_id, kind, caption, created_at, posted_as_generic_profile_id")
     .single();
 
   if (error) {

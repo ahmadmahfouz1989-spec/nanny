@@ -11,10 +11,10 @@ export type MatchStatusRow = { id: string; status: string; interest_expires_at: 
  * Current status of the match cards a results list is showing, so it can
  * pick up changes made by the other person (interest accepted, declined)
  * without refetching and re-paginating the whole list. Request-scoped
- * client: matches_select / generic_matches_select already limit rows to
- * the caller's own matches, so unknown or foreign ids just don't come back.
+ * client: generic_matches_select already limits rows to the caller's own
+ * matches, so unknown or foreign ids just don't come back.
  */
-export async function matchStatusesResponse(request: Request, table: "matches" | "generic_matches") {
+export async function matchStatusesResponse(request: Request) {
   const supabase = await createClient();
   const user = await requireActiveUser(supabase);
   if (!user) {
@@ -27,7 +27,7 @@ export async function matchStatusesResponse(request: Request, table: "matches" |
     .slice(0, MAX_IDS);
   if (ids.length === 0) return NextResponse.json({ statuses: [] });
 
-  const { data, error } = await supabase.from(table).select("id, status, interest_expires_at").in("id", ids);
+  const { data, error } = await supabase.from("generic_matches").select("id, status, interest_expires_at").in("id", ids);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

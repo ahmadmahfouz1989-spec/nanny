@@ -5,7 +5,7 @@ import CategoryOnboardingClient from "./category-onboarding-client";
 // Each entry here also needs a schema pair in CATEGORY_SCHEMAS
 // (src/app/api/generic-profile/route.ts) and a form pair rendered by
 // CategoryOnboardingClient before it can actually onboard.
-const SUPPORTED_SLUGS = ["nursing", "tutoring"];
+const SUPPORTED_SLUGS = ["nanny", "nursing", "tutoring"];
 
 export default async function CategoryOnboardingPage({
   params,

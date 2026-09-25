@@ -166,8 +166,6 @@
     "notFeaturedLabel": "Not featured — get seen first on other dashboards",
     "manageFeatured": "Manage",
     "role": "Role",
-    "roleParent": "Parent",
-    "roleNanny": "Nanny",
     "roleSeeker": "Seeker",
     "roleProvider": "Provider",
     "email": "Email",
@@ -186,8 +184,6 @@
     "postClosed": "Closed",
     "deletePost": "Delete",
     "noProfileTitle": "No profile yet",
-    "noProfileParent": "Create your profile to start seeing matching nannies.",
-    "noProfileNanny": "Create your profile to start seeing matching families.",
     "noProfileGeneric": "Create your profile to start browsing matches in this category.",
     "editProfileLink": "Edit your profile",
     "createProfile": "Create profile",
@@ -321,6 +317,12 @@
     "backToCategories": "Back to categories",
     "roleTitle": "Welcome to {category}",
     "roleSubtitle": "Are you looking for help, or offering it?",
+    "nanny": {
+      "roleSeekerTitle": "I'm looking for a nanny",
+      "roleSeekerDescription": "Find and match with nannies near you.",
+      "roleProviderTitle": "I'm looking for work",
+      "roleProviderDescription": "Create a profile so families can find and match with you."
+    },
     "nursing": {
       "roleSeekerTitle": "I need a nurse",
       "roleSeekerDescription": "Find and connect with nurses near you.",
@@ -333,16 +335,6 @@
       "roleProviderTitle": "I'm a tutor looking for students",
       "roleProviderDescription": "Create a profile so students and families can find and match with you."
     }
-  },
-  "NannyRolePicker": {
-    "backToCategories": "Back to categories",
-    "title": "Welcome to Nanny",
-    "subtitle": "Are you looking for a nanny, or looking for work as one?",
-    "roleParentTitle": "I'm looking for a nanny",
-    "roleParentDescription": "Find and match with nannies near you.",
-    "roleNannyTitle": "I'm looking for work",
-    "roleNannyDescription": "Create a profile so families can find and match with you.",
-    "errorGeneric": "Something went wrong. Please try again."
   },
   "NursingProviderOnboarding": {
     "createTitle": "Create your nursing profile",
@@ -446,8 +438,6 @@
     "yearsExperience": "{years} yrs experience"
   },
   "Matches": {
-    "titleParent": "Nanny matches",
-    "titleNanny": "Family matches",
     "titleMatches": "Your matches",
     "resultsSubtitle": "People who match your profile, ranked by fit.",
     "empty": "No matches yet. Check back soon, or adjust your profile to widen your results.",
@@ -504,7 +494,9 @@
     "micNotSupported": "Voice notes aren't supported in this browser.",
     "voiceNoteUploadError": "Couldn't send the voice note — please try again.",
     "messageSendError": "Couldn't send — please try again.",
-    "voiceNoteLoading": "Voice note unavailable — try reloading."
+    "voiceNoteLoading": "Voice note unavailable — try reloading.",
+    "yes": "Yes",
+    "no": "No"
   },
   "Featured": {
     "title": "Get Featured",
@@ -570,8 +562,6 @@
     "reviewsLoading": "Loading reviews…",
     "reviewsEmpty": "No written reviews yet.",
     "reviewsError": "Couldn't load reviews. Please try again.",
-    "raterParent": "— a parent they matched with",
-    "raterNanny": "— a nanny they matched with",
     "raterGenericSeeker": "— a {category} client they matched with",
     "raterGenericProvider": "— a {category} provider they matched with",
     "myRatingsTitle": "Ratings you've received",
@@ -603,9 +593,6 @@
     "roleSeeker": "Seeker",
     "roleProvider": "Provider",
     "profilesEmpty": "Nothing waiting for review.",
-    "typeParent": "Parent",
-    "typeNanny": "Nanny",
-    "typeGenericRole": "Role",
     "careSpecialties": "Care specialties",
     "viewDetails": "View details",
     "hideDetails": "Hide details",

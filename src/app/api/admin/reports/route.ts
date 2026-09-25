@@ -26,10 +26,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  // reports only carries user ids -- resolve a display name (and, for a
-  // generic-category account, which category) so the queue shows more
-  // than a bare email + role, regardless of which track either party is
-  // on. A user without any of these rows (e.g. signed up, never finished
+  // reports only carries user ids -- resolve a display name and category
+  // (the account's oldest profile) so the queue shows more than a bare
+  // email. A user without any of these rows (e.g. signed up, never finished
   // onboarding) just falls back to the email in the UI.
   const userIds = [
     ...new Set(
@@ -43,14 +42,12 @@ export async function GET(request: Request) {
 
   const identityByUserId = new Map<string, { name: string; category: string | null }>();
   if (userIds.length > 0) {
-    const [{ data: parents }, { data: nannies }, { data: generic }] = await Promise.all([
-      db.from("parent_profiles").select("user_id, full_name").in("user_id", userIds),
-      db.from("nanny_profiles").select("user_id, full_name").in("user_id", userIds),
-      db.from("generic_profiles").select("user_id, full_name, categories(name_en)").in("user_id", userIds),
-    ]);
-    for (const p of parents ?? []) identityByUserId.set(p.user_id, { name: p.full_name, category: null });
-    for (const n of nannies ?? []) identityByUserId.set(n.user_id, { name: n.full_name, category: null });
-    for (const g of generic ?? []) {
+    const { data: profiles } = await db
+      .from("generic_profiles")
+      .select("user_id, full_name, categories(name_en)")
+      .in("user_id", userIds)
+      .order("created_at", { ascending: true });
+    for (const g of profiles ?? []) {
       if (identityByUserId.has(g.user_id)) continue;
       const categoryName = (g.categories as unknown as { name_en: string } | null)?.name_en ?? null;
       identityByUserId.set(g.user_id, { name: g.full_name, category: categoryName });

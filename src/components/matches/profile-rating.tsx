@@ -11,12 +11,10 @@ import ReviewsPanel from "./reviews-panel";
  */
 export default function ProfileRating({
   profileId,
-  profileType,
   average,
   count,
 }: {
   profileId: string;
-  profileType: "parent" | "nanny" | "generic";
   average: number | null;
   count: number;
 }) {
@@ -40,7 +38,7 @@ export default function ProfileRating({
       ) : (
         <RatingStars average={average} count={count} size="xs" />
       )}
-      {open && <ReviewsPanel profileId={profileId} profileType={profileType} />}
+      {open && <ReviewsPanel profileId={profileId} />}
     </div>
   );
 }
