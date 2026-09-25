@@ -3,9 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { reviewsReceivedByUser } from "@/lib/ratings";
 
-// The ratings a user has received, across both the legacy nanny/parent
-// `ratings` table and `generic_ratings` (nursing, tutoring, ...) -- a
-// person's reputation is per-account, not per-category.
+// The ratings a user has received, across every category -- a person's
+// reputation is per-account, not per-category.
 export async function GET() {
   const supabase = await createClient();
   const user = await requireActiveUser(supabase);

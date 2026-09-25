@@ -2,10 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 
 export type InboxConversation = {
   matchId: string;
-  // "nanny" for the legacy matches table, a category slug (e.g. "nursing")
-  // for generic_matches -- tells the client which thread/messaging API to
-  // use for this conversation.
-  source: "nanny" | string;
+  /** The match's category (e.g. "nanny", "nursing"). */
+  categorySlug: string;
   counterpart: { id: string; name: string; photoUrl: string | null };
   lastMessage: { body: string; createdAt: string } | null;
   unreadCount: number;
@@ -15,7 +13,7 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 
 /**
  * Per-match last-message and unread-count. Computed in SQL (see
- * message_summaries_for_matches / generic_message_summaries_for_matches,
+ * generic_message_summaries_for_matches,
  * 20260923000008_inbox_message_summaries_rpc.sql) via DISTINCT ON rather
  * than fetching a page of "recent" messages across every match combined
  * app-side -- that approach silently dropped a match's last message
@@ -23,18 +21,15 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
  * page first, corrupting exactly the "what's the latest message" preview
  * this is for. A true per-match aggregate has no such cap to exceed.
  */
-export async function messageSummariesByMatch(
-  supabase: Supabase,
-  table: "messages" | "generic_messages",
-  matchIds: string[],
-  userId: string,
-) {
+export async function messageSummariesByMatch(supabase: Supabase, matchIds: string[], userId: string) {
   const lastMessageByMatch = new Map<string, { body: string; createdAt: string }>();
   const unreadCountByMatch = new Map<string, number>();
   if (matchIds.length === 0) return { lastMessageByMatch, unreadCountByMatch };
 
-  const rpcName = table === "messages" ? "message_summaries_for_matches" : "generic_message_summaries_for_matches";
-  const { data: summaries } = await supabase.rpc(rpcName, { p_match_ids: matchIds, p_user_id: userId });
+  const { data: summaries } = await supabase.rpc("generic_message_summaries_for_matches", {
+    p_match_ids: matchIds,
+    p_user_id: userId,
+  });
 
   for (const row of summaries ?? []) {
     if (row.last_body !== null && row.last_created_at !== null) {
@@ -48,69 +43,11 @@ export async function messageSummariesByMatch(
   return { lastMessageByMatch, unreadCountByMatch };
 }
 
-/** Mutual nanny/parent conversations -- same query /api/messages/inbox used before unification. */
-export async function nannyConversations(supabase: Supabase, userId: string): Promise<InboxConversation[]> {
-  const { data: profile } = await supabase.from("users").select("role").eq("id", userId).single();
-  const role = profile?.role;
-
-  if (role !== "parent" && role !== "nanny") {
-    return [];
-  }
-
-  const ownProfileTable = role === "parent" ? "parent_profiles" : "nanny_profiles";
-  const { data: ownProfile } = await supabase.from(ownProfileTable).select("id").eq("user_id", userId).maybeSingle();
-  if (!ownProfile) {
-    return [];
-  }
-
-  const matchColumn = role === "parent" ? "parent_profile_id" : "nanny_profile_id";
-  const { data: matches } = await supabase
-    .from("matches")
-    .select(
-      role === "parent"
-        ? "id, nanny_profiles(id, full_name, profile_photo_url)"
-        : "id, parent_profiles(id, full_name, profile_photo_url)",
-    )
-    .eq(matchColumn, ownProfile.id)
-    .eq("status", "mutual");
-
-  if (!matches || matches.length === 0) {
-    return [];
-  }
-
-  const matchIds = matches.map((m) => m.id);
-  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(supabase, "messages", matchIds, userId);
-
-  type Counterpart = { id: string; full_name: string; profile_photo_url: string | null };
-
-  return matches.map((m) => {
-    const counterpart =
-      role === "parent"
-        ? (m as unknown as { nanny_profiles: Counterpart }).nanny_profiles
-        : (m as unknown as { parent_profiles: Counterpart }).parent_profiles;
-
-    return {
-      matchId: m.id,
-      source: "nanny" as const,
-      counterpart: {
-        id: counterpart?.id ?? "",
-        name: counterpart?.full_name ?? "",
-        photoUrl: counterpart?.profile_photo_url ?? null,
-      },
-      lastMessage: lastMessageByMatch.get(m.id) ?? null,
-      unreadCount: unreadCountByMatch.get(m.id) ?? 0,
-    };
-  });
-}
-
 /**
- * Mutual generic-category conversations across every category the user
- * has a profile in (nursing, tutoring, ...), not just one -- unlike
- * /api/generic-matches/inbox (kept as-is, still used by the direct
- * per-category route), this also handles a user holding both a seeker
- * and a provider profile in the same category at once.
+ * Every mutual conversation the user has, across every category they hold
+ * a profile in -- including both roles in one category -- newest first.
  */
-export async function genericConversations(supabase: Supabase, userId: string): Promise<InboxConversation[]> {
+export async function allConversations(supabase: Supabase, userId: string): Promise<InboxConversation[]> {
   const { data: myProfiles } = await supabase
     .from("generic_profiles")
     .select("id, role, categories(slug)")
@@ -161,27 +98,19 @@ export async function genericConversations(supabase: Supabase, userId: string): 
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
   const matchIds = matches.map((m) => m.match.id);
-  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(
-    supabase,
-    "generic_messages",
-    matchIds,
-    userId,
-  );
+  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(supabase, matchIds, userId);
 
-  return matches.map(({ match, myProfileId, otherProfileId }) => {
+  const conversations = matches.map(({ match, myProfileId, otherProfileId }) => {
     const other = otherById.get(otherProfileId);
 
     return {
       matchId: match.id,
-      source: categorySlugById.get(myProfileId) ?? "",
+      categorySlug: categorySlugById.get(myProfileId) ?? "",
       counterpart: { id: other?.id ?? "", name: other?.full_name ?? "", photoUrl: other?.profile_photo_url ?? null },
       lastMessage: lastMessageByMatch.get(match.id) ?? null,
       unreadCount: unreadCountByMatch.get(match.id) ?? 0,
     };
   });
-}
 
-export async function allConversations(supabase: Supabase, userId: string): Promise<InboxConversation[]> {
-  const [nanny, generic] = await Promise.all([nannyConversations(supabase, userId), genericConversations(supabase, userId)]);
-  return [...nanny, ...generic].sort((a, b) => (b.lastMessage?.createdAt ?? "").localeCompare(a.lastMessage?.createdAt ?? ""));
+  return conversations.sort((a, b) => (b.lastMessage?.createdAt ?? "").localeCompare(a.lastMessage?.createdAt ?? ""));
 }

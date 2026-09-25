@@ -77,7 +77,7 @@ export default async function CategoryDashboardPage({
     }
 
     return (
-      <AppShell active={slug as "nursing" | "tutoring"}>
+      <AppShell active={slug as "nanny" | "nursing" | "tutoring"}>
         <CategoryDashboardTabs
           categorySlug={slug}
           profiles={myProfiles.map((p) => ({ role: p.role as "seeker" | "provider", moderationStatus: p.moderation_status }))}
@@ -92,7 +92,7 @@ export default async function CategoryDashboardPage({
 
   if (myProfile.moderation_status === "approved") {
     return (
-      <AppShell active={slug as "nursing" | "tutoring"}>
+      <AppShell active={slug as "nanny" | "nursing" | "tutoring"}>
         <GenericResults
           categorySlug={slug}
           role={myProfile.role as "seeker" | "provider"}
@@ -105,7 +105,7 @@ export default async function CategoryDashboardPage({
   const moderationTone = myProfile.moderation_status === "rejected" ? "danger" : "warning";
 
   return (
-    <AppShell active={slug as "nursing" | "tutoring"}>
+    <AppShell active={slug as "nanny" | "nursing" | "tutoring"}>
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 

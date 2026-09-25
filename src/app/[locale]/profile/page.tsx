@@ -27,31 +27,11 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("role, email, email_verified_at, featured_until")
+    .select("email, email_verified_at, featured_until")
     .eq("id", user!.id)
     .single();
 
   const isFeatured = !!profile?.featured_until && new Date(profile.featured_until) > new Date();
-
-  const hasNannyTrack = profile?.role === "parent" || profile?.role === "nanny";
-
-  let matchProfile: { status: string; moderation_status: string; full_name: string; profile_photo_url?: string | null } | null =
-    null;
-  if (profile?.role === "parent") {
-    const { data } = await supabase
-      .from("parent_profiles")
-      .select("status, moderation_status, full_name, profile_photo_url")
-      .eq("user_id", user!.id)
-      .maybeSingle();
-    matchProfile = data;
-  } else if (profile?.role === "nanny") {
-    const { data } = await supabase
-      .from("nanny_profiles")
-      .select("status, moderation_status, full_name, profile_photo_url")
-      .eq("user_id", user!.id)
-      .maybeSingle();
-    matchProfile = data;
-  }
 
   const { data: genericRows } = await supabase
     .from("generic_profiles")
@@ -63,32 +43,14 @@ export default async function ProfilePage({
   // (categories/[slug]/dashboard, the admin queue).
   const genericProfiles = (genericRows ?? []).filter((p) => p.status !== "draft");
 
-  // "Profile" is a global nav tab, not scoped to a category -- unlike
-  // /dashboard (nanny's own route, reached by choosing "Nanny" on the
-  // hub), it must never assume nanny. Only bounce out to the hub when
-  // there's truly nothing to show on any track yet.
-  if (!hasNannyTrack && genericProfiles.length === 0) {
+  // "Profile" is a global nav tab, not scoped to a category -- only bounce
+  // out to the hub when there's truly nothing to show yet.
+  if (genericProfiles.length === 0) {
     redirect({ href: "/categories", locale });
     return;
   }
 
-  const roleLabel = profile?.role === "nanny" ? t("roleNanny") : t("roleParent");
-
   const tabs: ProfileTabDef[] = [
-    ...(hasNannyTrack
-      ? [
-          {
-            kind: "nanny" as const,
-            key: "nanny",
-            label: tNav("nanny"),
-            fullName: matchProfile?.full_name ?? null,
-            roleLabel,
-            isNanny: profile?.role === "nanny",
-            initialPhotoUrl: matchProfile?.profile_photo_url ?? null,
-            matchProfile,
-          },
-        ]
-      : []),
     ...genericProfiles.map((p) => {
       const category = p.categories as unknown as { slug: string; name_en: string; name_ar: string } | null;
       const categoryLabel = category ? (locale === "ar" ? category.name_ar : category.name_en) : "";
@@ -97,7 +59,6 @@ export default async function ProfilePage({
       // get two identical tabs.
       const sharesCategory = genericProfiles.some((o) => o.id !== p.id && o.category_id === p.category_id);
       return {
-        kind: "generic" as const,
         key: p.id,
         profileId: p.id,
         initialPhotoUrl: p.profile_photo_url,

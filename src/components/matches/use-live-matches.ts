@@ -23,13 +23,11 @@ type LiveMatch = { id: string; status: string; interest_expires_at: string | nul
  * page) is fetched on its own via `fetchTarget` and pinned to the top.
  */
 export function useLiveMatches<T extends LiveMatch>({
-  source,
   results,
   setResults,
   targetMatchId,
   fetchTarget,
 }: {
-  source: "nanny" | "generic";
   results: T[] | null;
   setResults: (update: (prev: T[] | null) => T[] | null) => void;
   targetMatchId: string | null;
@@ -48,8 +46,7 @@ export function useLiveMatches<T extends LiveMatch>({
   const refresh = useCallback(async () => {
     const ids = idsRef.current;
     if (ids.length === 0) return;
-    const base = source === "nanny" ? "/api/matches/statuses" : "/api/generic-matches/statuses";
-    const res = await fetch(`${base}?ids=${ids.join(",")}`).catch(() => null);
+    const res = await fetch(`/api/generic-matches/statuses?ids=${ids.join(",")}`).catch(() => null);
     if (!res?.ok) return;
     const { statuses } = (await res.json()) as { statuses: MatchStatusRow[] };
     const byId = new Map(statuses.map((s) => [s.id, s]));
@@ -64,7 +61,7 @@ export function useLiveMatches<T extends LiveMatch>({
       });
       return changed ? next : prev;
     });
-  }, [source, setResults]);
+  }, [setResults]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {

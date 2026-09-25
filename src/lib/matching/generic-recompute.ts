@@ -120,8 +120,7 @@ async function upsertGenericMatches(
  * active+approved profile of the opposite role in the same category. Scores
  * are computed as soon as a profile is active regardless of its own
  * moderation status (cross-visibility is gated by RLS/the API layer), so
- * scores are ready the moment it's approved -- same posture as
- * recomputeMatchesForParent/Nanny.
+ * scores are ready the moment it's approved.
  */
 export async function recomputeGenericMatchesForProfile(profileId: string) {
   const admin = createAdminClient();

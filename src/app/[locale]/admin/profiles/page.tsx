@@ -7,50 +7,21 @@ import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 
-type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
+type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
 
 type QueueProfile = {
   id: string;
   user_id: string;
   full_name: string;
-  profile_photo_url?: string | null;
-  profileType: "parent" | "nanny" | "generic";
+  profile_photo_url: string | null;
+  role: "seeker" | "provider";
   moderation_status: "pending" | "approved";
-  location_detail?: string | null;
-  nationality?: string | null;
+  attributes: Record<string, unknown>;
+  languages: Language[];
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
+  categories: { slug: string; name_en: string; name_ar: string } | null;
   created_at: string;
   users: { email: string | null; contact_phone: string | null; status: string } | null;
-
-  // generic-category only (nursing etc.)
-  role?: "seeker" | "provider";
-  attributes?: Record<string, unknown>;
-  categorySlug?: string | null;
-  categories?: { slug: string; name_en: string; name_ar: string } | null;
-
-  // parent-only
-  num_children?: number;
-  children_age_ranges?: string[];
-  schedule_type?: string;
-  live_arrangement?: string;
-  desired_start_date?: string;
-  transportation_required?: boolean;
-  additional_duties?: string[];
-  family_description?: string | null;
-  parent_profile_languages?: LangRef[];
-
-  // nanny-only
-  work_radius_km?: number;
-  employment_type?: string;
-  live_arrangement_pref?: string;
-  availability?: { days: string[] };
-  years_experience?: number;
-  has_transportation?: boolean;
-  can_drive?: boolean;
-  certifications?: string[];
-  short_intro?: string | null;
-  nanny_profile_languages?: LangRef[];
-  nanny_experience?: { age_group: string; years_experience: number }[];
 };
 
 function localizedLocationName(
@@ -63,7 +34,7 @@ function localizedLocationName(
   return loc.name_en;
 }
 
-function localizedLangName(l: LangRef["languages"], locale: string) {
+function localizedLangName(l: Language, locale: string) {
   if (locale === "ar") return l.name_ar;
   if (locale === "fr") return l.name_fr;
   return l.name_en;
@@ -82,6 +53,13 @@ export default function AdminProfilesPage() {
   const tSchedule = useTranslations("ScheduleOptions");
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const tNat = useTranslations("Nationality");
+  const tPatientAge = useTranslations("PatientAgeGroups");
+  const tSubject = useTranslations("Subjects");
+  const tGrade = useTranslations("GradeLevels");
+  const tFormat = useTranslations("TutoringFormats");
+  const tNursingProvider = useTranslations("NursingProviderOnboarding");
+  const tNursingSeeker = useTranslations("NursingSeekerOnboarding");
+  const tTutoringSeeker = useTranslations("TutoringSeekerOnboarding");
   const locale = useLocale();
   const [profiles, setProfiles] = useState<QueueProfile[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -128,7 +106,7 @@ export default function AdminProfilesPage() {
     const res = await fetch(`/api/admin/profiles/${profile.id}/moderation`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ profileType: profile.profileType, status, notes: rejectNotes }),
+      body: JSON.stringify({ status, notes: rejectNotes }),
     });
     setSubmitting(null);
 
@@ -151,120 +129,90 @@ export default function AdminProfilesPage() {
     }
   }
 
+  // Reviewers need to see everything a profile says, in every category --
+  // so known fields get a localized label and formatting, and anything
+  // else still shows as raw key/value rather than being hidden.
   function renderDetails(profile: QueueProfile) {
-    if (profile.profileType === "generic") {
-      const a = profile.attributes ?? {};
-      const specialties = ((a.careSpecialties ?? a.careSpecialtiesNeeded ?? []) as string[]) ?? [];
-      const days = (a.availability as { days?: string[] } | undefined)?.days ?? (a.neededDays as string[] | undefined) ?? [];
-      // Attributes are a category-defined jsonb bag, so this renders
-      // whatever the category's schema put there generically -- days and
-      // specialties get a nicer localized rendering, everything else is a
-      // raw key/value fallback rather than a bespoke field list per category.
-      const skipKeys = new Set(["careSpecialties", "careSpecialtiesNeeded", "availability", "neededDays", "languageIds"]);
-      const otherEntries = Object.entries(a).filter(
-        ([key, value]) => !skipKeys.has(key) && value !== null && value !== undefined && value !== "",
-      );
+    const a = profile.attributes ?? {};
+    const strings = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
+    const yesNo = (v: unknown) => (v ? tMatches("yes") : tMatches("no"));
+    const list = (v: unknown, label: (x: string) => string) => strings(v).map(label).join(", ");
 
-      return (
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <dt className="text-muted">{t("typeGenericRole")}</dt>
-          <dd>{profile.role}</dd>
-          {otherEntries.map(([key, value]) => (
-            <Fragment key={key}>
-              <dt className="text-muted">{key}</dt>
-              <dd>{typeof value === "boolean" ? (value ? "Yes" : "No") : String(value)}</dd>
-            </Fragment>
-          ))}
-          {days.length > 0 && (
-            <>
-              <dt className="text-muted">{tNanny("availableDays")}</dt>
-              <dd>{days.map((d) => tDays(d as never)).join(", ")}</dd>
-            </>
-          )}
-          {specialties.length > 0 && (
-            <>
-              <dt className="text-muted">{t("careSpecialties")}</dt>
-              <dd>{specialties.map((s) => labelOr(tCareSpecialties, s)).join(", ")}</dd>
-            </>
-          )}
-        </dl>
-      );
+    const known: Record<string, { label: string; value: (v: unknown) => string }> = {
+      nationality: { label: tNat("label"), value: (v) => labelOr(tNat, String(v)) },
+      workRadiusKm: { label: tNanny("workRadius"), value: (v) => `${v} km` },
+      employmentType: { label: tNanny("employmentType"), value: (v) => labelOr(tSchedule, String(v)) },
+      scheduleType: { label: tParent("schedule"), value: (v) => labelOr(tSchedule, String(v)) },
+      liveArrangementPref: { label: tNanny("liveArrangementPref"), value: (v) => labelOr(tLiveArrangement, String(v)) },
+      liveArrangement: { label: tParent("liveArrangement"), value: (v) => labelOr(tLiveArrangement, String(v)) },
+      availability: {
+        label: tNanny("availableDays"),
+        value: (v) => {
+          const av = (v ?? {}) as { days?: unknown; startTime?: unknown; endTime?: unknown };
+          const days = list(av.days, (d) => labelOr(tDays, d));
+          return av.startTime && av.endTime ? `${days} · ${av.startTime}–${av.endTime}` : days;
+        },
+      },
+      neededDays: { label: tNanny("availableDays"), value: (v) => list(v, (d) => labelOr(tDays, d)) },
+      yearsExperience: { label: tNanny("yearsExperience"), value: (v) => tMatches("yearsExperience", { years: Number(v) }) },
+      experience: {
+        label: tNanny("experienceByAge"),
+        value: (v) =>
+          (Array.isArray(v) ? (v as { ageGroup?: string; yearsExperience?: number }[]) : [])
+            .map((e) => `${labelOr(tAgeGroups, e.ageGroup ?? "")} (${e.yearsExperience})`)
+            .join(", "),
+      },
+      hasTransportation: { label: tNanny("hasTransportation"), value: yesNo },
+      transportationRequired: { label: tParent("transportationRequired"), value: yesNo },
+      canDrive: { label: tNanny("canDrive"), value: yesNo },
+      certifications: { label: tNanny("certifications"), value: (v) => list(v, (c) => labelOr(tCerts, c)) },
+      shortIntro: { label: tNanny("shortIntro"), value: String },
+      numChildren: { label: tParent("numChildren"), value: String },
+      childrenAgeRanges: { label: tParent("ageRanges"), value: (v) => list(v, (g) => labelOr(tAgeGroups, g)) },
+      desiredStartDate: { label: tParent("desiredStartDate"), value: String },
+      additionalDuties: { label: tParent("additionalDuties"), value: (v) => list(v, (d) => labelOr(tDuties, d)) },
+      familyDescription: { label: tParent("familyDescription"), value: String },
+      careSpecialties: { label: t("careSpecialties"), value: (v) => list(v, (x) => labelOr(tCareSpecialties, x)) },
+      careSpecialtiesNeeded: { label: t("careSpecialties"), value: (v) => list(v, (x) => labelOr(tCareSpecialties, x)) },
+      patientAgeGroup: { label: tNursingSeeker("patientAgeGroup"), value: (v) => labelOr(tPatientAge, String(v)) },
+      medicalConditionNotes: { label: tNursingSeeker("medicalConditionNotes"), value: String },
+      licenseNumber: { label: tNursingProvider("licenseNumber"), value: String },
+      licenseIssuingAuthority: { label: tNursingProvider("licenseIssuingAuthority"), value: String },
+      hasNursingDiploma: { label: tNursingProvider("hasNursingDiploma"), value: yesNo },
+      subjects: { label: tMatches("criteriaSubject"), value: (v) => list(v, (x) => labelOr(tSubject, x)) },
+      subjectsNeeded: { label: tMatches("criteriaSubject"), value: (v) => list(v, (x) => labelOr(tSubject, x)) },
+      gradeLevel: { label: tMatches("criteriaGradeLevel"), value: (v) => labelOr(tGrade, String(v)) },
+      gradeLevels: { label: tMatches("criteriaGradeLevel"), value: (v) => list(v, (x) => labelOr(tGrade, x)) },
+      format: { label: tMatches("criteriaFormat"), value: (v) => labelOr(tFormat, String(v)) },
+      additionalNotes: { label: tTutoringSeeker("additionalNotes"), value: String },
+    };
+    // Shown elsewhere on the card (area line) or resolved separately.
+    const skip = new Set(["locationDetail", "languageIds"]);
+
+    const rows: { key: string; label: string; value: string }[] = [];
+    for (const [key, value] of Object.entries(a)) {
+      if (skip.has(key) || value === null || value === undefined || value === "") continue;
+      const field = known[key];
+      const text = field
+        ? field.value(value)
+        : typeof value === "boolean"
+          ? yesNo(value)
+          : typeof value === "object"
+            ? JSON.stringify(value)
+            : String(value);
+      if (text) rows.push({ key, label: field?.label ?? key, value: text });
     }
+    const langs = profile.languages.map((l) => localizedLangName(l, locale));
+    if (langs.length) rows.push({ key: "languages", label: tNanny("languages"), value: langs.join(", ") });
 
-    if (profile.profileType === "parent") {
-      const langs = (profile.parent_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
-      return (
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          <dt className="text-muted">{tParent("numChildren")}</dt>
-          <dd>{profile.num_children}</dd>
-          <dt className="text-muted">{tParent("ageRanges")}</dt>
-          <dd>{(profile.children_age_ranges ?? []).map((g) => tAgeGroups(g as never)).join(", ")}</dd>
-          <dt className="text-muted">{tParent("schedule")}</dt>
-          <dd>{tSchedule(profile.schedule_type as never)}</dd>
-          <dt className="text-muted">{tParent("liveArrangement")}</dt>
-          <dd>{tLiveArrangement(profile.live_arrangement as never)}</dd>
-          <dt className="text-muted">{tParent("desiredStartDate")}</dt>
-          <dd>{profile.desired_start_date}</dd>
-          <dt className="text-muted">{tParent("preferredLanguages")}</dt>
-          <dd>{langs.join(", ") || "—"}</dd>
-          <dt className="text-muted">{tParent("transportationRequired")}</dt>
-          <dd>{profile.transportation_required ? "Yes" : "No"}</dd>
-          {(profile.additional_duties?.length ?? 0) > 0 && (
-            <>
-              <dt className="text-muted">{tParent("additionalDuties")}</dt>
-              <dd>{(profile.additional_duties ?? []).map((d) => tDuties(d as never)).join(", ")}</dd>
-            </>
-          )}
-          {profile.family_description && (
-            <>
-              <dt className="text-muted">{tParent("familyDescription")}</dt>
-              <dd className="col-span-2 -mt-1">{profile.family_description}</dd>
-            </>
-          )}
-        </dl>
-      );
-    }
-
-    const langs = (profile.nanny_profile_languages ?? []).map((l) => localizedLangName(l.languages, locale));
-    const experience = profile.nanny_experience ?? [];
     return (
       <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-        <dt className="text-muted">{tNanny("workRadius")}</dt>
-        <dd>{profile.work_radius_km} km</dd>
-        <dt className="text-muted">{tNanny("employmentType")}</dt>
-        <dd>{tSchedule(profile.employment_type as never)}</dd>
-        <dt className="text-muted">{tNanny("liveArrangementPref")}</dt>
-        <dd>{tLiveArrangement(profile.live_arrangement_pref as never)}</dd>
-        <dt className="text-muted">{tNanny("availableDays")}</dt>
-        <dd>{(profile.availability?.days ?? []).map((d) => tDays(d as never)).join(", ")}</dd>
-        <dt className="text-muted">{tNanny("yearsExperience")}</dt>
-        <dd>{tMatches("yearsExperience", { years: profile.years_experience ?? 0 })}</dd>
-        <dt className="text-muted">{tNanny("languages")}</dt>
-        <dd>{langs.join(", ") || "—"}</dd>
-        <dt className="text-muted">{tNanny("hasTransportation")}</dt>
-        <dd>{profile.has_transportation ? "Yes" : "No"}</dd>
-        <dt className="text-muted">{tNanny("canDrive")}</dt>
-        <dd>{profile.can_drive ? "Yes" : "No"}</dd>
-        {experience.length > 0 && (
-          <>
-            <dt className="text-muted">{tNanny("experienceByAge")}</dt>
-            <dd>
-              {experience.map((e) => `${tAgeGroups(e.age_group as never)} (${e.years_experience})`).join(", ")}
-            </dd>
-          </>
-        )}
-        {(profile.certifications?.length ?? 0) > 0 && (
-          <>
-            <dt className="text-muted">{tNanny("certifications")}</dt>
-            <dd>{(profile.certifications ?? []).map((c) => labelOr(tCerts, c)).join(", ")}</dd>
-          </>
-        )}
-        {profile.short_intro && (
-          <>
-            <dt className="text-muted">{tNanny("shortIntro")}</dt>
-            <dd className="col-span-2 -mt-1">{profile.short_intro}</dd>
-          </>
-        )}
+        {rows.map((row) => (
+          <Fragment key={row.key}>
+            <dt className="text-muted">{row.label}</dt>
+            <dd>{row.value}</dd>
+          </Fragment>
+        ))}
       </dl>
     );
   }
@@ -304,7 +252,8 @@ export default function AdminProfilesPage() {
 
       <div className="flex flex-col gap-4">
         {profiles?.map((profile) => {
-          const area = [localizedLocationName(profile.locations, locale), profile.location_detail]
+          const locationDetail = profile.attributes?.locationDetail;
+          const area = [localizedLocationName(profile.locations, locale), typeof locationDetail === "string" ? locationDetail : null]
             .filter(Boolean)
             .join(", ");
           const isExpanded = expanded.has(profile.id);
@@ -326,10 +275,9 @@ export default function AdminProfilesPage() {
                 <div className="flex items-center gap-2 mb-1">
                   <p className="font-display text-lg font-semibold truncate">{profile.full_name}</p>
                   <span className={ui.badge("secondary")}>
-                    {profile.profileType === "parent" && t("typeParent")}
-                    {profile.profileType === "nanny" && t("typeNanny")}
-                    {profile.profileType === "generic" &&
-                      `${profile.categories?.slug ?? profile.categorySlug ?? ""} · ${profile.role}`}
+                    {profile.categories ? (locale === "ar" ? profile.categories.name_ar : profile.categories.name_en) : ""}
+                    {" · "}
+                    {profile.role === "seeker" ? t("roleSeeker") : t("roleProvider")}
                   </span>
                   {profile.users?.status === "suspended" && (
                     <span className={ui.badge("danger")}>{t("columnStatus")}: {profile.users.status}</span>
@@ -340,12 +288,7 @@ export default function AdminProfilesPage() {
                     {[profile.users?.email, profile.users?.contact_phone].filter(Boolean).join(" · ")}
                   </p>
                 )}
-                {area && <p className="text-sm text-muted mb-1">{area}</p>}
-                {profile.nationality && (
-                  <p className="text-sm text-muted mb-3">
-                    {tNat("label")}: {tNat(profile.nationality as never)}
-                  </p>
-                )}
+                {area && <p className="text-sm text-muted mb-3">{area}</p>}
 
                 <button
                   type="button"

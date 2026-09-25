@@ -26,10 +26,8 @@ function Stars({ score }: { score: number }) {
  */
 export default function ReviewsPanel({
   profileId,
-  profileType,
 }: {
   profileId: string;
-  profileType: "parent" | "nanny" | "generic";
 }) {
   const t = useTranslations("Rating");
   const locale = useLocale();
@@ -38,7 +36,7 @@ export default function ReviewsPanel({
 
   useEffect(() => {
     let active = true;
-    fetch(`/api/reviews?profileId=${profileId}&profileType=${profileType}`)
+    fetch(`/api/reviews?profileId=${profileId}`)
       .then((res) => (res.ok ? res.json() : Promise.reject(new Error("failed"))))
       .then((body: ReviewsResponse) => {
         if (active) setData(body);
@@ -49,7 +47,7 @@ export default function ReviewsPanel({
     return () => {
       active = false;
     };
-  }, [profileId, profileType]);
+  }, [profileId]);
 
   const monthYear = (iso: string) =>
     new Intl.DateTimeFormat(locale, { month: "short", year: "numeric" }).format(new Date(iso));
@@ -67,7 +65,6 @@ export default function ReviewsPanel({
   // labelled from its own match rather than from the profile being viewed.
   function raterLabel(rater: ProfileReview["rater"]) {
     if (!rater) return null;
-    if (rater.kind !== "generic") return rater.kind === "parent" ? t("raterParent") : t("raterNanny");
     const category = locale === "ar" ? rater.categoryAr : rater.categoryEn;
     return rater.role === "seeker" ? t("raterGenericSeeker", { category }) : t("raterGenericProvider", { category });
   }

@@ -7,9 +7,9 @@ import { featuredUserIds } from "@/lib/featured";
 import { savedProfileIds } from "@/lib/saved-profiles";
 
 /**
- * Lists matches for the caller's own generic_profiles row in a category --
- * the generic-category equivalent of /api/search/nannies /
- * /api/search/families.
+ * Lists matches for the caller's own profile in a category, best first:
+ * Featured profiles, then by score. Paged (`page`, `pageSize`); `total`
+ * is the full filtered count.
  */
 export async function GET(request: Request) {
   const supabase = await createClient();
@@ -83,6 +83,7 @@ export async function GET(request: Request) {
     attributes: Record<string, unknown>;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
   };
+  type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
 
   const otherIds = (matches ?? []).map(otherIdOf);
   const { data: otherProfiles } =
@@ -93,11 +94,33 @@ export async function GET(request: Request) {
           .in("id", otherIds)
       : { data: [] as OtherProfile[] };
 
-  const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
+  // Languages are stored as bare ids in attributes -- resolve them once for
+  // the whole list so cards can show names.
+  const languageIds = [
+    ...new Set(
+      (otherProfiles ?? []).flatMap((p) => {
+        const ids = (p.attributes as { languageIds?: unknown } | null)?.languageIds;
+        return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
+      }),
+    ),
+  ];
+  const { data: languageRows } =
+    languageIds.length > 0
+      ? await supabase.from("languages").select("id, name_en, name_ar, name_fr").in("id", languageIds)
+      : { data: [] as Language[] };
+  const languageById = new Map((languageRows ?? []).map((l) => [l.id, l]));
+
+  const otherById = new Map(
+    (otherProfiles ?? []).map((p) => {
+      const ids = (p.attributes as { languageIds?: unknown } | null)?.languageIds;
+      const languages = (Array.isArray(ids) ? ids : []).map((id) => languageById.get(id)).filter((l): l is Language => !!l);
+      return [p.id, { ...p, languages }];
+    }),
+  );
 
   // Attach each counterpart's aggregate rating and Featured status -- the
   // profile→user_id mapping stays server-side (user_id is never part of
-  // the response), same pattern as /api/search/nannies.
+  // the response).
   const ratingByProfileId = new Map<string, { average: number | null; count: number }>();
   const featuredProfileIds = new Set<string>();
   if (otherIds.length > 0) {
@@ -113,7 +136,7 @@ export async function GET(request: Request) {
     }
   }
 
-  const savedIds = await savedProfileIds(supabase, user.id, "generic", otherIds);
+  const savedIds = await savedProfileIds(supabase, user.id, otherIds);
 
   const results = (matches ?? []).map((m) => {
     const otherId = otherIdOf(m);
@@ -126,11 +149,10 @@ export async function GET(request: Request) {
     };
   });
 
-  // Manual overrides on top of the algorithm's score order, same as
-  // /api/search/nannies -- narrows the already-complete match set rather
-  // than querying a separate index. availability lives under different
-  // attribute keys depending on category/role (availability.days vs
-  // neededDays), so both are checked.
+  // Manual overrides on top of the algorithm's score order -- narrows the
+  // already-complete match set rather than querying a separate index.
+  // availability lives under different attribute keys depending on
+  // category/role (availability.days vs neededDays), so both are checked.
   // matchId: a notification's target card, fetched on its own so it can be
   // shown even when the viewer's current filters or page would hide it --
   // bypasses every filter and always returns that one row (or nothing).
@@ -156,5 +178,13 @@ export async function GET(request: Request) {
     return true;
   });
 
-  return NextResponse.json({ myRole: myProfile.role, results: filtered, total: filtered.length });
+  // Featured has to be applied before slicing to a page, or a Featured
+  // profile ranked below the cutoff by score alone would never surface on
+  // page 1. Stable sort: score order is kept within each group.
+  const ranked = [...filtered].sort((a, b) => Number(b.featured) - Number(a.featured));
+  const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
+  const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
+  const from = (page - 1) * pageSize;
+
+  return NextResponse.json({ myRole: myProfile.role, results: ranked.slice(from, from + pageSize), total: ranked.length });
 }

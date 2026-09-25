@@ -166,8 +166,6 @@
     "notFeaturedLabel": "غير مميّز — اظهر أولًا في لوحات الآخرين",
     "manageFeatured": "إدارة",
     "role": "الدور",
-    "roleParent": "أحد الوالدين",
-    "roleNanny": "مربية",
     "roleSeeker": "باحث عن الخدمة",
     "roleProvider": "مقدّم الخدمة",
     "email": "البريد الإلكتروني",
@@ -186,8 +184,6 @@
     "postClosed": "مُغلق",
     "deletePost": "حذف",
     "noProfileTitle": "لا يوجد ملف شخصي بعد",
-    "noProfileParent": "أنشئ ملفك الشخصي لتبدأ برؤية المربيات المناسبات.",
-    "noProfileNanny": "أنشئ ملفك الشخصي لتبدأ برؤية العائلات المناسبة.",
     "noProfileGeneric": "أنشئ ملفك الشخصي لتبدأ تصفح التطابقات في هذه الفئة.",
     "editProfileLink": "عدّل ملفك الشخصي",
     "createProfile": "إنشاء الملف الشخصي",
@@ -321,6 +317,12 @@
     "backToCategories": "العودة إلى الفئات",
     "roleTitle": "أهلاً بك في {category}",
     "roleSubtitle": "هل تبحث عن مساعدة، أم تقدّمها؟",
+    "nanny": {
+      "roleSeekerTitle": "أبحث عن مربية",
+      "roleSeekerDescription": "ابحث وتواصل مع مربيات بالقرب منك.",
+      "roleProviderTitle": "أبحث عن عمل",
+      "roleProviderDescription": "أنشئ ملفًا شخصيًا لتتمكن العائلات من إيجادك والتواصل معك."
+    },
     "nursing": {
       "roleSeekerTitle": "أحتاج إلى ممرض/ة",
       "roleSeekerDescription": "ابحث وتواصل مع ممرضين وممرضات بالقرب منك.",
@@ -333,16 +335,6 @@
       "roleProviderTitle": "أنا مدرّس/ة خصوصي/ة أبحث عن طلاب",
       "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الطلاب والعائلات من إيجادك والتواصل معك."
     }
-  },
-  "NannyRolePicker": {
-    "backToCategories": "العودة إلى الفئات",
-    "title": "أهلاً بك في فئة المربيات",
-    "subtitle": "هل تبحث عن مربية، أم تبحث عن عمل كمربية؟",
-    "roleParentTitle": "أبحث عن مربية",
-    "roleParentDescription": "ابحث وتواصل مع مربيات بالقرب منك.",
-    "roleNannyTitle": "أبحث عن عمل",
-    "roleNannyDescription": "أنشئ ملفًا شخصيًا لتتمكن العائلات من إيجادك والتواصل معك.",
-    "errorGeneric": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
   },
   "NursingProviderOnboarding": {
     "createTitle": "أنشئ ملفك كممرض/ة",
@@ -446,8 +438,6 @@
     "yearsExperience": "{years} سنوات خبرة"
   },
   "Matches": {
-    "titleParent": "تطابقات المربيات",
-    "titleNanny": "تطابقات العائلات",
     "titleMatches": "تطابقاتك",
     "resultsSubtitle": "أشخاص يطابقون ملفك الشخصي، مرتبون حسب التوافق.",
     "empty": "لا توجد تطابقات بعد. تحقق لاحقًا، أو عدّل ملفك الشخصي لتوسيع النتائج.",
@@ -504,7 +494,9 @@
     "micNotSupported": "الرسائل الصوتية غير مدعومة في هذا المتصفح.",
     "voiceNoteUploadError": "تعذّر إرسال الرسالة الصوتية — يرجى المحاولة مجددًا.",
     "messageSendError": "تعذّر الإرسال — يرجى المحاولة مجددًا.",
-    "voiceNoteLoading": "الرسالة الصوتية غير متاحة — حاول إعادة التحميل."
+    "voiceNoteLoading": "الرسالة الصوتية غير متاحة — حاول إعادة التحميل.",
+    "yes": "نعم",
+    "no": "لا"
   },
   "Featured": {
     "title": "كن مميّزًا",
@@ -570,8 +562,6 @@
     "reviewsLoading": "جارٍ تحميل التقييمات…",
     "reviewsEmpty": "لا توجد تقييمات مكتوبة بعد.",
     "reviewsError": "تعذّر تحميل التقييمات. يرجى المحاولة مرة أخرى.",
-    "raterParent": "— أحد الوالدين الذين تطابق معهم",
-    "raterNanny": "— مربية تطابقت معها",
     "raterGenericSeeker": "— عميل في {category} تطابق معهم",
     "raterGenericProvider": "— مقدّم خدمة في {category} تطابق معهم",
     "myRatingsTitle": "التقييمات التي تلقيتها",
@@ -603,9 +593,6 @@
     "roleSeeker": "طالب الخدمة",
     "roleProvider": "مقدم الخدمة",
     "profilesEmpty": "لا يوجد شيء بانتظار المراجعة.",
-    "typeParent": "أحد الوالدين",
-    "typeNanny": "مربية",
-    "typeGenericRole": "الدور",
     "careSpecialties": "تخصصات الرعاية",
     "viewDetails": "عرض التفاصيل",
     "hideDetails": "إخفاء التفاصيل",

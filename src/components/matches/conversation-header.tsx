@@ -9,32 +9,24 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { MoreIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
-import { MATCH_SOURCES } from "@/lib/matching/match-access";
+import { MATCHES_API } from "@/lib/matching/match-access";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
 
-/**
- * Header for an open conversation in any category. `conversationSource` is
- * the inbox's per-conversation source: "nanny" for a nanny/parent match,
- * otherwise the generic category's slug (e.g. "nursing").
- */
+/** Header for an open conversation, in any category. */
 export default function ConversationHeader({
   matchId,
-  conversationSource,
   name,
   photoUrl,
   tone,
   profileId,
-  profileType,
   onBack,
 }: {
   matchId: string;
-  conversationSource: string;
   name: string;
   photoUrl: string | null;
   tone: "primary" | "secondary" | "berry";
   profileId: string;
-  profileType: "parent" | "nanny" | "generic";
   onBack?: () => void;
 }) {
   const t = useTranslations("Matches");
@@ -43,11 +35,10 @@ export default function ConversationHeader({
   const [profileOpen, setProfileOpen] = useState(false);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [loading, setLoading] = useState(false);
-  const { apiBase } = MATCH_SOURCES[conversationSource === "nanny" ? "nanny" : "generic"];
 
   async function loadContact() {
     setLoading(true);
-    const res = await fetch(`${apiBase}/${matchId}/contact`);
+    const res = await fetch(`${MATCHES_API}/${matchId}/contact`);
     setLoading(false);
     if (res.ok) setContact(await res.json());
   }
@@ -116,10 +107,10 @@ export default function ConversationHeader({
                 </div>
               )}
               <div className="border-t border-border pt-2">
-                <RatingButton matchId={matchId} counterpartName={name} apiBase={apiBase} />
+                <RatingButton matchId={matchId} counterpartName={name} />
               </div>
               <div className="border-t border-border pt-2">
-                <ReportButton profileId={profileId} profileType={profileType} matchId={matchId} matchSource={conversationSource} />
+                <ReportButton profileId={profileId} matchId={matchId} />
               </div>
             </div>
           </>
@@ -128,7 +119,7 @@ export default function ConversationHeader({
 
       {profileOpen && (
         <div className="px-4 pb-3">
-          <ProfileSummaryPanel profileType={profileType} profileId={profileId} matchId={matchId} />
+          <ProfileSummaryPanel profileId={profileId} matchId={matchId} />
         </div>
       )}
     </div>

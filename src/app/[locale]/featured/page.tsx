@@ -19,7 +19,7 @@ export default async function FeaturedPage({
   }
 
   return (
-    <AppShell active="nanny">
+    <AppShell active="profile">
       <FeaturedClient />
     </AppShell>
   );

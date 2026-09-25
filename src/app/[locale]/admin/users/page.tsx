@@ -118,7 +118,7 @@ export default function AdminUsersPage() {
             <div className="flex items-center justify-between gap-4">
               <div className="min-w-0">
                 <p className="text-sm font-medium truncate">{user.email ?? user.phone ?? "—"}</p>
-                <p className="text-xs text-muted capitalize">{user.role}</p>
+                {user.role === "admin" && <p className="text-xs text-muted capitalize">{user.role}</p>}
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className={ui.badge(user.status === "suspended" ? "danger" : "success")}>{user.status}</span>

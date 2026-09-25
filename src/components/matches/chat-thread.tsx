@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
 import { MAX_RECORDING_SECONDS, SIGNED_URL_TTL_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
-import { MATCH_SOURCES, type MatchSource } from "@/lib/matching/match-access";
+import { MATCHES_API } from "@/lib/matching/match-access";
 
 type Message = {
   id: string;
@@ -32,24 +32,17 @@ function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
-/**
- * One chat thread for every category: `source` picks nanny/parent's
- * `matches` or the generic (nursing, tutoring, ...) `generic_matches`
- * store -- the API routes and realtime table differ, nothing else does.
- */
+/** A match's chat thread (any category). */
 export default function ChatThread({
   matchId,
-  source = "nanny",
   onMessage,
   variant = "compact",
 }: {
   matchId: string;
-  source?: MatchSource;
   onMessage?: (message: Message) => void;
   variant?: "compact" | "full";
 }) {
-  const { apiBase, messagesTable } = MATCH_SOURCES[source];
-  const threadUrl = `${apiBase}/${matchId}/messages`;
+  const threadUrl = `${MATCHES_API}/${matchId}/messages`;
   const t = useTranslations("Matches");
   const locale = useLocale();
   const [messages, setMessages] = useState<Message[] | null>(null);
@@ -215,10 +208,10 @@ export default function ChatThread({
     markRead();
 
     const channel = supabase
-      .channel(`${messagesTable}:${matchId}`)
+      .channel(`generic_messages:${matchId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: messagesTable, filter: `match_id=eq.${matchId}` },
+        { event: "INSERT", schema: "public", table: "generic_messages", filter: `match_id=eq.${matchId}` },
         (payload) => {
           const incoming = payload.new as Message;
           if (incoming.audio_path) {
@@ -249,7 +242,7 @@ export default function ChatThread({
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, source, variant]);
+  }, [matchId, variant]);
 
   useEffect(() => {
     // Scroll only this thread's own container to the bottom — never

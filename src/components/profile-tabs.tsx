@@ -2,22 +2,9 @@
 
 import { useState } from "react";
 import ProfileHeaderCard from "@/components/profile-header-card";
-import GenericProfileHeaderCard from "@/components/generic-profile-header-card";
 import { ui } from "@/lib/ui";
 
-type NannyTab = {
-  kind: "nanny";
-  key: string;
-  label: string;
-  fullName: string | null;
-  roleLabel: string;
-  isNanny: boolean;
-  initialPhotoUrl: string | null;
-  matchProfile: { status: string; moderation_status: string } | null;
-};
-
-type GenericTab = {
-  kind: "generic";
+export type ProfileTabDef = {
   key: string;
   profileId: string;
   initialPhotoUrl: string | null;
@@ -30,13 +17,10 @@ type GenericTab = {
   moderationStatus: string;
 };
 
-export type ProfileTabDef = NannyTab | GenericTab;
 
 /**
- * An account can hold a profile per category (nanny stays on its own
- * users.role track; nursing/tutoring live in generic_profiles) -- this
- * switches between them on the shared /profile page instead of only ever
- * showing the nanny/parent one. Skips the tab bar entirely when there's
+ * An account can hold a profile per category (and both roles in one) --
+ * this switches between them on the shared /profile page. Skips the tab bar entirely when there's
  * just one profile, since a switcher with one option is dead weight.
  */
 export default function ProfileTabs({ tabs }: { tabs: ProfileTabDef[] }) {
@@ -62,27 +46,17 @@ export default function ProfileTabs({ tabs }: { tabs: ProfileTabDef[] }) {
         </div>
       )}
 
-      {active.kind === "nanny" ? (
-        <ProfileHeaderCard
-          fullName={active.fullName}
-          roleLabel={active.roleLabel}
-          isNanny={active.isNanny}
-          initialPhotoUrl={active.initialPhotoUrl}
-          matchProfile={active.matchProfile}
-        />
-      ) : (
-        <GenericProfileHeaderCard
-          key={active.key}
-          profileId={active.profileId}
-          initialPhotoUrl={active.initialPhotoUrl}
-          slug={active.slug}
-          role={active.role}
-          categoryLabel={active.categoryLabel}
-          roleLabel={active.roleLabel}
-          fullName={active.fullName}
-          moderationStatus={active.moderationStatus}
-        />
-      )}
+      <ProfileHeaderCard
+        key={active.key}
+        profileId={active.profileId}
+        initialPhotoUrl={active.initialPhotoUrl}
+        slug={active.slug}
+        role={active.role}
+        categoryLabel={active.categoryLabel}
+        roleLabel={active.roleLabel}
+        fullName={active.fullName}
+        moderationStatus={active.moderationStatus}
+      />
     </div>
   );
 }
