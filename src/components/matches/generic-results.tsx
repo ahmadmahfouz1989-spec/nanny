@@ -83,7 +83,20 @@ export default function GenericResults({
   const locale = useLocale();
   const [myRole, setMyRole] = useState<"seeker" | "provider" | null>(null);
   const [results, setResults] = useState<GenericMatch[] | null>(null);
-  useLiveMatches({ source: "generic", results, setResults, targetMatchId });
+  useLiveMatches({
+    source: "generic",
+    results,
+    setResults,
+    targetMatchId,
+    fetchTarget: (matchId) => {
+      const params = new URLSearchParams({ categorySlug, matchId });
+      if (role) params.set("role", role);
+      return fetch(`/api/generic-matches?${params}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body) => body?.results?.[0] ?? null)
+        .catch(() => null);
+    },
+  });
   const [error, setError] = useState<string | null>(null);
   const [governorateId, setGovernorateId] = useState("");
   const [day, setDay] = useState("");

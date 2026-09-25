@@ -18,7 +18,7 @@ function effectiveStatus(status: string, interestExpiresAt: string | null) {
 // that's older than an action just taken on this card can't roll it back.
 function progress(status: string) {
   if (status === "mutual") return 2;
-  if (status === "declined") return 3;
+  if (status.startsWith("declined_by_")) return 3;
   if (status.endsWith("_interested")) return 1;
   return 0;
 }
