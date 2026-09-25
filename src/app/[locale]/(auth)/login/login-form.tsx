@@ -1,26 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { useRouter, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
 import { ui } from "@/lib/ui";
+import { safeReturnPath } from "@/lib/return-path";
 
 export default function LoginForm() {
   const t = useTranslations("Login");
   const tAuth = useTranslations("Auth");
   const router = useRouter();
-  const locale = useLocale();
   const searchParams = useSearchParams();
-  // middleware sets `next` to a locale-prefixed pathname (e.g. /en/admin) —
-  // strip the prefix since the locale-aware router re-adds it on push.
-  const rawNext = searchParams.get("next");
-  const explicitNext = rawNext
-    ? rawNext.replace(new RegExp(`^/${locale}(?=/|$)`), "") || "/"
-    : null;
+  // middleware sets `next` to a locale-prefixed path + query (e.g.
+  // /en/feed?post=...) — safeReturnPath strips the locale (the router
+  // re-adds it on push) and rejects anything off-site.
+  const explicitNext = safeReturnPath(searchParams.get("next"));
 
   const linkErrorType = searchParams.get("error") === "auth_callback_failed" ? searchParams.get("type") : null;
 
@@ -92,7 +90,7 @@ export default function LoginForm() {
       <h1 className="font-display text-2xl font-semibold mb-1">{t("title")}</h1>
       <p className="text-muted text-sm mb-6">{t("subhead")}</p>
 
-      <GoogleAuthButton />
+      <GoogleAuthButton next={explicitNext} />
 
       <div className="flex items-center gap-3 my-5">
         <div className="h-px flex-1 bg-border" />

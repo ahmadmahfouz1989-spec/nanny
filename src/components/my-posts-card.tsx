@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 
 type MyPost = {
@@ -69,10 +70,17 @@ export default function MyPostsCard() {
                 {post.status === "closed" && <span className={ui.badge("secondary")}>{t("postClosed")}</span>}
                 <span className="text-xs text-muted">{formatRelative(post.created_at, locale, tFeed("justNow"))}</span>
               </div>
-              <p className="text-sm text-ink whitespace-pre-wrap">{post.caption}</p>
-              <p className="text-xs text-muted mt-1">
-                {tFeed("repliesCount", { count: post.replyCount })} · {post.likeCount} {tFeed("like")}
-              </p>
+              {/* Opens the post in the feed with its thread expanded -- the
+                  same deep link a reply notification uses. */}
+              <Link href={`/feed?post=${post.id}`} className="block group">
+                <p className="text-sm text-ink whitespace-pre-wrap group-hover:underline underline-offset-2">{post.caption}</p>
+                <p className="text-xs text-muted mt-1">
+                  <span className="text-primary group-hover:underline underline-offset-2">
+                    {tFeed("repliesCount", { count: post.replyCount })}
+                  </span>{" "}
+                  · {post.likeCount} {tFeed("like")}
+                </p>
+              </Link>
             </div>
             <button
               type="button"

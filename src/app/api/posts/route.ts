@@ -59,7 +59,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const results = await decoratePosts(posts ?? [], user.id);
+  const results = await decoratePosts(posts ?? [], user.id, supabase);
 
   return NextResponse.json({ posts: results, nextCursor: results.length === PAGE_SIZE ? results[results.length - 1].created_at : null });
 }

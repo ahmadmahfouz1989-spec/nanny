@@ -24,7 +24,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
 
-  const [decorated] = await decoratePosts([post], user.id);
+  const [decorated] = await decoratePosts([post], user.id, supabase);
   return NextResponse.json({ post: decorated });
 }
 
