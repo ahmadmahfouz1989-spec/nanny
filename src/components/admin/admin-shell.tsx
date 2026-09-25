@@ -71,7 +71,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   return (
     <ToastProvider>
       <div className="flex min-h-screen">
-        <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5 sticky top-0 h-screen">
+        {/* z-40: sticky makes the sidebar its own stacking context, so the
+            notification dropdown's z-50 only counts inside it -- without a
+            z-index here the main column (later in the DOM) paints over it. */}
+        <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5 sticky top-0 h-screen z-40">
           <div className="px-3 mb-6 flex items-center gap-2">
             <BrandMark />
             <span className="rounded-md bg-ink px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-background">
