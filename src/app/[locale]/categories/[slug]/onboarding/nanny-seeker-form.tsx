@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
-import WizardShell from "@/components/onboarding/wizard-shell";
 import EditShell from "@/components/onboarding/edit-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
@@ -13,7 +12,6 @@ import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannySeekerSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
 
-const TOTAL_STEPS = 5;
 const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_help", "laundry"] as const;
 
 type FormState = {
@@ -107,11 +105,9 @@ export default function NannySeekerForm({
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   // The row always exists by now (claimed as a draft when the role was
-  // picked), so saving is always an update -- but a draft still walks
-  // through the step-by-step wizard, only a submitted profile gets the
-  // single-page editor.
+  // picked), so saving is always an update; a draft still reads as
+  // "create" to the user.
   const isEdit = !!initialProfile && initialProfile.status !== "draft";
-  const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -165,29 +161,10 @@ export default function NannySeekerForm({
     );
   }
 
-  const stepValid = (() => {
-    switch (step) {
-      case 1:
-        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2 && !!form.nationality;
-      case 2:
-        return form.numChildren >= 1 && form.childrenAgeRanges.length > 0;
-      case 3:
-        return !!form.desiredStartDate;
-      case 4:
-        return true;
-      case 5:
-        return true;
-      default:
-        return false;
-    }
-  })();
-
-  async function handleNext() {
+  async function handleSave() {
     setError(null);
-    if (!isEdit && step < TOTAL_STEPS) {
-      setStep(step + 1);
-      return;
-    }
+    // A photo still uploading would be left out of the save.
+    if (uploading) return;
 
     const payload = {
       fullName: form.fullName,
@@ -232,17 +209,11 @@ export default function NannySeekerForm({
     router.refresh();
   }
 
-  function handleBack() {
-    setError(null);
-    setStep((s) => Math.max(1, s - 1));
-  }
-
   function handleCancel() {
     router.push(`/categories/${categorySlug}/dashboard`);
   }
 
-  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5) =>
-    isEdit && (
+  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5) => (
       <h2 className="font-display text-sm font-semibold text-muted uppercase tracking-wide">
         {t(`step${n}Title` as "step1Title")}
       </h2>
@@ -250,7 +221,7 @@ export default function NannySeekerForm({
 
   const content = (
     <>
-      {(isEdit || step === 1) && (
+      {(
         <>
           {sectionHeading(1)}
           <input
@@ -315,7 +286,7 @@ export default function NannySeekerForm({
         </>
       )}
 
-      {(isEdit || step === 2) && (
+      {(
         <>
           {sectionHeading(2)}
           <label className={ui.label}>{t("numChildren")}</label>
@@ -343,7 +314,7 @@ export default function NannySeekerForm({
         </>
       )}
 
-      {(isEdit || step === 3) && (
+      {(
         <>
           {sectionHeading(3)}
           <label className={ui.label}>{t("schedule")}</label>
@@ -400,7 +371,7 @@ export default function NannySeekerForm({
         </>
       )}
 
-      {(isEdit || step === 4) && (
+      {(
         <>
           {sectionHeading(4)}
           <label className={ui.label}>{t("preferredLanguages")}</label>
@@ -417,7 +388,7 @@ export default function NannySeekerForm({
         </>
       )}
 
-      {(isEdit || step === 5) && (
+      {(
         <>
           {sectionHeading(5)}
           <label className={ui.label}>{t("additionalDuties")}</label>
@@ -446,29 +417,17 @@ export default function NannySeekerForm({
     </>
   );
 
-  if (isEdit) {
-    return (
-      <EditShell title={t("editTitle")} error={error} onCancel={handleCancel} onSave={handleNext} submitting={submitting}>
-        {content}
-      </EditShell>
-    );
-  }
-
   return (
-    <WizardShell
-      step={step}
-      totalSteps={TOTAL_STEPS}
-      title={t(`step${step}Title` as "step1Title")}
+    <EditShell
+      title={isEdit ? t("editTitle") : t("createTitle")}
       error={error}
-      onBack={handleBack}
-      onNext={handleNext}
-      onExit={onBack}
-      exitLabel={tw("changeRole")}
-      nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
-      nextDisabled={!stepValid}
-      submitting={submitting}
+      onCancel={handleCancel}
+      onSave={handleSave}
+      onBack={onBack}
+      backLabel={tw("changeRole")}
+      submitting={submitting || uploading}
     >
       {content}
-    </WizardShell>
+    </EditShell>
   );
 }

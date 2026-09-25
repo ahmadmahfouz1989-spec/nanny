@@ -7,10 +7,8 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import { ui } from "@/lib/ui";
 
 /**
- * Editing an existing profile shouldn't mean re-walking the same
- * step-by-step wizard used to create it — this shows every section at
- * once with a single Save/Cancel, no Next/Next/Next. First-time
- * onboarding (no existing profile yet) still uses WizardShell.
+ * The profile form layout for every category, both creating and editing:
+ * every section on one page with a single Save/Cancel.
  */
 export default function EditShell({
   title,
