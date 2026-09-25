@@ -6,6 +6,7 @@ import {
   type LiveArrangement,
   type ScheduleType,
 } from "./generic-engine";
+import { computeMatchScore as computeNannyMatchScore, nannyInputFromProfile, parentInputFromProfile } from "./engine";
 import {
   computeTutoringMatchScore,
   type TutoringFormat,
@@ -84,6 +85,9 @@ function tutoringProviderInput(profile: GenericProfileRow): TutoringProviderMatc
 }
 
 function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
+  if (categorySlug === "nanny") {
+    return computeNannyMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
+  }
   if (categorySlug === "tutoring") {
     return computeTutoringMatchScore(tutoringSeekerInput(seeker), tutoringProviderInput(provider));
   }
