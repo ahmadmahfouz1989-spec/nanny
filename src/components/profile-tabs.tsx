@@ -21,6 +21,7 @@ type GenericTab = {
   key: string;
   label: string;
   slug: string;
+  role: "seeker" | "provider";
   categoryLabel: string;
   roleLabel: string;
   fullName: string | null;
@@ -70,6 +71,7 @@ export default function ProfileTabs({ tabs }: { tabs: ProfileTabDef[] }) {
       ) : (
         <GenericProfileHeaderCard
           slug={active.slug}
+          role={active.role}
           categoryLabel={active.categoryLabel}
           roleLabel={active.roleLabel}
           fullName={active.fullName}

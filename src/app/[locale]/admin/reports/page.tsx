@@ -24,6 +24,8 @@ type ConversationMessage = {
   audioDurationSeconds: number | null;
 };
 
+type ConversationState = { messages: ConversationMessage[]; hasOlder: boolean; loadingOlder: boolean };
+
 const REASON_LABEL_KEY: Record<string, string> = {
   inappropriate_content: "reasonInappropriateContent",
   harassment: "reasonHarassment",
@@ -39,12 +41,13 @@ function formatTimestamp(iso: string, locale: string) {
 export default function AdminReportsPage() {
   const t = useTranslations("Admin");
   const tReport = useTranslations("Report");
+  const tMatches = useTranslations("Matches");
   const locale = useLocale();
   const [reports, setReports] = useState<AdminReport[] | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<Record<string, ConversationMessage[] | null>>({});
+  const [conversations, setConversations] = useState<Record<string, ConversationState | null>>({});
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +81,42 @@ export default function AdminReportsPage() {
       setConversations((prev) => ({ ...prev, [next]: null }));
       fetch(`/api/admin/reports/${next}/messages`)
         .then((res) => res.json())
-        .then((body) => setConversations((prev) => ({ ...prev, [next]: body.messages ?? [] })));
+        .then((body) =>
+          setConversations((prev) => ({
+            ...prev,
+            [next]: { messages: body.messages ?? [], hasOlder: !!body.hasOlder, loadingOlder: false },
+          })),
+        );
+    }
+  }
+
+  // The endpoint returns the newest window first -- page backwards from
+  // the oldest message currently shown until the admin has what they need.
+  async function loadOlder(reportId: string) {
+    const current = conversations[reportId];
+    if (!current || current.loadingOlder || !current.hasOlder || current.messages.length === 0) return;
+    setConversations((prev) => ({ ...prev, [reportId]: { ...current, loadingOlder: true } }));
+    try {
+      const res = await fetch(
+        `/api/admin/reports/${reportId}/messages?before=${encodeURIComponent(current.messages[0]!.created_at)}`,
+      );
+      const body = res.ok ? await res.json() : null;
+      setConversations((prev) => {
+        const latest = prev[reportId];
+        if (!latest) return prev;
+        if (!body) return { ...prev, [reportId]: { ...latest, loadingOlder: false } };
+        const known = new Set(latest.messages.map((m) => m.id));
+        const older = ((body.messages ?? []) as ConversationMessage[]).filter((m) => !known.has(m.id));
+        return {
+          ...prev,
+          [reportId]: { messages: [...older, ...latest.messages], hasOlder: !!body.hasOlder, loadingOlder: false },
+        };
+      });
+    } catch {
+      setConversations((prev) => {
+        const latest = prev[reportId];
+        return latest ? { ...prev, [reportId]: { ...latest, loadingOlder: false } } : prev;
+      });
     }
   }
 
@@ -128,10 +166,20 @@ export default function AdminReportsPage() {
             {expanded === report.id && (
               <div className="rounded-xl border border-border bg-background mb-3 p-3 max-h-64 overflow-y-auto flex flex-col gap-2">
                 {conversations[report.id] === null && <p className="text-sm text-muted">…</p>}
-                {conversations[report.id]?.length === 0 && (
+                {conversations[report.id]?.messages.length === 0 && (
                   <p className="text-sm text-muted">{t("noConversation")}</p>
                 )}
-                {conversations[report.id]?.map((m) => (
+                {conversations[report.id]?.hasOlder && (
+                  <button
+                    type="button"
+                    onClick={() => loadOlder(report.id)}
+                    disabled={conversations[report.id]?.loadingOlder}
+                    className={ui.link + " text-xs self-center"}
+                  >
+                    {conversations[report.id]?.loadingOlder ? tMatches("loadingMore") : tMatches("loadEarlierMessages")}
+                  </button>
+                )}
+                {conversations[report.id]?.messages.map((m) => (
                   <div
                     key={m.id}
                     className={`max-w-[85%] rounded-2xl px-3 py-1.5 text-sm ${

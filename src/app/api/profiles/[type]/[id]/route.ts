@@ -53,5 +53,24 @@ export async function GET(request: Request, { params }: { params: Promise<{ type
     savedProfileIds(supabase, user.id, type, [id]),
   ]);
 
-  return NextResponse.json({ type, profile, rating, featured: featured.has(userId), isSaved: saved.has(id) });
+  // A generic profile stores its languages as bare ids inside attributes
+  // (there's no join table like nanny/parent have) -- resolve them here so
+  // the preview can show localized names instead of UUIDs.
+  let languages: { id: string; name_en: string; name_ar: string; name_fr: string }[] = [];
+  if (type === "generic") {
+    const ids = (profile as unknown as { attributes: { languageIds?: unknown } | null }).attributes?.languageIds;
+    const languageIds = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
+    if (languageIds.length > 0) {
+      const { data } = await supabase.from("languages").select("id, name_en, name_ar, name_fr").in("id", languageIds);
+      languages = data ?? [];
+    }
+  }
+
+  return NextResponse.json({
+    type,
+    profile: type === "generic" ? { ...profile, languages } : profile,
+    rating,
+    featured: featured.has(userId),
+    isSaved: saved.has(id),
+  });
 }

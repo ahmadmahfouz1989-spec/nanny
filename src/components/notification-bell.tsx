@@ -53,8 +53,14 @@ function hrefFor(n: Notification): string {
     case "verification_updated":
       return "/profile";
     case "post_reply":
-    case "post_like":
-      return "/feed";
+    case "post_like": {
+      // Deep-link to the post itself (and the reply, when there is one)
+      // -- the feed loads it directly, regardless of how far back it is.
+      const postId = typeof n.payload?.post_id === "string" ? n.payload.post_id : null;
+      const replyId = typeof n.payload?.reply_id === "string" ? n.payload.reply_id : null;
+      if (!postId) return "/feed";
+      return replyId ? `/feed?post=${postId}&reply=${replyId}` : `/feed?post=${postId}`;
+    }
     default:
       return "/dashboard";
   }

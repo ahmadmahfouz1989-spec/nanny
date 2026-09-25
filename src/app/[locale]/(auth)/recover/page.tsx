@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import { ui } from "@/lib/ui";
 
@@ -11,11 +12,34 @@ export default function RecoverPage() {
   const [identifier, setIdentifier] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const router = useRouter();
+  // Phone recovery is two steps: the SMS code is entered here, and a
+  // correct one signs the user in so /reset-password can take over (the
+  // email path does the same through its link instead).
+  const [code, setCode] = useState("");
+  const [codeError, setCodeError] = useState<string | null>(null);
+  const isEmail = identifier.includes("@");
+
+  async function handleVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setCodeError(null);
+    setSubmitting(true);
+    const res = await fetch("/api/auth/recover/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ phone: identifier, code: code.trim() }),
+    }).catch(() => null);
+    setSubmitting(false);
+    if (!res || !res.ok) {
+      setCodeError(res?.status === 429 ? t("tooManyAttempts") : t("codeError"));
+      return;
+    }
+    router.push("/reset-password");
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
-    const isEmail = identifier.includes("@");
 
     await fetch("/api/auth/recover", {
       method: "POST",
@@ -25,6 +49,33 @@ export default function RecoverPage() {
 
     setSubmitting(false);
     setSubmitted(true);
+  }
+
+  if (submitted && !isEmail) {
+    return (
+      <AuthCard>
+        <h1 className="font-display text-2xl font-semibold mb-1">{t("codeTitle")}</h1>
+        <p className="text-muted text-sm mb-6">{t("codeSubhead", { identifier })}</p>
+        <form onSubmit={handleVerify} className="flex flex-col gap-4">
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            required
+            minLength={4}
+            maxLength={10}
+            placeholder={t("codePlaceholder")}
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            className={ui.input}
+          />
+          {codeError && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{codeError}</p>}
+          <button type="submit" disabled={submitting} className={ui.buttonPrimary + " w-full"}>
+            {submitting ? t("verifying") : t("verify")}
+          </button>
+        </form>
+      </AuthCard>
+    );
   }
 
   if (submitted) {
