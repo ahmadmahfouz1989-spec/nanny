@@ -43,7 +43,17 @@ export async function ratingAggregateForUser(rateeUserId: string): Promise<Ratin
   return map.get(rateeUserId) ?? { average: null, count: 0 };
 }
 
-export type ProfileReview = { score: number; comment: string | null; createdAt: string };
+// Who left a review, as far as a reader should be told: the side of the
+// match the rater was on, and for a generic match which category it was
+// in. Ratings are per-account, so one profile's reviews can mix nanny-track
+// and nursing/tutoring matches -- the label has to come from each review's
+// own match, not from the profile being viewed.
+export type ReviewRater =
+  | { kind: "parent" | "nanny" }
+  | { kind: "generic"; role: "seeker" | "provider"; categoryEn: string; categoryAr: string }
+  | null;
+
+export type ProfileReview = { score: number; comment: string | null; createdAt: string; rater: ReviewRater };
 
 /**
  * Every rating a user has received, from either table — aggregate plus
@@ -55,13 +65,56 @@ export async function reviewsReceivedByUser(
 ): Promise<RatingAggregate & { reviews: ProfileReview[] }> {
   const admin = createAdminClient();
   const [{ data: legacy }, { data: generic }] = await Promise.all([
-    admin.from("ratings").select("score, comment, created_at").eq("ratee_user_id", userId),
-    admin.from("generic_ratings").select("score, comment, created_at").eq("ratee_user_id", userId),
+    admin.from("ratings").select("score, comment, created_at, rater_user_id").eq("ratee_user_id", userId),
+    admin.from("generic_ratings").select("score, comment, created_at, rater_user_id, match_id").eq("ratee_user_id", userId),
   ]);
 
-  const reviews: ProfileReview[] = [...(legacy ?? []), ...(generic ?? [])]
-    .map((r) => ({ score: r.score, comment: r.comment, createdAt: r.created_at }))
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Legacy (nanny-track) raters are parent or nanny accounts -- users.role
+  // is exactly which side of the match they were on.
+  const legacyRaterIds = [...new Set((legacy ?? []).map((r) => r.rater_user_id as string))];
+  const genericMatchIds = [...new Set((generic ?? []).map((r) => r.match_id as string))];
+  const [{ data: raterUsers }, { data: genericMatches }] = await Promise.all([
+    legacyRaterIds.length
+      ? admin.from("users").select("id, role").in("id", legacyRaterIds)
+      : Promise.resolve({ data: [] as { id: string; role: string | null }[] }),
+    genericMatchIds.length
+      ? admin.from("generic_matches").select("id, seeker_profile_id, categories(name_en, name_ar)").in("id", genericMatchIds)
+      : Promise.resolve({ data: [] as { id: string; seeker_profile_id: string; categories: unknown }[] }),
+  ]);
+  const seekerProfileIds = [...new Set((genericMatches ?? []).map((m) => m.seeker_profile_id as string))];
+  const { data: seekerProfiles } = seekerProfileIds.length
+    ? await admin.from("generic_profiles").select("id, user_id").in("id", seekerProfileIds)
+    : { data: [] as { id: string; user_id: string }[] };
+
+  const roleByUser = new Map((raterUsers ?? []).map((u) => [u.id as string, u.role as string | null]));
+  const matchById = new Map((genericMatches ?? []).map((m) => [m.id as string, m]));
+  const seekerUserByProfile = new Map((seekerProfiles ?? []).map((p) => [p.id as string, p.user_id as string]));
+
+  const reviews: ProfileReview[] = [
+    ...(legacy ?? []).map((r) => {
+      const role = roleByUser.get(r.rater_user_id as string);
+      return {
+        score: r.score,
+        comment: r.comment,
+        createdAt: r.created_at,
+        rater: role === "parent" || role === "nanny" ? { kind: role } : null,
+      } as ProfileReview;
+    }),
+    ...(generic ?? []).map((r) => {
+      const match = matchById.get(r.match_id as string);
+      const category = match?.categories as { name_en: string; name_ar: string } | null | undefined;
+      const rater: ReviewRater =
+        match && category
+          ? {
+              kind: "generic",
+              role: seekerUserByProfile.get(match.seeker_profile_id as string) === r.rater_user_id ? "seeker" : "provider",
+              categoryEn: category.name_en,
+              categoryAr: category.name_ar,
+            }
+          : null;
+      return { score: r.score, comment: r.comment, createdAt: r.created_at, rater };
+    }),
+  ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   const count = reviews.length;
   const average = count

@@ -43,7 +43,9 @@ export async function updateSession(request: NextRequest, response: NextResponse
 
   if (isProtected && !user) {
     const redirectUrl = new URL(`/${locale}/login`, request.url);
-    redirectUrl.searchParams.set("next", request.nextUrl.pathname);
+    // Query included -- deep links like /feed?post=...&reply=... are the
+    // destination, not just their pathname.
+    redirectUrl.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search);
     return NextResponse.redirect(redirectUrl);
   }
 

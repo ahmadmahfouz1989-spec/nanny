@@ -28,25 +28,15 @@ export async function GET(request: Request) {
 
   const { profileId, profileType } = parsed.data;
 
-  if (profileType === "generic") {
-    const result = await reviewsForGenericProfile(profileId);
-    if (!result) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
-    // Ratings are per-account, not per-category (see ratingAggregatesByUser)
-    // -- a generic profile's reviews can come from any category or role, so
-    // there's no single "rater role" to label them with the way a nanny
-    // profile is always rated by parents specifically.
-    return NextResponse.json({ ...result, raterRole: null });
-  }
-
-  const result = await reviewsForProfile(profileType, profileId);
+  // Each review carries its own rater label (see ReviewRater) -- ratings
+  // are per-account, so a profile's reviews can come from any category.
+  const result =
+    profileType === "generic"
+      ? await reviewsForGenericProfile(profileId)
+      : await reviewsForProfile(profileType, profileId);
   if (!result) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  // A nanny profile is only ever rated by parents, and vice versa.
-  const raterRole = profileType === "parent" ? "nanny" : "parent";
-
-  return NextResponse.json({ ...result, raterRole });
+  return NextResponse.json(result);
 }

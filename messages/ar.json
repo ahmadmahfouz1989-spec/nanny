@@ -571,6 +571,8 @@
     "reviewsError": "تعذّر تحميل التقييمات. يرجى المحاولة مرة أخرى.",
     "raterParent": "— أحد الوالدين الذين تطابق معهم",
     "raterNanny": "— مربية تطابقت معها",
+    "raterGenericSeeker": "— عميل في {category} تطابق معهم",
+    "raterGenericProvider": "— مقدّم خدمة في {category} تطابق معهم",
     "myRatingsTitle": "التقييمات التي تلقيتها",
     "myRatingsEmpty": "لم يقيّمك أحد بعد. تظهر التقييمات هنا بعد التطابق."
   },

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { routing } from "@/i18n/routing";
+import { RETURN_PATH_COOKIE, safeReturnPath } from "@/lib/return-path";
 
 async function currentLocale() {
   const cookieStore = await cookies();
@@ -20,7 +21,14 @@ export async function GET(request: Request) {
   // Signup no longer chooses a category up front, so a confirmation link
   // with no explicit `next` (e.g. a bare /signup with no category hint)
   // lands on the hub to choose one, not a specific category's dashboard.
-  const next = searchParams.get("next") ?? "/categories";
+  // Google sign-in carries its destination in a cookie instead (see
+  // GoogleAuthButton). Either way it must be a same-origin path.
+  const cookieStore = await cookies();
+  const cookieNext = cookieStore.get(RETURN_PATH_COOKIE)?.value;
+  const next =
+    safeReturnPath(searchParams.get("next")) ??
+    safeReturnPath(cookieNext ? decodeURIComponent(cookieNext) : null) ??
+    "/categories";
   const locale = await currentLocale();
 
   if (code) {
@@ -38,7 +46,9 @@ export async function GET(request: Request) {
     }
 
     if (!error) {
-      return NextResponse.redirect(`${origin}/${locale}${next}`);
+      const response = NextResponse.redirect(`${origin}/${locale}${next}`);
+      response.cookies.delete(RETURN_PATH_COOKIE);
+      return response;
     }
   }
 
