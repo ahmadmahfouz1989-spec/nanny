@@ -1,3 +1,3 @@
 import { messagesAudioPost } from "@/lib/matching/match-routes";
 
-export const POST = messagesAudioPost("generic");
+export const POST = messagesAudioPost;

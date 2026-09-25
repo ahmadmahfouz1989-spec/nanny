@@ -6,7 +6,7 @@ import { Link } from "@/i18n/navigation";
 import ChatThread from "./chat-thread";
 import RatingButton from "./rating-button";
 import { ui } from "@/lib/ui";
-import { MATCH_SOURCES, type MatchSource } from "@/lib/matching/match-access";
+import { MATCHES_API, type MatchSide } from "@/lib/matching/match-access";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
 
@@ -28,24 +28,19 @@ function progress(status: string) {
 /**
  * Interest/accept/decline on a match card, and once mutual: a link into
  * the unified /messages inbox, contact reveal (phone/email/WhatsApp),
- * rating, and an inline chat -- the same for every category. `source`
- * picks nanny/parent's match API or the generic (nursing, tutoring, ...)
- * one; `viewerSide` is the viewer's side in that source's terms.
+ * rating, and an inline chat -- the same for every category.
  */
 export default function MatchActions({
   matchId,
-  source = "nanny",
   status,
   interestExpiresAt,
   viewerSide,
 }: {
   matchId: string;
-  source?: MatchSource;
   status: string;
   interestExpiresAt: string | null;
-  viewerSide: string;
+  viewerSide: MatchSide;
 }) {
-  const { apiBase, sides } = MATCH_SOURCES[source];
   const t = useTranslations("Matches");
   const [current, setCurrent] = useState(effectiveStatus(status, interestExpiresAt));
   // The list refreshes statuses in the background (useLiveMatches) -- adopt
@@ -67,14 +62,14 @@ export default function MatchActions({
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const otherSide = viewerSide === sides[0] ? sides[1] : sides[0];
+  const otherSide = viewerSide === "seeker" ? "provider" : "seeker";
   const ownPending = `${viewerSide}_interested`;
   const otherPending = `${otherSide}_interested`;
 
   async function act(action: "interest" | "decline") {
     setLoading(true);
     setError(null);
-    const res = await fetch(`${apiBase}/${matchId}/${action}`, { method: "POST" });
+    const res = await fetch(`${MATCHES_API}/${matchId}/${action}`, { method: "POST" });
     setLoading(false);
 
     if (!res.ok) {
@@ -91,7 +86,7 @@ export default function MatchActions({
   async function loadContact() {
     setLoading(true);
     setError(null);
-    const res = await fetch(`${apiBase}/${matchId}/contact`);
+    const res = await fetch(`${MATCHES_API}/${matchId}/contact`);
     setLoading(false);
 
     if (!res.ok) {
@@ -158,8 +153,8 @@ export default function MatchActions({
           </div>
         )}
         {error && <p className="text-xs text-danger mt-1">{error}</p>}
-        <RatingButton matchId={matchId} apiBase={apiBase} />
-        <ChatThread matchId={matchId} source={source} />
+        <RatingButton matchId={matchId} />
+        <ChatThread matchId={matchId} />
       </div>
     );
   }

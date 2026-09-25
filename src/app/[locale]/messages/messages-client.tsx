@@ -16,9 +16,7 @@ const INBOX_POLL_MS = 6000;
 
 type Conversation = {
   matchId: string;
-  // "nanny" for the legacy matches table, a category slug (e.g. "nursing")
-  // for a generic_matches conversation.
-  source: string;
+  categorySlug: string;
   counterpart: { id: string; name: string; photoUrl: string | null };
   lastMessage: { body: string; createdAt: string } | null;
   unreadCount: number;
@@ -43,7 +41,6 @@ export default function MessagesClient() {
   const tNav = useTranslations("Nav");
   const locale = useLocale();
   const searchParams = useSearchParams();
-  const [role, setRole] = useState<"parent" | "nanny" | null>(null);
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [selected, setSelected] = useState<string | null>(searchParams.get("match"));
   const [query, setQuery] = useState("");
@@ -61,7 +58,6 @@ export default function MessagesClient() {
       fetch("/api/inbox")
         .then((res) => res.json())
         .then((body) => {
-          setRole(body.role ?? null);
           const fresh: Conversation[] = body.conversations ?? [];
           // The open thread already marks its own messages read as they
           // arrive, but there's a brief window between that happening and
@@ -110,7 +106,6 @@ export default function MessagesClient() {
 
   const selectedConversation = conversations?.find((c) => c.matchId === selected) ?? null;
   const selectedIndex = conversations?.findIndex((c) => c.matchId === selected) ?? -1;
-  const counterpartProfileType = role === "parent" ? "nanny" : "parent";
 
   return (
     <div className="h-full flex min-h-0">
@@ -169,11 +164,9 @@ export default function MessagesClient() {
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <p className="font-display font-semibold truncate">{c.counterpart.name}</p>
-                    {c.source !== "nanny" && (
-                      <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-muted">
-                        {tNav.has(c.source) ? tNav(c.source) : c.source}
-                      </span>
-                    )}
+                    <span className="shrink-0 rounded-full bg-surface-sunken px-1.5 py-0.5 text-[10px] font-medium text-muted">
+                      {tNav.has(c.categorySlug) ? tNav(c.categorySlug) : c.categorySlug}
+                    </span>
                   </div>
                   {c.lastMessage && (
                     <span className="text-xs text-muted shrink-0">
@@ -203,18 +196,15 @@ export default function MessagesClient() {
             <ConversationHeader
               key={`header-${selectedConversation.matchId}`}
               matchId={selectedConversation.matchId}
-              conversationSource={selectedConversation.source}
               name={selectedConversation.counterpart.name}
               photoUrl={selectedConversation.counterpart.photoUrl}
               tone={TONES[selectedIndex % TONES.length]}
               profileId={selectedConversation.counterpart.id}
-              profileType={selectedConversation.source === "nanny" ? counterpartProfileType : "generic"}
               onBack={() => setSelected(null)}
             />
             <ChatThread
               key={`thread-${selectedConversation.matchId}`}
               matchId={selectedConversation.matchId}
-              source={selectedConversation.source === "nanny" ? "nanny" : "generic"}
               variant="full"
               onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
             />

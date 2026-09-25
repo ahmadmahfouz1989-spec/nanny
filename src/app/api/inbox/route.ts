@@ -3,12 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { allConversations } from "@/lib/inbox";
 
-/**
- * One conversation list across every category an account is active in --
- * nanny/parent plus every generic category (nursing, tutoring, ...) --
- * so someone with, say, both a nanny and a nursing profile checks a
- * single inbox instead of two separate pages.
- */
+/** One conversation list across every category an account is active in. */
 export async function GET() {
   const supabase = await createClient();
   const user = await requireActiveUser(supabase);
@@ -17,10 +12,5 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const [{ data: profile }, conversations] = await Promise.all([
-    supabase.from("users").select("role").eq("id", user.id).single(),
-    allConversations(supabase, user.id),
-  ]);
-
-  return NextResponse.json({ role: profile?.role ?? null, conversations });
+  return NextResponse.json({ conversations: await allConversations(supabase, user.id) });
 }
