@@ -141,14 +141,14 @@ export async function listSavedProfiles(
     pageGenericIds.length
       ? supabase
           .from("generic_profiles")
-          .select("id, user_id, category_id, role, full_name, moderation_status, attributes, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)")
+          .select("id, user_id, category_id, role, full_name, profile_photo_url, moderation_status, attributes, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)")
           .in("id", pageGenericIds)
       : Promise.resolve({ data: [] as never[] }),
   ]);
 
   type ParentRow = { id: string; user_id: string; full_name: string; profile_photo_url: string | null; moderation_status: string; nationality: string | null; num_children: number; schedule_type: string; live_arrangement: string; locations: LocationRef };
   type NannyRow = { id: string; user_id: string; full_name: string; profile_photo_url: string | null; moderation_status: string; nationality: string | null; years_experience: number; employment_type: string; live_arrangement_pref: string; locations: LocationRef };
-  type GenericRow = { id: string; user_id: string; category_id: string; role: string; full_name: string; moderation_status: string; attributes: Record<string, unknown>; locations: LocationRef; categories: { slug: string; name_en: string; name_ar: string } | null };
+  type GenericRow = { id: string; user_id: string; category_id: string; role: string; full_name: string; profile_photo_url: string | null; moderation_status: string; attributes: Record<string, unknown>; locations: LocationRef; categories: { slug: string; name_en: string; name_ar: string } | null };
 
   const parentById = new Map(((parents ?? []) as unknown as ParentRow[]).map((p) => [p.id, p]));
   const nannyById = new Map(((nannies ?? []) as unknown as NannyRow[]).map((n) => [n.id, n]));
@@ -262,7 +262,7 @@ export async function listSavedProfiles(
       if (g) {
         profile = {
           id: g.id, type: "generic", category: g.categories?.slug ?? "", role: g.role === "provider" ? "offering" : "seeking",
-          displayName: g.full_name, photoUrl: null, locationLabel: g.locations,
+          displayName: g.full_name, photoUrl: g.profile_photo_url, locationLabel: g.locations,
           moderationStatus: g.moderation_status,
           attributes: g.attributes,
           rating: ratingByUserId.get(g.user_id) ?? { average: null, count: 0 },

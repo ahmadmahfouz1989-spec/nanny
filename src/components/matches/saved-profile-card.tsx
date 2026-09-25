@@ -6,7 +6,6 @@ import { useLocale, useTranslations } from "next-intl";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileRating from "@/components/matches/profile-rating";
 import MatchActions from "@/components/matches/match-actions";
-import GenericMatchActions from "@/components/matches/generic-match-actions";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { ui } from "@/lib/ui";
 import { useToast } from "@/components/toast-provider";
@@ -140,20 +139,13 @@ export default function SavedProfileCard({
 
         {open && <ProfileSummaryPanel profileType={profile.type} profileId={profile.id} />}
 
-        {match && item.type !== "generic" && (
+        {match && (
           <MatchActions
+            source={item.type === "generic" ? "generic" : "nanny"}
             matchId={match.id}
             status={match.status}
             interestExpiresAt={match.interestExpiresAt}
-            viewerSide={match.viewerSide as "parent" | "nanny"}
-          />
-        )}
-        {match && item.type === "generic" && (
-          <GenericMatchActions
-            matchId={match.id}
-            status={match.status}
-            interestExpiresAt={match.interestExpiresAt}
-            viewerSide={match.viewerSide as "seeker" | "provider"}
+            viewerSide={match.viewerSide}
           />
         )}
 

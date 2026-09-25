@@ -2,14 +2,16 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import ChatThread from "./chat-thread";
 import RatingButton from "./rating-button";
 import { ui } from "@/lib/ui";
+import { MATCH_SOURCES, type MatchSource } from "@/lib/matching/match-access";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
 
 function effectiveStatus(status: string, interestExpiresAt: string | null) {
-  const pending = status === "parent_interested" || status === "nanny_interested";
+  const pending = status.endsWith("_interested");
   if (pending && interestExpiresAt && new Date(interestExpiresAt) < new Date()) return "expired";
   return status;
 }
@@ -23,17 +25,27 @@ function progress(status: string) {
   return 0;
 }
 
+/**
+ * Interest/accept/decline on a match card, and once mutual: a link into
+ * the unified /messages inbox, contact reveal (phone/email/WhatsApp),
+ * rating, and an inline chat -- the same for every category. `source`
+ * picks nanny/parent's match API or the generic (nursing, tutoring, ...)
+ * one; `viewerSide` is the viewer's side in that source's terms.
+ */
 export default function MatchActions({
   matchId,
+  source = "nanny",
   status,
   interestExpiresAt,
   viewerSide,
 }: {
   matchId: string;
+  source?: MatchSource;
   status: string;
   interestExpiresAt: string | null;
-  viewerSide: "parent" | "nanny";
+  viewerSide: string;
 }) {
+  const { apiBase, sides } = MATCH_SOURCES[source];
   const t = useTranslations("Matches");
   const [current, setCurrent] = useState(effectiveStatus(status, interestExpiresAt));
   // The list refreshes statuses in the background (useLiveMatches) -- adopt
@@ -55,14 +67,14 @@ export default function MatchActions({
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const otherSide = viewerSide === "parent" ? "nanny" : "parent";
+  const otherSide = viewerSide === sides[0] ? sides[1] : sides[0];
   const ownPending = `${viewerSide}_interested`;
   const otherPending = `${otherSide}_interested`;
 
   async function act(action: "interest" | "decline") {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/matches/${matchId}/${action}`, { method: "POST" });
+    const res = await fetch(`${apiBase}/${matchId}/${action}`, { method: "POST" });
     setLoading(false);
 
     if (!res.ok) {
@@ -79,7 +91,7 @@ export default function MatchActions({
   async function loadContact() {
     setLoading(true);
     setError(null);
-    const res = await fetch(`/api/matches/${matchId}/contact`);
+    const res = await fetch(`${apiBase}/${matchId}/contact`);
     setLoading(false);
 
     if (!res.ok) {
@@ -124,12 +136,18 @@ export default function MatchActions({
   if (current === "mutual") {
     return (
       <div className="mt-3">
-        {!contact ? (
-          <button onClick={loadContact} disabled={loading} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
-            {t("viewContact")}
-          </button>
-        ) : (
-          <div className="rounded-xl bg-secondary-soft p-3 text-sm flex flex-col gap-1">
+        <div className="flex items-center gap-3">
+          <Link href={`/messages?match=${matchId}`} className={ui.buttonPrimary + " px-5! py-2! text-sm"}>
+            {t("openChat")}
+          </Link>
+          {!contact && (
+            <button onClick={loadContact} disabled={loading} className={ui.buttonSecondary + " px-5! py-2! text-sm"}>
+              {t("viewContact")}
+            </button>
+          )}
+        </div>
+        {contact && (
+          <div className="rounded-xl bg-secondary-soft p-3 text-sm flex flex-col gap-1 mt-2">
             {contact.phone && <span>{contact.phone}</span>}
             {contact.email && <span>{contact.email}</span>}
             {contact.whatsappUrl && (
@@ -140,8 +158,8 @@ export default function MatchActions({
           </div>
         )}
         {error && <p className="text-xs text-danger mt-1">{error}</p>}
-        <RatingButton matchId={matchId} />
-        <ChatThread matchId={matchId} />
+        <RatingButton matchId={matchId} apiBase={apiBase} />
+        <ChatThread matchId={matchId} source={source} />
       </div>
     );
   }

@@ -12,7 +12,7 @@ const PARENT_FIELDS =
   "id, user_id, full_name, profile_photo_url, location_detail, nationality, num_children, children_age_ranges, schedule_type, needed_days, live_arrangement, desired_start_date, transportation_required, additional_duties, family_description, locations(name_en, name_ar, name_fr), parent_profile_languages(languages(id, name_en, name_ar, name_fr))";
 
 const GENERIC_FIELDS =
-  "id, user_id, full_name, role, location_id, attributes, category_id, locations(name_en, name_ar, name_fr), categories(name_en, name_ar)";
+  "id, user_id, full_name, profile_photo_url, role, location_id, attributes, category_id, locations(name_en, name_ar, name_fr), categories(name_en, name_ar)";
 
 /**
  * A single profile, for viewing from a context that isn't a scored match

@@ -53,6 +53,7 @@ type ParentProfile = {
 type GenericProfile = {
   id: string;
   full_name: string;
+  profile_photo_url: string | null;
   role: "seeker" | "provider";
   attributes: Record<string, unknown>;
   locations: LocationRef;
@@ -152,8 +153,7 @@ export default function ProfileSummaryPanel({
       : data.type === "parent"
         ? data.profile.parent_profile_languages.map((l) => localizedLangName(l.languages, locale))
         : (data.profile.languages ?? []).map((l) => localizedLangName(l, locale));
-  // generic_profiles has no photo column (see saved-profile-card.tsx).
-  const photoUrl = data.type !== "generic" ? data.profile.profile_photo_url : null;
+  const photoUrl = data.profile.profile_photo_url;
 
   return (
     <div className="mt-2 rounded-xl border border-border bg-background p-4 flex flex-col gap-3">

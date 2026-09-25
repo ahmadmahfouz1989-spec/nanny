@@ -8,7 +8,7 @@ export type PostIdentityOption = {
   type: PostIdentityType;
   profileId: string;
   fullName: string;
-  photoUrl: string | null; // always null for generic -- no photo column exists there
+  photoUrl: string | null;
   categoryNameEn?: string;
   categoryNameAr?: string;
   genericRole?: "seeker" | "provider";
@@ -45,7 +45,7 @@ export async function listPostIdentities(supabase: Supabase, userId: string): Pr
 
   const { data: generics } = await supabase
     .from("generic_profiles")
-    .select("id, full_name, role, status, created_at, categories(name_en, name_ar)")
+    .select("id, full_name, profile_photo_url, role, status, created_at, categories(name_en, name_ar)")
     .eq("user_id", userId)
     .neq("status", "draft")
     .order("created_at", { ascending: true });
@@ -56,7 +56,7 @@ export async function listPostIdentities(supabase: Supabase, userId: string): Pr
       type: "generic",
       profileId: g.id,
       fullName: g.full_name,
-      photoUrl: null,
+      photoUrl: g.profile_photo_url,
       categoryNameEn: category?.name_en,
       categoryNameAr: category?.name_ar,
       genericRole: g.role as "seeker" | "provider",
