@@ -25,8 +25,9 @@ export default async function FeedPage({
 
   const { data: profile } = await supabase.from("users").select("role").eq("id", user!.id).single();
 
+  // Admins get the moderation view of the same feed instead.
   if (profile?.role === "admin") {
-    redirect({ href: "/admin", locale });
+    redirect({ href: post ? `/admin/feed?post=${post}${reply ? `&reply=${reply}` : ""}` : "/admin/feed", locale });
   }
 
   return (
