@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
@@ -52,6 +53,7 @@ type ExistingProfile = {
   attributes: Record<string, unknown>;
   contact_phone: string | null;
   status: string;
+  profile_photo_url?: string | null;
 };
 
 function stateFromExisting(p: ExistingProfile): FormState {
@@ -99,6 +101,7 @@ export default function NursingSeekerForm({
   // submitted anything yet.
   const isRealEdit = isEdit && initialProfile!.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
+  const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -145,7 +148,7 @@ export default function NursingSeekerForm({
     const res = await fetch("/api/generic-profile", {
       method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, profilePhotoUrl: photoUrl ?? undefined }),
     });
     setSubmitting(false);
 
@@ -171,6 +174,9 @@ export default function NursingSeekerForm({
       <div className="flex flex-col gap-3">
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        {initialProfile && (
+          <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
+        )}
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
