@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
+import AdminPageHeader from "@/components/admin/admin-page-header";
 
 type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
 
@@ -270,9 +271,10 @@ export default function AdminProfilesPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold mb-6">
-        {statusFilter === "pending" ? t("profilesTitle") : t("directoryTitle")}
-      </h1>
+      <AdminPageHeader
+        title={statusFilter === "pending" ? t("profilesTitle") : t("directoryTitle")}
+        description={statusFilter === "pending" ? t("profilesDescription") : t("directoryDescription")}
+      />
 
       {notice && (
         <div className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning mb-4">{notice}</div>

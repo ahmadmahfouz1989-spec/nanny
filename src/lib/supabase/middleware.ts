@@ -2,7 +2,16 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 
-const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/settings", "/featured", "/admin"];
+const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/saved", "/settings", "/featured", "/admin"];
+
+// An admin account has no marketplace profiles -- the user-facing app
+// (categories, matches, messages, saved, ...) has nothing for it and only
+// half-works. Every protected page outside /admin sends an admin into the
+// admin area instead, in this one place rather than per page. The feed has
+// a real moderation counterpart, so a feed deep link keeps its target.
+function adminDestination(rest: string, search: string): string {
+  return rest.startsWith("/feed") ? `/admin/feed${search}` : "/admin";
+}
 
 function splitLocale(pathname: string): { locale: string; rest: string } {
   const segments = pathname.split("/");
@@ -50,12 +59,15 @@ export async function updateSession(request: NextRequest, response: NextResponse
   }
 
   if (isProtected && user) {
-    const { data: profile } = await supabase.from("users").select("status").eq("id", user.id).single();
+    const { data: profile } = await supabase.from("users").select("role, status").eq("id", user.id).single();
     if (profile?.status === "suspended") {
       await supabase.auth.signOut();
       const redirectUrl = new URL(`/${locale}/login`, request.url);
       redirectUrl.searchParams.set("error", "account_suspended");
       return NextResponse.redirect(redirectUrl);
+    }
+    if (profile?.role === "admin" && !rest.startsWith("/admin")) {
+      return NextResponse.redirect(new URL(`/${locale}${adminDestination(rest, request.nextUrl.search)}`, request.url));
     }
   }
 

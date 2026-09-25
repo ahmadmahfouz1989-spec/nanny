@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { ui } from "@/lib/ui";
+import AdminPageHeader from "@/components/admin/admin-page-header";
 
 type CategoryStats = {
   slug: string;
@@ -45,7 +46,7 @@ export default function AdminOverviewPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold mb-8">{t("overviewTitle")}</h1>
+      <AdminPageHeader title={t("overviewTitle")} description={t("overviewDescription")} />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
         {tiles.map((tile) => (
