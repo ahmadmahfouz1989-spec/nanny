@@ -4,6 +4,10 @@
 -- old code keeps writing nanny activity to the legacy tables; this copies
 -- whatever changed there since, so nothing is lost at cutover.
 --
+-- DONE 2026-09-25 -- kept for reference only. Do NOT run it again now
+-- that the new code is live: step 1's delete would remove every nanny
+-- profile created since, because those only exist in generic_profiles.
+--
 -- Idempotent -- safe to run more than once. Run with the app in
 -- READ_ONLY_MODE, right before deploying the new code:
 --   begin; <this file> commit;
