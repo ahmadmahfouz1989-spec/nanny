@@ -1,12 +1,16 @@
-// Cutover check for the nanny → generic migration: scores every
-// parent × nanny pair twice -- once from the legacy tables (exactly as the
-// old recompute.ts built its inputs) and once from the migrated
-// generic_profiles rows -- and fails on any difference.
+// Cutover check for the nanny → generic migration:
+//  1. scores every parent × nanny pair twice -- once from the legacy tables
+//     (exactly as the old recompute.ts built its inputs) and once from the
+//     migrated generic_profiles rows -- and fails on any difference;
+//  2. checks every stored nanny generic_matches score against nanny's
+//     rubric (the old app could have re-scored copies with the wrong one
+//     while the migration ran ahead of the code deploy).
 //
 //   SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... node scripts/check-nanny-score-parity.ts
 //
-// Read-only. Needs the legacy tables to still exist (i.e. before the
-// clean-up migration that drops them).
+// Read-only unless --fix, which rewrites wrong stored scores (step 2).
+// Needs the legacy tables to still exist (i.e. before the clean-up
+// migration that drops them).
 
 import { createClient } from "@supabase/supabase-js";
 import {
@@ -112,9 +116,36 @@ for (const p of parents) {
 }
 for (const n of nannies) if (!genericById.has(n.id)) problems.push(`nanny ${n.id} missing from generic_profiles`);
 
+// Stored scores on the migrated/new nanny matches.
+const fix = process.argv.includes("--fix");
+const genericIds = new Set(generic.map((g) => g.id));
+const stored = await all<{ id: string; seeker_profile_id: string; provider_profile_id: string; score: number }>(
+  db.from("generic_matches").select("id, seeker_profile_id, provider_profile_id, score, categories!inner(slug)").eq("categories.slug", "nanny"),
+);
+let wrongStored = 0;
+for (const m of stored) {
+  const seeker = genericById.get(m.seeker_profile_id);
+  const provider = genericById.get(m.provider_profile_id);
+  if (!seeker || !provider || !genericIds.has(seeker.id)) continue;
+  const expected = computeMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
+  if (Number(m.score) === expected.score) continue;
+  wrongStored++;
+  if (fix) {
+    const { error } = await db
+      .from("generic_matches")
+      .update({ score: expected.score, score_breakdown: expected.breakdown })
+      .eq("id", m.id);
+    if (error) problems.push(`could not fix stored score on ${m.id}: ${error.message}`);
+  } else {
+    problems.push(`stored score on match ${m.id}: ${m.score}, nanny rubric gives ${expected.score} (rerun with --fix)`);
+  }
+}
+if (fix && wrongStored > 0) console.log(`Fixed ${wrongStored} stored nanny match score(s).`);
+
 if (problems.length > 0) {
   console.error(`Score parity FAILED (${problems.length} problem(s) over ${pairs} pairs):`);
   for (const p of problems.slice(0, 50)) console.error("  " + p);
   process.exit(1);
 }
 console.log(`Score parity OK: ${pairs} parent × nanny pairs score identically (score and every criterion).`);
+console.log(`Stored scores OK: ${stored.length} nanny match(es) match nanny's rubric.`);
