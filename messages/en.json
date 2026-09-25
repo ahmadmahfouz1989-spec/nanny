@@ -17,7 +17,8 @@
     "categories": "Categories",
     "terms": "Terms of Service",
     "contact": "Contact us",
-    "instagram": "Instagram"
+    "instagram": "Instagram",
+    "adminPanel": "Admin panel"
   },
   "Categories": {
     "hubTitle": "Browse categories",
@@ -642,7 +643,15 @@
     "hideConversation": "Hide conversation",
     "noConversation": "No conversation between these two — they were never a mutual match.",
     "reporterLabel": "Reporter",
-    "reportedLabel": "Reported"
+    "reportedLabel": "Reported",
+    "adminBadge": "Admin",
+    "overviewDescription": "Activity across the marketplace, and what's waiting on you.",
+    "profilesDescription": "New and edited profiles wait here until you approve or reject them. Nothing goes live without review.",
+    "directoryDescription": "Every approved profile. Open one to review it again or take it down.",
+    "usersDescription": "Find an account by email or phone to verify, feature, suspend or delete it.",
+    "reportsDescription": "Open reports from users. Review the conversation, then resolve or dismiss.",
+    "feedTitle": "Feed moderation",
+    "feedDescription": "The public feed as users see it. Delete any post or reply that breaks the rules."
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",

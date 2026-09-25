@@ -33,10 +33,6 @@ export default async function ProfilePage({
 
   const isFeatured = !!profile?.featured_until && new Date(profile.featured_until) > new Date();
 
-  if (profile?.role === "admin") {
-    redirect({ href: "/admin", locale });
-  }
-
   const hasNannyTrack = profile?.role === "parent" || profile?.role === "nanny";
 
   let matchProfile: { status: string; moderation_status: string; full_name: string; profile_photo_url?: string | null } | null =

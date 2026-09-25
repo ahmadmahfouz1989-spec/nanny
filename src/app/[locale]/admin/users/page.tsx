@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
+import AdminPageHeader from "@/components/admin/admin-page-header";
 
 type AdminUser = {
   id: string;
@@ -100,7 +101,7 @@ export default function AdminUsersPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold mb-6">{t("usersTitle")}</h1>
+      <AdminPageHeader title={t("usersTitle")} description={t("usersDescription")} />
 
       <input
         className={ui.input + " mb-6"}

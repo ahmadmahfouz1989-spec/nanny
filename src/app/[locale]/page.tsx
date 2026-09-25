@@ -30,6 +30,12 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const {
     data: { user },
   } = await supabase.auth.getUser();
+  // A signed-in admin's way back in is the admin panel, not the category
+  // hub (which the middleware would only redirect away from anyway).
+  const { data: account } = user
+    ? await supabase.from("users").select("role").eq("id", user.id).single()
+    : { data: null };
+  const isAdmin = account?.role === "admin";
 
   const steps = [
     { title: t("step1Title"), body: t("step1Body"), Illustration: CreateProfileIllustration },
@@ -54,8 +60,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <LocaleSwitcher />
           {user ? (
             <>
-              <Link href="/categories" className={ui.buttonGhost}>
-                {tNav("categories")}
+              <Link href={isAdmin ? "/admin" : "/categories"} className={ui.buttonGhost}>
+                {isAdmin ? tNav("adminPanel") : tNav("categories")}
               </Link>
               <SignOutButton />
             </>
