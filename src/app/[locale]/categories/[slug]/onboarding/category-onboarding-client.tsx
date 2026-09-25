@@ -28,6 +28,7 @@ type ExistingProfile = {
   attributes: Record<string, unknown>;
   contact_phone: string | null;
   status: string;
+  profile_photo_url?: string | null;
 } | null;
 
 export default function CategoryOnboardingClient({
