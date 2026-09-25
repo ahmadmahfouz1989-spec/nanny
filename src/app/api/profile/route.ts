@@ -169,11 +169,21 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
-    await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
-    await supabase
+    // Not part of the RPC's transaction -- if either fails, the core fields
+    // are already saved but the photo/nationality aren't, so report the
+    // failure (the editor keeps the form and can retry) and, above all,
+    // leave the previous photo alone: it's still what the row points to.
+    const { error: contactError } = await supabase
+      .from("users")
+      .update({ contact_phone: p.contactPhone ?? null })
+      .eq("id", user.id);
+    const { error: extraError } = await supabase
       .from("parent_profiles")
       .update({ nationality: p.nationality, profile_photo_url: p.profilePhotoUrl ?? null })
       .eq("user_id", user.id);
+    if (contactError || extraError) {
+      return NextResponse.json({ error: (contactError ?? extraError)!.message }, { status: 500 });
+    }
     await cleanupPreviousPhoto(supabase, "parent", user.id, oldPhotoUrl, p.profilePhotoUrl ?? null);
     await recomputeMatchesForParent((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "parent");
@@ -212,8 +222,17 @@ async function upsertProfile(request: Request, mode: "create" | "update") {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
     }
-    await supabase.from("users").update({ contact_phone: p.contactPhone ?? null }).eq("id", user.id);
-    await supabase.from("nanny_profiles").update({ nationality: p.nationality }).eq("user_id", user.id);
+    const { error: contactError } = await supabase
+      .from("users")
+      .update({ contact_phone: p.contactPhone ?? null })
+      .eq("id", user.id);
+    const { error: extraError } = await supabase
+      .from("nanny_profiles")
+      .update({ nationality: p.nationality })
+      .eq("user_id", user.id);
+    if (contactError || extraError) {
+      return NextResponse.json({ error: (contactError ?? extraError)!.message }, { status: 500 });
+    }
     await cleanupPreviousPhoto(supabase, "nanny", user.id, oldPhotoUrl, p.profilePhotoUrl);
     await recomputeMatchesForNanny((data as { id: string }).id);
     await notifyAdminsOfPendingReview(p.fullName, "nanny");

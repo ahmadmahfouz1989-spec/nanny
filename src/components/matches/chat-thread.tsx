@@ -35,7 +35,10 @@ export default function ChatThread({
   const [messages, setMessages] = useState<Message[] | null>(null);
   const [hasMoreOlder, setHasMoreOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
-  const suppressAutoScrollRef = useRef(false);
+  // Follow new messages only when the reader is already at the bottom --
+  // an incoming message shouldn't yank someone who has scrolled up to
+  // read older history back down (same as GenericChatThread).
+  const isNearBottomRef = useRef(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
@@ -80,6 +83,12 @@ export default function ChatThread({
   // MediaRecorder's onstop handler, it would still upload a voice note
   // against this now-defunct matchId closure.
   useEffect(() => {
+    // Set here, not just in useRef's initial value: Strict Mode's dev-only
+    // effect replay runs this cleanup and then this setup again on the
+    // same still-mounted component, and without resetting these the
+    // thread would treat itself as unmounted for its whole life.
+    mountedRef.current = true;
+    cancelledRef.current = false;
     return () => {
       mountedRef.current = false;
       cancelledRef.current = true;
@@ -124,11 +133,11 @@ export default function ChatThread({
     fetch(`/api/matches/${matchId}/messages?before=${encodeURIComponent(oldest)}`)
       .then((res) => res.json())
       .then((body) => {
-        suppressAutoScrollRef.current = true;
         setMessages((prev) => [...(body.messages ?? []), ...(prev ?? [])]);
         setHasMoreOlder(body.hasMore ?? false);
-        // Keep the same messages in view instead of jumping to the bottom
-        // (the default scroll effect) or the very top after prepending.
+        // isNearBottomRef is false here (the user had to scroll up to reach
+        // this button), so the scroll effect leaves position alone --
+        // restore it manually so prepending doesn't shift what's in view.
         requestAnimationFrame(() => {
           if (el) el.scrollTop = el.scrollHeight - prevScrollHeight;
         });
@@ -186,15 +195,16 @@ export default function ChatThread({
   useEffect(() => {
     // Scroll only this thread's own container to the bottom — never
     // scrollIntoView, which would also scroll the page (the compact widget
-    // is embedded mid-page on the dashboard). Skipped right after loading
-    // older history, which restores its own scroll position instead.
-    if (suppressAutoScrollRef.current) {
-      suppressAutoScrollRef.current = false;
-      return;
-    }
+    // is embedded mid-page on the dashboard).
     const el = listRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
+    if (el && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
   }, [messages]);
+
+  function handleScroll() {
+    const el = listRef.current;
+    if (!el) return;
+    isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  }
 
   async function send() {
     const body = draft.trim();
@@ -209,11 +219,12 @@ export default function ChatThread({
         body: JSON.stringify({ body }),
       });
       if (!res.ok) {
-        setDraft(body);
+        restoreDraft(body);
         setSendError(t("messageSendError"));
         return;
       }
       const { message } = await res.json();
+      isNearBottomRef.current = true;
       setMessages((prev) => {
         const withoutOptimistic = prev ?? [];
         if (withoutOptimistic.some((m) => m.id === message.id)) return withoutOptimistic;
@@ -221,11 +232,17 @@ export default function ChatThread({
       });
       onMessageRef.current?.(message);
     } catch {
-      setDraft(body);
+      restoreDraft(body);
       setSendError(t("messageSendError"));
     } finally {
       setSending(false);
     }
+  }
+
+  // The composer stays editable while a send is in flight -- only put the
+  // failed text back if the user hasn't started typing something new.
+  function restoreDraft(failedBody: string) {
+    setDraft((current) => (current === "" ? failedBody : current));
   }
 
   async function startRecording() {
@@ -319,6 +336,7 @@ export default function ChatThread({
       }
 
       const { message } = await res.json();
+      isNearBottomRef.current = true;
       setMessages((prev) => {
         const withoutOptimistic = prev ?? [];
         if (withoutOptimistic.some((m) => m.id === message.id)) return withoutOptimistic;
@@ -354,6 +372,7 @@ export default function ChatThread({
 
       <div
         ref={listRef}
+        onScroll={handleScroll}
         className={
           full
             ? "flex-1 min-h-0 overflow-y-auto flex flex-col gap-1 p-4"

@@ -147,7 +147,14 @@
     "title": "Reset your password",
     "subhead": "Enter the email or phone you signed up with.",
     "submit": "Send recovery instructions",
-    "submitting": "Sending…"
+    "submitting": "Sending…",
+    "codeTitle": "Enter the code",
+    "codeSubhead": "If {identifier} belongs to an account, we sent it a 6-digit code by SMS.",
+    "codePlaceholder": "6-digit code",
+    "verify": "Continue",
+    "verifying": "Checking…",
+    "codeError": "That code is invalid or has expired.",
+    "tooManyAttempts": "Too many attempts. Try again in a few minutes."
   },
   "ResetPassword": {
     "title": "Set a new password",

@@ -105,8 +105,13 @@ function stateFromExisting(p: ExistingNannyProfile): FormState {
 
 export default function NannyOnboarding({
   initialProfile,
+  accountContactPhone,
 }: {
   initialProfile?: ExistingNannyProfile | null;
+  // contact_phone is shared account state, not a profile column -- a first
+  // profile here must still start from whatever another category already
+  // saved, or submitting the form untouched would clear it.
+  accountContactPhone?: string | null;
 }) {
   const t = useTranslations("NannyOnboarding");
   const tw = useTranslations("Wizard");
@@ -119,7 +124,9 @@ export default function NannyOnboarding({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isEdit = !!initialProfile;
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
+  const [form, setForm] = useState(
+    initialProfile ? stateFromExisting(initialProfile) : { ...initialState, contactPhone: accountContactPhone ?? "" },
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);

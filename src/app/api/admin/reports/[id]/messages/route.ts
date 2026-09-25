@@ -28,19 +28,36 @@ type ConversationMessage = {
 // the contact-reveal route, not something either party's own RLS should
 // allow.
 
+// Newest-first page, reversed for display. Oldest-first with no bound
+// silently truncated a long thread to its OLDEST rows under PostgREST's
+// max_rows cap (supabase/config.toml) -- exactly hiding a recent incident.
+// `before` pages further back; hasOlder tells the admin UI there's more,
+// so a partial window is never presented as the whole conversation.
+const ADMIN_MESSAGE_PAGE_SIZE = 200;
+
+type ConversationPage = { messages: ConversationMessage[]; hasOlder: boolean };
+
 async function messagesForMatch(
   db: Admin,
   table: "messages" | "generic_messages",
   matchId: string,
   reporterUserId: string,
-): Promise<ConversationMessage[]> {
-  const { data: messages } = await db
+  before: string | null,
+): Promise<ConversationPage> {
+  let query = db
     .from(table)
     .select("id, sender_id, body, audio_path, audio_duration_seconds, created_at")
     .eq("match_id", matchId)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: false })
+    .limit(ADMIN_MESSAGE_PAGE_SIZE + 1);
+  if (before) query = query.lt("created_at", before);
 
-  const audioPaths = (messages ?? []).map((m) => m.audio_path).filter((p): p is string => !!p);
+  const { data } = await query;
+  const rows = data ?? [];
+  const hasOlder = rows.length > ADMIN_MESSAGE_PAGE_SIZE;
+  const messages = rows.slice(0, ADMIN_MESSAGE_PAGE_SIZE).reverse();
+
+  const audioPaths = messages.map((m) => m.audio_path).filter((p): p is string => !!p);
   const signedByPath = new Map<string, string>();
   if (audioPaths.length > 0) {
     const { data: signed } = await db.storage.from("voice-notes").createSignedUrls(audioPaths, SIGNED_URL_TTL_SECONDS);
@@ -49,14 +66,17 @@ async function messagesForMatch(
     }
   }
 
-  return (messages ?? []).map((m) => ({
-    id: m.id as string,
-    body: m.body as string,
-    created_at: m.created_at as string,
-    isReporter: m.sender_id === reporterUserId,
-    audioUrl: m.audio_path ? (signedByPath.get(m.audio_path) ?? null) : null,
-    audioDurationSeconds: (m.audio_duration_seconds as number | null) ?? null,
-  }));
+  return {
+    hasOlder,
+    messages: messages.map((m) => ({
+      id: m.id as string,
+      body: m.body as string,
+      created_at: m.created_at as string,
+      isReporter: m.sender_id === reporterUserId,
+      audioUrl: m.audio_path ? (signedByPath.get(m.audio_path) ?? null) : null,
+      audioDurationSeconds: (m.audio_duration_seconds as number | null) ?? null,
+    })),
+  };
 }
 
 async function directConversation(
@@ -65,7 +85,8 @@ async function directConversation(
   matchSource: string,
   reporterUserId: string,
   reportedUserId: string,
-): Promise<{ matchId: string; messages: ConversationMessage[] } | null> {
+  before: string | null,
+): Promise<({ matchId: string } & ConversationPage) | null> {
   const table = matchSource === "nanny" ? "matches" : "generic_matches";
   const { data: match } = await db.from(table).select("id").eq("id", matchId).maybeSingle();
   if (!match) return null;
@@ -77,8 +98,8 @@ async function directConversation(
   const isValid = await verifyMatchParticipants(db, matchSource, matchId, reporterUserId, reportedUserId);
   if (!isValid) return null;
 
-  const messages = await messagesForMatch(db, matchSource === "nanny" ? "messages" : "generic_messages", matchId, reporterUserId);
-  return { matchId, messages };
+  const page = await messagesForMatch(db, matchSource === "nanny" ? "messages" : "generic_messages", matchId, reporterUserId, before);
+  return { matchId, ...page };
 }
 
 async function legacyConversation(
@@ -86,7 +107,8 @@ async function legacyConversation(
   roleById: Map<string, string | null>,
   reporterUserId: string,
   reportedUserId: string,
-): Promise<{ matchId: string; messages: ConversationMessage[] } | null> {
+  before: string | null,
+): Promise<({ matchId: string } & ConversationPage) | null> {
   async function profileFor(userId: string) {
     const role = roleById.get(userId);
     if (role === "parent") {
@@ -118,15 +140,16 @@ async function legacyConversation(
 
   if (!match || match.status !== "mutual") return null;
 
-  const messages = await messagesForMatch(db, "messages", match.id, reporterUserId);
-  return { matchId: match.id, messages };
+  const page = await messagesForMatch(db, "messages", match.id, reporterUserId, before);
+  return { matchId: match.id, ...page };
 }
 
 async function genericConversation(
   db: Admin,
   reporterUserId: string,
   reportedUserId: string,
-): Promise<{ matchId: string; messages: ConversationMessage[] } | null> {
+  before: string | null,
+): Promise<({ matchId: string } & ConversationPage) | null> {
   const { data: profiles } = await db
     .from("generic_profiles")
     .select("id, user_id")
@@ -158,8 +181,8 @@ async function genericConversation(
   const match = reporterAsSeeker?.[0] ?? reportedAsSeeker?.[0];
   if (!match) return null;
 
-  const messages = await messagesForMatch(db, "generic_messages", match.id, reporterUserId);
-  return { matchId: match.id, messages };
+  const page = await messagesForMatch(db, "generic_messages", match.id, reporterUserId, before);
+  return { matchId: match.id, ...page };
 }
 
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -182,26 +205,37 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ error: "Report not found" }, { status: 404 });
   }
 
+  const before = new URL(request.url).searchParams.get("before");
+
+  // Either party may since have been deleted (reports.*_user_id are ON
+  // DELETE SET NULL) -- their messages went with them, so there's nothing
+  // left to show.
+  const reporterUserId = report.reporter_user_id as string | null;
+  const reportedUserId = report.reported_user_id as string | null;
+  if (!reporterUserId || !reportedUserId) {
+    return NextResponse.json({ matchId: null, messages: [], hasOlder: false });
+  }
+
   let conversation =
     report.match_id && report.match_source
-      ? await directConversation(db, report.match_id, report.match_source, report.reporter_user_id, report.reported_user_id)
+      ? await directConversation(db, report.match_id, report.match_source, reporterUserId, reportedUserId, before)
       : null;
 
   if (!conversation) {
     const { data: users } = await db
       .from("users")
       .select("id, role")
-      .in("id", [report.reporter_user_id, report.reported_user_id]);
+      .in("id", [reporterUserId, reportedUserId]);
 
     const roleById = new Map((users ?? []).map((u) => [u.id, u.role]));
 
     conversation =
-      (await legacyConversation(db, roleById, report.reporter_user_id, report.reported_user_id)) ??
-      (await genericConversation(db, report.reporter_user_id, report.reported_user_id));
+      (await legacyConversation(db, roleById, reporterUserId, reportedUserId, before)) ??
+      (await genericConversation(db, reporterUserId, reportedUserId, before));
   }
 
   if (!conversation) {
-    return NextResponse.json({ matchId: null, messages: [] });
+    return NextResponse.json({ matchId: null, messages: [], hasOlder: false });
   }
 
   return NextResponse.json(conversation);

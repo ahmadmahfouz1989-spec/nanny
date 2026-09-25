@@ -8,6 +8,7 @@ import CreateProfileIllustration from "@/components/illustrations/create-profile
 import { LogoLoader } from "@/components/animated-logo";
 import { ui } from "@/lib/ui";
 import type { SavedListItem } from "@/lib/saved-profiles";
+import { useSavedProfiles } from "@/components/saved-profiles-provider";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 const CATEGORIES = ["nanny", "nursing", "tutoring"] as const;
@@ -15,6 +16,7 @@ const CATEGORIES = ["nanny", "nursing", "tutoring"] as const;
 export default function SavedClient() {
   const t = useTranslations("SavedProfiles");
   const tNav = useTranslations("Nav");
+  const { isSaved } = useSavedProfiles();
 
   const [items, setItems] = useState<SavedListItem[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -48,6 +50,16 @@ export default function SavedClient() {
       });
   }, [category, role, t]);
 
+  // Drop the previous filter's page and cursor in the same update as the
+  // filter change -- otherwise its Load more stays clickable while the new
+  // first page loads, and would fetch the new filter with the old filter's
+  // cursor.
+  function resetResults() {
+    setItems(null);
+    setNextCursor(null);
+    setError(null);
+  }
+
   function loadMore() {
     if (!nextCursor || loadingMore) return;
     setLoadingMore(true);
@@ -71,9 +83,20 @@ export default function SavedClient() {
     setItems((prev) => (prev ?? []).filter((i) => i.id !== item.id));
   }
 
+  // Keyed by target, not favorites row id: Undo first restores the old
+  // row's snapshot, then replaces it with the re-created row's identity.
   function restoreItem(item: SavedListItem) {
-    setItems((prev) => [item, ...(prev ?? [])]);
+    setItems((prev) => [
+      item,
+      ...(prev ?? []).filter((i) => !(i.type === item.type && i.targetProfileId === item.targetProfileId)),
+    ]);
   }
+
+  // A profile unsaved from somewhere other than this card's own Remove
+  // (the bookmark inside its expanded preview) only updates the shared
+  // saved-state map -- hide it here too rather than leaving a card for
+  // something that is no longer saved.
+  const visibleItems = items?.filter((item) => isSaved(item.type, item.targetProfileId, true)) ?? null;
 
   const hasFilters = !!(category || role);
   const filteredEmptyLabel = category ? tNav(category) : role === "seeking" ? t("roleSeeking") : t("roleOffering");
@@ -84,7 +107,14 @@ export default function SavedClient() {
       <p className="text-sm text-muted mb-4">{t("sortRecentlySaved")}</p>
 
       <div className="flex flex-wrap items-center gap-2 mb-6 rounded-2xl border border-border bg-surface-sunken/50 p-3">
-        <select className={ui.select + " w-auto"} value={category} onChange={(e) => setCategory(e.target.value as typeof category)}>
+        <select
+          className={ui.select + " w-auto"}
+          value={category}
+          onChange={(e) => {
+            resetResults();
+            setCategory(e.target.value as typeof category);
+          }}
+        >
           <option value="">{t("filterAllCategories")}</option>
           {CATEGORIES.map((c) => (
             <option key={c} value={c}>
@@ -92,7 +122,14 @@ export default function SavedClient() {
             </option>
           ))}
         </select>
-        <select className={ui.select + " w-auto"} value={role} onChange={(e) => setRole(e.target.value as typeof role)}>
+        <select
+          className={ui.select + " w-auto"}
+          value={role}
+          onChange={(e) => {
+            resetResults();
+            setRole(e.target.value as typeof role);
+          }}
+        >
           <option value="">{t("filterAllRoles")}</option>
           <option value="seeking">{t("roleSeeking")}</option>
           <option value="offering">{t("roleOffering")}</option>
@@ -102,7 +139,7 @@ export default function SavedClient() {
       {!items && !error && <LogoLoader label={t("loading")} fullHeight />}
       {error && <p className="text-sm text-muted">{error}</p>}
 
-      {items && items.length === 0 && !hasFilters && (
+      {visibleItems && visibleItems.length === 0 && !hasFilters && (
         <div className={ui.card + " overflow-hidden text-center"}>
           <CreateProfileIllustration className="w-full h-32" />
           <div className="p-6">
@@ -115,14 +152,14 @@ export default function SavedClient() {
         </div>
       )}
 
-      {items && items.length === 0 && hasFilters && (
+      {visibleItems && visibleItems.length === 0 && hasFilters && (
         <div className={ui.card + " overflow-hidden"}>
           <p className="text-sm text-muted p-6">{t("emptyFiltered", { category: filteredEmptyLabel })}</p>
         </div>
       )}
 
       <div className="flex flex-col gap-5">
-        {items?.map((item, i) => (
+        {visibleItems?.map((item, i) => (
           <SavedProfileCard key={item.id} item={item} tone={TONES[i % TONES.length]} onRemoved={removeItem} onRestored={restoreItem} />
         ))}
       </div>

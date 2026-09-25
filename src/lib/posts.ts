@@ -1,11 +1,16 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { featuredUserIds } from "@/lib/featured";
 
-// `role` (and a usable `profileId`) is only present for a parent/nanny
-// author -- that's what ProfileSummaryPanel knows how to render. A post's
-// author might instead be a nursing (or other category) account, or have
-// no profile anywhere yet; those just show a name with no clickable
-// summary, same as the existing "someone" fallback for no author at all.
-export type PostAuthor = { fullName: string; role?: "parent" | "nanny"; profileId: string | null; photoUrl: string | null };
+// `role` + `profileId` name the profile ProfileSummaryPanel should open
+// for this author -- a parent/nanny profile, or a generic_profiles one
+// (nursing, tutoring, ...). An author with no profile anywhere just shows
+// a name with no clickable summary.
+export type PostAuthor = {
+  fullName: string;
+  role?: "parent" | "nanny" | "generic";
+  profileId: string | null;
+  photoUrl: string | null;
+};
 
 /**
  * A user's default display identity, independent of any specific post --
@@ -37,8 +42,8 @@ export async function defaultIdentityByUser(posts: { user_id: string }[]): Promi
       ? admin.from("nanny_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", nannyIds)
       : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
     otherIds.length
-      ? admin.from("generic_profiles").select("user_id, full_name").in("user_id", otherIds)
-      : Promise.resolve({ data: [] as { user_id: string; full_name: string }[] }),
+      ? admin.from("generic_profiles").select("id, user_id, full_name").in("user_id", otherIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
   ]);
 
   for (const p of parents ?? [])
@@ -46,7 +51,7 @@ export async function defaultIdentityByUser(posts: { user_id: string }[]): Promi
   for (const n of nannies ?? [])
     out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id, photoUrl: n.profile_photo_url });
   for (const g of generics ?? []) {
-    if (!out.has(g.user_id)) out.set(g.user_id, { fullName: g.full_name, profileId: null, photoUrl: null });
+    if (!out.has(g.user_id)) out.set(g.user_id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: null });
   }
   return out;
 }
@@ -114,7 +119,7 @@ export async function resolvePostAuthors(posts: PostWithIdentity[]): Promise<Map
     } else if (post.posted_as_generic_profile_id) {
       const g = genericById.get(post.posted_as_generic_profile_id);
       if (g) {
-        out.set(post.id, { fullName: g.full_name, profileId: null, photoUrl: null });
+        out.set(post.id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: null });
         continue;
       }
     }
@@ -162,4 +167,29 @@ export async function postEngagement(postIds: string[], userId: string): Promise
     if (agg) agg.replyCount += 1;
   }
   return out;
+}
+
+export const POST_FEED_COLUMNS =
+  "id, user_id, kind, caption, status, created_at, posted_as_parent_profile_id, posted_as_nanny_profile_id, posted_as_generic_profile_id";
+
+/**
+ * Everything the feed renders per post beyond its own row -- author,
+ * engagement counts, featured badge, ownership. Shared by the paginated
+ * feed and the single-post lookup a notification deep link uses, so a
+ * post opened from either looks identical.
+ */
+export async function decoratePosts<T extends PostWithIdentity>(posts: T[], userId: string) {
+  const [authors, engagement, featured] = await Promise.all([
+    resolvePostAuthors(posts),
+    postEngagement(posts.map((p) => p.id), userId),
+    featuredUserIds(posts.map((p) => p.user_id)),
+  ]);
+
+  return posts.map((p) => ({
+    ...p,
+    author: authors.get(p.id) ?? null,
+    ...(engagement.get(p.id) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
+    featured: featured.has(p.user_id),
+    isMine: p.user_id === userId,
+  }));
 }

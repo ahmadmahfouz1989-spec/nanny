@@ -3,8 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
-import { resolvePostAuthors, postEngagement } from "@/lib/posts";
-import { featuredUserIds } from "@/lib/featured";
+import { resolvePostAuthors, decoratePosts, POST_FEED_COLUMNS } from "@/lib/posts";
 
 const PAGE_SIZE = 20;
 
@@ -44,7 +43,7 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("posts")
-    .select("id, user_id, kind, caption, status, created_at, posted_as_parent_profile_id, posted_as_nanny_profile_id, posted_as_generic_profile_id")
+    .select(POST_FEED_COLUMNS)
     .order("created_at", { ascending: false })
     .limit(PAGE_SIZE);
 
@@ -60,19 +59,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const [authors, engagement, featured] = await Promise.all([
-    resolvePostAuthors(posts ?? []),
-    postEngagement((posts ?? []).map((p) => p.id) as string[], user.id),
-    featuredUserIds((posts ?? []).map((p) => p.user_id as string)),
-  ]);
-
-  const results = (posts ?? []).map((p) => ({
-    ...p,
-    author: authors.get(p.id as string) ?? null,
-    ...(engagement.get(p.id as string) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
-    featured: featured.has(p.user_id as string),
-    isMine: p.user_id === user.id,
-  }));
+  const results = await decoratePosts(posts ?? [], user.id);
 
   return NextResponse.json({ posts: results, nextCursor: results.length === PAGE_SIZE ? results[results.length - 1].created_at : null });
 }

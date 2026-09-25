@@ -24,7 +24,11 @@ export async function POST(request: Request) {
       redirectTo: `${origin}/auth/callback-recovery`,
     });
   } else if (parsed.data.phone) {
-    await supabase.auth.signInWithOtp({ phone: parsed.data.phone });
+    // shouldCreateUser: false -- this is recovery, not signup; without it
+    // an unregistered number would silently get a brand-new account. The
+    // code is then checked by /api/auth/recover/verify, which signs the
+    // user in so /reset-password can set a new password.
+    await supabase.auth.signInWithOtp({ phone: parsed.data.phone, options: { shouldCreateUser: false } });
   }
 
   // Always return a generic success response regardless of whether the

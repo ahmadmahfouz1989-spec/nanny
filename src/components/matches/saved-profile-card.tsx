@@ -10,6 +10,7 @@ import GenericMatchActions from "@/components/matches/generic-match-actions";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { ui } from "@/lib/ui";
 import { useToast } from "@/components/toast-provider";
+import { useSavedProfiles } from "@/components/saved-profiles-provider";
 import type { SavedListItem } from "@/lib/saved-profiles";
 
 function localizedLocationName(loc: { name_en: string; name_ar: string; name_fr: string } | null, locale: string) {
@@ -34,30 +35,48 @@ export default function SavedProfileCard({
   const tNav = useTranslations("Nav");
   const locale = useLocale();
   const { show } = useToast();
+  const { setSaved } = useSavedProfiles();
   const [open, setOpen] = useState(false);
 
   // Both mutations update the list optimistically for a snappy toggle, but
   // must roll back on failure -- previously they always kept the optimistic
   // state and never checked the response, so a failed request looked
   // identical to a successful one until the next reload silently reversed
-  // it.
-  async function undo() {
-    onRestored(item);
-    const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "PUT" }).catch(() => null);
-    if (!res || !res.ok) {
-      onRemoved(item);
-      show({ message: t("saveError"), tone: "error" });
-    }
-  }
-
+  // it. Both also keep SavedProfilesProvider in step, so every bookmark
+  // for this profile (including one in an open preview) agrees.
   async function remove() {
     onRemoved(item);
+    setSaved(item.type, item.targetProfileId, false);
     const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "DELETE" }).catch(() => null);
     if (!res || !res.ok) {
       onRestored(item);
+      setSaved(item.type, item.targetProfileId, true);
       show({ message: t("removeError"), tone: "error" });
       return;
     }
+
+    // The toast's Undo stays clickable until it auto-dismisses -- only the
+    // first click may act, or a double click would restore the card twice.
+    let undoUsed = false;
+    async function undo() {
+      if (undoUsed) return;
+      undoUsed = true;
+      onRestored(item);
+      setSaved(item.type, item.targetProfileId, true);
+      const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "PUT" }).catch(() => null);
+      if (!res || !res.ok) {
+        onRemoved(item);
+        setSaved(item.type, item.targetProfileId, false);
+        show({ message: t("saveError"), tone: "error" });
+        return;
+      }
+      // Re-saving creates a new favorites row -- adopt its id/savedAt
+      // instead of the deleted row's.
+      const body = await res.json().catch(() => null);
+      const favorite = body?.favorite as { id: string; created_at: string } | null | undefined;
+      if (favorite) onRestored({ ...item, id: favorite.id, savedAt: favorite.created_at });
+    }
+
     show({ message: t("removedToast"), actionLabel: t("undo"), onAction: undo });
   }
 
