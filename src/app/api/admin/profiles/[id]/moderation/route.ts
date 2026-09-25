@@ -104,9 +104,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ profile: updated, deleted: false });
     }
 
-    // generic_profiles has no photo column -- only parent/nanny need their
-    // storage file cleaned up alongside the DB row.
-    const deleteSelectCols = profileType === "generic" ? selectCols : `${selectCols}, profile_photo_url`;
+    // Every profile table has a photo column -- fetch it so the storage
+    // file is cleaned up alongside the DB row.
+    const deleteSelectCols = `${selectCols}, profile_photo_url`;
 
     const { data: deleted, error } = await db.from(table).delete().eq("id", id).select(deleteSelectCols).single();
 
@@ -121,7 +121,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     };
 
     if (row.profile_photo_url) {
-      const bucket = profileType === "parent" ? "parent-photos" : "nanny-photos";
+      const bucket = profileType === "parent" ? "parent-photos" : profileType === "nanny" ? "nanny-photos" : "generic-photos";
       // profile_photo_url is client-submitted and only validated as a URL --
       // it could name another account's real photo. Only ever delete a
       // path that actually lives under this profile's own owner folder.

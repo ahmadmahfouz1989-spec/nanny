@@ -19,6 +19,8 @@ type NannyTab = {
 type GenericTab = {
   kind: "generic";
   key: string;
+  profileId: string;
+  initialPhotoUrl: string | null;
   label: string;
   slug: string;
   role: "seeker" | "provider";
@@ -70,6 +72,9 @@ export default function ProfileTabs({ tabs }: { tabs: ProfileTabDef[] }) {
         />
       ) : (
         <GenericProfileHeaderCard
+          key={active.key}
+          profileId={active.profileId}
+          initialPhotoUrl={active.initialPhotoUrl}
           slug={active.slug}
           role={active.role}
           categoryLabel={active.categoryLabel}

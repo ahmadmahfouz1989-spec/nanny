@@ -1,6 +1,9 @@
+"use client";
+
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { ui } from "@/lib/ui";
 
 const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
@@ -12,10 +15,12 @@ const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
 /**
  * Identity block for a nursing/tutoring profile on the account-wide
  * /profile page -- the generic-category counterpart of ProfileHeaderCard.
- * No photo upload here: generic_profiles has no photo column, unlike
- * nanny/parent, so this shows a plain avatar instead of an editable one.
+ * Same editable photo as ProfileHeaderCard, scoped to this one profile
+ * (an account can hold several generic profiles, each with its own photo).
  */
 export default function GenericProfileHeaderCard({
+  profileId,
+  initialPhotoUrl,
   slug,
   role,
   categoryLabel,
@@ -23,6 +28,8 @@ export default function GenericProfileHeaderCard({
   fullName,
   moderationStatus,
 }: {
+  profileId: string;
+  initialPhotoUrl: string | null;
   slug: string;
   role: "seeker" | "provider";
   categoryLabel: string;
@@ -31,33 +38,93 @@ export default function GenericProfileHeaderCard({
   moderationStatus: string;
 }) {
   const t = useTranslations("Dashboard");
-  const tone = MODERATION_TONE[moderationStatus] ?? "warning";
+  const tNanny = useTranslations("NannyOnboarding");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
+  // A new photo goes back to admin review, same as nanny/parent.
+  const [status, setStatus] = useState(moderationStatus);
+  const [uploading, setUploading] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
+  const tone = MODERATION_TONE[status] ?? "warning";
+
+  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setPhotoError(null);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("genericProfileId", profileId);
+
+    try {
+      const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
+      if (!res.ok) {
+        setPhotoError(t("photoUpdateError"));
+        return;
+      }
+      const body = await res.json();
+      setPhotoUrl(body.url);
+      setStatus("pending");
+    } catch {
+      setPhotoError(t("photoUpdateError"));
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }
 
   return (
     <div className={ui.card + " p-6"}>
       <div className="flex items-start gap-4">
-        <AvatarIllustration tone="secondary" className="h-16 w-16 shrink-0 rounded-full" />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          aria-label={tNanny("changePhoto")}
+          className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted overflow-hidden hover:border-primary/50 transition-colors"
+        >
+          {photoUrl ? (
+            <Image src={photoUrl} alt="" width={64} height={64} className="h-full w-full object-cover" />
+          ) : (
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
+          )}
+        </button>
         <div className="min-w-0 flex-1">
           <p className="font-display text-xl font-bold truncate">{fullName ?? categoryLabel}</p>
           <p className="text-sm text-muted">
             {categoryLabel} · {roleLabel}
           </p>
           <span className={ui.badge(tone) + " mt-1.5 inline-block"}>
-            {moderationStatus === "approved" && t("statusApproved")}
-            {moderationStatus === "pending" && t("statusPending")}
-            {moderationStatus === "rejected" && t("statusRejected")}
+            {status === "approved" && t("statusApproved")}
+            {status === "pending" && t("statusPending")}
+            {status === "rejected" && t("statusRejected")}
           </span>
         </div>
       </div>
 
+      <button type="button" onClick={() => fileInputRef.current?.click()} className={ui.link + " text-xs mt-2"}>
+        {tNanny("changePhoto")}
+      </button>
+      <p className="text-xs text-muted mt-0.5">{uploading ? tNanny("uploading") : tNanny("photoHint")}</p>
+      {photoError && <p className="text-xs text-danger mt-0.5">{photoError}</p>}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/jpeg,image/png,image/webp"
+        onChange={handlePhotoChange}
+        className="hidden"
+      />
+
       <p className="text-sm text-muted mt-4">
-        {moderationStatus === "approved" && t("descriptionApproved")}
-        {moderationStatus === "pending" && t("descriptionPending")}
-        {moderationStatus === "rejected" && t("descriptionRejected")}
+        {status === "approved" && t("descriptionApproved")}
+        {status === "pending" && t("descriptionPending")}
+        {status === "rejected" && t("descriptionRejected")}
       </p>
 
       <div className="flex items-center gap-3 mt-4">
-        {moderationStatus === "approved" && (
+        {status === "approved" && (
           <Link href={`/categories/${slug}/dashboard`} className={ui.buttonPrimary}>
             {t("viewMatches")}
           </Link>

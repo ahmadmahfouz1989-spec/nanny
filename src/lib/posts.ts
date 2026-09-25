@@ -20,7 +20,7 @@ export type PostAuthor = {
  * Resolves by the account's global users.role first: parent/nanny accounts
  * show their profile name+photo, anyone else falls back to their
  * generic_profiles full_name (arbitrary category, if they have more than
- * one) with no photo. Service role: this should always resolve a name
+ * one) and its photo. Service role: this should always resolve a name
  * regardless of a profile's own moderation/pause state, same reasoning as
  * the ratings and featured-status lookups.
  */
@@ -43,8 +43,8 @@ export async function defaultIdentityByUser(posts: { user_id: string }[]): Promi
       ? admin.from("nanny_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", nannyIds)
       : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
     otherIds.length
-      ? admin.from("generic_profiles").select("id, user_id, full_name").in("user_id", otherIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string }[] }),
+      ? admin.from("generic_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", otherIds)
+      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
   ]);
 
   for (const p of parents ?? [])
@@ -52,7 +52,7 @@ export async function defaultIdentityByUser(posts: { user_id: string }[]): Promi
   for (const n of nannies ?? [])
     out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id, photoUrl: n.profile_photo_url });
   for (const g of generics ?? []) {
-    if (!out.has(g.user_id)) out.set(g.user_id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: null });
+    if (!out.has(g.user_id)) out.set(g.user_id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: g.profile_photo_url });
   }
   return out;
 }
@@ -95,8 +95,8 @@ export async function resolvePostAuthors(posts: PostWithIdentity[]): Promise<Map
       ? admin.from("nanny_profiles").select("id, full_name, profile_photo_url").in("id", nannyIds)
       : Promise.resolve({ data: [] as { id: string; full_name: string; profile_photo_url: string | null }[] }),
     genericIds.length
-      ? admin.from("generic_profiles").select("id, full_name").in("id", genericIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+      ? admin.from("generic_profiles").select("id, full_name, profile_photo_url").in("id", genericIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string; profile_photo_url: string | null }[] }),
   ]);
 
   const parentById = new Map((parents ?? []).map((p) => [p.id, p]));
@@ -120,7 +120,7 @@ export async function resolvePostAuthors(posts: PostWithIdentity[]): Promise<Map
     } else if (post.posted_as_generic_profile_id) {
       const g = genericById.get(post.posted_as_generic_profile_id);
       if (g) {
-        out.set(post.id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: null });
+        out.set(post.id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: g.profile_photo_url });
         continue;
       }
     }

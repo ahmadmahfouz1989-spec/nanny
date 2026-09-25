@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   let genericQuery = db
     .from("generic_profiles")
     .select(
-      "id, user_id, full_name, role, attributes, status, moderation_status, created_at, updated_at, " +
+      "id, user_id, full_name, profile_photo_url, role, attributes, status, moderation_status, created_at, updated_at, " +
         "locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar), users(email, contact_phone, status)",
     )
     .eq("moderation_status", moderationStatus)

@@ -6,8 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import ChatThread from "@/components/matches/chat-thread";
 import ConversationHeader from "@/components/matches/conversation-header";
-import GenericChatThread from "@/components/matches/generic-chat-thread";
-import GenericConversationHeader from "@/components/matches/generic-conversation-header";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ConnectIllustration from "@/components/illustrations/connect-illustration";
 import { SearchIcon } from "@/components/nav-icons";
@@ -201,43 +199,26 @@ export default function MessagesClient() {
 
       <div className={`${selected ? "flex" : "hidden sm:flex"} flex-1 min-w-0 flex-col`}>
         {selectedConversation ? (
-          selectedConversation.source === "nanny" ? (
-            <>
-              <ConversationHeader
-                key={`header-${selectedConversation.matchId}`}
-                matchId={selectedConversation.matchId}
-                name={selectedConversation.counterpart.name}
-                photoUrl={selectedConversation.counterpart.photoUrl}
-                tone={TONES[selectedIndex % TONES.length]}
-                profileId={selectedConversation.counterpart.id}
-                profileType={counterpartProfileType}
-                onBack={() => setSelected(null)}
-              />
-              <ChatThread
-                key={`thread-${selectedConversation.matchId}`}
-                matchId={selectedConversation.matchId}
-                variant="full"
-                onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
-              />
-            </>
-          ) : (
-            <>
-              <GenericConversationHeader
-                key={`header-${selectedConversation.matchId}`}
-                matchId={selectedConversation.matchId}
-                matchSource={selectedConversation.source}
-                name={selectedConversation.counterpart.name}
-                profileId={selectedConversation.counterpart.id}
-                tone={TONES[selectedIndex % TONES.length]}
-                onBack={() => setSelected(null)}
-              />
-              <GenericChatThread
-                key={`thread-${selectedConversation.matchId}`}
-                matchId={selectedConversation.matchId}
-                onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
-              />
-            </>
-          )
+          <>
+            <ConversationHeader
+              key={`header-${selectedConversation.matchId}`}
+              matchId={selectedConversation.matchId}
+              conversationSource={selectedConversation.source}
+              name={selectedConversation.counterpart.name}
+              photoUrl={selectedConversation.counterpart.photoUrl}
+              tone={TONES[selectedIndex % TONES.length]}
+              profileId={selectedConversation.counterpart.id}
+              profileType={selectedConversation.source === "nanny" ? counterpartProfileType : "generic"}
+              onBack={() => setSelected(null)}
+            />
+            <ChatThread
+              key={`thread-${selectedConversation.matchId}`}
+              matchId={selectedConversation.matchId}
+              source={selectedConversation.source === "nanny" ? "nanny" : "generic"}
+              variant="full"
+              onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
+            />
+          </>
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
             <ConnectIllustration className="h-28 w-auto opacity-80" />

@@ -55,7 +55,7 @@ export default async function ProfilePage({
 
   const { data: genericRows } = await supabase
     .from("generic_profiles")
-    .select("id, role, category_id, full_name, status, moderation_status, categories(slug, name_en, name_ar)")
+    .select("id, role, category_id, full_name, profile_photo_url, status, moderation_status, categories(slug, name_en, name_ar)")
     .eq("user_id", user!.id);
 
   // A draft is just a claimed role with nothing filled in yet -- same
@@ -99,6 +99,8 @@ export default async function ProfilePage({
       return {
         kind: "generic" as const,
         key: p.id,
+        profileId: p.id,
+        initialPhotoUrl: p.profile_photo_url,
         label: sharesCategory ? `${categoryLabel} · ${roleLabel}` : categoryLabel,
         slug: category?.slug ?? "",
         role: p.role as "seeker" | "provider",

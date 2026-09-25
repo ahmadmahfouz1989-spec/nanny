@@ -1,29 +1,42 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import type { Criterion, CriterionResult } from "@/lib/matching/engine";
+import type { CriterionResult } from "@/lib/matching/generic-engine";
 
-const ORDER: Criterion[] = [
+// Covers every criterion key across every matching engine (nanny's
+// engine.ts, nursing's generic-engine.ts, tutoring's tutoring-engine.ts, and
+// whatever a future category adds) -- a breakdown only ever has a subset of
+// these, and unknown keys are simply skipped, so one shared component/order/
+// label map works for all of them instead of one per category.
+const ORDER = [
   "location",
+  "availability",
   "employmentType",
   "liveArrangement",
+  "format",
   "language",
+  "specialty",
+  "subject",
+  "gradeLevel",
   "childAgeExperience",
   "transportation",
-  "availability",
-];
+] as const;
 
-const LABEL_KEY: Record<Criterion, string> = {
+const LABEL_KEY: Record<(typeof ORDER)[number], string> = {
   location: "criteriaLocation",
   availability: "criteriaAvailability",
   employmentType: "criteriaEmploymentType",
   liveArrangement: "criteriaLiveArrangement",
+  format: "criteriaFormat",
   language: "criteriaLanguage",
+  specialty: "criteriaSpecialty",
+  subject: "criteriaSubject",
+  gradeLevel: "criteriaGradeLevel",
   childAgeExperience: "criteriaChildAgeExperience",
   transportation: "criteriaTransportation",
 };
 
-export default function CriteriaChecklist({ breakdown }: { breakdown: Record<Criterion, CriterionResult> }) {
+export default function CriteriaChecklist({ breakdown }: { breakdown: Partial<Record<string, CriterionResult>> }) {
   const t = useTranslations("Matches");
 
   return (

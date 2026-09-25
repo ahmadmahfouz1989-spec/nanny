@@ -78,6 +78,7 @@ export async function GET(request: Request) {
   type OtherProfile = {
     id: string;
     full_name: string;
+    profile_photo_url: string | null;
     location_id: string | null;
     attributes: Record<string, unknown>;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
@@ -88,7 +89,7 @@ export async function GET(request: Request) {
     otherIds.length > 0
       ? await supabase
           .from("generic_profiles")
-          .select("id, full_name, location_id, attributes, locations(name_en, name_ar, name_fr)")
+          .select("id, full_name, profile_photo_url, location_id, attributes, locations(name_en, name_ar, name_fr)")
           .in("id", otherIds)
       : { data: [] as OtherProfile[] };
 

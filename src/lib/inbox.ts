@@ -154,7 +154,10 @@ export async function genericConversations(supabase: Supabase, userId: string): 
   }
 
   const otherIds = [...new Set(matches.map((m) => m.otherProfileId))];
-  const { data: otherProfiles } = await supabase.from("generic_profiles").select("id, full_name").in("id", otherIds);
+  const { data: otherProfiles } = await supabase
+    .from("generic_profiles")
+    .select("id, full_name, profile_photo_url")
+    .in("id", otherIds);
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
   const matchIds = matches.map((m) => m.match.id);
@@ -171,7 +174,7 @@ export async function genericConversations(supabase: Supabase, userId: string): 
     return {
       matchId: match.id,
       source: categorySlugById.get(myProfileId) ?? "",
-      counterpart: { id: other?.id ?? "", name: other?.full_name ?? "", photoUrl: null },
+      counterpart: { id: other?.id ?? "", name: other?.full_name ?? "", photoUrl: other?.profile_photo_url ?? null },
       lastMessage: lastMessageByMatch.get(match.id) ?? null,
       unreadCount: unreadCountByMatch.get(match.id) ?? 0,
     };
