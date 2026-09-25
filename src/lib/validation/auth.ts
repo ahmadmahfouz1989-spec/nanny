@@ -1,6 +1,5 @@
 import { z } from "zod";
 
-const lebanesePhone = /^\+961\d{7,8}$/;
 const password = z
   .string()
   .min(8, "Password must be at least 8 characters")
@@ -19,19 +18,3 @@ export const signupSchema = z.object({
 
 export type SignupInput = z.infer<typeof signupSchema>;
 
-export const loginSchema = z
-  .object({
-    email: z.string().email().optional(),
-    phone: z.string().regex(lebanesePhone).optional(),
-    password: z.string().min(1, "Password is required"),
-  })
-  .refine((data) => data.email || data.phone, {
-    message: "Either email or phone is required",
-    path: ["email"],
-  });
-
-export type LoginInput = z.infer<typeof loginSchema>;
-
-export const verifyPhoneConfirmSchema = z.object({
-  code: z.string().min(4).max(10),
-});

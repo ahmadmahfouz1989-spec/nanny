@@ -3,12 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { getPublicOrigin } from "@/lib/site-url";
 import { z } from "zod";
 
-const bodySchema = z
-  .object({
-    email: z.string().email().optional(),
-    phone: z.string().regex(/^\+961\d{7,8}$/).optional(),
-  })
-  .refine((data) => data.email || data.phone, { message: "Either email or phone is required" });
+// Email is the only recovery channel -- signup and login are email-only
+// too, so there's no phone identity to recover through.
+const bodySchema = z.object({
+  email: z.string().email(),
+});
 
 export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
@@ -19,19 +18,11 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const origin = getPublicOrigin(request);
 
-  if (parsed.data.email) {
-    await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-      redirectTo: `${origin}/auth/callback-recovery`,
-    });
-  } else if (parsed.data.phone) {
-    // shouldCreateUser: false -- this is recovery, not signup; without it
-    // an unregistered number would silently get a brand-new account. The
-    // code is then checked by /api/auth/recover/verify, which signs the
-    // user in so /reset-password can set a new password.
-    await supabase.auth.signInWithOtp({ phone: parsed.data.phone, options: { shouldCreateUser: false } });
-  }
+  await supabase.auth.resetPasswordForEmail(parsed.data.email, {
+    redirectTo: `${origin}/auth/callback-recovery`,
+  });
 
   // Always return a generic success response regardless of whether the
-  // identifier matched an account, to avoid a user-enumeration oracle.
+  // email matched an account, to avoid a user-enumeration oracle.
   return NextResponse.json({ status: "recovery_sent_if_account_exists" });
 }
