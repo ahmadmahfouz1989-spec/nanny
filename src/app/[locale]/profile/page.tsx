@@ -36,7 +36,8 @@ export default async function ProfilePage({
   const { data: genericRows } = await supabase
     .from("generic_profiles")
     .select("id, role, category_id, full_name, profile_photo_url, status, moderation_status, categories(slug, name_en, name_ar)")
-    .eq("user_id", user!.id);
+    .eq("user_id", user!.id)
+    .order("created_at", { ascending: true });
 
   // A draft is just a claimed role with nothing filled in yet -- same
   // "not really a profile" rule used everywhere else this shows up
