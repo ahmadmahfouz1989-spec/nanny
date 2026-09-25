@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
-import WizardShell from "@/components/onboarding/wizard-shell";
 import EditShell from "@/components/onboarding/edit-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
@@ -13,7 +12,6 @@ import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannyProviderSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
 
-const TOTAL_STEPS = 7;
 const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_care_specialist"] as const;
 
 type FormState = {
@@ -118,11 +116,9 @@ export default function NannyProviderForm({
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   // The row always exists by now (claimed as a draft when the role was
-  // picked), so saving is always an update -- but a draft still walks
-  // through the step-by-step wizard, only a submitted profile gets the
-  // single-page editor.
+  // picked), so saving is always an update; a draft still reads as
+  // "create" to the user.
   const isEdit = !!initialProfile && initialProfile.status !== "draft";
-  const [step, setStep] = useState(1);
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -165,38 +161,15 @@ export default function NannyProviderForm({
 
   const activeAgeGroups = Object.keys(form.experience).filter((g) => form.experience[g] !== "");
 
-  const stepValid = (() => {
-    switch (step) {
-      case 1:
-        return form.fullName.trim().length >= 2 && !!form.locationId && form.locationDetail.trim().length >= 2 && !!form.nationality && !!form.profilePhotoUrl;
-      case 2:
-        return true;
-      case 3:
-        return form.days.length > 0;
-      case 4:
-        return form.yearsExperience !== "";
-      case 5:
-        return activeAgeGroups.length > 0;
-      case 6:
-        return true;
-      case 7:
-        return true;
-      default:
-        return false;
-    }
-  })();
-
-  async function handleNext() {
+  async function handleSave() {
     setError(null);
-    if (!isEdit && step < TOTAL_STEPS) {
-      setStep(step + 1);
-      return;
-    }
+    // A photo still uploading would be left out of the save.
+    if (uploading) return;
 
     const payload = {
       fullName: form.fullName,
       contactPhone: form.contactPhone || undefined,
-      profilePhotoUrl: form.profilePhotoUrl,
+      profilePhotoUrl: form.profilePhotoUrl || undefined,
       locationId: form.locationId,
       locationDetail: form.locationDetail,
       nationality: form.nationality,
@@ -240,17 +213,11 @@ export default function NannyProviderForm({
     router.refresh();
   }
 
-  function handleBack() {
-    setError(null);
-    setStep((s) => Math.max(1, s - 1));
-  }
-
   function handleCancel() {
     router.push(`/categories/${categorySlug}/dashboard`);
   }
 
-  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5 | 6 | 7) =>
-    isEdit && (
+  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5 | 6 | 7) => (
       <h2 className="font-display text-sm font-semibold text-muted uppercase tracking-wide">
         {t(`step${n}Title` as "step1Title")}
       </h2>
@@ -258,7 +225,7 @@ export default function NannyProviderForm({
 
   const content = (
     <>
-      {(isEdit || step === 1) && (
+      {(
         <>
           {sectionHeading(1)}
           <input
@@ -337,7 +304,7 @@ export default function NannyProviderForm({
         </>
       )}
 
-      {(isEdit || step === 2) && (
+      {(
         <>
           {sectionHeading(2)}
           <label className={ui.label}>{t("employmentType")}</label>
@@ -363,7 +330,7 @@ export default function NannyProviderForm({
         </>
       )}
 
-      {(isEdit || step === 3) && (
+      {(
         <>
           {sectionHeading(3)}
           <label className={ui.label}>{t("availableDays")}</label>
@@ -402,7 +369,7 @@ export default function NannyProviderForm({
         </>
       )}
 
-      {(isEdit || step === 4) && (
+      {(
         <>
           {sectionHeading(4)}
           <label className={ui.label}>{t("languages")}</label>
@@ -419,7 +386,7 @@ export default function NannyProviderForm({
         </>
       )}
 
-      {(isEdit || step === 5) && (
+      {(
         <>
           {sectionHeading(5)}
           <label className={ui.label}>{t("experienceByAge")}</label>
@@ -442,7 +409,7 @@ export default function NannyProviderForm({
         </>
       )}
 
-      {(isEdit || step === 6) && (
+      {(
         <>
           {sectionHeading(6)}
           <label className="flex items-center gap-2 text-sm mt-2">
@@ -466,7 +433,7 @@ export default function NannyProviderForm({
         </>
       )}
 
-      {(isEdit || step === 7) && (
+      {(
         <>
           {sectionHeading(7)}
           <label className={ui.label}>{t("certifications")}</label>
@@ -495,29 +462,17 @@ export default function NannyProviderForm({
     </>
   );
 
-  if (isEdit) {
-    return (
-      <EditShell title={t("editTitle")} error={error} onCancel={handleCancel} onSave={handleNext} submitting={submitting}>
-        {content}
-      </EditShell>
-    );
-  }
-
   return (
-    <WizardShell
-      step={step}
-      totalSteps={TOTAL_STEPS}
-      title={t(`step${step}Title` as "step1Title")}
+    <EditShell
+      title={isEdit ? t("editTitle") : t("createTitle")}
       error={error}
-      onBack={handleBack}
-      onNext={handleNext}
-      onExit={onBack}
-      exitLabel={tw("changeRole")}
-      nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
-      nextDisabled={!stepValid || uploading}
-      submitting={submitting}
+      onCancel={handleCancel}
+      onSave={handleSave}
+      onBack={onBack}
+      backLabel={tw("changeRole")}
+      submitting={submitting || uploading}
     >
       {content}
-    </WizardShell>
+    </EditShell>
   );
 }

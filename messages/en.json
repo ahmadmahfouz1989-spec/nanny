@@ -191,18 +191,12 @@
     "editProfile": "Edit profile"
   },
   "Wizard": {
-    "step": "Step {step} of {total}",
-    "back": "Back",
     "changeRole": "Choose a different role",
-    "next": "Next",
-    "finish": "Finish",
     "cancel": "Cancel",
     "saveChanges": "Save changes",
     "saving": "Saving…",
     "validationError": "Please check the form for errors.",
-    "genericError": "Something went wrong. Please try again.",
-    "min": "Min",
-    "max": "Max"
+    "genericError": "Something went wrong. Please try again."
   },
   "Location": {
     "governorate": "Governorate",
@@ -429,7 +423,8 @@
     "preferredLanguages": "Preferred languages",
     "transportationRequired": "Transportation required",
     "additionalDuties": "Additional duties",
-    "familyDescription": "Family / job description"
+    "familyDescription": "Family / job description",
+    "createTitle": "Create your request"
   },
   "Preview": {
     "title": "See what a profile looks like",
@@ -669,7 +664,8 @@
     "hasTransportation": "I have my own transportation",
     "canDrive": "I can drive",
     "certifications": "Certifications",
-    "shortIntro": "Short introduction"
+    "shortIntro": "Short introduction",
+    "createTitle": "Create your nanny profile"
   },
   "SavedProfiles": {
     "saveLabel": "Save profile",
