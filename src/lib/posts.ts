@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { featuredUserIds } from "@/lib/featured";
+import type { createClient } from "@/lib/supabase/server";
 
 // `role` + `profileId` name the profile ProfileSummaryPanel should open
 // for this author -- a parent/nanny profile, or a generic_profiles one
@@ -178,18 +179,53 @@ export const POST_FEED_COLUMNS =
  * feed and the single-post lookup a notification deep link uses, so a
  * post opened from either looks identical.
  */
-export async function decoratePosts<T extends PostWithIdentity>(posts: T[], userId: string) {
+type SessionClient = Awaited<ReturnType<typeof createClient>>;
+
+const PROFILE_TABLE = { parent: "parent_profiles", nanny: "nanny_profiles", generic: "generic_profiles" } as const;
+
+/**
+ * Which of these authors' profiles the *viewer* may actually open.
+ * Authors are resolved with the service role (a name should always show),
+ * but the profile preview reads through the viewer's own session, where
+ * RLS decides -- e.g. a tutoring-only account can't see nanny/parent
+ * profiles, and a parent can't see another parent's. Asking the same RLS
+ * here (one query per profile table) keeps the feed from offering a
+ * profile button that can only end in "Profile not found".
+ */
+async function viewableAuthorProfiles(supabase: SessionClient, authors: PostAuthor[]): Promise<Set<string>> {
+  const idsByType = { parent: new Set<string>(), nanny: new Set<string>(), generic: new Set<string>() };
+  for (const a of authors) if (a.role && a.profileId) idsByType[a.role].add(a.profileId);
+
+  const visible = new Set<string>();
+  await Promise.all(
+    (Object.keys(idsByType) as (keyof typeof idsByType)[]).map(async (type) => {
+      const ids = [...idsByType[type]];
+      if (ids.length === 0) return;
+      const { data } = await supabase.from(PROFILE_TABLE[type]).select("id").in("id", ids);
+      for (const row of data ?? []) visible.add(`${type}:${row.id}`);
+    }),
+  );
+  return visible;
+}
+
+export async function decoratePosts<T extends PostWithIdentity>(posts: T[], userId: string, supabase: SessionClient) {
   const [authors, engagement, featured] = await Promise.all([
     resolvePostAuthors(posts),
     postEngagement(posts.map((p) => p.id), userId),
     featuredUserIds(posts.map((p) => p.user_id)),
   ]);
+  const viewable = await viewableAuthorProfiles(supabase, [...authors.values()]);
 
-  return posts.map((p) => ({
-    ...p,
-    author: authors.get(p.id) ?? null,
-    ...(engagement.get(p.id) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
-    featured: featured.has(p.user_id),
-    isMine: p.user_id === userId,
-  }));
+  return posts.map((p) => {
+    const author = authors.get(p.id) ?? null;
+    // Keep the name/photo, but drop the profile link the viewer can't open.
+    const canOpen = !!author?.role && !!author.profileId && viewable.has(`${author.role}:${author.profileId}`);
+    return {
+      ...p,
+      author: author && !canOpen ? { ...author, role: undefined, profileId: null } : author,
+      ...(engagement.get(p.id) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
+      featured: featured.has(p.user_id),
+      isMine: p.user_id === userId,
+    };
+  });
 }

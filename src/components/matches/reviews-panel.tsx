@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 
-type Review = { score: number; comment: string | null; createdAt: string };
+import type { ProfileReview } from "@/lib/ratings";
+
 type ReviewsResponse = {
   average: number | null;
   count: number;
-  reviews: Review[];
-  raterRole: "parent" | "nanny" | null;
+  reviews: ProfileReview[];
 };
 
 function Stars({ score }: { score: number }) {
@@ -62,11 +62,15 @@ export default function ReviewsPanel({
     return <p className="mt-2 text-xs text-muted">{t("reviewsLoading")}</p>;
   }
 
-  // Ratings are per-account, not per-category -- a generic profile's
-  // reviews can come from any category or role, so there's no single
-  // label to put on them the way a nanny profile is always rated by
-  // parents specifically.
-  const raterLabel = data.raterRole === "parent" ? t("raterParent") : data.raterRole === "nanny" ? t("raterNanny") : null;
+  // Ratings are per-account, not per-category -- one profile's reviews can
+  // come from nanny-track and nursing/tutoring matches alike, so each is
+  // labelled from its own match rather than from the profile being viewed.
+  function raterLabel(rater: ProfileReview["rater"]) {
+    if (!rater) return null;
+    if (rater.kind !== "generic") return rater.kind === "parent" ? t("raterParent") : t("raterNanny");
+    const category = locale === "ar" ? rater.categoryAr : rater.categoryEn;
+    return rater.role === "seeker" ? t("raterGenericSeeker", { category }) : t("raterGenericProvider", { category });
+  }
 
   return (
     <div className="mt-2 rounded-xl border border-border bg-background p-3 flex flex-col divide-y divide-border">
@@ -78,7 +82,7 @@ export default function ReviewsPanel({
             <span className="text-[11px] text-muted shrink-0">{monthYear(r.createdAt)}</span>
           </div>
           {r.comment && <p className="text-sm text-ink/80">{r.comment}</p>}
-          {raterLabel && <span className="text-[11px] text-muted">{raterLabel}</span>}
+          {raterLabel(r.rater) && <span className="text-[11px] text-muted">{raterLabel(r.rater)}</span>}
         </div>
       ))}
     </div>

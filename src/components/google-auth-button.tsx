@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
+import { RETURN_PATH_COOKIE } from "@/lib/return-path";
 
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
@@ -32,7 +33,7 @@ function GoogleIcon({ className = "" }: { className?: string }) {
  * email/password account of the same (verified) email, so there's no
  * separate "merge accounts" step to build here.
  */
-export default function GoogleAuthButton() {
+export default function GoogleAuthButton({ next = null }: { next?: string | null }) {
   const t = useTranslations("Auth");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +41,12 @@ export default function GoogleAuthButton() {
   async function handleClick() {
     setLoading(true);
     setError(null);
+    // Where to land after Google -- read back (and validated again) by
+    // /auth/callback. Cleared when there's none, so a stale one from an
+    // abandoned attempt can't redirect a later sign-in.
+    document.cookie = next
+      ? `${RETURN_PATH_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`
+      : `${RETURN_PATH_COOKIE}=; path=/; max-age=0; samesite=lax`;
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
