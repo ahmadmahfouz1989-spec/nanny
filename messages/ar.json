@@ -191,18 +191,12 @@
     "editProfile": "تعديل الملف الشخصي"
   },
   "Wizard": {
-    "step": "الخطوة {step} من {total}",
-    "back": "رجوع",
     "changeRole": "اختر دورًا مختلفًا",
-    "next": "التالي",
-    "finish": "إنهاء",
     "cancel": "إلغاء",
     "saveChanges": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
     "validationError": "يرجى التحقق من النموذج بحثًا عن الأخطاء.",
-    "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-    "min": "الحد الأدنى",
-    "max": "الحد الأقصى"
+    "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
   },
   "Location": {
     "governorate": "المحافظة",
@@ -429,7 +423,8 @@
     "preferredLanguages": "اللغات المفضّلة",
     "transportationRequired": "المواصلات مطلوبة",
     "additionalDuties": "مهام إضافية",
-    "familyDescription": "وصف العائلة / الوظيفة"
+    "familyDescription": "وصف العائلة / الوظيفة",
+    "createTitle": "أنشئ طلبك"
   },
   "Preview": {
     "title": "هكذا يبدو الملف الشخصي",
@@ -669,7 +664,8 @@
     "hasTransportation": "لدي وسيلة نقل خاصة",
     "canDrive": "أستطيع القيادة",
     "certifications": "الشهادات",
-    "shortIntro": "نبذة تعريفية مختصرة"
+    "shortIntro": "نبذة تعريفية مختصرة",
+    "createTitle": "أنشئ ملفك كمربية"
   },
   "SavedProfiles": {
     "saveLabel": "حفظ الملف الشخصي",

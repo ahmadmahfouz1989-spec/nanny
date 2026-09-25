@@ -104,9 +104,6 @@ export async function GET(request: Request) {
 }
 
 const PHOTO_BUCKET = "generic-photos";
-// Profiles that can't be submitted without a photo (nannies always had to
-// have one before going active).
-const PHOTO_REQUIRED = new Set(["nanny:provider"]);
 
 export async function POST(request: Request) {
   return upsertGenericProfile(request, "create");
@@ -186,10 +183,6 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
       return NextResponse.json({ error: "Invalid profile photo" }, { status: 400 });
     }
     profilePhotoUrl = rawPhotoUrl;
-  }
-
-  if (PHOTO_REQUIRED.has(`${categorySlug}:${role}`) && !(profilePhotoUrl ?? previousPhotoUrl)) {
-    return NextResponse.json({ error: "A profile photo is required" }, { status: 400 });
   }
 
   if (mode === "create") {
