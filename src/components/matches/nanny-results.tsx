@@ -82,7 +82,17 @@ export default function NannyResults({ targetMatchId = null }: { targetMatchId?:
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const locale = useLocale();
   const [results, setResults] = useState<NannyResult[] | null>(null);
-  useLiveMatches({ source: "nanny", results, setResults, targetMatchId });
+  useLiveMatches({
+    source: "nanny",
+    results,
+    setResults,
+    targetMatchId,
+    fetchTarget: (matchId) =>
+      fetch(`/api/search/nannies?matchId=${matchId}`)
+        .then((res) => (res.ok ? res.json() : null))
+        .then((body) => body?.results?.[0] ?? null)
+        .catch(() => null),
+  });
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +133,12 @@ export default function NannyResults({ targetMatchId = null }: { targetMatchId?:
         const body = await res.json();
         setLoadingMore(false);
         if (!res.ok) return;
-        setResults((prev) => [...(prev ?? []), ...body.results]);
+        // A notification's target may already be pinned at the top (see
+        // useLiveMatches) -- don't list it twice when its page arrives.
+        setResults((prev) => {
+          const known = new Set((prev ?? []).map((r) => r.id));
+          return [...(prev ?? []), ...(body.results as NannyResult[]).filter((r) => !known.has(r.id))];
+        });
         setTotal(body.total);
       })
       .catch(() => setLoadingMore(false));

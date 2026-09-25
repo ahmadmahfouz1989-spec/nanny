@@ -130,12 +130,17 @@ export async function GET(request: Request) {
   // than querying a separate index. availability lives under different
   // attribute keys depending on category/role (availability.days vs
   // neededDays), so both are checked.
+  // matchId: a notification's target card, fetched on its own so it can be
+  // shown even when the viewer's current filters or page would hide it --
+  // bypasses every filter and always returns that one row (or nothing).
+  const matchId = searchParams.get("matchId");
   const governorateId = searchParams.get("governorateId");
   const day = searchParams.get("day");
   const minYearsExperience = searchParams.get("minYearsExperience");
 
   const filtered = results.filter((r) => {
     if (!r.other) return false;
+    if (matchId) return r.id === matchId;
     const a = r.other.attributes ?? {};
     if (governorateId && r.other.location_id !== governorateId) return false;
     if (day) {

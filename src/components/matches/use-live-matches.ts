@@ -18,19 +18,28 @@ type LiveMatch = { id: string; status: string; interest_expires_at: string | nul
  *
  * Also owns landing on a notification's target card: scrolls to and
  * briefly highlights `match-<targetMatchId>` once it has rendered, and
- * again whenever the bell re-announces that same target.
+ * again whenever the bell re-announces that same target. A target the
+ * list doesn't contain (hidden by the current filters, or on a later
+ * page) is fetched on its own via `fetchTarget` and pinned to the top.
  */
 export function useLiveMatches<T extends LiveMatch>({
   source,
   results,
   setResults,
   targetMatchId,
+  fetchTarget,
 }: {
   source: "nanny" | "generic";
   results: T[] | null;
   setResults: (update: (prev: T[] | null) => T[] | null) => void;
   targetMatchId: string | null;
+  fetchTarget: (matchId: string) => Promise<T | null>;
 }) {
+  const fetchTargetRef = useRef(fetchTarget);
+  useEffect(() => {
+    fetchTargetRef.current = fetchTarget;
+  }, [fetchTarget]);
+
   const idsRef = useRef<string[]>([]);
   useEffect(() => {
     idsRef.current = (results ?? []).map((r) => r.id);
@@ -84,12 +93,26 @@ export function useLiveMatches<T extends LiveMatch>({
   }, [targetMatchId]);
 
   const pendingScrollRef = useRef<string | null>(null);
+  const loaded = results !== null;
   useEffect(() => {
-    if (!targetMatchId) return;
+    // Wait for the list's own first load, so the pinned target isn't
+    // overwritten by it (or fetched needlessly when it's already there).
+    if (!targetMatchId || !loaded) return;
     pendingScrollRef.current = targetMatchId;
-    // A notification is exactly when this card's status just changed.
-    refresh();
-  }, [targetMatchId, targetToken, refresh]);
+    if (idsRef.current.includes(targetMatchId)) {
+      // A notification is exactly when this card's status just changed.
+      refresh();
+      return;
+    }
+    let active = true;
+    fetchTargetRef.current(targetMatchId).then((target) => {
+      if (!active || !target) return;
+      setResults((prev) => [target, ...(prev ?? []).filter((r) => r.id !== target.id)]);
+    });
+    return () => {
+      active = false;
+    };
+  }, [targetMatchId, targetToken, loaded, refresh, setResults]);
 
   useEffect(() => {
     const id = pendingScrollRef.current;
