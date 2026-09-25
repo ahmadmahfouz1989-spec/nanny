@@ -8,6 +8,16 @@ import {
   type ScheduleType,
 } from "./engine";
 
+// The onboarding form lets a nanny enter 0 years for an age group -- a
+// truthful "no experience here", not a claim of it. Only positive years
+// count toward the child-age-experience criterion. Used by both recompute
+// directions so editing either side scores the same way.
+function experiencedAgeGroups(rows: unknown): AgeGroup[] {
+  return ((rows ?? []) as { age_group: string; years_experience: number | null }[])
+    .filter((e) => (e.years_experience ?? 0) > 0)
+    .map((e) => e.age_group as AgeGroup);
+}
+
 type Admin = ReturnType<typeof createAdminClient>;
 
 // profile.location_id now holds a governorate id directly.
@@ -40,7 +50,7 @@ async function loadNannyInputs(admin: Admin) {
   const { data } = await admin
     .from("nanny_profiles")
     .select(
-      "id, location_id, employment_type, live_arrangement_pref, availability, has_transportation, nanny_profile_languages(language_id), nanny_experience(age_group)",
+      "id, location_id, employment_type, live_arrangement_pref, availability, has_transportation, nanny_profile_languages(language_id), nanny_experience(age_group, years_experience)",
     )
     .eq("status", "active")
     .eq("moderation_status", "approved");
@@ -54,7 +64,7 @@ async function loadNannyInputs(admin: Admin) {
       availabilityDays: (n.availability as { days: string[] })?.days ?? [],
       hasTransportation: n.has_transportation as boolean,
       languageIds: (n.nanny_profile_languages as { language_id: string }[]).map((l) => l.language_id),
-      experienceAgeGroups: (n.nanny_experience as { age_group: string }[]).map((e) => e.age_group as AgeGroup),
+      experienceAgeGroups: experiencedAgeGroups(n.nanny_experience),
     } satisfies NannyMatchInput,
   }));
 }
@@ -108,7 +118,7 @@ export async function recomputeMatchesForNanny(nannyProfileId: string) {
   const { data: nannyRow } = await admin
     .from("nanny_profiles")
     .select(
-      "id, location_id, employment_type, live_arrangement_pref, availability, has_transportation, status, moderation_status, nanny_profile_languages(language_id), nanny_experience(age_group)",
+      "id, location_id, employment_type, live_arrangement_pref, availability, has_transportation, status, moderation_status, nanny_profile_languages(language_id), nanny_experience(age_group, years_experience)",
     )
     .eq("id", nannyProfileId)
     .single();
@@ -122,7 +132,7 @@ export async function recomputeMatchesForNanny(nannyProfileId: string) {
     availabilityDays: (nannyRow.availability as { days: string[] })?.days ?? [],
     hasTransportation: nannyRow.has_transportation as boolean,
     languageIds: (nannyRow.nanny_profile_languages as { language_id: string }[]).map((l) => l.language_id),
-    experienceAgeGroups: (nannyRow.nanny_experience as { age_group: string }[]).map((e) => e.age_group as AgeGroup),
+    experienceAgeGroups: experiencedAgeGroups(nannyRow.nanny_experience),
   };
 
   const parents = await loadParentInputs(admin);

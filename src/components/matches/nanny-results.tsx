@@ -15,8 +15,9 @@ import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
-import { useHashScroll } from "@/components/matches/use-hash-scroll";
+import { useLiveMatches } from "@/components/matches/use-live-matches";
 import { LogoLoader } from "@/components/animated-logo";
+import { formatHoursRange } from "@/lib/format-hours";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -38,7 +39,7 @@ type NannyResult = {
     work_radius_km: number;
     employment_type: string;
     live_arrangement_pref: string;
-    availability: { days: string[] };
+    availability: { days: string[]; start_time?: string; end_time?: string };
     years_experience: number;
     has_transportation: boolean;
     can_drive: boolean;
@@ -70,7 +71,7 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
 
 const PAGE_SIZE = 20;
 
-export default function NannyResults() {
+export default function NannyResults({ targetMatchId = null }: { targetMatchId?: string | null }) {
   const t = useTranslations("Matches");
   const tNanny = useTranslations("NannyOnboarding");
   const tNat = useTranslations("Nationality");
@@ -81,7 +82,7 @@ export default function NannyResults() {
   const tLiveArrangement = useTranslations("LiveArrangementOptions");
   const locale = useLocale();
   const [results, setResults] = useState<NannyResult[] | null>(null);
-  useHashScroll(!!results);
+  useLiveMatches({ source: "nanny", results, setResults, targetMatchId });
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -183,6 +184,7 @@ export default function NannyResults() {
           const experience = nanny.nanny_experience ?? [];
           const tone = TONES[i % TONES.length];
           const availableDays = nanny.availability?.days ?? [];
+          const availableHours = formatHoursRange(nanny.availability?.start_time, nanny.availability?.end_time, locale);
           const hasFeaturedSection = arr.some((x) => x.featured);
           const showFeaturedHeader = r.featured && i === 0;
           const showRegularHeader = !r.featured && hasFeaturedSection && (i === 0 || arr[i - 1].featured);
@@ -263,6 +265,7 @@ export default function NannyResults() {
                         </div>
                       ))}
                     </div>
+                    {availableHours && <p className="text-xs text-muted mt-1.5">{availableHours}</p>}
                   </div>
                 )}
 

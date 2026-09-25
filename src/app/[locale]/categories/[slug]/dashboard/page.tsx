@@ -14,10 +14,14 @@ const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
 
 export default async function CategoryDashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ match?: string }>;
 }) {
   const { locale, slug } = await params;
+  // Set by match notifications -- the card to land on (see useLiveMatches).
+  const { match: targetMatchId = null } = await searchParams;
   const t = await getTranslations("Dashboard");
   const supabase = await createClient();
   const {
@@ -35,7 +39,7 @@ export default async function CategoryDashboardPage({
 
   const { data: profiles } = await supabase
     .from("generic_profiles")
-    .select("role, status, moderation_status")
+    .select("id, role, status, moderation_status")
     .eq("user_id", user!.id)
     .eq("category_id", category!.id);
 
@@ -58,11 +62,27 @@ export default async function CategoryDashboardPage({
   // "myProfile" to pick, so switch between them instead of arbitrarily
   // only ever showing whichever one the query happened to return first.
   if (myProfiles.length > 1) {
+    // Which of the two profiles the notified match belongs to, so the right
+    // tab opens instead of whichever role happens to be listed first.
+    // generic_matches_select only returns the caller's own matches.
+    let targetRole: "seeker" | "provider" | null = null;
+    if (targetMatchId) {
+      const { data: match } = await supabase
+        .from("generic_matches")
+        .select("seeker_profile_id, provider_profile_id")
+        .eq("id", targetMatchId)
+        .maybeSingle();
+      const mine = myProfiles.find((p) => p.id === match?.seeker_profile_id || p.id === match?.provider_profile_id);
+      targetRole = (mine?.role as "seeker" | "provider" | undefined) ?? null;
+    }
+
     return (
       <AppShell active={slug as "nursing" | "tutoring"}>
         <CategoryDashboardTabs
           categorySlug={slug}
           profiles={myProfiles.map((p) => ({ role: p.role as "seeker" | "provider", moderationStatus: p.moderation_status }))}
+          targetMatchId={targetMatchId}
+          targetRole={targetRole}
         />
       </AppShell>
     );
@@ -73,7 +93,11 @@ export default async function CategoryDashboardPage({
   if (myProfile.moderation_status === "approved") {
     return (
       <AppShell active={slug as "nursing" | "tutoring"}>
-        <GenericResults categorySlug={slug} role={myProfile.role as "seeker" | "provider"} />
+        <GenericResults
+          categorySlug={slug}
+          role={myProfile.role as "seeker" | "provider"}
+          targetMatchId={targetMatchId}
+        />
       </AppShell>
     );
   }

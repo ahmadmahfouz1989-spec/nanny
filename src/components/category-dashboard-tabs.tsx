@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import GenericResults from "@/components/matches/generic-results";
 import { ui } from "@/lib/ui";
+import { MATCH_TARGET_EVENT, type MatchTargetDetail } from "@/lib/match-target";
 
 const MODERATION_BAND: Record<"warning" | "danger", string> = {
   warning: "bg-warning-soft",
@@ -23,12 +24,37 @@ type ProfileSummary = { role: "seeker" | "provider"; moderationStatus: string };
 export default function CategoryDashboardTabs({
   categorySlug,
   profiles,
+  targetMatchId = null,
+  targetRole = null,
 }: {
   categorySlug: string;
   profiles: ProfileSummary[];
+  // From a match notification: the match to land on, and which of this
+  // account's two profiles it belongs to (resolved server-side).
+  targetMatchId?: string | null;
+  targetRole?: "seeker" | "provider" | null;
 }) {
   const t = useTranslations("Dashboard");
-  const [activeRole, setActiveRole] = useState(profiles[0]!.role);
+  const [activeRole, setActiveRole] = useState(targetRole ?? profiles[0]!.role);
+
+  // A notification clicked while already here only changes these props on
+  // the same mounted component -- follow it to the right tab (adjusting
+  // state during render, React's recommended alternative to an effect).
+  const [seenTarget, setSeenTarget] = useState(targetMatchId);
+  if (targetMatchId !== seenTarget) {
+    setSeenTarget(targetMatchId);
+    if (targetRole) setActiveRole(targetRole);
+  }
+
+  // Same notification clicked again (identical URL, no prop change) after
+  // manually switching tabs -- switch back to the match's tab.
+  useEffect(() => {
+    function onTarget(e: Event) {
+      if (targetRole && (e as CustomEvent<MatchTargetDetail>).detail.matchId === targetMatchId) setActiveRole(targetRole);
+    }
+    window.addEventListener(MATCH_TARGET_EVENT, onTarget);
+    return () => window.removeEventListener(MATCH_TARGET_EVENT, onTarget);
+  }, [targetMatchId, targetRole]);
   const active = profiles.find((p) => p.role === activeRole) ?? profiles[0]!;
 
   const tabBar = (
@@ -59,7 +85,12 @@ export default function CategoryDashboardTabs({
             a stale minYearsExperience in particular silently hid every
             seeker result once applied to a provider search, which has no
             such field. */}
-        <GenericResults key={active.role} categorySlug={categorySlug} role={active.role} />
+        <GenericResults
+          key={active.role}
+          categorySlug={categorySlug}
+          role={active.role}
+          targetMatchId={active.role === targetRole ? targetMatchId : null}
+        />
       </>
     );
   }

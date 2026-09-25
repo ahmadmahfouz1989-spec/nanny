@@ -15,6 +15,8 @@ import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
 import { LogoLoader } from "@/components/animated-logo";
+import { useLiveMatches } from "@/components/matches/use-live-matches";
+import { formatHoursRange } from "@/lib/format-hours";
 
 type OtherProfile = {
   id: string;
@@ -59,8 +61,11 @@ function localizedLocationName(
 export default function GenericResults({
   categorySlug,
   role,
+  targetMatchId = null,
 }: {
   categorySlug: string;
+  // From a match notification (?match=...) -- see useLiveMatches.
+  targetMatchId?: string | null;
   // Only needed when the account holds both a seeker and a provider
   // profile in this category -- otherwise the API resolves the single
   // profile on its own.
@@ -78,6 +83,7 @@ export default function GenericResults({
   const locale = useLocale();
   const [myRole, setMyRole] = useState<"seeker" | "provider" | null>(null);
   const [results, setResults] = useState<GenericMatch[] | null>(null);
+  useLiveMatches({ source: "generic", results, setResults, targetMatchId });
   const [error, setError] = useState<string | null>(null);
   const [governorateId, setGovernorateId] = useState("");
   const [day, setDay] = useState("");
@@ -160,7 +166,9 @@ export default function GenericResults({
           const other = r.other;
           const a = other.attributes ?? {};
           const gov = localizedLocationName(other.locations, locale);
-          const availableDays = ((a.availability as { days?: string[] } | undefined)?.days ?? a.neededDays ?? []) as string[];
+          const availability = a.availability as { days?: string[]; startTime?: string; endTime?: string } | undefined;
+          const availableDays = (availability?.days ?? a.neededDays ?? []) as string[];
+          const availableHours = formatHoursRange(availability?.startTime, availability?.endTime, locale);
           const specialties = ((a.careSpecialties ?? a.careSpecialtiesNeeded ?? []) as string[]) ?? [];
           const subjects = ((a.subjects ?? a.subjectsNeeded ?? []) as string[]) ?? [];
           const tone = TONES[i % TONES.length];
@@ -220,6 +228,7 @@ export default function GenericResults({
                           </div>
                         ))}
                       </div>
+                      {availableHours && <p className="text-xs text-muted mt-1.5">{availableHours}</p>}
                     </div>
                   )}
 
