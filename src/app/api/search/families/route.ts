@@ -38,7 +38,11 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
+  // matchId: a notification's target card, fetched on its own so it can be
+  // shown even when the viewer's current filters or page would hide it --
+  // bypasses every filter and always returns that one row (or nothing).
+  const matchId = searchParams.get("matchId");
+  const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
   const governorateId = searchParams.get("governorateId");
   const day = searchParams.get("day");
@@ -58,6 +62,7 @@ export async function GET(request: Request) {
   }
 
   const filtered = (data ?? []).filter((r) => {
+    if (matchId) return r.id === matchId;
     const parent = r.parent_profiles as unknown as ParentProfile;
     if (governorateId && parent.location_id !== governorateId) return false;
     // No needed days = "flexible" (the onboarding hint, and how the

@@ -37,7 +37,11 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
+  // matchId: a notification's target card, fetched on its own so it can be
+  // shown even when the viewer's current filters or page would hide it --
+  // bypasses every filter and always returns that one row (or nothing).
+  const matchId = searchParams.get("matchId");
+  const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
   // Manual overrides on top of the algorithm's score order -- narrows the
   // same fully-materialized match set every parent already has (a row per
@@ -60,6 +64,7 @@ export async function GET(request: Request) {
   }
 
   const filtered = (data ?? []).filter((r) => {
+    if (matchId) return r.id === matchId;
     const nanny = r.nanny_profiles as unknown as NannyProfile;
     if (governorateId && nanny.location_id !== governorateId) return false;
     if (day && !(nanny.availability?.days ?? []).includes(day)) return false;
