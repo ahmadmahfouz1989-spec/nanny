@@ -9,6 +9,12 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
 const BUCKET_BY_ROLE = { nanny: "nanny-photos", parent: "parent-photos" } as const;
 const TABLE_BY_ROLE = { nanny: "nanny_profiles", parent: "parent_profiles" } as const;
 
+/**
+ * Uploads a profile photo. Without `genericProfileId` this is the account's
+ * nanny/parent profile (picked by users.role); with it, it's that one
+ * generic-category profile (nursing, tutoring, ...) -- an account can hold
+ * several of those at once, so the caller has to say which.
+ */
 export async function POST(request: Request) {
   const supabase = await createClient();
   const user = await requireActiveUser(supabase);
@@ -17,13 +23,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
-  const role = profile?.role as "nanny" | "parent" | "admin" | undefined;
-  if (role !== "nanny" && role !== "parent") {
-    return NextResponse.json({ error: "Only parent or nanny accounts have a profile photo" }, { status: 403 });
+  const formData = await request.formData().catch(() => null);
+  const genericProfileId = formData?.get("genericProfileId");
+
+  let bucket: string;
+  let table: string;
+  let rowFilter: { column: "user_id" | "id"; value: string };
+
+  if (typeof genericProfileId === "string" && genericProfileId) {
+    const { data: own } = await supabase
+      .from("generic_profiles")
+      .select("id")
+      .eq("id", genericProfileId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (!own) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    }
+    bucket = "generic-photos";
+    table = "generic_profiles";
+    rowFilter = { column: "id", value: own.id };
+  } else {
+    const { data: profile } = await supabase.from("users").select("role").eq("id", user.id).single();
+    const role = profile?.role as "nanny" | "parent" | "admin" | undefined;
+    if (role !== "nanny" && role !== "parent") {
+      return NextResponse.json({ error: "Only parent or nanny accounts have a profile photo" }, { status: 403 });
+    }
+    bucket = BUCKET_BY_ROLE[role];
+    table = TABLE_BY_ROLE[role];
+    rowFilter = { column: "user_id", value: user.id };
   }
 
-  const formData = await request.formData().catch(() => null);
   const file = formData?.get("file");
   // The edit wizard uploads a preview before its own Save/Cancel is
   // resolved -- staged skips writing the profile row (and deleting the
@@ -46,13 +76,15 @@ export async function POST(request: Request) {
 
   const ext = file.type.split("/")[1];
   const path = `${user.id}/${Date.now()}.${ext}`;
-  const bucket = BUCKET_BY_ROLE[role];
-  const table = TABLE_BY_ROLE[role];
 
   // Grab whatever photo is live now so it can be cleaned up after the new
   // one is safely in place -- every re-upload otherwise leaves the old
   // file sitting in the bucket forever with nothing pointing to it.
-  const { data: existing } = await supabase.from(table).select("profile_photo_url").eq("user_id", user.id).maybeSingle();
+  const { data: existing } = await supabase
+    .from(table)
+    .select("profile_photo_url")
+    .eq(rowFilter.column, rowFilter.value)
+    .maybeSingle();
   const previousUrl = existing?.profile_photo_url ?? null;
 
   const { error: uploadError } = await supabase.storage.from(bucket).upload(path, file, {
@@ -79,7 +111,7 @@ export async function POST(request: Request) {
   const { error: updateError } = await supabase
     .from(table)
     .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
-    .eq("user_id", user.id);
+    .eq(rowFilter.column, rowFilter.value);
 
   if (updateError) {
     // The upload already succeeded and the file is live in storage, but the

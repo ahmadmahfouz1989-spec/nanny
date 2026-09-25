@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import GenericCriteriaChecklist from "@/components/matches/generic-criteria-checklist";
-import GenericMatchActions from "@/components/matches/generic-match-actions";
+import CriteriaChecklist from "./criteria-checklist";
+import MatchActions from "@/components/matches/match-actions";
 import ProfileRating from "@/components/matches/profile-rating";
 import GovernorateSelect from "@/components/matches/governorate-select";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
+import Image from "next/image";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ReportButton from "@/components/matches/report-button";
 import SaveProfileButton from "@/components/save-profile-button";
@@ -21,6 +22,7 @@ import { formatHoursRange } from "@/lib/format-hours";
 type OtherProfile = {
   id: string;
   full_name: string;
+  profile_photo_url: string | null;
   location_id: string | null;
   attributes: Record<string, unknown>;
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
@@ -200,7 +202,21 @@ export default function GenericResults({
               {showRegularHeader && <p className={ui.eyebrow}>{t("allMatchesSection")}</p>}
               <div id={`match-${r.id}`} className={ui.cardHover + " oui-in overflow-hidden scroll-mt-6"}>
                 <div className="relative">
-                  <AvatarIllustration tone={tone} className="h-28 w-full" />
+                  {other.profile_photo_url ? (
+                    <Image
+                      src={other.profile_photo_url}
+                      alt=""
+                      width={640}
+                      height={160}
+                      unoptimized
+                      className="h-28 w-full object-cover"
+                    />
+                  ) : (
+                    <AvatarIllustration tone={tone} className="h-28 w-full" />
+                  )}
+                  {other.profile_photo_url && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
+                  )}
                   {r.featured && (
                     <span className="absolute top-3 start-3 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
                       <span aria-hidden>★</span>
@@ -322,9 +338,10 @@ export default function GenericResults({
 
                   {a.shortIntro ? <p className="text-sm text-ink/80 mb-3">{String(a.shortIntro)}</p> : null}
 
-                  <GenericCriteriaChecklist breakdown={r.score_breakdown} />
+                  <CriteriaChecklist breakdown={r.score_breakdown} />
                   {myRole && (
-                    <GenericMatchActions
+                    <MatchActions
+                      source="generic"
                       matchId={r.id}
                       status={r.status}
                       interestExpiresAt={r.interest_expires_at}

@@ -1,32 +1,3 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
-import { requireActiveUser } from "@/lib/session";
-import { resolveMatchAccess } from "@/lib/matching/access";
+import { messagesMarkRead } from "@/lib/matching/match-routes";
 
-export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const supabase = await createClient();
-  const user = await requireActiveUser(supabase);
-
-  if (!user) {
-    return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
-  }
-
-  const access = await resolveMatchAccess(supabase, id, user.id);
-  if (!access) {
-    return NextResponse.json({ error: "Match not found" }, { status: 404 });
-  }
-
-  const { error } = await supabase
-    .from("messages")
-    .update({ read_at: new Date().toISOString() })
-    .eq("match_id", id)
-    .neq("sender_id", user.id)
-    .is("read_at", null);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
-  }
-
-  return NextResponse.json({ status: "ok" });
-}
+export const PATCH = messagesMarkRead("nanny");

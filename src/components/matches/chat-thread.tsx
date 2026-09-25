@@ -5,7 +5,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
-import { MAX_RECORDING_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
+import { MAX_RECORDING_SECONDS, SIGNED_URL_TTL_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
+import { MATCH_SOURCES, type MatchSource } from "@/lib/matching/match-access";
 
 type Message = {
   id: string;
@@ -17,19 +18,38 @@ type Message = {
   created_at: string;
 };
 
+// Realtime delivers new messages as they land; this slower refresh is only
+// a safety net for a dropped/reconnecting channel, and keeps long-lived
+// voice-note URLs from expiring under an open thread.
+const SAFETY_REFRESH_MS = 30000;
+// Every GET re-signs every voice note, but swapping a still-valid URL on
+// each refresh would reload any <audio> that's mid-playback. Only take the
+// fresh one once the held URL is missing (signing failed earlier) or has
+// used up most of its lifetime.
+const AUDIO_URL_REFRESH_AFTER_MS = SIGNED_URL_TTL_SECONDS * 1000 * 0.75;
+
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/**
+ * One chat thread for every category: `source` picks nanny/parent's
+ * `matches` or the generic (nursing, tutoring, ...) `generic_matches`
+ * store -- the API routes and realtime table differ, nothing else does.
+ */
 export default function ChatThread({
   matchId,
+  source = "nanny",
   onMessage,
   variant = "compact",
 }: {
   matchId: string;
+  source?: MatchSource;
   onMessage?: (message: Message) => void;
   variant?: "compact" | "full";
 }) {
+  const { apiBase, messagesTable } = MATCH_SOURCES[source];
+  const threadUrl = `${apiBase}/${matchId}/messages`;
   const t = useTranslations("Matches");
   const locale = useLocale();
   const [messages, setMessages] = useState<Message[] | null>(null);
@@ -37,11 +57,14 @@ export default function ChatThread({
   const [loadingOlder, setLoadingOlder] = useState(false);
   // Follow new messages only when the reader is already at the bottom --
   // an incoming message shouldn't yank someone who has scrolled up to
-  // read older history back down (same as GenericChatThread).
+  // read older history back down.
   const isNearBottomRef = useRef(true);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  // The realtime handler is bound once per thread, so it reads the viewer's
+  // id from here rather than from whatever render captured `userId`.
+  const userIdRef = useRef<string | null>(null);
   const [recording, setRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [uploadingAudio, setUploadingAudio] = useState(false);
@@ -72,6 +95,8 @@ export default function ChatThread({
   // refreshMessages() call stomps it back to whatever that window alone
   // implies, ignoring how much further back the reader has actually paged.
   const olderLoadedRef = useRef(false);
+  // When each message's currently-held audioUrl was received, keyed by id.
+  const audioUrlReceivedAtRef = useRef(new Map<string, number>());
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
@@ -99,26 +124,60 @@ export default function ChatThread({
     };
   }, []);
 
+  function markRead() {
+    // Only the dedicated Messages thread (variant "full") represents the user
+    // deliberately opening a conversation -- the compact widget embedded on
+    // match cards renders unconditionally, so mounting it shouldn't clear
+    // the unread badge before the user has actually looked at their inbox.
+    if (variant === "full") fetch(`${threadUrl}/read`, { method: "PATCH" });
+  }
+
   function refreshMessages() {
-    fetch(`/api/matches/${matchId}/messages`)
+    fetch(threadUrl)
       .then((res) => res.json())
       .then((body) => {
-        const next: Message[] = body.messages ?? [];
+        const now = Date.now();
+        const receivedAt = audioUrlReceivedAtRef.current;
         // This fetch always returns the newest window, regardless of how
         // far back loadOlder has already paged -- its own hasMore is only
         // trustworthy as the initial value, before there's any older
         // history loaded to contradict it.
         if (!olderLoadedRef.current) setHasMoreOlder(body.hasMore ?? false);
         setMessages((prev) => {
+          const prevById = new Map((prev ?? []).map((m) => [m.id, m]));
+          const next: Message[] = ((body.messages ?? []) as Message[]).map((m) => {
+            if (!m.audio_path) return m;
+            const held = prevById.get(m.id);
+            if (held?.audioUrl) {
+              // A URL that arrived some other way (send, upload, loadOlder)
+              // was signed just before it got here -- start its clock now.
+              if (!receivedAt.has(m.id)) receivedAt.set(m.id, now);
+              if (now - receivedAt.get(m.id)! < AUDIO_URL_REFRESH_AFTER_MS) {
+                return { ...m, audioUrl: held.audioUrl };
+              }
+            }
+            if (m.audioUrl) receivedAt.set(m.id, now);
+            return m;
+          });
           if (!prev) return next;
           // Merge, don't replace: prev may hold history loaded further
-          // back via loadOlder that this newest-window fetch (fired here on
-          // mount, and again on every incoming voice-note realtime event)
-          // knows nothing about.
+          // back via loadOlder that this newest-window fetch knows nothing
+          // about.
           const nextIds = new Set(next.map((m) => m.id));
           const cutoff = next[0]?.created_at;
           const older = prev.filter((m) => !nextIds.has(m.id) && (!cutoff || m.created_at < cutoff));
-          return [...older, ...next];
+          const merged = [...older, ...next];
+          // Keep the same array reference when nothing actually changed --
+          // a refresh that just re-confirms the same messages shouldn't
+          // re-trigger the scroll effect and yank a reader who has scrolled
+          // up back down to the bottom.
+          if (prev.length === merged.length && prev.every((m, i) => m.id === merged[i]?.id)) {
+            // Same messages -- but a voice note may have just gained (or
+            // renewed) its playable URL, which does need to reach the UI.
+            const urlChanged = prev.some((m, i) => m.audioUrl !== merged[i]?.audioUrl);
+            return urlChanged ? merged : prev;
+          }
+          return merged;
         });
       });
   }
@@ -130,7 +189,7 @@ export default function ChatThread({
     const oldest = messages[0]!.created_at;
     const el = listRef.current;
     const prevScrollHeight = el?.scrollHeight ?? 0;
-    fetch(`/api/matches/${matchId}/messages?before=${encodeURIComponent(oldest)}`)
+    fetch(`${threadUrl}?before=${encodeURIComponent(oldest)}`)
       .then((res) => res.json())
       .then((body) => {
         setMessages((prev) => [...(body.messages ?? []), ...(prev ?? [])]);
@@ -147,23 +206,19 @@ export default function ChatThread({
 
   useEffect(() => {
     const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getUser().then(({ data }) => {
+      userIdRef.current = data.user?.id ?? null;
+      setUserId(userIdRef.current);
+    });
 
     refreshMessages();
-
-    // Only the dedicated Messages thread (variant "full") represents the user
-    // deliberately opening a conversation — the compact widget embedded on
-    // match cards renders unconditionally, so mounting it shouldn't clear
-    // the unread badge before the user has actually looked at their inbox.
-    if (variant === "full") {
-      fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
-    }
+    markRead();
 
     const channel = supabase
-      .channel(`messages:${matchId}`)
+      .channel(`${messagesTable}:${matchId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages", filter: `match_id=eq.${matchId}` },
+        { event: "INSERT", schema: "public", table: messagesTable, filter: `match_id=eq.${matchId}` },
         (payload) => {
           const incoming = payload.new as Message;
           if (incoming.audio_path) {
@@ -179,18 +234,22 @@ export default function ChatThread({
             });
           }
           onMessageRef.current?.(incoming);
-          if (variant === "full") {
-            fetch(`/api/matches/${matchId}/messages/read`, { method: "PATCH" });
-          }
+          // New content arrived while the thread is open -- re-mark read,
+          // or it would stay unread server-side until the thread is
+          // closed and reopened.
+          if (incoming.sender_id !== userIdRef.current) markRead();
         },
       )
       .subscribe();
 
+    const safetyRefresh = setInterval(refreshMessages, SAFETY_REFRESH_MS);
+
     return () => {
+      clearInterval(safetyRefresh);
       supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [matchId, variant]);
+  }, [matchId, source, variant]);
 
   useEffect(() => {
     // Scroll only this thread's own container to the bottom — never
@@ -213,7 +272,7 @@ export default function ChatThread({
     setSendError(null);
     setDraft("");
     try {
-      const res = await fetch(`/api/matches/${matchId}/messages`, {
+      const res = await fetch(threadUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ body }),
@@ -329,7 +388,7 @@ export default function ChatThread({
     // and leaves the composer disabled until the page is reloaded, with no
     // way to retry.
     try {
-      const res = await fetch(`/api/matches/${matchId}/messages/audio`, { method: "POST", body: formData });
+      const res = await fetch(`${threadUrl}/audio`, { method: "POST", body: formData });
       if (!res.ok) {
         setAudioError(t("voiceNoteUploadError"));
         return;

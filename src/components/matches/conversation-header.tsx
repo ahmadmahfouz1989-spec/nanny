@@ -9,11 +9,18 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { MoreIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
+import { MATCH_SOURCES } from "@/lib/matching/match-access";
 
 type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
 
+/**
+ * Header for an open conversation in any category. `conversationSource` is
+ * the inbox's per-conversation source: "nanny" for a nanny/parent match,
+ * otherwise the generic category's slug (e.g. "nursing").
+ */
 export default function ConversationHeader({
   matchId,
+  conversationSource,
   name,
   photoUrl,
   tone,
@@ -22,11 +29,12 @@ export default function ConversationHeader({
   onBack,
 }: {
   matchId: string;
+  conversationSource: string;
   name: string;
   photoUrl: string | null;
   tone: "primary" | "secondary" | "berry";
   profileId: string;
-  profileType: "parent" | "nanny";
+  profileType: "parent" | "nanny" | "generic";
   onBack?: () => void;
 }) {
   const t = useTranslations("Matches");
@@ -35,10 +43,11 @@ export default function ConversationHeader({
   const [profileOpen, setProfileOpen] = useState(false);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [loading, setLoading] = useState(false);
+  const { apiBase } = MATCH_SOURCES[conversationSource === "nanny" ? "nanny" : "generic"];
 
   async function loadContact() {
     setLoading(true);
-    const res = await fetch(`/api/matches/${matchId}/contact`);
+    const res = await fetch(`${apiBase}/${matchId}/contact`);
     setLoading(false);
     if (res.ok) setContact(await res.json());
   }
@@ -107,10 +116,10 @@ export default function ConversationHeader({
                 </div>
               )}
               <div className="border-t border-border pt-2">
-                <RatingButton matchId={matchId} counterpartName={name} />
+                <RatingButton matchId={matchId} counterpartName={name} apiBase={apiBase} />
               </div>
               <div className="border-t border-border pt-2">
-                <ReportButton profileId={profileId} profileType={profileType} matchId={matchId} matchSource="nanny" />
+                <ReportButton profileId={profileId} profileType={profileType} matchId={matchId} matchSource={conversationSource} />
               </div>
             </div>
           </>
