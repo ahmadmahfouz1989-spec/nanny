@@ -7,10 +7,13 @@ import FeedClient from "./feed-client";
 // regardless of category or role -- no profile/onboarding required.
 export default async function FeedPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ post?: string; reply?: string }>;
 }) {
   const { locale } = await params;
+  const { post, reply } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -28,7 +31,7 @@ export default async function FeedPage({
 
   return (
     <AppShell active="feed">
-      <FeedClient />
+      <FeedClient targetPostId={post ?? null} targetReplyId={reply ?? null} />
     </AppShell>
   );
 }

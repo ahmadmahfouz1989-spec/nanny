@@ -31,18 +31,31 @@ export async function PUT(request: Request, { params }: { params: Promise<{ type
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { error } = await supabase.from("favorites").insert({ user_id: user.id, [column]: profileId });
+  // The favorite's own id/created_at are returned so a client restoring a
+  // removed item (Saved page Undo) can reconcile it with the row that now
+  // actually exists, rather than reusing the deleted row's identity.
+  const { data: inserted, error } = await supabase
+    .from("favorites")
+    .insert({ user_id: user.id, [column]: profileId })
+    .select("id, created_at")
+    .single();
 
   if (error) {
     // Already saved -- the partial unique index rejected the duplicate.
     // Idempotent by design: this is success, not a conflict to surface.
     if (error.code === "23505") {
-      return NextResponse.json({ status: "saved" });
+      const { data: existing } = await supabase
+        .from("favorites")
+        .select("id, created_at")
+        .eq("user_id", user.id)
+        .eq(column, profileId)
+        .maybeSingle();
+      return NextResponse.json({ status: "saved", favorite: existing ?? null });
     }
     return NextResponse.json({ error: "Cannot save this profile" }, { status: 403 });
   }
 
-  return NextResponse.json({ status: "saved" }, { status: 201 });
+  return NextResponse.json({ status: "saved", favorite: inserted }, { status: 201 });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ type: string; profileId: string }> }) {

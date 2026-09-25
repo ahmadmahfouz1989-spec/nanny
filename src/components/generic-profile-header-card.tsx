@@ -17,12 +17,14 @@ const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
  */
 export default function GenericProfileHeaderCard({
   slug,
+  role,
   categoryLabel,
   roleLabel,
   fullName,
   moderationStatus,
 }: {
   slug: string;
+  role: "seeker" | "provider";
   categoryLabel: string;
   roleLabel: string;
   fullName: string | null;
@@ -60,7 +62,9 @@ export default function GenericProfileHeaderCard({
             {t("viewMatches")}
           </Link>
         )}
-        <Link href={`/categories/${slug}/onboarding`} className={ui.buttonSecondary}>
+        {/* ?role= so an account with both roles in this category edits
+            this one, not whichever the onboarding page defaults to. */}
+        <Link href={`/categories/${slug}/onboarding?role=${role}`} className={ui.buttonSecondary}>
           {t("editProfile")}
         </Link>
       </div>

@@ -17,7 +17,7 @@ type Post = {
   kind: "looking_for" | "offering";
   caption: string;
   created_at: string;
-  author: { fullName: string; role?: "parent" | "nanny"; profileId: string | null; photoUrl: string | null } | null;
+  author: { fullName: string; role?: "parent" | "nanny" | "generic"; profileId: string | null; photoUrl: string | null } | null;
   likeCount: number;
   likedByMe: boolean;
   replyCount: number;
@@ -79,6 +79,7 @@ function ReplyThread({
   onDeleteClick,
   collapsed,
   onToggleCollapse,
+  highlightId,
 }: {
   allReplies: Reply[];
   parentId: string | null;
@@ -90,6 +91,7 @@ function ReplyThread({
   onDeleteClick: (reply: Reply) => void;
   collapsed: Set<string>;
   onToggleCollapse: (replyId: string) => void;
+  highlightId: string | null;
 }) {
   const children = allReplies.filter((r) => r.parent_reply_id === parentId);
   if (children.length === 0) return null;
@@ -100,8 +102,8 @@ function ReplyThread({
         const descendantCount = allReplies.filter((x) => x.parent_reply_id === r.id).length;
         const isCollapsed = collapsed.has(r.id);
         return (
-          <div key={r.id}>
-            <div className="flex gap-2.5">
+          <div key={r.id} id={`reply-${r.id}`}>
+            <div className={`flex gap-2.5 rounded-lg transition-colors ${highlightId === r.id ? "bg-primary-soft -mx-1.5 px-1.5 py-1" : ""}`}>
               <Avatar photoUrl={r.authorPhotoUrl} size={28} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-1.5 flex-wrap">
@@ -141,6 +143,7 @@ function ReplyThread({
                 onDeleteClick={onDeleteClick}
                 collapsed={collapsed}
                 onToggleCollapse={onToggleCollapse}
+                highlightId={highlightId}
               />
             )}
           </div>
@@ -150,7 +153,15 @@ function ReplyThread({
   );
 }
 
-export default function FeedClient() {
+export default function FeedClient({
+  targetPostId = null,
+  targetReplyId = null,
+}: {
+  // From a notification deep link (/feed?post=...&reply=...): that post is
+  // loaded on its own, pinned to the top, with its thread open.
+  targetPostId?: string | null;
+  targetReplyId?: string | null;
+}) {
   const t = useTranslations("Feed");
   const tNav = useTranslations("Nav");
   const tSaved = useTranslations("SavedProfiles");
@@ -211,7 +222,13 @@ export default function FeedClient() {
     return fetch(url)
       .then((res) => res.json())
       .then((body) => {
-        setPosts((prev) => (before ? [...(prev ?? []), ...(body.posts ?? [])] : (body.posts ?? [])));
+        setPosts((prev) => {
+          if (!before) return body.posts ?? [];
+          // A deep-linked post is pinned at the top already -- don't list
+          // it a second time when its own page comes around.
+          const known = new Set((prev ?? []).map((p) => p.id));
+          return [...(prev ?? []), ...((body.posts ?? []) as Post[]).filter((p) => !known.has(p.id))];
+        });
         setNextCursor(body.nextCursor ?? null);
       })
       .finally(() => setLoadingMore(false));
@@ -220,10 +237,17 @@ export default function FeedClient() {
   useEffect(() => {
     let active = true;
     async function init() {
-      const [postsRes, identitiesRes] = await Promise.all([fetch("/api/posts"), fetch("/api/posts/identities")]);
+      const [postsRes, identitiesRes, targetRes] = await Promise.all([
+        fetch("/api/posts"),
+        fetch("/api/posts/identities"),
+        targetPostId ? fetch(`/api/posts/${targetPostId}`).catch(() => null) : Promise.resolve(null),
+      ]);
       const [postsBody, identitiesBody] = await Promise.all([postsRes.json(), identitiesRes.json()]);
+      const target: Post | null = targetRes?.ok ? ((await targetRes.json()).post ?? null) : null;
       if (!active) return;
-      setPosts(postsBody.posts ?? []);
+      const firstPage: Post[] = postsBody.posts ?? [];
+      setPosts(target ? [target, ...firstPage.filter((p) => p.id !== target.id)] : firstPage);
+      if (target) toggleReplies(target.id);
       setNextCursor(postsBody.nextCursor ?? null);
       setIdentities(identitiesBody.identities ?? []);
       setSelectedIdentity(identitiesBody.defaultIdentity ?? null);
@@ -232,6 +256,7 @@ export default function FeedClient() {
     return () => {
       active = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function submitPost() {
@@ -275,6 +300,13 @@ export default function FeedClient() {
       );
     }
   }
+
+  // Once a deep-linked reply is actually on screen, bring it into view.
+  const targetReplies = targetPostId ? replies[targetPostId] : undefined;
+  useEffect(() => {
+    if (!targetReplyId || !targetReplies) return;
+    document.getElementById(`reply-${targetReplyId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [targetReplyId, targetReplies]);
 
   function toggleReplies(postId: string) {
     const next = openReplies === postId ? null : postId;
@@ -416,7 +448,7 @@ export default function FeedClient() {
 
               <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
-                  {post.author?.role ? (
+                  {post.author?.role && post.author.profileId ? (
                     <button
                       type="button"
                       onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
@@ -487,6 +519,7 @@ export default function FeedClient() {
                         onDeleteClick={(r) => deleteReply(post.id, r.id)}
                         collapsed={collapsedReplies}
                         onToggleCollapse={toggleCollapse}
+                        highlightId={targetReplyId}
                       />
                     )}
 

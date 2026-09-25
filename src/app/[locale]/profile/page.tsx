@@ -59,7 +59,7 @@ export default async function ProfilePage({
 
   const { data: genericRows } = await supabase
     .from("generic_profiles")
-    .select("id, role, full_name, status, moderation_status, categories(slug, name_en, name_ar)")
+    .select("id, role, category_id, full_name, status, moderation_status, categories(slug, name_en, name_ar)")
     .eq("user_id", user!.id);
 
   // A draft is just a claimed role with nothing filled in yet -- same
@@ -96,13 +96,18 @@ export default async function ProfilePage({
     ...genericProfiles.map((p) => {
       const category = p.categories as unknown as { slug: string; name_en: string; name_ar: string } | null;
       const categoryLabel = category ? (locale === "ar" ? category.name_ar : category.name_en) : "";
+      const roleLabel = p.role === "provider" ? t("roleProvider") : t("roleSeeker");
+      // Two profiles in one category (seeking + offering) would otherwise
+      // get two identical tabs.
+      const sharesCategory = genericProfiles.some((o) => o.id !== p.id && o.category_id === p.category_id);
       return {
         kind: "generic" as const,
         key: p.id,
-        label: categoryLabel,
+        label: sharesCategory ? `${categoryLabel} · ${roleLabel}` : categoryLabel,
         slug: category?.slug ?? "",
+        role: p.role as "seeker" | "provider",
         categoryLabel,
-        roleLabel: p.role === "provider" ? t("roleProvider") : t("roleSeeker"),
+        roleLabel,
         fullName: p.full_name,
         moderationStatus: p.moderation_status,
       };

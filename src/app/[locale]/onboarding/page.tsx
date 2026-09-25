@@ -29,6 +29,7 @@ export default async function OnboardingPage({
     return (
       <ParentOnboarding
         initialProfile={existing ? { ...existing, contact_phone: profile.contact_phone } : null}
+        accountContactPhone={profile.contact_phone}
       />
     );
   }
@@ -42,6 +43,7 @@ export default async function OnboardingPage({
     return (
       <NannyOnboarding
         initialProfile={existing ? { ...existing, contact_phone: profile.contact_phone } : null}
+        accountContactPhone={profile.contact_phone}
       />
     );
   }

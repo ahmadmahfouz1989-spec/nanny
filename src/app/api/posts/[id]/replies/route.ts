@@ -113,7 +113,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       if (recipient?.email) {
         const fromName = myAuthors.get(user.id)?.fullName ?? "Someone";
         const locale = recipient.preferred_language === "ar" ? "ar" : "en";
-        const postUrl = `${getPublicOrigin(request)}/${locale}/feed`;
+        const postUrl = `${getPublicOrigin(request)}/${locale}/feed?post=${id}&reply=${reply.id}`;
         const { subject, html } = postReplyEmail(recipient.preferred_language, fromName, parsed.data.body, postUrl);
         await sendEmail(recipient.email, subject, html);
       }

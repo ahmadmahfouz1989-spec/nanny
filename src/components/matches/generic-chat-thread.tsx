@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
-import { MAX_RECORDING_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
+import { MAX_RECORDING_SECONDS, SIGNED_URL_TTL_SECONDS, pickAudioMimeType, formatAudioDuration } from "@/lib/voice-notes";
 
 type Message = {
   id: string;
@@ -17,6 +17,11 @@ type Message = {
 };
 
 const POLL_MS = 4000;
+// Every GET re-signs every voice note, but swapping a still-valid URL on
+// each 4s poll would reload any <audio> that's mid-playback. Only take the
+// fresh one once the held URL is missing (signing failed earlier) or has
+// used up most of its lifetime.
+const AUDIO_URL_REFRESH_AFTER_MS = SIGNED_URL_TTL_SECONDS * 1000 * 0.75;
 
 /**
  * The generic-category equivalent of ChatThread (nanny/parent), for the
@@ -74,6 +79,8 @@ export default function GenericChatThread({
   // reader was already there -- otherwise polling would keep yanking
   // someone back down while they're scrolled up reading older history.
   const isNearBottomRef = useRef(true);
+  // When each message's currently-held audioUrl was received, keyed by id.
+  const audioUrlReceivedAtRef = useRef(new Map<string, number>());
 
   useEffect(() => {
     onMessageRef.current = onMessage;
@@ -86,6 +93,12 @@ export default function GenericChatThread({
   // MediaRecorder's onstop handler, it would still upload a voice note
   // against this now-defunct matchId closure.
   useEffect(() => {
+    // Set here, not just in useRef's initial value: Strict Mode's dev-only
+    // effect replay runs this cleanup and then this setup again on the
+    // same still-mounted component, and without resetting these the
+    // thread would treat itself as unmounted for its whole life.
+    mountedRef.current = true;
+    cancelledRef.current = false;
     return () => {
       mountedRef.current = false;
       cancelledRef.current = true;
@@ -100,13 +113,29 @@ export default function GenericChatThread({
     fetch(`/api/generic-matches/${matchId}/messages`)
       .then((res) => res.json())
       .then((body) => {
-        const next: Message[] = body.messages ?? [];
+        const now = Date.now();
+        const receivedAt = audioUrlReceivedAtRef.current;
         // This fetch always returns the newest window, regardless of how
         // far back loadOlder has already paged -- its own hasMore is only
         // trustworthy as the initial value, before there's any older
         // history loaded to contradict it.
         if (!olderLoadedRef.current) setHasMoreOlder(body.hasMore ?? false);
         setMessages((prev) => {
+          const prevById = new Map((prev ?? []).map((m) => [m.id, m]));
+          const next: Message[] = ((body.messages ?? []) as Message[]).map((m) => {
+            if (!m.audio_path) return m;
+            const held = prevById.get(m.id);
+            if (held?.audioUrl) {
+              // A URL that arrived some other way (send, upload, loadOlder)
+              // was signed just before it got here -- start its clock now.
+              if (!receivedAt.has(m.id)) receivedAt.set(m.id, now);
+              if (now - receivedAt.get(m.id)! < AUDIO_URL_REFRESH_AFTER_MS) {
+                return { ...m, audioUrl: held.audioUrl };
+              }
+            }
+            if (m.audioUrl) receivedAt.set(m.id, now);
+            return m;
+          });
           if (!prev) return next;
           // Merge, don't replace: prev may hold history loaded further
           // back via loadOlder that this newest-window fetch knows nothing
@@ -121,7 +150,10 @@ export default function GenericChatThread({
           // re-trigger the scroll effect below and yank a reader who has
           // scrolled up back down to the bottom.
           if (prev.length === merged.length && prev.every((m, i) => m.id === merged[i]?.id)) {
-            return prev;
+            // Same messages -- but a voice note may have just gained (or
+            // renewed) its playable URL, which does need to reach the UI.
+            const urlChanged = prev.some((m, i) => m.audioUrl !== merged[i]?.audioUrl);
+            return urlChanged ? merged : prev;
           }
           // New content arrived while the thread is open -- re-mark read
           // rather than only doing it once on mount, or messages received
@@ -193,7 +225,7 @@ export default function GenericChatThread({
         body: JSON.stringify({ body }),
       });
       if (!res.ok) {
-        setDraft(body);
+        restoreDraft(body);
         setSendError(t("messageSendError"));
         return;
       }
@@ -206,11 +238,17 @@ export default function GenericChatThread({
       });
       onMessageRef.current?.(message);
     } catch {
-      setDraft(body);
+      restoreDraft(body);
       setSendError(t("messageSendError"));
     } finally {
       setSending(false);
     }
+  }
+
+  // The composer stays editable while a send is in flight -- only put the
+  // failed text back if the user hasn't started typing something new.
+  function restoreDraft(failedBody: string) {
+    setDraft((current) => (current === "" ? failedBody : current));
   }
 
   async function startRecording() {
