@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
@@ -197,6 +198,7 @@ export default function NursingProviderForm({
       submitting={submitting}
     >
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section1Title")}</SectionHeading>
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         {initialProfile && (
@@ -213,6 +215,7 @@ export default function NursingProviderForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section2Title")}</SectionHeading>
         <label className={ui.label}>{t("licenseNumber")}</label>
         <input className={ui.input} value={form.licenseNumber} onChange={(e) => update("licenseNumber", e.target.value)} />
         <label className={ui.label}>{t("licenseIssuingAuthority")}</label>
@@ -224,6 +227,7 @@ export default function NursingProviderForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section3Title")}</SectionHeading>
         <label className={ui.label}>{t("workRadius")}</label>
         <input type="number" min={1} max={50} className={ui.input} value={form.workRadiusKm} onChange={(e) => update("workRadiusKm", Number(e.target.value))} />
 
@@ -264,6 +268,7 @@ export default function NursingProviderForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section4Title")}</SectionHeading>
         <label className={ui.label}>{t("careSpecialties")}</label>
         <div className="flex flex-wrap gap-2">
           {CARE_SPECIALTIES.map((s) => (

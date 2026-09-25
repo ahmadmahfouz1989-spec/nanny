@@ -348,7 +348,11 @@
     "canDrive": "أستطيع القيادة",
     "careSpecialties": "تخصصات الرعاية",
     "preferredLanguages": "اللغات التي تتحدثها",
-    "shortIntro": "نبذة قصيرة عنك"
+    "shortIntro": "نبذة قصيرة عنك",
+    "section1Title": "بياناتك ومنطقتك",
+    "section2Title": "الترخيص والمؤهلات",
+    "section3Title": "تفضيلات العمل وأوقات التوفر",
+    "section4Title": "التخصصات واللغات والنبذة"
   },
   "NursingSeekerOnboarding": {
     "createTitle": "أنشئ طلبك",
@@ -365,7 +369,11 @@
     "liveArrangement": "الإقامة مع العائلة أم لا",
     "desiredStartDate": "تاريخ البدء المطلوب",
     "transportationRequired": "المواصلات مطلوبة",
-    "preferredLanguages": "اللغات المفضلة"
+    "preferredLanguages": "اللغات المفضلة",
+    "section1Title": "بياناتك ومنطقتك",
+    "section2Title": "الرعاية المطلوبة",
+    "section3Title": "الجدول الزمني",
+    "section4Title": "اللغات"
   },
   "TutoringProviderOnboarding": {
     "createTitle": "أنشئ ملفك كمدرّس/ة",
@@ -380,7 +388,11 @@
     "yearsExperience": "سنوات الخبرة",
     "hasTransportation": "أستطيع التنقل إلى الطلاب",
     "preferredLanguages": "اللغات التي تتحدثها",
-    "shortIntro": "نبذة قصيرة عنك"
+    "shortIntro": "نبذة قصيرة عنك",
+    "section1Title": "بياناتك ومنطقتك",
+    "section2Title": "ما تدرّسه",
+    "section3Title": "أوقات التوفر والخبرة",
+    "section4Title": "اللغات والنبذة"
   },
   "TutoringSeekerOnboarding": {
     "createTitle": "أنشئ طلبك",
@@ -396,7 +408,11 @@
     "neededDays": "ما هي الأيام التي تحتاج فيها دروسًا؟",
     "desiredStartDate": "تاريخ البدء المطلوب",
     "transportationRequired": "يجب أن يأتي المدرّس إليك",
-    "preferredLanguages": "اللغات المفضلة"
+    "preferredLanguages": "اللغات المفضلة",
+    "section1Title": "بياناتك ومنطقتك",
+    "section2Title": "ما تحتاجه",
+    "section3Title": "الجدول الزمني",
+    "section4Title": "اللغات"
   },
   "ParentOnboarding": {
     "editTitle": "تعديل ملفك الشخصي",

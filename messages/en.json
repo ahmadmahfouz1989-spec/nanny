@@ -348,7 +348,11 @@
     "canDrive": "I can drive",
     "careSpecialties": "Care specialties",
     "preferredLanguages": "Languages you speak",
-    "shortIntro": "A short introduction"
+    "shortIntro": "A short introduction",
+    "section1Title": "You and your area",
+    "section2Title": "License & qualifications",
+    "section3Title": "Work preferences & availability",
+    "section4Title": "Specialties, languages & intro"
   },
   "NursingSeekerOnboarding": {
     "createTitle": "Create your request",
@@ -365,7 +369,11 @@
     "liveArrangement": "Live-in / live-out preference",
     "desiredStartDate": "Desired start date",
     "transportationRequired": "Transportation is required",
-    "preferredLanguages": "Preferred languages"
+    "preferredLanguages": "Preferred languages",
+    "section1Title": "You and your area",
+    "section2Title": "Care needed",
+    "section3Title": "Schedule",
+    "section4Title": "Languages"
   },
   "TutoringProviderOnboarding": {
     "createTitle": "Create your tutoring profile",
@@ -380,7 +388,11 @@
     "yearsExperience": "Years of experience",
     "hasTransportation": "I can travel to students",
     "preferredLanguages": "Languages you speak",
-    "shortIntro": "A short introduction"
+    "shortIntro": "A short introduction",
+    "section1Title": "You and your area",
+    "section2Title": "What you teach",
+    "section3Title": "Availability & experience",
+    "section4Title": "Languages & intro"
   },
   "TutoringSeekerOnboarding": {
     "createTitle": "Create your request",
@@ -396,7 +408,11 @@
     "neededDays": "Which days do you need tutoring?",
     "desiredStartDate": "Desired start date",
     "transportationRequired": "The tutor should come to you",
-    "preferredLanguages": "Preferred languages"
+    "preferredLanguages": "Preferred languages",
+    "section1Title": "You and your area",
+    "section2Title": "What you need",
+    "section3Title": "Schedule",
+    "section4Title": "Languages"
   },
   "ParentOnboarding": {
     "editTitle": "Edit your profile",
