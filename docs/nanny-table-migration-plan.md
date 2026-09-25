@@ -75,6 +75,26 @@ restored the original state.
 6. **Reopen:** remove `READ_ONLY_MODE`, wait for the redeploy, send one
    test message.
 
+## If the migration ran before the code deploy (what happened 2026-09-25)
+
+`supabase db push` applied the migration while production was still on the
+old code, outside read-only mode. The copy itself is correct, but until
+the new code is live the old code keeps writing nanny activity to the
+legacy tables (not copied), sees both copies (ratings counted twice,
+duplicate conversations), and its admin queue could re-score nanny copies
+with the wrong rubric. To finish:
+
+1. **Railway:** set `READ_ONLY_MODE=1` and wait for the redeploy.
+2. **SQL editor:** `begin;` + `supabase/tests/nanny-migration-catch-up.sql`
+   + `commit;` -- copies everything the old code wrote since the migration
+   (whichever copy changed last wins; safe to run twice).
+3. **Scores:** run the parity script with `--fix`, then once more without
+   it; it must print both "OK" lines.
+4. Continue at step 4 of the cutover (merge + push, check, reopen).
+
+The rollback script below no longer applies once the old code has written
+to the shared tables for nanny -- fix forward.
+
 ## Rollback (any time before step 6)
 
 1. Revert `main` to the commit before the merge and push.
