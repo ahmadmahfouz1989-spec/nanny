@@ -14,7 +14,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { Criterion, CriterionResult } from "@/lib/matching/engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
-import { useHashScroll } from "@/components/matches/use-hash-scroll";
+import { useLiveMatches } from "@/components/matches/use-live-matches";
 import { LogoLoader } from "@/components/animated-logo";
 
 const TONES = ["primary", "secondary", "berry"] as const;
@@ -67,7 +67,7 @@ function localizedLangName(l: LangRef["languages"], locale: string) {
 
 const PAGE_SIZE = 20;
 
-export default function FamilyResults() {
+export default function FamilyResults({ targetMatchId = null }: { targetMatchId?: string | null }) {
   const t = useTranslations("Matches");
   const tParent = useTranslations("ParentOnboarding");
   const tAgeGroups = useTranslations("AgeGroups");
@@ -78,7 +78,7 @@ export default function FamilyResults() {
   const tNat = useTranslations("Nationality");
   const locale = useLocale();
   const [results, setResults] = useState<FamilyResult[] | null>(null);
-  useHashScroll(!!results);
+  useLiveMatches({ source: "nanny", results, setResults, targetMatchId });
   const [total, setTotal] = useState(0);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);

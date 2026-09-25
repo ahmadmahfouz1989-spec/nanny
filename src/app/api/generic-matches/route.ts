@@ -140,7 +140,9 @@ export async function GET(request: Request) {
     if (governorateId && r.other.location_id !== governorateId) return false;
     if (day) {
       const days = ((a.availability as { days?: string[] } | undefined)?.days ?? a.neededDays ?? []) as string[];
-      if (!days.includes(day)) return false;
+      // Empty = a flexible seeker (generic-engine scores it as full
+      // availability) -- fits any day. Providers always list at least one.
+      if (days.length > 0 && !days.includes(day)) return false;
     }
     if (minYearsExperience && !(typeof a.yearsExperience === "number" && a.yearsExperience >= Number(minYearsExperience))) {
       return false;

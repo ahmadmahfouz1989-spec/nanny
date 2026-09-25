@@ -14,10 +14,14 @@ const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
 
 export default async function DashboardPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string }>;
+  searchParams: Promise<{ match?: string }>;
 }) {
   const { locale } = await params;
+  // Set by match notifications -- the card to land on (see useLiveMatches).
+  const { match: targetMatchId = null } = await searchParams;
   const t = await getTranslations("Dashboard");
   const supabase = await createClient();
   const {
@@ -83,7 +87,11 @@ export default async function DashboardPage({
   if (matchProfile.moderation_status === "approved") {
     return (
       <AppShell active="nanny">
-        {profile?.role === "parent" ? <NannyResults /> : <FamilyResults />}
+        {profile?.role === "parent" ? (
+          <NannyResults targetMatchId={targetMatchId} />
+        ) : (
+          <FamilyResults targetMatchId={targetMatchId} />
+        )}
       </AppShell>
     );
   }
