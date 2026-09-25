@@ -16,6 +16,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     { href: "/admin/profiles", label: t("navProfiles") },
     { href: "/admin/users", label: t("navUsers") },
     { href: "/admin/reports", label: t("navReports") },
+    { href: "/admin/feed", label: t("navFeed") },
   ];
 
   return (
