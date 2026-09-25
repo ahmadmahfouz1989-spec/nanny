@@ -9,7 +9,7 @@ import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { LogoLoader } from "@/components/animated-logo";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { ChatIcon, HeartIcon } from "@/components/nav-icons";
-import type { PostIdentityOption, PostIdentityType } from "@/lib/post-identities";
+import type { PostIdentityOption } from "@/lib/post-identities";
 import { FEED_TARGET_EVENT, type FeedTargetDetail } from "@/lib/feed-target";
 
 type Post = {
@@ -18,7 +18,7 @@ type Post = {
   kind: "looking_for" | "offering";
   caption: string;
   created_at: string;
-  author: { fullName: string; role?: "parent" | "nanny" | "generic"; profileId: string | null; photoUrl: string | null } | null;
+  author: { fullName: string; profileId: string | null; photoUrl: string | null } | null;
   likeCount: number;
   likedByMe: boolean;
   replyCount: number;
@@ -173,18 +173,14 @@ export default function FeedClient({
   targetReplyId?: string | null;
 }) {
   const t = useTranslations("Feed");
-  const tNav = useTranslations("Nav");
   const tSaved = useTranslations("SavedProfiles");
   const tAdmin = useTranslations("Admin");
   const locale = useLocale();
 
   function identityLabel(identity: PostIdentityOption) {
-    if (identity.type === "generic") {
-      const categoryName = locale === "ar" ? identity.categoryNameAr : identity.categoryNameEn;
-      const roleLabel = identity.genericRole === "provider" ? tSaved("roleOffering") : tSaved("roleSeeking");
-      return `${categoryName} · ${roleLabel} — ${identity.fullName}`;
-    }
-    return `${tNav("nanny")} — ${identity.fullName}`;
+    const categoryName = locale === "ar" ? identity.categoryNameAr : identity.categoryNameEn;
+    const roleLabel = identity.role === "provider" ? tSaved("roleOffering") : tSaved("roleSeeking");
+    return `${categoryName} · ${roleLabel} — ${identity.fullName}`;
   }
 
   const [posts, setPosts] = useState<Post[] | null>(null);
@@ -199,9 +195,8 @@ export default function FeedClient({
   // fast submit could go out with no chosen identity even for an account
   // that has more than one.
   const [identities, setIdentities] = useState<PostIdentityOption[] | null>(null);
-  const [selectedIdentity, setSelectedIdentity] = useState<{ type: PostIdentityType; profileId: string } | null>(null);
-  const selectedIdentityOption =
-    identities?.find((i) => selectedIdentity && i.type === selectedIdentity.type && i.profileId === selectedIdentity.profileId) ?? null;
+  const [selectedIdentity, setSelectedIdentity] = useState<{ profileId: string } | null>(null);
+  const selectedIdentityOption = identities?.find((i) => i.profileId === selectedIdentity?.profileId) ?? null;
 
   const [openProfile, setOpenProfile] = useState<string | null>(null);
   const [openReplies, setOpenReplies] = useState<string | null>(null);
@@ -474,14 +469,11 @@ export default function FeedClient({
               {identities && identities.length > 1 && (
                 <select
                   className={ui.select + " w-auto text-xs py-1.5"}
-                  value={selectedIdentity ? `${selectedIdentity.type}:${selectedIdentity.profileId}` : ""}
-                  onChange={(e) => {
-                    const [type, profileId] = e.target.value.split(":");
-                    setSelectedIdentity({ type: type as PostIdentityType, profileId: profileId! });
-                  }}
+                  value={selectedIdentity?.profileId ?? ""}
+                  onChange={(e) => setSelectedIdentity({ profileId: e.target.value })}
                 >
                   {identities.map((identity) => (
-                    <option key={`${identity.type}:${identity.profileId}`} value={`${identity.type}:${identity.profileId}`}>
+                    <option key={identity.profileId} value={identity.profileId}>
                       {identityLabel(identity)}
                     </option>
                   ))}
@@ -524,7 +516,7 @@ export default function FeedClient({
 
               <div className="flex-1 min-w-0 flex flex-col gap-1">
                 <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
-                  {post.author?.role && post.author.profileId ? (
+                  {post.author?.profileId ? (
                     <button
                       type="button"
                       onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
@@ -587,8 +579,8 @@ export default function FeedClient({
 
                 <p dir="auto" className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
 
-                {openProfile === post.id && post.author?.role && post.author.profileId && (
-                  <ProfileSummaryPanel profileType={post.author.role} profileId={post.author.profileId} />
+                {openProfile === post.id && post.author?.profileId && (
+                  <ProfileSummaryPanel profileId={post.author.profileId} />
                 )}
 
                 <div className="flex items-center justify-between max-w-[280px] mt-2">

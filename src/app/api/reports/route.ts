@@ -6,7 +6,6 @@ import { verifyMatchParticipants } from "@/lib/reports";
 
 const bodySchema = z.object({
   reportedProfileId: z.string().uuid().optional(),
-  profileType: z.enum(["parent", "nanny", "generic"]).optional(),
   reportedPostId: z.string().uuid().optional(),
   reason: z.enum(["inappropriate_content", "harassment", "fraud_scam", "fake_profile", "other"]),
   details: z.string().max(1000).optional(),
@@ -15,10 +14,8 @@ const bodySchema = z.object({
   // conversation instead of guessing at one via a mutual-match search,
   // which is ambiguous once the same two people share more than one
   // active service relationship (e.g. both a nanny match and a nursing
-  // match). "nanny" for the legacy matches table, a category slug for a
-  // generic_matches row (mirrors InboxConversation.source).
+  // match).
   matchId: z.string().uuid().optional(),
-  matchSource: z.string().optional(),
 });
 
 export async function POST(request: Request) {
@@ -44,20 +41,14 @@ export async function POST(request: Request) {
     }
     reportedUserId = post.user_id;
     postId = parsed.data.reportedPostId;
-  } else if (parsed.data.reportedProfileId && parsed.data.profileType) {
-    const table =
-      parsed.data.profileType === "parent"
-        ? "parent_profiles"
-        : parsed.data.profileType === "nanny"
-          ? "nanny_profiles"
-          : "generic_profiles";
-    const { data: profile } = await supabase.from(table).select("user_id").eq("id", parsed.data.reportedProfileId).maybeSingle();
+  } else if (parsed.data.reportedProfileId) {
+    const { data: profile } = await supabase.from("generic_profiles").select("user_id").eq("id", parsed.data.reportedProfileId).maybeSingle();
     if (!profile) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 });
     }
     reportedUserId = profile.user_id;
   } else {
-    return NextResponse.json({ error: "Either reportedPostId or reportedProfileId + profileType is required" }, { status: 400 });
+    return NextResponse.json({ error: "Either reportedPostId or reportedProfileId is required" }, { status: 400 });
   }
 
   if (reportedUserId === user.id) {
@@ -68,11 +59,11 @@ export async function POST(request: Request) {
   // otherwise a fabricated matchId could point admin review at an
   // unrelated conversation. Silently drop it rather than failing the
   // whole report; the admin endpoint falls back to its own lookup when
-  // match_id is null.
-  const verifiedMatch =
-    parsed.data.matchId && parsed.data.matchSource
-      ? await verifyMatchParticipants(supabase, parsed.data.matchSource, parsed.data.matchId, user.id, reportedUserId)
-      : false;
+  // match_id is null. match_source records the match's category, read from
+  // the match itself.
+  const matchCategory = parsed.data.matchId
+    ? await verifyMatchParticipants(supabase, parsed.data.matchId, user.id, reportedUserId)
+    : null;
 
   const { error } = await supabase.from("reports").insert({
     reporter_user_id: user.id,
@@ -80,8 +71,8 @@ export async function POST(request: Request) {
     post_id: postId,
     reason: parsed.data.reason,
     details: parsed.data.details ?? null,
-    match_id: verifiedMatch ? parsed.data.matchId : null,
-    match_source: verifiedMatch ? parsed.data.matchSource : null,
+    match_id: matchCategory ? parsed.data.matchId : null,
+    match_source: matchCategory,
   });
 
   if (error) {

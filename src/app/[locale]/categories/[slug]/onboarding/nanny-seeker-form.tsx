@@ -9,7 +9,8 @@ import EditShell from "@/components/onboarding/edit-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
-import { AGE_GROUPS, DAYS, parentProfileSchema } from "@/lib/validation/profile";
+import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
+import { nannySeekerSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
 
 const TOTAL_STEPS = 5;
@@ -53,55 +54,48 @@ const initialState: FormState = {
   familyDescription: "",
 };
 
-type ExistingParentProfile = {
+type ExistingProfile = {
+  id: string;
   full_name: string;
+  profile_photo_url?: string | null;
+  location_id: string | null;
+  attributes: Record<string, unknown>;
   contact_phone: string | null;
-  profile_photo_url: string | null;
-  location_id: string;
-  location_detail: string | null;
-  nationality: string | null;
-  num_children: number;
-  children_age_ranges: string[];
-  schedule_type: FormState["scheduleType"];
-  needed_days: string[] | null;
-  live_arrangement: FormState["liveArrangement"];
-  desired_start_date: string;
-  transportation_required: boolean;
-  additional_duties: string[];
-  family_description: string | null;
-  parent_profile_languages: { language_id: string }[];
+  status: string;
 };
 
-function stateFromExisting(p: ExistingParentProfile): FormState {
+function stateFromExisting(p: ExistingProfile): FormState {
+  const a = p.attributes;
   return {
-    fullName: p.full_name,
+    // A freshly-claimed draft (see /api/generic-profile/claim) has a
+    // placeholder full_name -- show the field empty rather than that.
+    fullName: p.status === "draft" ? "" : p.full_name,
     contactPhone: p.contact_phone ?? "",
-    profilePhotoUrl: p.profile_photo_url,
+    profilePhotoUrl: p.profile_photo_url ?? null,
     locationId: p.location_id,
-    locationDetail: p.location_detail ?? "",
-    nationality: p.nationality ?? "",
-    numChildren: p.num_children,
-    childrenAgeRanges: p.children_age_ranges,
-    scheduleType: p.schedule_type,
-    neededDays: p.needed_days ?? [],
-    liveArrangement: p.live_arrangement,
-    desiredStartDate: p.desired_start_date,
-    transportationRequired: p.transportation_required,
-    languageIds: p.parent_profile_languages.map((l) => l.language_id),
-    additionalDuties: p.additional_duties,
-    familyDescription: p.family_description ?? "",
+    locationDetail: (a.locationDetail as string) ?? "",
+    nationality: (a.nationality as string) ?? "",
+    numChildren: (a.numChildren as number) ?? initialState.numChildren,
+    childrenAgeRanges: (a.childrenAgeRanges as string[]) ?? [],
+    scheduleType: (a.scheduleType as FormState["scheduleType"]) ?? initialState.scheduleType,
+    neededDays: (a.neededDays as string[]) ?? [],
+    liveArrangement: (a.liveArrangement as FormState["liveArrangement"]) ?? initialState.liveArrangement,
+    desiredStartDate: (a.desiredStartDate as string) ?? "",
+    transportationRequired: !!a.transportationRequired,
+    languageIds: (a.languageIds as string[]) ?? [],
+    additionalDuties: (a.additionalDuties as string[]) ?? [],
+    familyDescription: (a.familyDescription as string) ?? "",
   };
 }
 
-export default function ParentOnboarding({
+export default function NannySeekerForm({
+  categorySlug,
   initialProfile,
-  accountContactPhone,
+  onBack,
 }: {
-  initialProfile?: ExistingParentProfile | null;
-  // contact_phone is shared account state, not a profile column -- a first
-  // profile here must still start from whatever another category already
-  // saved, or submitting the form untouched would clear it.
-  accountContactPhone?: string | null;
+  categorySlug: string;
+  initialProfile: ExistingProfile | null;
+  onBack?: () => void;
 }) {
   const t = useTranslations("ParentOnboarding");
   const tw = useTranslations("Wizard");
@@ -112,11 +106,13 @@ export default function ParentOnboarding({
   const tDays = useTranslations("Days");
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isEdit = !!initialProfile;
+  // The row always exists by now (claimed as a draft when the role was
+  // picked), so saving is always an update -- but a draft still walks
+  // through the step-by-step wizard, only a submitted profile gets the
+  // single-page editor.
+  const isEdit = !!initialProfile && initialProfile.status !== "draft";
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(
-    initialProfile ? stateFromExisting(initialProfile) : { ...initialState, contactPhone: accountContactPhone ?? "" },
-  );
+  const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -133,10 +129,11 @@ export default function ParentOnboarding({
     setError(null);
     const formData = new FormData();
     formData.append("file", file);
-    // Editing an existing profile: stage the upload so Cancel doesn't leave
-    // the live profile pointing at a new (unsaved) photo with its previous
-    // one already deleted. Save commits it as part of the full payload below.
-    if (isEdit) formData.append("stage", "true");
+    // Staged against this profile: the file is uploaded now, but the
+    // profile only points at it once Save sends profilePhotoUrl below, so
+    // Cancel leaves the saved profile untouched.
+    if (initialProfile) formData.append("genericProfileId", initialProfile.id);
+    formData.append("stage", "true");
 
     const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
     setUploading(false);
@@ -211,7 +208,7 @@ export default function ParentOnboarding({
       languageIds: form.languageIds,
     };
 
-    const parsed = parentProfileSchema.safeParse(payload);
+    const parsed = nannySeekerSchema.safeParse(payload);
     if (!parsed.success) {
       const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
       setError(msgs.length ? msgs.join(", ") : tw("validationError"));
@@ -219,10 +216,10 @@ export default function ParentOnboarding({
     }
 
     setSubmitting(true);
-    const res = await fetch("/api/profile", {
-      method: isEdit ? "PATCH" : "POST",
+    const res = await fetch("/api/generic-profile", {
+      method: initialProfile ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, categorySlug, role: "seeker" }),
     });
     setSubmitting(false);
 
@@ -231,7 +228,7 @@ export default function ParentOnboarding({
       return;
     }
 
-    router.push(isEdit ? "/profile" : "/dashboard");
+    router.push(`/categories/${categorySlug}/dashboard`);
     router.refresh();
   }
 
@@ -241,16 +238,7 @@ export default function ParentOnboarding({
   }
 
   function handleCancel() {
-    router.push("/profile");
-  }
-
-  // "I need a nanny" clicked by mistake, or just changing their mind
-  // before ever submitting -- undoes the users.role claim (see
-  // /api/account/claim-role) and sends them back to the role picker.
-  async function handleExitToRolePicker() {
-    await fetch("/api/account/claim-role", { method: "DELETE" });
-    router.push("/categories/nanny/onboarding");
-    router.refresh();
+    router.push(`/categories/${categorySlug}/dashboard`);
   }
 
   const sectionHeading = (n: 1 | 2 | 3 | 4 | 5) =>
@@ -474,7 +462,7 @@ export default function ParentOnboarding({
       error={error}
       onBack={handleBack}
       onNext={handleNext}
-      onExit={handleExitToRolePicker}
+      onExit={onBack}
       exitLabel={tw("changeRole")}
       nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
       nextDisabled={!stepValid}

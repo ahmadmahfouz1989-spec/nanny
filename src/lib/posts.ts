@@ -2,13 +2,11 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { featuredUserIds } from "@/lib/featured";
 import type { createClient } from "@/lib/supabase/server";
 
-// `role` + `profileId` name the profile ProfileSummaryPanel should open
-// for this author -- a parent/nanny profile, or a generic_profiles one
-// (nursing, tutoring, ...). An author with no profile anywhere just shows
-// a name with no clickable summary.
+// `profileId` names the profile ProfileSummaryPanel should open for this
+// author. An author with no profile anywhere just shows a name with no
+// clickable summary.
 export type PostAuthor = {
   fullName: string;
-  role?: "parent" | "nanny" | "generic";
   profileId: string | null;
   photoUrl: string | null;
 };
@@ -17,12 +15,9 @@ export type PostAuthor = {
  * A user's default display identity, independent of any specific post --
  * used for reply authors and "who liked/replied" notification-email
  * lookups, neither of which have (or need) a real post row to key off of.
- * Resolves by the account's global users.role first: parent/nanny accounts
- * show their profile name+photo, anyone else falls back to their
- * generic_profiles full_name (arbitrary category, if they have more than
- * one) and its photo. Service role: this should always resolve a name
- * regardless of a profile's own moderation/pause state, same reasoning as
- * the ratings and featured-status lookups.
+ * Their oldest profile's name and photo. Service role: this should always
+ * resolve a name regardless of a profile's own moderation/pause state,
+ * same reasoning as the ratings and featured-status lookups.
  */
 export async function defaultIdentityByUser(posts: { user_id: string }[]): Promise<Map<string, PostAuthor>> {
   const userIds = [...new Set(posts.map((p) => p.user_id))];
@@ -30,29 +25,14 @@ export async function defaultIdentityByUser(posts: { user_id: string }[]): Promi
   if (userIds.length === 0) return out;
 
   const admin = createAdminClient();
-  const { data: userRows } = await admin.from("users").select("id, role").in("id", userIds);
-  const parentIds = (userRows ?? []).filter((u) => u.role === "parent").map((u) => u.id);
-  const nannyIds = (userRows ?? []).filter((u) => u.role === "nanny").map((u) => u.id);
-  const otherIds = userIds.filter((id) => !parentIds.includes(id) && !nannyIds.includes(id));
+  const { data: profiles } = await admin
+    .from("generic_profiles")
+    .select("id, user_id, full_name, profile_photo_url")
+    .in("user_id", userIds)
+    .order("created_at", { ascending: true });
 
-  const [{ data: parents }, { data: nannies }, { data: generics }] = await Promise.all([
-    parentIds.length
-      ? admin.from("parent_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", parentIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
-    nannyIds.length
-      ? admin.from("nanny_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", nannyIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
-    otherIds.length
-      ? admin.from("generic_profiles").select("id, user_id, full_name, profile_photo_url").in("user_id", otherIds)
-      : Promise.resolve({ data: [] as { id: string; user_id: string; full_name: string; profile_photo_url: string | null }[] }),
-  ]);
-
-  for (const p of parents ?? [])
-    out.set(p.user_id, { fullName: p.full_name, role: "parent", profileId: p.id, photoUrl: p.profile_photo_url });
-  for (const n of nannies ?? [])
-    out.set(n.user_id, { fullName: n.full_name, role: "nanny", profileId: n.id, photoUrl: n.profile_photo_url });
-  for (const g of generics ?? []) {
-    if (!out.has(g.user_id)) out.set(g.user_id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: g.profile_photo_url });
+  for (const g of profiles ?? []) {
+    if (!out.has(g.user_id)) out.set(g.user_id, { fullName: g.full_name, profileId: g.id, photoUrl: g.profile_photo_url });
   }
   return out;
 }
@@ -60,8 +40,6 @@ export async function defaultIdentityByUser(posts: { user_id: string }[]): Promi
 type PostWithIdentity = {
   id: string;
   user_id: string;
-  posted_as_parent_profile_id: string | null;
-  posted_as_nanny_profile_id: string | null;
   posted_as_generic_profile_id: string | null;
 };
 
@@ -69,71 +47,34 @@ type PostWithIdentity = {
  * Which identity each specific post was actually published under, keyed
  * by post id (not user id) -- unlike defaultIdentityByUser, two posts from
  * the same account can show two different identities here, since the
- * poster chooses one per post. Posts with no chosen identity (every
- * pre-existing row, plus any post from an account with no eligible
- * profile at the time) fall back to defaultIdentityByUser, unchanged.
+ * poster chooses one per post. Posts with no chosen identity (older rows,
+ * plus any post from an account with no eligible profile at the time)
+ * fall back to defaultIdentityByUser.
  */
 export async function resolvePostAuthors(posts: PostWithIdentity[]): Promise<Map<string, PostAuthor>> {
   const out = new Map<string, PostAuthor>();
   if (posts.length === 0) return out;
 
-  const withIdentity = posts.filter(
-    (p) => p.posted_as_parent_profile_id || p.posted_as_nanny_profile_id || p.posted_as_generic_profile_id,
-  );
-  const withoutIdentity = posts.filter((p) => !withIdentity.includes(p));
-
-  const parentIds = withIdentity.filter((p) => p.posted_as_parent_profile_id).map((p) => p.posted_as_parent_profile_id!);
-  const nannyIds = withIdentity.filter((p) => p.posted_as_nanny_profile_id).map((p) => p.posted_as_nanny_profile_id!);
-  const genericIds = withIdentity.filter((p) => p.posted_as_generic_profile_id).map((p) => p.posted_as_generic_profile_id!);
-
+  const chosenIds = [...new Set(posts.map((p) => p.posted_as_generic_profile_id).filter((id): id is string => !!id))];
   const admin = createAdminClient();
-  const [{ data: parents }, { data: nannies }, { data: generics }] = await Promise.all([
-    parentIds.length
-      ? admin.from("parent_profiles").select("id, full_name, profile_photo_url").in("id", parentIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string; profile_photo_url: string | null }[] }),
-    nannyIds.length
-      ? admin.from("nanny_profiles").select("id, full_name, profile_photo_url").in("id", nannyIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string; profile_photo_url: string | null }[] }),
-    genericIds.length
-      ? admin.from("generic_profiles").select("id, full_name, profile_photo_url").in("id", genericIds)
-      : Promise.resolve({ data: [] as { id: string; full_name: string; profile_photo_url: string | null }[] }),
-  ]);
+  const { data: profiles } = chosenIds.length
+    ? await admin.from("generic_profiles").select("id, full_name, profile_photo_url").in("id", chosenIds)
+    : { data: [] as { id: string; full_name: string; profile_photo_url: string | null }[] };
+  const profileById = new Map((profiles ?? []).map((g) => [g.id, g]));
 
-  const parentById = new Map((parents ?? []).map((p) => [p.id, p]));
-  const nannyById = new Map((nannies ?? []).map((n) => [n.id, n]));
-  const genericById = new Map((generics ?? []).map((g) => [g.id, g]));
-
-  const fellBackToDefault: PostWithIdentity[] = [];
-  for (const post of withIdentity) {
-    if (post.posted_as_parent_profile_id) {
-      const p = parentById.get(post.posted_as_parent_profile_id);
-      if (p) {
-        out.set(post.id, { fullName: p.full_name, role: "parent", profileId: p.id, photoUrl: p.profile_photo_url });
-        continue;
-      }
-    } else if (post.posted_as_nanny_profile_id) {
-      const n = nannyById.get(post.posted_as_nanny_profile_id);
-      if (n) {
-        out.set(post.id, { fullName: n.full_name, role: "nanny", profileId: n.id, photoUrl: n.profile_photo_url });
-        continue;
-      }
-    } else if (post.posted_as_generic_profile_id) {
-      const g = genericById.get(post.posted_as_generic_profile_id);
-      if (g) {
-        out.set(post.id, { fullName: g.full_name, role: "generic", profileId: g.id, photoUrl: g.profile_photo_url });
-        continue;
-      }
-    }
-    // Referenced profile row wasn't found (e.g. deleted concurrently,
-    // on delete set null racing this read) -- resolve like a post with no
-    // chosen identity rather than leaving it with no author at all.
-    fellBackToDefault.push(post);
+  // Includes posts whose chosen profile wasn't found (e.g. deleted
+  // concurrently, on delete set null racing this read) -- resolved like a
+  // post with no chosen identity rather than left with no author at all.
+  const needsDefault: PostWithIdentity[] = [];
+  for (const post of posts) {
+    const g = post.posted_as_generic_profile_id ? profileById.get(post.posted_as_generic_profile_id) : undefined;
+    if (g) out.set(post.id, { fullName: g.full_name, profileId: g.id, photoUrl: g.profile_photo_url });
+    else needsDefault.push(post);
   }
 
-  const legacyPosts = [...withoutIdentity, ...fellBackToDefault];
-  if (legacyPosts.length > 0) {
-    const byUser = await defaultIdentityByUser(legacyPosts);
-    for (const post of legacyPosts) {
+  if (needsDefault.length > 0) {
+    const byUser = await defaultIdentityByUser(needsDefault);
+    for (const post of needsDefault) {
       const author = byUser.get(post.user_id);
       if (author) out.set(post.id, author);
     }
@@ -170,8 +111,7 @@ export async function postEngagement(postIds: string[], userId: string): Promise
   return out;
 }
 
-export const POST_FEED_COLUMNS =
-  "id, user_id, kind, caption, status, created_at, posted_as_parent_profile_id, posted_as_nanny_profile_id, posted_as_generic_profile_id";
+export const POST_FEED_COLUMNS = "id, user_id, kind, caption, status, created_at, posted_as_generic_profile_id";
 
 /**
  * Everything the feed renders per post beyond its own row -- author,
@@ -181,31 +121,18 @@ export const POST_FEED_COLUMNS =
  */
 type SessionClient = Awaited<ReturnType<typeof createClient>>;
 
-const PROFILE_TABLE = { parent: "parent_profiles", nanny: "nanny_profiles", generic: "generic_profiles" } as const;
-
 /**
  * Which of these authors' profiles the *viewer* may actually open.
  * Authors are resolved with the service role (a name should always show),
  * but the profile preview reads through the viewer's own session, where
- * RLS decides -- e.g. a tutoring-only account can't see nanny/parent
- * profiles, and a parent can't see another parent's. Asking the same RLS
- * here (one query per profile table) keeps the feed from offering a
+ * RLS decides. Asking the same RLS here keeps the feed from offering a
  * profile button that can only end in "Profile not found".
  */
 async function viewableAuthorProfiles(supabase: SessionClient, authors: PostAuthor[]): Promise<Set<string>> {
-  const idsByType = { parent: new Set<string>(), nanny: new Set<string>(), generic: new Set<string>() };
-  for (const a of authors) if (a.role && a.profileId) idsByType[a.role].add(a.profileId);
-
-  const visible = new Set<string>();
-  await Promise.all(
-    (Object.keys(idsByType) as (keyof typeof idsByType)[]).map(async (type) => {
-      const ids = [...idsByType[type]];
-      if (ids.length === 0) return;
-      const { data } = await supabase.from(PROFILE_TABLE[type]).select("id").in("id", ids);
-      for (const row of data ?? []) visible.add(`${type}:${row.id}`);
-    }),
-  );
-  return visible;
+  const ids = [...new Set(authors.map((a) => a.profileId).filter((id): id is string => !!id))];
+  if (ids.length === 0) return new Set();
+  const { data } = await supabase.from("generic_profiles").select("id").in("id", ids);
+  return new Set((data ?? []).map((row) => row.id));
 }
 
 export async function decoratePosts<T extends PostWithIdentity>(posts: T[], userId: string, supabase: SessionClient) {
@@ -219,10 +146,10 @@ export async function decoratePosts<T extends PostWithIdentity>(posts: T[], user
   return posts.map((p) => {
     const author = authors.get(p.id) ?? null;
     // Keep the name/photo, but drop the profile link the viewer can't open.
-    const canOpen = !!author?.role && !!author.profileId && viewable.has(`${author.role}:${author.profileId}`);
+    const canOpen = !!author?.profileId && viewable.has(author.profileId);
     return {
       ...p,
-      author: author && !canOpen ? { ...author, role: undefined, profileId: null } : author,
+      author: author && !canOpen ? { ...author, profileId: null } : author,
       ...(engagement.get(p.id) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
       featured: featured.has(p.user_id),
       isMine: p.user_id === userId,

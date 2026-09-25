@@ -1,10 +1,7 @@
-import { redirect } from "@/i18n/navigation";
+import { permanentRedirect } from "@/i18n/navigation";
 
-export default async function MatchesPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+// Old nanny link -- see ../dashboard/page.tsx.
+export default async function MatchesPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
-  redirect({ href: "/dashboard", locale });
+  permanentRedirect({ href: "/categories/nanny/dashboard", locale });
 }

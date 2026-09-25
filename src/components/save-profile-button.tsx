@@ -8,7 +8,6 @@ import { useSavedProfiles } from "@/components/saved-profiles-provider";
 import { useToast } from "@/components/toast-provider";
 
 type SaveProfileButtonProps = {
-  profileType: "parent" | "nanny" | "generic";
   profileId: string;
   initialSaved: boolean;
   className?: string;
@@ -21,14 +20,14 @@ type SaveProfileButtonProps = {
  * future card-level click-to-open wrapper, even though none of today's
  * cards have one.
  */
-export default function SaveProfileButton({ profileType, profileId, initialSaved, className = "" }: SaveProfileButtonProps) {
+export default function SaveProfileButton({ profileId, initialSaved, className = "" }: SaveProfileButtonProps) {
   const t = useTranslations("SavedProfiles");
   const router = useRouter();
   const { show } = useToast();
   const { isSaved, setSaved } = useSavedProfiles();
   const [pending, setPending] = useState(false);
 
-  const saved = isSaved(profileType, profileId, initialSaved);
+  const saved = isSaved(profileId, initialSaved);
 
   async function toggle(e: React.MouseEvent) {
     e.stopPropagation();
@@ -37,15 +36,15 @@ export default function SaveProfileButton({ profileType, profileId, initialSaved
 
     const nextSaved = !saved;
     setPending(true);
-    setSaved(profileType, profileId, nextSaved);
+    setSaved(profileId, nextSaved);
 
     try {
-      const res = await fetch(`/api/saved-profiles/${profileType}/${profileId}`, {
+      const res = await fetch(`/api/saved-profiles/${profileId}`, {
         method: nextSaved ? "PUT" : "DELETE",
       });
 
       if (!res.ok) {
-        setSaved(profileType, profileId, saved);
+        setSaved(profileId, saved);
         show({ message: nextSaved ? t("saveError") : t("removeError"), tone: "error", actionLabel: t("retry"), onAction: () => toggle(e) });
         return;
       }
@@ -54,7 +53,7 @@ export default function SaveProfileButton({ profileType, profileId, initialSaved
         show({ message: t("savedToast"), actionLabel: t("viewSavedLink"), onAction: () => router.push("/saved") });
       }
     } catch {
-      setSaved(profileType, profileId, saved);
+      setSaved(profileId, saved);
       show({ message: nextSaved ? t("saveError") : t("removeError"), tone: "error", actionLabel: t("retry"), onAction: () => toggle(e) });
     } finally {
       setPending(false);

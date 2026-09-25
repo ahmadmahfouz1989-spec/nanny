@@ -5,15 +5,11 @@ import { createContext, useCallback, useContext, useState } from "react";
 type SavedMap = Map<string, boolean>;
 
 type SavedProfilesContextValue = {
-  isSaved: (type: string, profileId: string, fallback: boolean) => boolean;
-  setSaved: (type: string, profileId: string, saved: boolean) => void;
+  isSaved: (profileId: string, fallback: boolean) => boolean;
+  setSaved: (profileId: string, saved: boolean) => void;
 };
 
 const SavedProfilesContext = createContext<SavedProfilesContextValue | null>(null);
-
-function keyOf(type: string, profileId: string) {
-  return `${type}:${profileId}`;
-}
 
 /**
  * Shared saved/unsaved state so the same profile shows consistently across
@@ -28,14 +24,14 @@ export function SavedProfilesProvider({ children }: { children: React.ReactNode 
   const [overrides, setOverrides] = useState<SavedMap>(new Map());
 
   const isSaved = useCallback(
-    (type: string, profileId: string, fallback: boolean) => overrides.get(keyOf(type, profileId)) ?? fallback,
+    (profileId: string, fallback: boolean) => overrides.get(profileId) ?? fallback,
     [overrides],
   );
 
-  const setSaved = useCallback((type: string, profileId: string, saved: boolean) => {
+  const setSaved = useCallback((profileId: string, saved: boolean) => {
     setOverrides((prev) => {
       const next = new Map(prev);
-      next.set(keyOf(type, profileId), saved);
+      next.set(profileId, saved);
       return next;
     });
   }, []);
