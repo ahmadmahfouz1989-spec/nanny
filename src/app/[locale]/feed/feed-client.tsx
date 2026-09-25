@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
@@ -215,6 +215,7 @@ export default function FeedClient({
   }
 
   const [sendingReply, setSendingReply] = useState<Record<string, boolean>>({});
+  const pendingScrollIdRef = useRef<string | null>(null);
 
   function loadPosts(before?: string) {
     const url = before ? `/api/posts?before=${encodeURIComponent(before)}` : "/api/posts";
@@ -237,17 +238,17 @@ export default function FeedClient({
   useEffect(() => {
     let active = true;
     async function init() {
-      const [postsRes, identitiesRes, targetRes] = await Promise.all([
-        fetch("/api/posts"),
-        fetch("/api/posts/identities"),
-        targetPostId ? fetch(`/api/posts/${targetPostId}`).catch(() => null) : Promise.resolve(null),
-      ]);
+      const [postsRes, identitiesRes] = await Promise.all([fetch("/api/posts"), fetch("/api/posts/identities")]);
       const [postsBody, identitiesBody] = await Promise.all([postsRes.json(), identitiesRes.json()]);
-      const target: Post | null = targetRes?.ok ? ((await targetRes.json()).post ?? null) : null;
       if (!active) return;
       const firstPage: Post[] = postsBody.posts ?? [];
-      setPosts(target ? [target, ...firstPage.filter((p) => p.id !== target.id)] : firstPage);
-      if (target) toggleReplies(target.id);
+      // A deep-linked post (effect below) may already have been pinned
+      // before this first page arrived -- keep it on top, don't drop it.
+      setPosts((prev) => {
+        const pinned = prev ?? [];
+        const pinnedIds = new Set(pinned.map((p) => p.id));
+        return [...pinned, ...firstPage.filter((p) => !pinnedIds.has(p.id))];
+      });
       setNextCursor(postsBody.nextCursor ?? null);
       setIdentities(identitiesBody.identities ?? []);
       setSelectedIdentity(identitiesBody.defaultIdentity ?? null);
@@ -256,8 +257,35 @@ export default function FeedClient({
     return () => {
       active = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Notification deep links (/feed?post=...&reply=...). Keyed on the
+  // target itself, not run once on mount: clicking a notification while
+  // already on the feed only changes these props on the same mounted
+  // component. Always refetches the post and its replies -- a new reply
+  // is exactly why the notification exists, so a cached thread is stale.
+  useEffect(() => {
+    if (!targetPostId) return;
+    const postId = targetPostId;
+    let active = true;
+    async function openTarget() {
+      const [postRes, repliesRes] = await Promise.all([
+        fetch(`/api/posts/${postId}`).catch(() => null),
+        fetch(`/api/posts/${postId}/replies`).catch(() => null),
+      ]);
+      const target: Post | null = postRes?.ok ? ((await postRes.json()).post ?? null) : null;
+      const threadReplies: Reply[] | null = repliesRes?.ok ? ((await repliesRes.json()).replies ?? []) : null;
+      if (!active || !target) return;
+      pendingScrollIdRef.current = targetReplyId ? `reply-${targetReplyId}` : `post-${postId}`;
+      setPosts((prev) => [target, ...(prev ?? []).filter((p) => p.id !== target.id)]);
+      if (threadReplies) setReplies((prev) => ({ ...prev, [postId]: threadReplies }));
+      setOpenReplies(postId);
+    }
+    openTarget();
+    return () => {
+      active = false;
+    };
+  }, [targetPostId, targetReplyId]);
 
   async function submitPost() {
     setComposerError(null);
@@ -301,12 +329,15 @@ export default function FeedClient({
     }
   }
 
-  // Once a deep-linked reply is actually on screen, bring it into view.
-  const targetReplies = targetPostId ? replies[targetPostId] : undefined;
+  // Scroll a deep-linked post/reply into view once it has actually
+  // rendered, then stop -- later updates to the thread shouldn't re-scroll.
   useEffect(() => {
-    if (!targetReplyId || !targetReplies) return;
-    document.getElementById(`reply-${targetReplyId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }, [targetReplyId, targetReplies]);
+    const id = pendingScrollIdRef.current;
+    const el = id ? document.getElementById(id) : null;
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    pendingScrollIdRef.current = null;
+  }, [posts, replies, openReplies]);
 
   function toggleReplies(postId: string) {
     const next = openReplies === postId ? null : postId;
@@ -443,7 +474,7 @@ export default function FeedClient({
 
         <div className="divide-y divide-border">
           {posts?.map((post) => (
-            <article key={post.id} className="flex gap-3 p-4">
+            <article key={post.id} id={`post-${post.id}`} className="flex gap-3 p-4 scroll-mt-6">
               <Avatar photoUrl={post.author?.photoUrl ?? null} size={44} className="mt-0.5" />
 
               <div className="flex-1 min-w-0 flex flex-col gap-1">
