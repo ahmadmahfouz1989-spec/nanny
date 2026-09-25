@@ -27,7 +27,7 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("role, email, phone, email_verified_at, phone_verified_at, featured_until")
+    .select("role, email, email_verified_at, featured_until")
     .eq("id", user!.id)
     .single();
 
@@ -130,15 +130,6 @@ export default async function ProfilePage({
               {profile?.email && (
                 <span className={ui.badge(profile.email_verified_at ? "success" : "warning")}>
                   {profile.email_verified_at ? t("verified") : t("unverified")}
-                </span>
-              )}
-            </dd>
-            <dt className="text-muted">{t("phone")}</dt>
-            <dd className="flex items-center gap-2">
-              {profile?.phone ?? "—"}
-              {profile?.phone && (
-                <span className={ui.badge(profile.phone_verified_at ? "success" : "warning")}>
-                  {profile.phone_verified_at ? t("verified") : t("unverified")}
                 </span>
               )}
             </dd>
