@@ -42,7 +42,7 @@ export async function GET(request: Request) {
   }
 
   const { items, nextCursor } = await listSavedProfiles(supabase, user.id, {
-    category: category as "nanny" | "nursing" | "tutoring" | undefined,
+    category: category ?? undefined,
     role: role as "seeking" | "offering" | undefined,
     limit,
     cursor: decodeCursor(rawCursor),
@@ -54,13 +54,11 @@ export async function GET(request: Request) {
     items: items.map((item) => ({
       id: item.id,
       savedAt: item.savedAt,
-      type: item.type,
       targetProfileId: item.targetProfileId,
       match: item.match,
       profile: item.profile
         ? {
             id: item.profile.id,
-            type: item.profile.type,
             category: item.profile.category,
             role: item.profile.role,
             displayName: item.profile.displayName,

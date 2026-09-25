@@ -26,3 +26,21 @@ export function storageOwnPathFromPublicUrl(url: string, bucket: string, ownerId
   const [firstSegment] = path.split("/");
   return firstSegment === ownerId ? path : null;
 }
+
+// Every bucket a profile photo can live in: new uploads go to
+// generic-photos; nanny/parent photos from before nanny moved onto
+// generic_profiles stay where they were uploaded.
+export const PROFILE_PHOTO_BUCKETS = ["generic-photos", "nanny-photos", "parent-photos"] as const;
+
+/**
+ * Locates a stored profile photo URL in whichever photo bucket it lives
+ * in, returning its bucket and path only when it's under `ownerId`'s own
+ * folder (see storageOwnPathFromPublicUrl for why that check matters).
+ */
+export function ownProfilePhotoObject(url: string, ownerId: string): { bucket: string; path: string } | null {
+  for (const bucket of PROFILE_PHOTO_BUCKETS) {
+    const path = storageOwnPathFromPublicUrl(url, bucket, ownerId);
+    if (path) return { bucket, path };
+  }
+  return null;
+}

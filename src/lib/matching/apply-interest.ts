@@ -1,23 +1,12 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import {
-  MATCH_SOURCES,
-  conversationUrl,
-  effectiveStatus,
-  matchNotificationPayload,
-  profileTableFor,
-  type MatchAccess,
-} from "@/lib/matching/match-access";
+import { conversationUrl, effectiveStatus, matchNotificationPayload, type MatchAccess } from "@/lib/matching/match-access";
 import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
 
 const INTEREST_WINDOW_DAYS = 14;
 
-/**
- * The interest state-machine for every category -- nanny/parent and
- * generic (nursing, tutoring, ...) matches go through the exact same
- * transition, notifications, and emails.
- */
+/** The interest state-machine for a match in any category. */
 export async function applyInterest(request: Request, access: MatchAccess) {
   const status = effectiveStatus(access);
   const ownPending = `${access.side}_interested`;
@@ -55,7 +44,7 @@ export async function applyInterest(request: Request, access: MatchAccess) {
   // interest at once) would each blindly overwrite the other's transition
   // instead of one landing on "mutual".
   const { data: updated, error } = await admin
-    .from(MATCH_SOURCES[access.source].matchesTable)
+    .from("generic_matches")
     .update(updatePayload)
     .eq("id", access.id)
     .eq("status", access.status)
@@ -81,12 +70,8 @@ export async function applyInterest(request: Request, access: MatchAccess) {
           "id",
           notify.map((n) => n.user_id),
         ),
-      admin.from(profileTableFor(access.source, access.side)).select("full_name").eq("id", access.myProfileId).single(),
-      admin
-        .from(profileTableFor(access.source, access.otherSide))
-        .select("full_name")
-        .eq("id", access.otherProfileId)
-        .single(),
+      admin.from("generic_profiles").select("full_name").eq("id", access.myProfileId).single(),
+      admin.from("generic_profiles").select("full_name").eq("id", access.otherProfileId).single(),
     ]);
 
     const recipientById = new Map((recipients ?? []).map((r) => [r.id, r]));

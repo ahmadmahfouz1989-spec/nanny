@@ -28,22 +28,5 @@ export async function GET() {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 
-  let profileSummary = null;
-  if (profile.role === "parent") {
-    const { data } = await supabase
-      .from("parent_profiles")
-      .select("id, status, moderation_status, profile_completion_pct")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    profileSummary = data;
-  } else if (profile.role === "nanny") {
-    const { data } = await supabase
-      .from("nanny_profiles")
-      .select("id, status, moderation_status, profile_completion_pct")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    profileSummary = data;
-  }
-
-  return NextResponse.json({ user: profile, profile: profileSummary });
+  return NextResponse.json({ user: profile });
 }

@@ -16,11 +16,10 @@ type ConversationMessage = {
 };
 
 // Reports made from within a conversation record exactly which one
-// (match_id/match_source, see /api/reports) -- used directly here when
-// present. Older reports (or ones filed outside a conversation, e.g.
-// against a feed post) have neither, so this falls back to searching for
-// a mutual match between the two of them, on either the legacy
-// nanny/parent track or a generic_matches one (nursing, tutoring, ...).
+// (match_id, see /api/reports) -- used directly here when present. Older
+// reports (or ones filed outside a conversation, e.g. against a feed post)
+// don't, so this falls back to searching for a mutual match between the
+// two of them.
 // That fallback is inherently ambiguous once the same two people share
 // more than one active service relationship -- exactly what recording
 // the match up front avoids. Goes through the service role throughout:
@@ -39,13 +38,12 @@ type ConversationPage = { messages: ConversationMessage[]; hasOlder: boolean };
 
 async function messagesForMatch(
   db: Admin,
-  table: "messages" | "generic_messages",
   matchId: string,
   reporterUserId: string,
   before: string | null,
 ): Promise<ConversationPage> {
   let query = db
-    .from(table)
+    .from("generic_messages")
     .select("id, sender_id, body, audio_path, audio_duration_seconds, created_at")
     .eq("match_id", matchId)
     .order("created_at", { ascending: false })
@@ -82,69 +80,22 @@ async function messagesForMatch(
 async function directConversation(
   db: Admin,
   matchId: string,
-  matchSource: string,
   reporterUserId: string,
   reportedUserId: string,
   before: string | null,
 ): Promise<({ matchId: string } & ConversationPage) | null> {
-  const table = matchSource === "nanny" ? "matches" : "generic_matches";
-  const { data: match } = await db.from(table).select("id").eq("id", matchId).maybeSingle();
-  if (!match) return null;
-  // report_match_participants_valid (20260923000005) now enforces this at
-  // insert time, but re-verify independently here too rather than trusting
-  // a stored match_id outright -- a report inserted before that migration,
-  // or any future insert path that forgets it, must never surface an
+  // report_match_participants_valid enforces this at insert time, but
+  // re-verify independently here too rather than trusting a stored
+  // match_id outright -- a report inserted before that check existed, or
+  // any future insert path that forgets it, must never surface an
   // unrelated couple's conversation as evidence against the reported user.
-  const isValid = await verifyMatchParticipants(db, matchSource, matchId, reporterUserId, reportedUserId);
-  if (!isValid) return null;
+  if (!(await verifyMatchParticipants(db, matchId, reporterUserId, reportedUserId))) return null;
 
-  const page = await messagesForMatch(db, matchSource === "nanny" ? "messages" : "generic_messages", matchId, reporterUserId, before);
+  const page = await messagesForMatch(db, matchId, reporterUserId, before);
   return { matchId, ...page };
 }
 
-async function legacyConversation(
-  db: Admin,
-  roleById: Map<string, string | null>,
-  reporterUserId: string,
-  reportedUserId: string,
-  before: string | null,
-): Promise<({ matchId: string } & ConversationPage) | null> {
-  async function profileFor(userId: string) {
-    const role = roleById.get(userId);
-    if (role === "parent") {
-      const { data } = await db.from("parent_profiles").select("id").eq("user_id", userId).maybeSingle();
-      return data ? { side: "parent" as const, profileId: data.id as string } : null;
-    }
-    if (role === "nanny") {
-      const { data } = await db.from("nanny_profiles").select("id").eq("user_id", userId).maybeSingle();
-      return data ? { side: "nanny" as const, profileId: data.id as string } : null;
-    }
-    return null;
-  }
-
-  const reporterProfile = await profileFor(reporterUserId);
-  const reportedProfile = await profileFor(reportedUserId);
-  if (!reporterProfile || !reportedProfile || reporterProfile.side === reportedProfile.side) {
-    return null;
-  }
-
-  const parentProfileId = reporterProfile.side === "parent" ? reporterProfile.profileId : reportedProfile.profileId;
-  const nannyProfileId = reporterProfile.side === "nanny" ? reporterProfile.profileId : reportedProfile.profileId;
-
-  const { data: match } = await db
-    .from("matches")
-    .select("id, status")
-    .eq("parent_profile_id", parentProfileId)
-    .eq("nanny_profile_id", nannyProfileId)
-    .maybeSingle();
-
-  if (!match || match.status !== "mutual") return null;
-
-  const page = await messagesForMatch(db, "messages", match.id, reporterUserId, before);
-  return { matchId: match.id, ...page };
-}
-
-async function genericConversation(
+async function mutualConversation(
   db: Admin,
   reporterUserId: string,
   reportedUserId: string,
@@ -160,9 +111,8 @@ async function genericConversation(
   if (reporterProfileIds.length === 0 || reportedProfileIds.length === 0) return null;
 
   // Two plain queries (one per direction) rather than an OR'd IN-list
-  // string, same reasoning as resolveGenericMatchAccess in
-  // generic-access.ts -- keeps this unambiguous rather than hand-building
-  // a PostgREST filter expression.
+  // string -- keeps this unambiguous rather than hand-building a PostgREST
+  // filter expression.
   const [{ data: reporterAsSeeker }, { data: reportedAsSeeker }] = await Promise.all([
     db
       .from("generic_matches")
@@ -181,7 +131,7 @@ async function genericConversation(
   const match = reporterAsSeeker?.[0] ?? reportedAsSeeker?.[0];
   if (!match) return null;
 
-  const page = await messagesForMatch(db, "generic_messages", match.id, reporterUserId, before);
+  const page = await messagesForMatch(db, match.id, reporterUserId, before);
   return { matchId: match.id, ...page };
 }
 
@@ -197,7 +147,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const { data: report } = await db
     .from("reports")
-    .select("reporter_user_id, reported_user_id, match_id, match_source")
+    .select("reporter_user_id, reported_user_id, match_id")
     .eq("id", id)
     .single();
 
@@ -216,23 +166,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ matchId: null, messages: [], hasOlder: false });
   }
 
-  let conversation =
-    report.match_id && report.match_source
-      ? await directConversation(db, report.match_id, report.match_source, reporterUserId, reportedUserId, before)
-      : null;
-
-  if (!conversation) {
-    const { data: users } = await db
-      .from("users")
-      .select("id, role")
-      .in("id", [reporterUserId, reportedUserId]);
-
-    const roleById = new Map((users ?? []).map((u) => [u.id, u.role]));
-
-    conversation =
-      (await legacyConversation(db, roleById, reporterUserId, reportedUserId, before)) ??
-      (await genericConversation(db, reporterUserId, reportedUserId, before));
-  }
+  const conversation =
+    (report.match_id ? await directConversation(db, report.match_id, reporterUserId, reportedUserId, before) : null) ??
+    (await mutualConversation(db, reporterUserId, reportedUserId, before));
 
   if (!conversation) {
     return NextResponse.json({ matchId: null, messages: [], hasOlder: false });

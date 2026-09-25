@@ -6,6 +6,8 @@ import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
 import { Link } from "@/i18n/navigation";
+import NannyProviderForm from "./nanny-provider-form";
+import NannySeekerForm from "./nanny-seeker-form";
 import NursingProviderForm from "./nursing-provider-form";
 import NursingSeekerForm from "./nursing-seeker-form";
 import TutoringProviderForm from "./tutoring-provider-form";
@@ -16,6 +18,7 @@ import { ui } from "@/lib/ui";
 // pair in CATEGORY_SCHEMAS (src/app/api/generic-profile/route.ts) and a
 // SUPPORTED_SLUGS entry (../page.tsx) before it's reachable at all.
 const FORMS: Record<string, { provider: typeof NursingProviderForm; seeker: typeof NursingSeekerForm }> = {
+  nanny: { provider: NannyProviderForm, seeker: NannySeekerForm },
   nursing: { provider: NursingProviderForm, seeker: NursingSeekerForm },
   tutoring: { provider: TutoringProviderForm, seeker: TutoringSeekerForm },
 };
@@ -74,8 +77,7 @@ export default function CategoryOnboardingClient({
   const [error, setError] = useState<string | null>(null);
 
   // Commits to a role the moment it's picked, before any real profile
-  // fields are filled in -- same reasoning as nanny's claim-role: this is
-  // what lets the nav show this category right away instead of only after
+  // fields are filled in -- this is what lets the nav show this category right away instead of only after
   // the whole form is submitted. Re-picking a role that's already claimed
   // (or fully onboarded) just reuses that same row -- never overwrites it.
   async function chooseRole(role: "seeker" | "provider") {

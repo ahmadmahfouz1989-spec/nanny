@@ -9,7 +9,8 @@ import EditShell from "@/components/onboarding/edit-shell";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
-import { AGE_GROUPS, DAYS, nannyProfileSchema } from "@/lib/validation/profile";
+import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
+import { nannyProviderSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
 
 const TOTAL_STEPS = 7;
@@ -59,59 +60,53 @@ const initialState: FormState = {
   shortIntro: "",
 };
 
-type ExistingNannyProfile = {
+type ExistingProfile = {
+  id: string;
   full_name: string;
+  profile_photo_url?: string | null;
+  location_id: string | null;
+  attributes: Record<string, unknown>;
   contact_phone: string | null;
-  profile_photo_url: string | null;
-  location_id: string;
-  location_detail: string | null;
-  nationality: string | null;
-  work_radius_km: number;
-  employment_type: FormState["employmentType"];
-  live_arrangement_pref: FormState["liveArrangementPref"];
-  availability: { days: string[]; start_time: string; end_time: string };
-  years_experience: number;
-  has_transportation: boolean;
-  can_drive: boolean;
-  certifications: string[];
-  short_intro: string | null;
-  nanny_profile_languages: { language_id: string }[];
-  nanny_experience: { age_group: string; years_experience: number }[];
+  status: string;
 };
 
-function stateFromExisting(p: ExistingNannyProfile): FormState {
+function stateFromExisting(p: ExistingProfile): FormState {
+  const a = p.attributes;
+  const availability = (a.availability ?? {}) as { days?: string[]; startTime?: string; endTime?: string };
+  const experience = (a.experience ?? []) as { ageGroup: string; yearsExperience: number }[];
   return {
-    fullName: p.full_name,
+    // A freshly-claimed draft (see /api/generic-profile/claim) has a
+    // placeholder full_name -- show the field empty rather than that.
+    fullName: p.status === "draft" ? "" : p.full_name,
     contactPhone: p.contact_phone ?? "",
-    profilePhotoUrl: p.profile_photo_url,
+    profilePhotoUrl: p.profile_photo_url ?? null,
     locationId: p.location_id,
-    locationDetail: p.location_detail ?? "",
-    nationality: p.nationality ?? "",
-    workRadiusKm: String(p.work_radius_km),
-    employmentType: p.employment_type,
-    liveArrangementPref: p.live_arrangement_pref,
-    days: p.availability?.days ?? [],
-    startTime: p.availability?.start_time ?? "08:00",
-    endTime: p.availability?.end_time ?? "18:00",
-    languageIds: p.nanny_profile_languages.map((l) => l.language_id),
-    yearsExperience: String(p.years_experience),
-    experience: Object.fromEntries(p.nanny_experience.map((e) => [e.age_group, String(e.years_experience)])),
-    hasTransportation: p.has_transportation,
-    canDrive: p.can_drive,
-    certifications: p.certifications,
-    shortIntro: p.short_intro ?? "",
+    locationDetail: (a.locationDetail as string) ?? "",
+    nationality: (a.nationality as string) ?? "",
+    workRadiusKm: a.workRadiusKm !== undefined ? String(a.workRadiusKm) : initialState.workRadiusKm,
+    employmentType: (a.employmentType as FormState["employmentType"]) ?? initialState.employmentType,
+    liveArrangementPref: (a.liveArrangementPref as FormState["liveArrangementPref"]) ?? initialState.liveArrangementPref,
+    days: availability.days ?? [],
+    startTime: availability.startTime ?? initialState.startTime,
+    endTime: availability.endTime ?? initialState.endTime,
+    languageIds: (a.languageIds as string[]) ?? [],
+    yearsExperience: a.yearsExperience !== undefined ? String(a.yearsExperience) : "",
+    experience: Object.fromEntries(experience.map((e) => [e.ageGroup, String(e.yearsExperience)])),
+    hasTransportation: !!a.hasTransportation,
+    canDrive: !!a.canDrive,
+    certifications: (a.certifications as string[]) ?? [],
+    shortIntro: (a.shortIntro as string) ?? "",
   };
 }
 
-export default function NannyOnboarding({
+export default function NannyProviderForm({
+  categorySlug,
   initialProfile,
-  accountContactPhone,
+  onBack,
 }: {
-  initialProfile?: ExistingNannyProfile | null;
-  // contact_phone is shared account state, not a profile column -- a first
-  // profile here must still start from whatever another category already
-  // saved, or submitting the form untouched would clear it.
-  accountContactPhone?: string | null;
+  categorySlug: string;
+  initialProfile: ExistingProfile | null;
+  onBack?: () => void;
 }) {
   const t = useTranslations("NannyOnboarding");
   const tw = useTranslations("Wizard");
@@ -122,11 +117,13 @@ export default function NannyOnboarding({
   const tLive = useTranslations("LiveArrangementOptions");
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const isEdit = !!initialProfile;
+  // The row always exists by now (claimed as a draft when the role was
+  // picked), so saving is always an update -- but a draft still walks
+  // through the step-by-step wizard, only a submitted profile gets the
+  // single-page editor.
+  const isEdit = !!initialProfile && initialProfile.status !== "draft";
   const [step, setStep] = useState(1);
-  const [form, setForm] = useState(
-    initialProfile ? stateFromExisting(initialProfile) : { ...initialState, contactPhone: accountContactPhone ?? "" },
-  );
+  const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -148,10 +145,11 @@ export default function NannyOnboarding({
     setError(null);
     const formData = new FormData();
     formData.append("file", file);
-    // Editing an existing profile: stage the upload so Cancel doesn't leave
-    // the live profile pointing at a new (unsaved) photo with its previous
-    // one already deleted. Save commits it as part of the full payload below.
-    if (isEdit) formData.append("stage", "true");
+    // Staged against this profile: the file is uploaded now, but the
+    // profile only points at it once Save sends profilePhotoUrl below, so
+    // Cancel leaves the saved profile untouched.
+    if (initialProfile) formData.append("genericProfileId", initialProfile.id);
+    formData.append("stage", "true");
 
     const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
     setUploading(false);
@@ -218,7 +216,7 @@ export default function NannyOnboarding({
       })),
     };
 
-    const parsed = nannyProfileSchema.safeParse(payload);
+    const parsed = nannyProviderSchema.safeParse(payload);
     if (!parsed.success) {
       const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
       setError(msgs.length ? msgs.join(", ") : tw("validationError"));
@@ -226,10 +224,10 @@ export default function NannyOnboarding({
     }
 
     setSubmitting(true);
-    const res = await fetch("/api/profile", {
-      method: isEdit ? "PATCH" : "POST",
+    const res = await fetch("/api/generic-profile", {
+      method: initialProfile ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, categorySlug, role: "provider" }),
     });
     setSubmitting(false);
 
@@ -238,7 +236,7 @@ export default function NannyOnboarding({
       return;
     }
 
-    router.push(isEdit ? "/profile" : "/dashboard");
+    router.push(`/categories/${categorySlug}/dashboard`);
     router.refresh();
   }
 
@@ -248,16 +246,7 @@ export default function NannyOnboarding({
   }
 
   function handleCancel() {
-    router.push("/profile");
-  }
-
-  // "I am a nanny" clicked by mistake, or just changing their mind before
-  // ever submitting -- undoes the users.role claim (see
-  // /api/account/claim-role) and sends them back to the role picker.
-  async function handleExitToRolePicker() {
-    await fetch("/api/account/claim-role", { method: "DELETE" });
-    router.push("/categories/nanny/onboarding");
-    router.refresh();
+    router.push(`/categories/${categorySlug}/dashboard`);
   }
 
   const sectionHeading = (n: 1 | 2 | 3 | 4 | 5 | 6 | 7) =>
@@ -522,7 +511,7 @@ export default function NannyOnboarding({
       error={error}
       onBack={handleBack}
       onNext={handleNext}
-      onExit={handleExitToRolePicker}
+      onExit={onBack}
       exitLabel={tw("changeRole")}
       nextLabel={step === TOTAL_STEPS ? tw("finish") : tw("next")}
       nextDisabled={!stepValid || uploading}

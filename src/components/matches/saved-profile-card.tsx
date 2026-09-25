@@ -45,11 +45,11 @@ export default function SavedProfileCard({
   // for this profile (including one in an open preview) agrees.
   async function remove() {
     onRemoved(item);
-    setSaved(item.type, item.targetProfileId, false);
-    const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "DELETE" }).catch(() => null);
+    setSaved(item.targetProfileId, false);
+    const res = await fetch(`/api/saved-profiles/${item.targetProfileId}`, { method: "DELETE" }).catch(() => null);
     if (!res || !res.ok) {
       onRestored(item);
-      setSaved(item.type, item.targetProfileId, true);
+      setSaved(item.targetProfileId, true);
       show({ message: t("removeError"), tone: "error" });
       return;
     }
@@ -61,11 +61,11 @@ export default function SavedProfileCard({
       if (undoUsed) return;
       undoUsed = true;
       onRestored(item);
-      setSaved(item.type, item.targetProfileId, true);
-      const res = await fetch(`/api/saved-profiles/${item.type}/${item.targetProfileId}`, { method: "PUT" }).catch(() => null);
+      setSaved(item.targetProfileId, true);
+      const res = await fetch(`/api/saved-profiles/${item.targetProfileId}`, { method: "PUT" }).catch(() => null);
       if (!res || !res.ok) {
         onRemoved(item);
-        setSaved(item.type, item.targetProfileId, false);
+        setSaved(item.targetProfileId, false);
         show({ message: t("saveError"), tone: "error" });
         return;
       }
@@ -95,7 +95,7 @@ export default function SavedProfileCard({
 
   const { profile, match } = item;
   const area = localizedLocationName(profile.locationLabel, locale);
-  const categoryLabel = profile.category === "nanny" ? tNav("nanny") : profile.category === "nursing" ? tNav("nursing") : tNav("tutoring");
+  const categoryLabel = tNav.has(profile.category) ? tNav(profile.category) : profile.category;
 
   return (
     <div className={ui.cardHover + " overflow-hidden"}>
@@ -130,18 +130,17 @@ export default function SavedProfileCard({
       <div className="p-5">
         <div className="flex items-center justify-between gap-2 mb-3">
           <span className={ui.badge("secondary")}>{profile.role === "seeking" ? t("roleSeeking") : t("roleOffering")}</span>
-          <ProfileRating profileId={profile.id} profileType={profile.type} average={profile.rating.average} count={profile.rating.count} />
+          <ProfileRating profileId={profile.id} average={profile.rating.average} count={profile.rating.count} />
         </div>
 
         <button type="button" onClick={() => setOpen((v) => !v)} className={ui.buttonGhost + " text-sm mb-3"}>
           {open ? t("hideProfile") : t("viewProfile")}
         </button>
 
-        {open && <ProfileSummaryPanel profileType={profile.type} profileId={profile.id} />}
+        {open && <ProfileSummaryPanel profileId={profile.id} />}
 
         {match && (
           <MatchActions
-            source={item.type === "generic" ? "generic" : "nanny"}
             matchId={match.id}
             status={match.status}
             interestExpiresAt={match.interestExpiresAt}

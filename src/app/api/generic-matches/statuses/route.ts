@@ -1,5 +1,5 @@
 import { matchStatusesResponse } from "@/lib/match-statuses";
 
 export async function GET(request: Request) {
-  return matchStatusesResponse(request, "generic_matches");
+  return matchStatusesResponse(request);
 }

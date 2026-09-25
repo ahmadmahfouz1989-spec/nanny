@@ -31,6 +31,44 @@ export interface NannyMatchInput {
   experienceAgeGroups: AgeGroup[];
 }
 
+/** A nanny-category generic_profiles row, as far as scoring needs it. */
+export interface NannyCategoryProfile {
+  location_id: string | null;
+  attributes: Record<string, unknown>;
+}
+
+/** Seeker (parent) side of the nanny rubric, read from generic_profiles.attributes. */
+export function parentInputFromProfile(profile: NannyCategoryProfile): ParentMatchInput {
+  const a = profile.attributes;
+  return {
+    location: { governorateId: profile.location_id },
+    neededDays: (a.neededDays as string[]) ?? [],
+    scheduleType: a.scheduleType as ScheduleType,
+    liveArrangement: a.liveArrangement as LiveArrangement,
+    transportationRequired: !!a.transportationRequired,
+    childrenAgeRanges: (a.childrenAgeRanges as AgeGroup[]) ?? [],
+    languageIds: (a.languageIds as string[]) ?? [],
+  };
+}
+
+/** Provider (nanny) side of the nanny rubric, read from generic_profiles.attributes. */
+export function nannyInputFromProfile(profile: NannyCategoryProfile): NannyMatchInput {
+  const a = profile.attributes;
+  return {
+    location: { governorateId: profile.location_id },
+    employmentType: a.employmentType as ScheduleType,
+    liveArrangementPref: a.liveArrangementPref as LiveArrangement,
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    hasTransportation: !!a.hasTransportation,
+    languageIds: (a.languageIds as string[]) ?? [],
+    // The form lets a nanny enter 0 years for an age group -- a truthful
+    // "no experience here", not a claim of it. Only positive years count.
+    experienceAgeGroups: ((a.experience as { ageGroup: AgeGroup; yearsExperience: number }[]) ?? [])
+      .filter((e) => (e.yearsExperience ?? 0) > 0)
+      .map((e) => e.ageGroup),
+  };
+}
+
 // Pricing is negotiated directly between matched parties, not scored — the
 // salary criterion's former 0.1 weight was folded into location and
 // availability, the two next-highest-weighted criteria.

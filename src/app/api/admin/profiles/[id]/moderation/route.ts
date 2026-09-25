@@ -3,12 +3,10 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
-import { recomputeMatchesForParent, recomputeMatchesForNanny } from "@/lib/matching/recompute";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
-import { storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
+import { ownProfilePhotoObject } from "@/lib/storage-cleanup";
 
 const bodySchema = z.object({
-  profileType: z.enum(["parent", "nanny", "generic"]),
   status: z.enum(["approved", "rejected"]),
   notes: z.string().max(1000).optional(),
 });
@@ -17,28 +15,12 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 /**
  * Messaging only ever unlocks once a match goes mutual (see the
- * generic_messages/messages RLS, which gates on match status, not on the
- * profile's own moderation_status) -- so "has a mutual match" is exactly
- * the signal that this profile might have a real conversation behind it,
- * not just an unrequited score.
+ * generic_messages RLS, which gates on match status, not on the profile's
+ * own moderation_status) -- so "has a mutual match" is exactly the signal
+ * that this profile might have a real conversation behind it, not just an
+ * unrequited score.
  */
-async function hasMutualMatch(db: Admin, profileType: "parent" | "nanny" | "generic", profileId: string) {
-  if (profileType === "parent") {
-    const { count } = await db
-      .from("matches")
-      .select("id", { count: "exact", head: true })
-      .eq("parent_profile_id", profileId)
-      .eq("status", "mutual");
-    return (count ?? 0) > 0;
-  }
-  if (profileType === "nanny") {
-    const { count } = await db
-      .from("matches")
-      .select("id", { count: "exact", head: true })
-      .eq("nanny_profile_id", profileId)
-      .eq("status", "mutual");
-    return (count ?? 0) > 0;
-  }
+async function hasMutualMatch(db: Admin, profileId: string) {
   const [{ count: asSeeker }, { count: asProvider }] = await Promise.all([
     db.from("generic_matches").select("id", { count: "exact", head: true }).eq("seeker_profile_id", profileId).eq("status", "mutual"),
     db.from("generic_matches").select("id", { count: "exact", head: true }).eq("provider_profile_id", profileId).eq("status", "mutual"),
@@ -58,13 +40,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
-  const { profileType, status, notes } = parsed.data;
+  const { status, notes } = parsed.data;
 
   const db = createAdminClient();
-  const table = profileType === "parent" ? "parent_profiles" : profileType === "nanny" ? "nanny_profiles" : "generic_profiles";
-  // Only generic_profiles carries a category, needed to deep-link the
-  // notification to the right dashboard (nanny's is a fixed route).
-  const selectCols = profileType === "generic" ? "id, user_id, full_name, categories(slug)" : "id, user_id, full_name";
+  const table = "generic_profiles";
+  // The category deep-links the notification to the right dashboard.
+  const selectCols = "id, user_id, full_name, categories(slug)";
 
   if (status === "rejected") {
     // A submission that never went mutual with anyone has nothing to
@@ -81,7 +62,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // profile just goes invisible to new matching (RLS requires
     // status=active + moderation_status=approved for anyone else to see
     // it) without touching what already exists.
-    if (await hasMutualMatch(db, profileType, id)) {
+    if (await hasMutualMatch(db, id)) {
       const { data: updated, error } = await db
         .from(table)
         .update({ moderation_status: "rejected" })
@@ -98,14 +79,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       await db.from("notifications").insert({
         user_id: row.user_id,
         type: "profile_rejected",
-        payload: { profile_type: profileType, notes: notes ?? null, category_slug: row.categories?.slug ?? null },
+        payload: { profile_type: "generic", notes: notes ?? null, category_slug: row.categories?.slug ?? null },
       });
 
       return NextResponse.json({ profile: updated, deleted: false });
     }
 
-    // Every profile table has a photo column -- fetch it so the storage
-    // file is cleaned up alongside the DB row.
+    // Fetch the photo too, so the storage file is cleaned up alongside the
+    // DB row.
     const deleteSelectCols = `${selectCols}, profile_photo_url`;
 
     const { data: deleted, error } = await db.from(table).delete().eq("id", id).select(deleteSelectCols).single();
@@ -121,20 +102,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     };
 
     if (row.profile_photo_url) {
-      const bucket = profileType === "parent" ? "parent-photos" : profileType === "nanny" ? "nanny-photos" : "generic-photos";
-      // profile_photo_url is client-submitted and only validated as a URL --
-      // it could name another account's real photo. Only ever delete a
-      // path that actually lives under this profile's own owner folder.
-      const path = storageOwnPathFromPublicUrl(row.profile_photo_url, bucket, row.user_id);
-      // Best-effort: a storage hiccup here shouldn't fail a moderation
-      // decision that already succeeded in the database.
-      if (path) await db.storage.from(bucket).remove([path]).catch(() => {});
+      // Only ever delete a path under this profile's own owner folder, in
+      // whichever photo bucket it lives. Best-effort: a storage hiccup here
+      // shouldn't fail a moderation decision that already succeeded.
+      const photo = ownProfilePhotoObject(row.profile_photo_url, row.user_id);
+      if (photo) await db.storage.from(photo.bucket).remove([photo.path]).catch(() => {});
     }
 
     await db.from("notifications").insert({
       user_id: row.user_id,
       type: "profile_rejected",
-      payload: { profile_type: profileType, notes: notes ?? null, category_slug: row.categories?.slug ?? null },
+      payload: { profile_type: "generic", notes: notes ?? null, category_slug: row.categories?.slug ?? null },
     });
 
     return NextResponse.json({ profile: deleted, deleted: true });
@@ -151,19 +129,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   await db.from("notifications").insert({
     user_id: row.user_id,
     type: "profile_approved",
-    payload: { profile_type: profileType, category_slug: row.categories?.slug ?? null },
+    payload: { profile_type: "generic", category_slug: row.categories?.slug ?? null },
   });
 
   // Approval makes this profile visible to counterparts for the first time —
   // recompute now so it's matched against everyone already approved on the
   // other side (spec appendix: this was the known gap left after R4/R5).
-  if (profileType === "parent") {
-    await recomputeMatchesForParent(id);
-  } else if (profileType === "nanny") {
-    await recomputeMatchesForNanny(id);
-  } else {
-    await recomputeGenericMatchesForProfile(id);
-  }
+  await recomputeGenericMatchesForProfile(id);
 
   return NextResponse.json({ profile: updated });
 }

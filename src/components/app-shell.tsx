@@ -6,18 +6,17 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
-import { HomeIcon, ProfileIcon, GridIcon, FeedIcon, BookmarkIcon } from "@/components/nav-icons";
+import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon } from "@/components/nav-icons";
 import CategoryIcon from "@/components/category-icon";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
 
 type ActiveKey = "categories" | "nanny" | "nursing" | "tutoring" | "feed" | "saved" | "messages" | "profile";
 
-// The generic_profiles-based categories' nav entries (icon matches the one
-// seeded on that category's row -- see category-icon.tsx). Nanny is
-// handled separately below since it predates generic_profiles and uses
-// its own icon/route shape.
-const GENERIC_CATEGORY_NAV = [
+// Each category's nav entry (icon matches the one seeded on that
+// category's row -- see category-icon.tsx).
+const CATEGORY_NAV = [
+  { slug: "nanny", icon: "heart" },
   { slug: "nursing", icon: "hand" },
   { slug: "tutoring", icon: "book" },
 ] as const;
@@ -36,7 +35,7 @@ export default async function AppShell({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
-  const currentGenericCategory = GENERIC_CATEGORY_NAV.find((c) => c.slug === active);
+  const currentCategory = CATEGORY_NAV.find((c) => c.slug === active);
 
   return (
     <ToastProvider>
@@ -59,15 +58,6 @@ export default async function AppShell({
                 <GridIcon className="h-[22px] w-[22px] shrink-0" />
                 <span>{t("categories")}</span>
               </Link>
-              {active === "nanny" && (
-                <Link
-                  href="/dashboard"
-                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] bg-surface-sunken font-semibold text-ink"
-                >
-                  <HomeIcon className="h-[22px] w-[22px] shrink-0" />
-                  <span>{t("nanny")}</span>
-                </Link>
-              )}
               <Link
                 href="/feed"
                 className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
@@ -90,13 +80,13 @@ export default async function AppShell({
                 <BookmarkIcon className="h-[22px] w-[22px] shrink-0" />
                 <span>{t("saved")}</span>
               </Link>
-              {currentGenericCategory && (
+              {currentCategory && (
                 <Link
-                  href={`/categories/${currentGenericCategory.slug}/dashboard`}
+                  href={`/categories/${currentCategory.slug}/dashboard`}
                   className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] bg-surface-sunken font-semibold text-ink"
                 >
-                  <CategoryIcon name={currentGenericCategory.icon} className="h-[22px] w-[22px] shrink-0" />
-                  <span>{t(currentGenericCategory.slug)}</span>
+                  <CategoryIcon name={currentCategory.icon} className="h-[22px] w-[22px] shrink-0" />
+                  <span>{t(currentCategory.slug)}</span>
                 </Link>
               )}
               <MessagesSidebarItem active={active === "messages"} />
@@ -143,12 +133,6 @@ export default async function AppShell({
               <GridIcon className="h-[22px] w-[22px]" />
               {t("categories")}
             </Link>
-            {active === "nanny" && (
-              <Link href="/dashboard" className="flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-semibold text-primary">
-                <HomeIcon className="h-[22px] w-[22px]" />
-                {t("nanny")}
-              </Link>
-            )}
             <Link
               href="/feed"
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
@@ -158,13 +142,13 @@ export default async function AppShell({
               <FeedIcon className="h-[22px] w-[22px]" />
               {t("feed")}
             </Link>
-            {currentGenericCategory && (
+            {currentCategory && (
               <Link
-                href={`/categories/${currentGenericCategory.slug}/dashboard`}
+                href={`/categories/${currentCategory.slug}/dashboard`}
                 className="flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-semibold text-primary"
               >
-                <CategoryIcon name={currentGenericCategory.icon} className="h-[22px] w-[22px]" />
-                {t(currentGenericCategory.slug)}
+                <CategoryIcon name={currentCategory.icon} className="h-[22px] w-[22px]" />
+                {t(currentCategory.slug)}
               </Link>
             )}
             <MessagesTabItem active={active === "messages"} />

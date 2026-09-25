@@ -88,7 +88,7 @@ export default function SavedClient() {
   function restoreItem(item: SavedListItem) {
     setItems((prev) => [
       item,
-      ...(prev ?? []).filter((i) => !(i.type === item.type && i.targetProfileId === item.targetProfileId)),
+      ...(prev ?? []).filter((i) => i.targetProfileId !== item.targetProfileId),
     ]);
   }
 
@@ -96,7 +96,7 @@ export default function SavedClient() {
   // (the bookmark inside its expanded preview) only updates the shared
   // saved-state map -- hide it here too rather than leaving a card for
   // something that is no longer saved.
-  const visibleItems = items?.filter((item) => isSaved(item.type, item.targetProfileId, true)) ?? null;
+  const visibleItems = items?.filter((item) => isSaved(item.targetProfileId, true)) ?? null;
 
   const hasFilters = !!(category || role);
   const filteredEmptyLabel = category ? tNav(category) : role === "seeking" ? t("roleSeeking") : t("roleOffering");
