@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { HeartIcon } from "@/components/nav-icons";
+import { announceFeedTarget } from "@/lib/feed-target";
 
 type Notification = {
   id: string;
@@ -126,6 +127,12 @@ export default function NotificationBell({
       fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
     }
     router.push(hrefFor(n));
+    if ((n.type === "post_reply" || n.type === "post_like") && typeof n.payload?.post_id === "string") {
+      announceFeedTarget({
+        postId: n.payload.post_id,
+        replyId: typeof n.payload?.reply_id === "string" ? n.payload.reply_id : null,
+      });
+    }
   }
 
   function markAllRead() {
