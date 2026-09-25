@@ -34,10 +34,6 @@ export default async function DashboardPage({
 
   const { data: profile } = await supabase.from("users").select("role").eq("id", user!.id).single();
 
-  if (profile?.role === "admin") {
-    redirect({ href: "/admin", locale });
-  }
-
   let matchProfile: { status: string; moderation_status: string } | null = null;
   if (profile?.role === "parent") {
     const { data } = await supabase

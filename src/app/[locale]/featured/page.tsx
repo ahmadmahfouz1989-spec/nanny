@@ -18,11 +18,6 @@ export default async function FeaturedPage({
     redirect({ href: "/login", locale });
   }
 
-  const { data: profile } = await supabase.from("users").select("role").eq("id", user!.id).single();
-  if (profile?.role === "admin") {
-    redirect({ href: "/admin", locale });
-  }
-
   return (
     <AppShell active="nanny">
       <FeaturedClient />

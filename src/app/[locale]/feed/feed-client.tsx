@@ -454,12 +454,15 @@ export default function FeedClient({
     // A wider, page-local box that IS centered in the true pane holds the
     // hugging content instead, matching X's "nav+timeline+phantom column"
     // group being centered as a unit, without affecting any other page.
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className={`max-w-2xl flex flex-col gap-6 ${posts === null ? "min-h-screen" : ""}`}>
-        <div>
-          <h1 className="font-display text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
-        </div>
+    // In adminMode the admin page supplies the frame and header instead.
+    <div className={adminMode ? "" : "max-w-4xl mx-auto px-4 py-8"}>
+      <div className={`${adminMode ? "" : "max-w-2xl"} flex flex-col gap-6 ${posts === null && !adminMode ? "min-h-screen" : ""}`}>
+        {!adminMode && (
+          <div>
+            <h1 className="font-display text-2xl font-semibold">{t("title")}</h1>
+            <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
+          </div>
+        )}
 
         <div className={ui.card + ` overflow-hidden ${posts === null ? "flex flex-col flex-1" : ""}`}>
         {/* Composer — avatar + borderless input, X-style. Admins moderate
@@ -511,7 +514,7 @@ export default function FeedClient({
           </div>
         )}
 
-        {posts === null && <LogoLoader label={t("loading")} fullHeight />}
+        {posts === null && <LogoLoader label={t("loading")} fullHeight={!adminMode} />}
         {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-10">{t("empty")}</p>}
 
         <div className="divide-y divide-border">

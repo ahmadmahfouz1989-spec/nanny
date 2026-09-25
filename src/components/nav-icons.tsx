@@ -125,3 +125,22 @@ export function AdminIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+export function UsersIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <circle cx="9" cy="8.5" r="3.2" />
+      <path d="M3.5 19c.6-3 2.8-4.8 5.5-4.8s4.9 1.8 5.5 4.8" strokeLinecap="round" />
+      <path d="M15.5 5.6a3 3 0 0 1 0 5.8M17.5 14.6c1.6.6 2.7 2.2 3 4.4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function FlagIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <path d="M5.5 20.5v-16" strokeLinecap="round" />
+      <path d="M5.5 4.5h11l-2 4 2 4h-11" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
+import AdminPageHeader from "@/components/admin/admin-page-header";
 
 type AdminReport = {
   id: string;
@@ -122,7 +123,7 @@ export default function AdminReportsPage() {
 
   return (
     <>
-      <h1 className="font-display text-3xl font-semibold mb-8">{t("reportsTitle")}</h1>
+      <AdminPageHeader title={t("reportsTitle")} description={t("reportsDescription")} />
 
       {notice && (
         <div className="rounded-lg bg-warning-soft px-3 py-2 text-sm text-warning mb-4">{notice}</div>
