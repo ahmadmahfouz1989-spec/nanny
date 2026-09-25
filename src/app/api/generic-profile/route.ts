@@ -7,6 +7,7 @@ import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATIO
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { sendEmail, pendingReviewEmail } from "@/lib/email";
+import { storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 
 type GenericRole = "seeker" | "provider";
 
@@ -100,6 +101,8 @@ export async function GET(request: Request) {
   return NextResponse.json({ profiles: data ?? [] });
 }
 
+const PHOTO_BUCKET = "generic-photos";
+
 export async function POST(request: Request) {
   return upsertGenericProfile(request, "create");
 }
@@ -152,7 +155,32 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     attributes.licenseVerificationStatus = DEFAULT_LICENSE_VERIFICATION_STATUS;
   }
 
+  // Optional; omitted means "leave the current photo alone". Checked here
+  // rather than left to the generic_profiles_protect_photo trigger, since
+  // the upsert below runs as the service role, which that trigger skips:
+  // only a URL into this user's own generic-photos folder (what
+  // /api/profile/photo hands back) is accepted.
+  const rawPhotoUrl = body?.profilePhotoUrl;
+  let profilePhotoUrl: string | undefined;
+  if (rawPhotoUrl !== undefined) {
+    if (typeof rawPhotoUrl !== "string" || !storageOwnPathFromPublicUrl(rawPhotoUrl, PHOTO_BUCKET, user.id)) {
+      return NextResponse.json({ error: "Invalid profile photo" }, { status: 400 });
+    }
+    profilePhotoUrl = rawPhotoUrl;
+  }
+
   const db = createAdminClient();
+
+  // Read before the write so a replaced photo's old file can be removed
+  // once the new one is saved. The row usually exists even on "create"
+  // (claimed as a draft when the role was picked).
+  const { data: before } = await db
+    .from("generic_profiles")
+    .select("profile_photo_url")
+    .eq("user_id", user.id)
+    .eq("category_id", category.id)
+    .eq("role", role)
+    .maybeSingle();
 
   if (mode === "create") {
     const { data: existing } = await db
@@ -199,6 +227,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     attributes,
     status: "active",
     moderation_status: "pending",
+    ...(profilePhotoUrl !== undefined && { profile_photo_url: profilePhotoUrl }),
   };
 
   const { data, error } = await db
@@ -209,6 +238,14 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: mode === "create" ? 400 : 409 });
+  }
+
+  const previousPhotoUrl = before?.profile_photo_url ?? null;
+  if (profilePhotoUrl !== undefined && previousPhotoUrl && previousPhotoUrl !== profilePhotoUrl) {
+    // Only ever delete a path under this user's own folder -- same guard as
+    // /api/profile/photo. Best-effort: never fails a save that succeeded.
+    const previousPath = storageOwnPathFromPublicUrl(previousPhotoUrl, PHOTO_BUCKET, user.id);
+    if (previousPath) await db.storage.from(PHOTO_BUCKET).remove([previousPath]).catch(() => {});
   }
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
