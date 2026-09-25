@@ -10,6 +10,7 @@ import { LogoLoader } from "@/components/animated-logo";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { ChatIcon, HeartIcon } from "@/components/nav-icons";
 import type { PostIdentityOption, PostIdentityType } from "@/lib/post-identities";
+import { FEED_TARGET_EVENT, type FeedTargetDetail } from "@/lib/feed-target";
 
 type Post = {
   id: string;
@@ -259,6 +260,18 @@ export default function FeedClient({
     };
   }, []);
 
+  // Bumped when the bell re-announces the target already in the URL (same
+  // notification clicked again) -- the only case the props below can't see.
+  const [reopenCount, setReopenCount] = useState(0);
+  useEffect(() => {
+    function onTarget(e: Event) {
+      const { postId, replyId } = (e as CustomEvent<FeedTargetDetail>).detail;
+      if (postId === targetPostId && replyId === targetReplyId) setReopenCount((c) => c + 1);
+    }
+    window.addEventListener(FEED_TARGET_EVENT, onTarget);
+    return () => window.removeEventListener(FEED_TARGET_EVENT, onTarget);
+  }, [targetPostId, targetReplyId]);
+
   // Notification deep links (/feed?post=...&reply=...). Keyed on the
   // target itself, not run once on mount: clicking a notification while
   // already on the feed only changes these props on the same mounted
@@ -285,7 +298,7 @@ export default function FeedClient({
     return () => {
       active = false;
     };
-  }, [targetPostId, targetReplyId]);
+  }, [targetPostId, targetReplyId, reopenCount]);
 
   async function submitPost() {
     setComposerError(null);
