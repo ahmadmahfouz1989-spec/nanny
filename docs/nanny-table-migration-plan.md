@@ -152,10 +152,42 @@ Roughly **1.5–3 weeks** of focused work: Phase 0 about 3–5 days (tests +
 staging + read-only flag), Phase 1 about 5–8 days, Phase 2 + rehearsal about
 2–3 days, cutover and Phase 4 about 1 day each.
 
-## Open questions for you
+## Decisions (2026-09-25)
 
-1. Is a ~15-minute read-only window at a quiet hour acceptable?
-2. Can you create a Supabase branch or a staging project from a recent
-   backup for rehearsal?
-3. Should old nanny URLs (`/dashboard`, `/matches`) redirect permanently,
-   or do you want nanny to keep its own top-level routes?
+1. **Read-only window:** a ~15-minute window at a quiet hour is acceptable.
+2. **Rehearsal database:** a separate Supabase project restored from a dump
+   of production (see "Setting up the rehearsal copy" below).
+3. **Old nanny URLs:** `/dashboard`, `/matches` and `/onboarding` redirect
+   permanently to `/categories/nanny/...`, so bookmarks and old emails
+   keep working. Nanny keeps no separate top-level routes.
+
+## Setting up the rehearsal copy
+
+Supabase branches start empty (migrations + seed only), so they can't
+rehearse a data migration. Use a separate project instead:
+
+1. Create a new Supabase project (e.g. `ouiknow-staging`), same region.
+2. Install the tools: `brew install supabase/tap/supabase libpq`.
+3. From each project's dashboard (Connect → Session pooler), copy the
+   Postgres connection string. Then dump production:
+   ```
+   supabase db dump --db-url "$PROD_DB_URL" -f roles.sql --role-only
+   supabase db dump --db-url "$PROD_DB_URL" -f schema.sql
+   supabase db dump --db-url "$PROD_DB_URL" -f data.sql --use-copy --data-only
+   ```
+4. Load it into staging:
+   ```
+   psql --single-transaction --variable ON_ERROR_STOP=1 \
+     --file roles.sql --file schema.sql \
+     --command 'SET session_replication_role = replica' \
+     --file data.sql --dbname "$STAGING_DB_URL"
+   ```
+5. Storage files (photos, voice notes) are not copied. Photo URLs still
+   point at production's public buckets, so photos render. Voice notes
+   won't play on staging, which doesn't matter for this rehearsal.
+6. **Before running the app against staging:** leave its email settings
+   empty (no Resend/SMTP keys), so a rehearsal can never email real users.
+
+This copy holds real users' emails, phone numbers and messages. Keep the
+project private, keep the dump files out of the repo, and delete both after
+the cutover.
