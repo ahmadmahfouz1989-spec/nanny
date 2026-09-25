@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
@@ -174,6 +175,7 @@ export default function TutoringProviderForm({
       submitting={submitting}
     >
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section1Title")}</SectionHeading>
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         {initialProfile && (
@@ -190,6 +192,7 @@ export default function TutoringProviderForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section2Title")}</SectionHeading>
         <label className={ui.label}>{t("subjects")}</label>
         <div className="flex flex-wrap gap-2">
           {SUBJECTS.map((s) => (
@@ -219,6 +222,7 @@ export default function TutoringProviderForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section3Title")}</SectionHeading>
         <label className={ui.label}>{t("availableDays")}</label>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
@@ -238,6 +242,7 @@ export default function TutoringProviderForm({
       </div>
 
       <div className="flex flex-col gap-3">
+        <SectionHeading>{t("section4Title")}</SectionHeading>
         <label className={ui.label}>{t("preferredLanguages")}</label>
         <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
 

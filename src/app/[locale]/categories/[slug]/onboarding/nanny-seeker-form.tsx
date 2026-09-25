@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
@@ -213,11 +214,7 @@ export default function NannySeekerForm({
     router.push(`/categories/${categorySlug}/dashboard`);
   }
 
-  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5) => (
-      <h2 className="font-display text-sm font-semibold text-muted uppercase tracking-wide">
-        {t(`step${n}Title` as "step1Title")}
-      </h2>
-    );
+  const sectionHeading = (n: 1 | 2 | 3 | 4 | 5) => <SectionHeading>{t(`step${n}Title` as "step1Title")}</SectionHeading>;
 
   const content = (
     <>
