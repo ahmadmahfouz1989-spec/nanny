@@ -35,17 +35,13 @@ const KNOWN_TYPES = new Set([
 // seeking/offering tab); a rating you received opens the ratings section
 // of your profile.
 function hrefFor(n: Notification): string {
-  const matchId = typeof n.payload?.match_id === "string" ? n.payload.match_id : null;
-  const genericMatchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
+  const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
   const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   switch (n.type) {
     case "interest_accepted":
     case "interest_received":
     case "new_match":
-      if (genericMatchId && categorySlug) {
-        return `/categories/${categorySlug}/dashboard?match=${genericMatchId}`;
-      }
-      return matchId ? `/dashboard?match=${matchId}` : "/dashboard";
+      return matchId && categorySlug ? `/categories/${categorySlug}/dashboard?match=${matchId}` : "/dashboard";
     case "rating_received":
       return "/profile#ratings";
     case "profile_approved":
@@ -129,7 +125,7 @@ export default function NotificationBell({
       fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
     }
     router.push(hrefFor(n));
-    const matchTarget = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : n.payload?.match_id;
+    const matchTarget = n.payload?.generic_match_id;
     if (
       (n.type === "interest_received" || n.type === "interest_accepted" || n.type === "new_match") &&
       typeof matchTarget === "string"

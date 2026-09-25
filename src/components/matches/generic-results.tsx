@@ -26,7 +26,10 @@ type OtherProfile = {
   location_id: string | null;
   attributes: Record<string, unknown>;
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
+  languages: { id: string; name_en: string; name_ar: string; name_fr: string }[];
 };
+
+const PAGE_SIZE = 20;
 
 const TONES = ["primary", "secondary", "berry"] as const;
 
@@ -41,14 +44,6 @@ type GenericMatch = {
   featured: boolean;
   isSaved: boolean;
 };
-
-// Featured profiles surface first regardless of match score -- a stable
-// sort keeps the algorithm's score order intact within each group. Same
-// pattern as nanny-results.tsx/family-results.tsx.
-function sortedByFeatured(results: GenericMatch[] | null) {
-  if (!results) return results;
-  return [...results].sort((a, b) => Number(b.featured) - Number(a.featured));
-}
 
 function localizedLocationName(
   loc: { name_en: string; name_ar: string; name_fr: string } | null,
@@ -82,11 +77,18 @@ export default function GenericResults({
   const tFormat = useTranslations("TutoringFormats");
   const tDays = useTranslations("Days");
   const tPatientAge = useTranslations("PatientAgeGroups");
+  const tNanny = useTranslations("NannyOnboarding");
+  const tParent = useTranslations("ParentOnboarding");
+  const tNat = useTranslations("Nationality");
+  const tAgeGroups = useTranslations("AgeGroups");
+  const tCerts = useTranslations("Certifications");
+  const tDuties = useTranslations("Duties");
   const locale = useLocale();
   const [myRole, setMyRole] = useState<"seeker" | "provider" | null>(null);
   const [results, setResults] = useState<GenericMatch[] | null>(null);
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   useLiveMatches({
-    source: "generic",
     results,
     setResults,
     targetMatchId,
@@ -104,14 +106,17 @@ export default function GenericResults({
   const [day, setDay] = useState("");
   const [minYearsExperience, setMinYearsExperience] = useState("");
 
-  useEffect(() => {
-    const params = new URLSearchParams({ categorySlug });
+  function listParams() {
+    const params = new URLSearchParams({ categorySlug, pageSize: String(PAGE_SIZE) });
     if (role) params.set("role", role);
     if (governorateId) params.set("governorateId", governorateId);
     if (day) params.set("day", day);
     if (minYearsExperience) params.set("minYearsExperience", minYearsExperience);
+    return params;
+  }
 
-    fetch(`/api/generic-matches?${params}`)
+  useEffect(() => {
+    fetch(`/api/generic-matches?${listParams()}`)
       .then(async (res) => {
         const body = await res.json();
         if (!res.ok) {
@@ -120,9 +125,31 @@ export default function GenericResults({
         }
         setMyRole(body.myRole);
         setResults(body.results);
+        setTotal(body.total);
       })
       .catch(() => setError(t("errorNoProfile")));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, role, t, governorateId, day, minYearsExperience]);
+
+  function loadMore() {
+    if (!results) return;
+    setLoadingMore(true);
+    const params = listParams();
+    params.set("page", String(Math.floor(results.length / PAGE_SIZE) + 1));
+    fetch(`/api/generic-matches?${params}`)
+      .then(async (res) => {
+        const body = await res.json();
+        if (!res.ok) return;
+        // A notification's target may already be pinned at the top (see
+        // useLiveMatches) -- don't list it twice when its page arrives.
+        setResults((prev) => {
+          const known = new Set((prev ?? []).map((r) => r.id));
+          return [...(prev ?? []), ...(body.results as GenericMatch[]).filter((r) => !known.has(r.id))];
+        });
+        setTotal(body.total);
+      })
+      .finally(() => setLoadingMore(false));
+  }
 
   // Minimum experience only makes sense filtering providers (a seeker has
   // no years-of-experience field), so only show it once we know the
@@ -177,10 +204,23 @@ export default function GenericResults({
       )}
 
       <div className="flex flex-col gap-5">
-        {sortedByFeatured(results)?.map((r, i, arr) => {
+        {results?.map((r, i, arr) => {
           const other = r.other;
           const a = other.attributes ?? {};
           const gov = localizedLocationName(other.locations, locale);
+          const area = [gov, typeof a.locationDetail === "string" ? a.locationDetail : null].filter(Boolean).join(", ");
+          const headline = [
+            area,
+            typeof a.yearsExperience === "number" ? t("yearsExperience", { years: a.yearsExperience }) : null,
+            typeof a.numChildren === "number" ? t("children", { count: a.numChildren }) : null,
+          ]
+            .filter(Boolean)
+            .join(" · ");
+          const langs = (other.languages ?? []).map((l) => (locale === "ar" ? l.name_ar : locale === "fr" ? l.name_fr : l.name_en));
+          const experience = (Array.isArray(a.experience) ? a.experience : []) as { ageGroup: string; yearsExperience: number }[];
+          const certifications = (Array.isArray(a.certifications) ? a.certifications : []) as string[];
+          const childrenAgeRanges = (Array.isArray(a.childrenAgeRanges) ? a.childrenAgeRanges : []) as string[];
+          const additionalDuties = (Array.isArray(a.additionalDuties) ? a.additionalDuties : []) as string[];
           const availability = a.availability as { days?: string[]; startTime?: string; endTime?: string } | undefined;
           const availableDays = (availability?.days ?? a.neededDays ?? []) as string[];
           const availableHours = formatHoursRange(availability?.startTime, availability?.endTime, locale);
@@ -227,14 +267,13 @@ export default function GenericResults({
                     {t("scoreLabel", { score: Math.round(r.score) })}
                   </span>
                   <SaveProfileButton
-                    profileType="generic"
                     profileId={other.id}
                     initialSaved={r.isSaved}
                     className="absolute bottom-3 end-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface"
                   />
                   <div className="absolute bottom-0 start-0 p-4">
                     <p className="font-display text-lg font-bold text-white drop-shadow">{other.full_name}</p>
-                    {gov && <p className="text-xs text-white/90 drop-shadow">{gov}</p>}
+                    {headline && <p className="text-xs text-white/90 drop-shadow">{headline}</p>}
                   </div>
                 </div>
 
@@ -242,7 +281,6 @@ export default function GenericResults({
                   <div className="mb-3">
                     <ProfileRating
                       profileId={other.id}
-                      profileType="generic"
                       average={r.rating?.average ?? null}
                       count={r.rating?.count ?? 0}
                     />
@@ -261,7 +299,24 @@ export default function GenericResults({
                     </div>
                   )}
 
+                  {typeof a.shortIntro === "string" && <p className="text-sm text-ink/80 mb-3">{a.shortIntro}</p>}
+                  {typeof a.familyDescription === "string" && (
+                    <p className="text-sm text-ink/80 mb-3">{a.familyDescription}</p>
+                  )}
+
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
+                    {typeof a.nationality === "string" && (
+                      <>
+                        <dt className="text-muted">{tNat("label")}</dt>
+                        <dd>{labelOr(tNat, a.nationality)}</dd>
+                      </>
+                    )}
+                    {childrenAgeRanges.length > 0 && (
+                      <>
+                        <dt className="text-muted">{tParent("ageRanges")}</dt>
+                        <dd>{childrenAgeRanges.map((g) => labelOr(tAgeGroups, g)).join(", ")}</dd>
+                      </>
+                    )}
                     {typeof a.employmentType === "string" && (
                       <>
                         <dt className="text-muted">{t("criteriaEmploymentType")}</dt>
@@ -292,16 +347,58 @@ export default function GenericResults({
                         <dd>{tFormat(a.format as never)}</dd>
                       </>
                     )}
-                    {typeof a.yearsExperience === "number" && (
+                    {typeof a.desiredStartDate === "string" && (
                       <>
-                        <dt className="text-muted">{t("yearsExperience", { years: a.yearsExperience })}</dt>
-                        <dd></dd>
+                        <dt className="text-muted">{tParent("desiredStartDate")}</dt>
+                        <dd>{a.desiredStartDate}</dd>
+                      </>
+                    )}
+                    {langs.length > 0 && (
+                      <>
+                        <dt className="text-muted">{tNanny("languages")}</dt>
+                        <dd>{langs.join(", ")}</dd>
+                      </>
+                    )}
+                    {typeof a.hasTransportation === "boolean" && (
+                      <>
+                        <dt className="text-muted">{tNanny("hasTransportation")}</dt>
+                        <dd>{a.hasTransportation ? t("yes") : t("no")}</dd>
+                      </>
+                    )}
+                    {typeof a.transportationRequired === "boolean" && (
+                      <>
+                        <dt className="text-muted">{tParent("transportationRequired")}</dt>
+                        <dd>{a.transportationRequired ? t("yes") : t("no")}</dd>
+                      </>
+                    )}
+                    {typeof a.canDrive === "boolean" && (
+                      <>
+                        <dt className="text-muted">{tNanny("canDrive")}</dt>
+                        <dd>{a.canDrive ? t("yes") : t("no")}</dd>
+                      </>
+                    )}
+                    {experience.length > 0 && (
+                      <>
+                        <dt className="text-muted">{tNanny("experienceByAge")}</dt>
+                        <dd>{experience.map((e) => `${labelOr(tAgeGroups, e.ageGroup)} (${e.yearsExperience})`).join(", ")}</dd>
+                      </>
+                    )}
+                    {certifications.length > 0 && (
+                      <>
+                        <dt className="text-muted">{tNanny("certifications")}</dt>
+                        <dd>{certifications.map((c) => labelOr(tCerts, c)).join(", ")}</dd>
+                      </>
+                    )}
+                    {additionalDuties.length > 0 && (
+                      <>
+                        <dt className="text-muted">{tParent("additionalDuties")}</dt>
+                        <dd>{additionalDuties.map((d) => labelOr(tDuties, d)).join(", ")}</dd>
                       </>
                     )}
                     {typeof a.hasNursingDiploma === "boolean" && (
                       <>
                         <dt className="text-muted">{t("criteriaNursingDiploma")}</dt>
-                        <dd>{a.hasNursingDiploma ? "Yes" : "No"}</dd>
+                        <dd>{a.hasNursingDiploma ? t("yes") : t("no")}</dd>
                       </>
                     )}
                     {typeof a.patientAgeGroup === "string" && (
@@ -336,25 +433,28 @@ export default function GenericResults({
                     )}
                   </dl>
 
-                  {a.shortIntro ? <p className="text-sm text-ink/80 mb-3">{String(a.shortIntro)}</p> : null}
-
                   <CriteriaChecklist breakdown={r.score_breakdown} />
                   {myRole && (
                     <MatchActions
-                      source="generic"
                       matchId={r.id}
                       status={r.status}
                       interestExpiresAt={r.interest_expires_at}
                       viewerSide={myRole}
                     />
                   )}
-                  <ReportButton profileId={other.id} profileType="generic" matchId={r.id} matchSource={categorySlug} />
+                  <ReportButton profileId={other.id} matchId={r.id} />
                 </div>
               </div>
             </div>
           );
         })}
       </div>
+
+      {results && results.length > 0 && results.length < total && (
+        <button type="button" onClick={loadMore} disabled={loadingMore} className={ui.buttonGhost + " mt-6 w-full"}>
+          {loadingMore ? t("loadingMore") : t("loadMore")}
+        </button>
+      )}
     </div>
   );
 }

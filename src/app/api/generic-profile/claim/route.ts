@@ -10,11 +10,10 @@ const bodySchema = z.object({
 });
 
 /**
- * Mirrors /api/account/claim-role's job for generic (non-nanny) categories:
- * commit to a role in this category the moment it's picked on the role
+ * Commits to a role in a category the moment it's picked on the role
  * picker, before any real profile fields are filled in -- that's what
  * lets AppShell's nav (see resolveCategoryNav) show this category right
- * away, same as nanny's users.role claim does. The placeholder row is
+ * away. The placeholder row is
  * `status: 'draft'`, which recomputeGenericMatchesForProfile and the admin
  * moderation queue both already exclude, so it never surfaces as a real
  * profile until the actual onboarding form overwrites it with real data

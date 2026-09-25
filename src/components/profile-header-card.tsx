@@ -6,8 +6,6 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 
-type MatchProfile = { status: string; moderation_status: string } | null;
-
 const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
   approved: "success",
   pending: "warning",
@@ -15,30 +13,38 @@ const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
 };
 
 /**
- * The profile page's identity block: picture (editable, both roles),
- * name, and profile status + the actions that matter (View matches /
- * Edit / Create), all in one place instead of split between a page
- * heading and a separate card with the same title further down the page.
+ * Identity block for one of the account's profiles on the /profile page:
+ * editable photo, name, category/role, review status and the actions that
+ * matter. An account can hold several profiles, each with its own photo.
  */
 export default function ProfileHeaderCard({
-  fullName,
-  roleLabel,
-  isNanny,
+  profileId,
   initialPhotoUrl,
-  matchProfile,
+  slug,
+  role,
+  categoryLabel,
+  roleLabel,
+  fullName,
+  moderationStatus,
 }: {
-  fullName: string | null;
-  roleLabel: string;
-  isNanny: boolean;
+  profileId: string;
   initialPhotoUrl: string | null;
-  matchProfile: MatchProfile;
+  slug: string;
+  role: "seeker" | "provider";
+  categoryLabel: string;
+  roleLabel: string;
+  fullName: string | null;
+  moderationStatus: string;
 }) {
   const t = useTranslations("Dashboard");
   const tNanny = useTranslations("NannyOnboarding");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
+  // A new photo goes back to admin review, same as nanny/parent.
+  const [status, setStatus] = useState(moderationStatus);
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
+  const tone = MODERATION_TONE[status] ?? "warning";
 
   async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -48,24 +54,27 @@ export default function ProfileHeaderCard({
     setPhotoError(null);
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("genericProfileId", profileId);
 
-    const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
-    setUploading(false);
-
-    if (!res.ok) {
+    try {
+      const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
+      if (!res.ok) {
+        setPhotoError(t("photoUpdateError"));
+        return;
+      }
+      const body = await res.json();
+      setPhotoUrl(body.url);
+      setStatus("pending");
+    } catch {
       setPhotoError(t("photoUpdateError"));
-      return;
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-
-    const body = await res.json();
-    setPhotoUrl(body.url);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
-  const tone = MODERATION_TONE[matchProfile?.moderation_status ?? ""] ?? "warning";
-
   return (
-    <div className={ui.card + " p-6 mb-5"}>
+    <div className={ui.card + " p-6"}>
       <div className="flex items-start gap-4">
         <button
           type="button"
@@ -81,17 +90,16 @@ export default function ProfileHeaderCard({
             </svg>
           )}
         </button>
-
         <div className="min-w-0 flex-1">
-          <p className="font-display text-xl font-bold truncate">{fullName ?? roleLabel}</p>
-          <p className="text-sm text-muted">{roleLabel}</p>
-          {matchProfile && (
-            <span className={ui.badge(tone) + " mt-1.5 inline-block"}>
-              {matchProfile.moderation_status === "approved" && t("statusApproved")}
-              {matchProfile.moderation_status === "pending" && t("statusPending")}
-              {matchProfile.moderation_status === "rejected" && t("statusRejected")}
-            </span>
-          )}
+          <p className="font-display text-xl font-bold truncate">{fullName ?? categoryLabel}</p>
+          <p className="text-sm text-muted">
+            {categoryLabel} · {roleLabel}
+          </p>
+          <span className={ui.badge(tone) + " mt-1.5 inline-block"}>
+            {status === "approved" && t("statusApproved")}
+            {status === "pending" && t("statusPending")}
+            {status === "rejected" && t("statusRejected")}
+          </span>
         </div>
       </div>
 
@@ -109,25 +117,21 @@ export default function ProfileHeaderCard({
       />
 
       <p className="text-sm text-muted mt-4">
-        {matchProfile ? (
-          <>
-            {matchProfile.moderation_status === "approved" && t("descriptionApproved")}
-            {matchProfile.moderation_status === "pending" && t("descriptionPending")}
-            {matchProfile.moderation_status === "rejected" && t("descriptionRejected")}
-          </>
-        ) : (
-          isNanny ? t("noProfileNanny") : t("noProfileParent")
-        )}
+        {status === "approved" && t("descriptionApproved")}
+        {status === "pending" && t("descriptionPending")}
+        {status === "rejected" && t("descriptionRejected")}
       </p>
 
       <div className="flex items-center gap-3 mt-4">
-        {matchProfile?.moderation_status === "approved" && (
-          <Link href="/dashboard" className={ui.buttonPrimary}>
+        {status === "approved" && (
+          <Link href={`/categories/${slug}/dashboard`} className={ui.buttonPrimary}>
             {t("viewMatches")}
           </Link>
         )}
-        <Link href="/onboarding" className={ui.buttonSecondary}>
-          {matchProfile ? t("editProfile") : t("createProfile")}
+        {/* ?role= so an account with both roles in this category edits
+            this one, not whichever the onboarding page defaults to. */}
+        <Link href={`/categories/${slug}/onboarding?role=${role}`} className={ui.buttonSecondary}>
+          {t("editProfile")}
         </Link>
       </div>
     </div>

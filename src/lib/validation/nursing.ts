@@ -1,10 +1,10 @@
 import { z } from "zod";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
-// generic_profiles only has top-level `full_name` / `location_id` columns --
-// everything else (including locationDetail/nationality/photo, which are
-// real columns on parent_profiles/nanny_profiles) lives in `attributes`
-// jsonb here, same as the category-specific fields below.
+// generic_profiles only has top-level `full_name` / `location_id` /
+// `profile_photo_url` columns -- everything else (including
+// locationDetail/nationality) lives in `attributes` jsonb, same as the
+// category-specific fields below.
 
 const uuid = z.string().uuid();
 // A bare `uuid` here reports Zod's generic "expected string, received null"

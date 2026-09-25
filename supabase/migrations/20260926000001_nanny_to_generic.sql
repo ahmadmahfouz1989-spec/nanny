@@ -164,6 +164,50 @@ set posted_as_generic_profile_id = coalesce(posted_as_parent_profile_id, posted_
 where posted_as_parent_profile_id is not null or posted_as_nanny_profile_id is not null;
 alter table public.posts enable trigger posts_protect_mutation;
 
+-- The Saved page's filter no longer needs a nanny special case: every
+-- saved profile is a generic_profiles row now. (Return type changes, so
+-- drop and recreate rather than replace.)
+drop function public.list_saved_favorites(uuid, text, text, timestamptz, uuid, int);
+create function public.list_saved_favorites(
+  p_user_id uuid,
+  p_category text,
+  p_role text,
+  p_cursor_created_at timestamptz,
+  p_cursor_id uuid,
+  p_limit int
+)
+returns table (
+  id uuid,
+  created_at timestamptz,
+  generic_profile_id uuid
+)
+language sql
+stable
+security invoker
+set search_path = public
+as $$
+  select f.id, f.created_at, f.generic_profile_id
+  from public.favorites f
+  join public.generic_profiles gp on gp.id = f.generic_profile_id
+  join public.categories c on c.id = gp.category_id
+  where f.user_id = p_user_id
+    and (p_category is null or c.slug = p_category)
+    and (
+      p_role is null
+      or (p_role = 'seeking' and gp.role = 'seeker')
+      or (p_role = 'offering' and gp.role = 'provider')
+    )
+    and (
+      p_cursor_created_at is null
+      or f.created_at < p_cursor_created_at
+      or (f.created_at = p_cursor_created_at and f.id < p_cursor_id)
+    )
+  order by f.created_at desc, f.id desc
+  limit p_limit;
+$$;
+
+grant execute on function public.list_saved_favorites to authenticated;
+
 -- Match notifications carry the same keys every other category uses.
 update public.notifications
 set payload = (payload - 'match_id')
