@@ -60,7 +60,11 @@ export async function GET(request: Request) {
   const filtered = (data ?? []).filter((r) => {
     const parent = r.parent_profiles as unknown as ParentProfile;
     if (governorateId && parent.location_id !== governorateId) return false;
-    if (day && !(parent.needed_days ?? []).includes(day)) return false;
+    // No needed days = "flexible" (the onboarding hint, and how the
+    // matching engine scores it) -- that fits any day, so it must not
+    // disappear the moment a day is chosen.
+    const neededDays = parent.needed_days ?? [];
+    if (day && neededDays.length > 0 && !neededDays.includes(day)) return false;
     if (scheduleType && parent.schedule_type !== scheduleType) return false;
     if (liveArrangement && parent.live_arrangement !== liveArrangement) return false;
     return true;

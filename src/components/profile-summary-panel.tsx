@@ -9,6 +9,7 @@ import SaveProfileButton from "@/components/save-profile-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { labelOr } from "@/lib/i18n-fallback";
 import { ui } from "@/lib/ui";
+import { formatHoursRange } from "@/lib/format-hours";
 
 type LangRef = { languages: { id: string; name_en: string; name_ar: string; name_fr: string } };
 type LocationRef = { name_en: string; name_ar: string; name_fr: string } | null;
@@ -21,6 +22,7 @@ type NannyProfile = {
   nationality: string | null;
   employment_type: string;
   live_arrangement_pref: string;
+  availability: { days?: string[]; start_time?: string; end_time?: string } | null;
   years_experience: number;
   has_transportation: boolean;
   can_drive: boolean;
@@ -198,6 +200,18 @@ export default function ProfileSummaryPanel({
             <dd>{tSchedule(data.profile.employment_type as never)}</dd>
             <dt className="text-muted">{tNanny("liveArrangementPref")}</dt>
             <dd>{tLiveArrangement(data.profile.live_arrangement_pref as never)}</dd>
+            {(data.profile.availability?.days?.length ?? 0) > 0 && (
+              <>
+                <dt className="text-muted">{tNanny("availableDays")}</dt>
+                <dd>
+                  {data.profile.availability!.days!.map((d) => labelOr(tDays, d)).join(", ")}
+                  {(() => {
+                    const hours = formatHoursRange(data.profile.availability?.start_time, data.profile.availability?.end_time, locale);
+                    return hours ? ` · ${hours}` : "";
+                  })()}
+                </dd>
+              </>
+            )}
             <dt className="text-muted">{tNanny("languages")}</dt>
             <dd>{langs.join(", ") || "—"}</dd>
             {data.profile.nanny_experience.length > 0 && (
@@ -266,8 +280,12 @@ export default function ProfileSummaryPanel({
             if (typeof schedule === "string") add(tMatches("criteriaEmploymentType"), labelOr(tSchedule, schedule));
             const live = a.liveArrangementPref ?? a.liveArrangement;
             if (typeof live === "string") add(tMatches("criteriaLiveArrangement"), labelOr(tLiveArrangement, live));
-            const days = asStrings((a.availability as { days?: unknown } | undefined)?.days ?? a.neededDays);
-            if (days.length) add(tMatches("criteriaAvailability"), days.map((d) => labelOr(tDays, d)).join(", "));
+            const availability = a.availability as { days?: unknown; startTime?: unknown; endTime?: unknown } | undefined;
+            const days = asStrings(availability?.days ?? a.neededDays);
+            const hours = formatHoursRange(availability?.startTime, availability?.endTime, locale);
+            if (days.length) {
+              add(tMatches("criteriaAvailability"), days.map((d) => labelOr(tDays, d)).join(", ") + (hours ? ` · ${hours}` : ""));
+            }
             if (typeof a.yearsExperience === "number") add(tNanny("yearsExperience"), String(a.yearsExperience));
             if (typeof a.workRadiusKm === "number") add(tNanny("workRadius"), String(a.workRadiusKm));
             if (typeof a.patientAgeGroup === "string") add(tNursingSeeker("patientAgeGroup"), labelOr(tPatientAge, a.patientAgeGroup));

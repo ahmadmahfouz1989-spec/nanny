@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { HeartIcon } from "@/components/nav-icons";
 import { announceFeedTarget } from "@/lib/feed-target";
+import { announceMatchTarget } from "@/lib/match-target";
 
 type Notification = {
   id: string;
@@ -30,8 +31,9 @@ const KNOWN_TYPES = new Set([
 
 // The app has no per-match detail route — match cards live on the
 // dashboard, so match notifications deep-link to the specific card
-// (#match-<id>); a rating you received opens the ratings section of your
-// profile.
+// (?match=<id>, which the dashboard page also uses to pick the right
+// seeking/offering tab); a rating you received opens the ratings section
+// of your profile.
 function hrefFor(n: Notification): string {
   const matchId = typeof n.payload?.match_id === "string" ? n.payload.match_id : null;
   const genericMatchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
@@ -41,9 +43,9 @@ function hrefFor(n: Notification): string {
     case "interest_received":
     case "new_match":
       if (genericMatchId && categorySlug) {
-        return `/categories/${categorySlug}/dashboard#match-${genericMatchId}`;
+        return `/categories/${categorySlug}/dashboard?match=${genericMatchId}`;
       }
-      return matchId ? `/dashboard#match-${matchId}` : "/dashboard";
+      return matchId ? `/dashboard?match=${matchId}` : "/dashboard";
     case "rating_received":
       return "/profile#ratings";
     case "profile_approved":
@@ -127,6 +129,13 @@ export default function NotificationBell({
       fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
     }
     router.push(hrefFor(n));
+    const matchTarget = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : n.payload?.match_id;
+    if (
+      (n.type === "interest_received" || n.type === "interest_accepted" || n.type === "new_match") &&
+      typeof matchTarget === "string"
+    ) {
+      announceMatchTarget({ matchId: matchTarget });
+    }
     if ((n.type === "post_reply" || n.type === "post_like") && typeof n.payload?.post_id === "string") {
       announceFeedTarget({
         postId: n.payload.post_id,

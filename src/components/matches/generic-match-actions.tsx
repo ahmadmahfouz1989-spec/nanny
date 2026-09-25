@@ -14,6 +14,15 @@ function effectiveStatus(status: string, interestExpiresAt: string | null) {
   return status;
 }
 
+// How far along the interest flow a status is -- used so a server status
+// that's older than an action just taken on this card can't roll it back.
+function progress(status: string) {
+  if (status === "mutual") return 2;
+  if (status === "declined") return 3;
+  if (status.endsWith("_interested")) return 1;
+  return 0;
+}
+
 /**
  * The generic-category equivalent of MatchActions: once mutual, this
  * offers the same contact-reveal as nanny/parent (phone/email/WhatsApp),
@@ -33,6 +42,21 @@ export default function GenericMatchActions({
 }) {
   const t = useTranslations("Matches");
   const [current, setCurrent] = useState(effectiveStatus(status, interestExpiresAt));
+  // The list refreshes statuses in the background (useLiveMatches) -- adopt
+  // a changed prop, e.g. the other side accepting, instead of freezing on
+  // whatever the card mounted with. After a local action, only move
+  // forward: a refresh fetched before that action must not undo it.
+  const [seenProp, setSeenProp] = useState(`${status}|${interestExpiresAt}`);
+  const [actedLocally, setActedLocally] = useState(false);
+  const propKey = `${status}|${interestExpiresAt}`;
+  if (propKey !== seenProp) {
+    setSeenProp(propKey);
+    const next = effectiveStatus(status, interestExpiresAt);
+    if (!actedLocally || progress(next) >= progress(current)) {
+      setCurrent(next);
+      setActedLocally(false);
+    }
+  }
   const [loading, setLoading] = useState(false);
   const [contact, setContact] = useState<ContactInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +79,7 @@ export default function GenericMatchActions({
 
     const body = await res.json();
     setCurrent(body.match.status);
+    setActedLocally(true);
   }
 
   async function loadContact() {
