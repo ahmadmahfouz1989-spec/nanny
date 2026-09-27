@@ -162,13 +162,13 @@ isOneToOne: false
                   ]
                 },"generic_profiles": {
                   Row: {
-                    "attributes": NonNullable<Json>,"category_id": string,"created_at": string,"full_name": string,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"status": string,"updated_at": string,"user_id": string
+                    "attributes": NonNullable<Json>,"category_id": string,"created_at": string,"full_name": string,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
                   }
                   Insert: {
-                    "attributes"?: NonNullable<Json>,"category_id": string,"created_at"?: string,"full_name": string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"status"?: string,"updated_at"?: string,"user_id": string
+                    "attributes"?: NonNullable<Json>,"category_id": string,"created_at"?: string,"full_name": string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "attributes"?: NonNullable<Json>,"category_id"?: string,"created_at"?: string,"full_name"?: string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "attributes"?: NonNullable<Json>,"category_id"?: string,"created_at"?: string,"full_name"?: string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -771,6 +771,11 @@ isOneToOne: false
 "is_parent_profile_mutual_counterpart":
 { Args: { "p_caller_user_id": string,"p_parent_profile_id": string }; Returns: boolean
                            },
+"list_profile_matches":
+{ Args: { "p_day"?: string,"p_governorate_id"?: string,"p_limit"?: number,"p_match_id"?: string,"p_min_years"?: number,"p_offset"?: number,"p_profile_id": string,"p_words"?: (string)[] }; Returns: {
+              "featured": boolean,"match_id": string,"other_profile_id": string,"total": number
+            }[]
+                           },
 "list_saved_favorites":
 { Args: { "p_category": string,"p_cursor_created_at": string,"p_cursor_id": string,"p_limit": number,"p_role": string,"p_user_id": string }; Returns: {
               "created_at": string,"generic_profile_id": string,"id": string
@@ -843,7 +848,10 @@ isOneToOne: false
         to: "parent_profiles"
         isOneToOne: true
         isSetofReturn: false
-      } }
+      } },
+"user_is_featured":
+{ Args: { "p_user_id": string }; Returns: boolean
+                           }
           }
           Enums: {
             [_ in never]: never

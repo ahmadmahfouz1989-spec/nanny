@@ -60,7 +60,10 @@ function names(n: Name | Name[]): string[] {
   return n ? [n.name_en, n.name_ar, n.name_fr] : [];
 }
 
-/** Everything a search can match on for one profile, already normalized. */
+/**
+ * Everything a search can match on for one profile, already normalized --
+ * what gets stored in generic_profiles.search_text.
+ */
 export function searchableText(profile: SearchableProfile): string {
   const a = profile.attributes ?? {};
   const parts: string[] = [profile.full_name, ...names(profile.locations)];
@@ -87,13 +90,17 @@ export function searchableText(profile: SearchableProfile): string {
 }
 
 /**
- * Whether a profile matches a search: every word of the query has to
- * appear somewhere in it (partial words count, so "math" finds
+ * A search query as the words the database compares against
+ * generic_profiles.search_text (see list_profile_matches): every word has
+ * to appear somewhere in it, and partial words count ("math" finds
  * "Mathematics").
  */
+export function searchWords(query: string): string[] {
+  return normalizeForSearch(query).split(/\s+/).filter(Boolean).slice(0, 10);
+}
+
+/** The same rule list_profile_matches applies, for code that has the profile in hand. */
 export function matchesSearch(profile: SearchableProfile, query: string): boolean {
-  const words = normalizeForSearch(query).split(/\s+/).filter(Boolean);
-  if (words.length === 0) return true;
   const text = searchableText(profile);
-  return words.every((w) => text.includes(w));
+  return searchWords(query).every((w) => text.includes(w));
 }

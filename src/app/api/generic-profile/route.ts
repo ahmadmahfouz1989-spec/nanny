@@ -7,6 +7,7 @@ import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATIO
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
+import { refreshSearchText } from "@/lib/search-text";
 import { sendEmail, pendingReviewEmail } from "@/lib/email";
 import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 import { asAttributes } from "@/lib/attributes";
@@ -253,7 +254,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   }
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
-  await recomputeGenericMatchesForProfile(data.id);
+  await Promise.all([recomputeGenericMatchesForProfile(data.id), refreshSearchText([data.id])]);
   await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
 
   return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
