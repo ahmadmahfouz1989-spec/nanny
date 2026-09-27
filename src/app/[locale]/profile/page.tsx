@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import MyRatings from "@/components/matches/my-ratings";
 import MyPostsCard from "@/components/my-posts-card";
+import DeleteAccountCard from "@/components/delete-account-card";
 import ProfileTabs, { type ProfileTabDef } from "@/components/profile-tabs";
 import { ui } from "@/lib/ui";
 
@@ -121,6 +122,8 @@ export default async function ProfilePage({
         <MyRatings />
 
         <MyPostsCard />
+
+        {profile?.email && <DeleteAccountCard email={profile.email} />}
       </div>
     </AppShell>
   );
