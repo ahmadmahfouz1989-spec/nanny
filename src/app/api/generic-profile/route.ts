@@ -9,6 +9,8 @@ import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { sendEmail, pendingReviewEmail } from "@/lib/email";
 import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
+import { asAttributes } from "@/lib/attributes";
+import type { Json } from "@/lib/supabase/database.types";
 
 type GenericRole = "seeker" | "provider";
 
@@ -150,7 +152,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   // shared per-account state on users; everything else lives in
   // attributes jsonb.
   const { fullName, contactPhone, locationId, ...rest } = p;
-  const attributes: Record<string, unknown> = { ...rest };
+  const attributes: { [key: string]: Json | undefined } = { ...rest };
   if (categorySlug === "nursing" && role === "provider" && mode === "create") {
     attributes.licenseVerificationStatus = DEFAULT_LICENSE_VERIFICATION_STATUS;
   }
@@ -212,8 +214,8 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     // A provider's license verification status is admin-controlled -- never
     // let a resubmission overwrite it back to "pending".
     if (role === "provider" && current.attributes && typeof current.attributes === "object") {
-      const existingStatus = (current.attributes as Record<string, unknown>).licenseVerificationStatus;
-      if (existingStatus) attributes.licenseVerificationStatus = existingStatus;
+      const existingStatus = asAttributes(current.attributes).licenseVerificationStatus;
+      if (typeof existingStatus === "string") attributes.licenseVerificationStatus = existingStatus;
     }
   }
 

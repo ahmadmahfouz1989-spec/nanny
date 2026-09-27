@@ -54,7 +54,7 @@ export default async function ProfilePage({
 
   const tabs: ProfileTabDef[] = [
     ...genericProfiles.map((p) => {
-      const category = p.categories as unknown as { slug: string; name_en: string; name_ar: string } | null;
+      const category = p.categories;
       const categoryLabel = category ? (locale === "ar" ? category.name_ar : category.name_en) : "";
       const roleLabel = p.role === "provider" ? t("roleProvider") : t("roleSeeker");
       // Two profiles in one category (seeking + offering) would otherwise

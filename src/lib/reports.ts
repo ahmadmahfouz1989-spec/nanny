@@ -30,5 +30,5 @@ export async function verifyMatchParticipants(
     .in("id", [match.seeker_profile_id, match.provider_profile_id]);
   const participants = new Set((profiles ?? []).map((p) => p.user_id));
   if (!participants.has(reporterUserId) || !participants.has(reportedUserId)) return null;
-  return (match.categories as unknown as { slug: string } | null)?.slug ?? null;
+  return match.categories?.slug ?? null;
 }

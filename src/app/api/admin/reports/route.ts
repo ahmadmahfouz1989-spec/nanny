@@ -33,8 +33,8 @@ export async function GET(request: Request) {
   const userIds = [
     ...new Set(
       (data ?? []).flatMap((r) => {
-        const reporter = r.reporter as unknown as { id: string } | null;
-        const reported = r.reported as unknown as { id: string } | null;
+        const reporter = r.reporter;
+        const reported = r.reported;
         return [reporter?.id, reported?.id].filter((id): id is string => !!id);
       }),
     ),
@@ -49,14 +49,14 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: true });
     for (const g of profiles ?? []) {
       if (identityByUserId.has(g.user_id)) continue;
-      const categoryName = (g.categories as unknown as { name_en: string } | null)?.name_en ?? null;
+      const categoryName = g.categories?.name_en ?? null;
       identityByUserId.set(g.user_id, { name: g.full_name, category: categoryName });
     }
   }
 
   const withIdentity = (data ?? []).map((r) => {
-    const reporter = r.reporter as unknown as { id: string; email: string; role: string | null } | null;
-    const reported = r.reported as unknown as { id: string; email: string; role: string | null } | null;
+    const reporter = r.reporter;
+    const reported = r.reported;
     return {
       ...r,
       reporter: reporter ? { ...reporter, ...identityByUserId.get(reporter.id) } : reporter,

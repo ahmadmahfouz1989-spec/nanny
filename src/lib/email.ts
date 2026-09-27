@@ -143,7 +143,9 @@ export async function sendEmail(to: string, subject: string, html: string): Prom
   return sendViaSmtp(to, subject, doc, text);
 }
 
-type Lang = "en" | "ar" | "fr" | null | undefined;
+// users.preferred_language as stored ("en" | "ar" | "fr"); anything other
+// than Arabic gets the English template.
+type Lang = string | null | undefined;
 
 function pick(lang: Lang, en: string, ar: string) {
   return lang === "ar" ? ar : en;

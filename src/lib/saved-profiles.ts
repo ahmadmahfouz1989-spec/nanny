@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/lib/supabase/database.types";
+import { asAttributes } from "@/lib/attributes";
 import { ratingAggregatesByUser } from "@/lib/ratings";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
@@ -81,14 +83,18 @@ export async function listSavedProfiles(
   // Filters + join to generic_profiles/categories, applied and paginated
   // server-side in one query -- see list_saved_favorites
   // (20260926000001_nanny_to_generic.sql).
-  const { data: rows } = await supabase.rpc("list_saved_favorites", {
+  // The generated types mark every function argument as required and
+  // non-null, but list_saved_favorites treats null as "no filter" / "first
+  // page" -- hence the cast on the arguments.
+  const args = {
     p_user_id: userId,
     p_category: opts.category ?? null,
     p_role: opts.role ?? null,
     p_cursor_created_at: opts.cursor?.createdAt ?? null,
     p_cursor_id: opts.cursor?.id ?? null,
     p_limit: opts.limit + 1,
-  });
+  } as unknown as Database["public"]["Functions"]["list_saved_favorites"]["Args"];
+  const { data: rows } = await supabase.rpc("list_saved_favorites", args);
   const favRows = (rows ?? []) as FavoritesRow[];
   const hasMore = favRows.length > opts.limit;
   const page = hasMore ? favRows.slice(0, opts.limit) : favRows;
@@ -101,8 +107,7 @@ export async function listSavedProfiles(
         .in("id", targetIds)
     : { data: [] as never[] };
 
-  type GenericRow = { id: string; user_id: string; category_id: string; role: string; full_name: string; profile_photo_url: string | null; moderation_status: string; attributes: Record<string, unknown>; locations: LocationRef; categories: { slug: string; name_en: string; name_ar: string } | null };
-  const genericById = new Map(((generics ?? []) as unknown as GenericRow[]).map((g) => [g.id, g]));
+  const genericById = new Map((generics ?? []).map((g) => [g.id, g]));
 
   const ratingByUserId = await ratingAggregatesByUser([...genericById.values()].map((g) => g.user_id));
 
@@ -158,7 +163,7 @@ export async function listSavedProfiles(
           id: g.id, category: g.categories?.slug ?? "", role: g.role === "provider" ? "offering" : "seeking",
           displayName: g.full_name, photoUrl: g.profile_photo_url, locationLabel: g.locations,
           moderationStatus: g.moderation_status,
-          attributes: g.attributes,
+          attributes: asAttributes(g.attributes),
           rating: ratingByUserId.get(g.user_id) ?? { average: null, count: 0 },
         }
       : null;

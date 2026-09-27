@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -23,7 +24,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const db = createAdminClient();
-  const update: Record<string, unknown> = {
+  const update: TablesUpdate<"reports"> = {
     status: parsed.data.status,
     resolution_notes: parsed.data.resolutionNotes ?? null,
   };

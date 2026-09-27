@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import type { TablesInsert } from "@/lib/supabase/database.types";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
@@ -72,7 +73,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const insertPayload: Record<string, unknown> = {
+  const insertPayload: TablesInsert<"posts"> = {
     user_id: user.id,
     kind: parsed.data.kind,
     caption: parsed.data.caption,
