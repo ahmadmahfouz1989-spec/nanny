@@ -26,6 +26,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run lint
+      # next-env.d.ts (image/CSS module types) is generated, not committed.
+      - run: npx next typegen
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
