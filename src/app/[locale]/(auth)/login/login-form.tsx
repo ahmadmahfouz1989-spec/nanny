@@ -37,6 +37,7 @@ export default function LoginForm() {
   // Only the signup-confirmation case gets an inline resend button -- a
   // failed recovery link should go back through "Forgot password?" instead,
   // since that flow doesn't require knowing the (possibly wrong) password.
+  const accountDeleted = searchParams.get("deleted") === "1";
   const [showResend, setShowResend] = useState(linkErrorType === "signup");
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [submitting, setSubmitting] = useState(false);
@@ -116,6 +117,9 @@ export default function LoginForm() {
           className={ui.input}
         />
 
+        {accountDeleted && !error && (
+          <p className="rounded-lg bg-success-soft px-3 py-2 text-sm text-success">{t("accountDeleted")}</p>
+        )}
         {error && (
           <div className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
             <p>{error}</p>

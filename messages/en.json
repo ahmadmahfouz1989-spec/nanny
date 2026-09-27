@@ -141,7 +141,8 @@
     "submitting": "Logging in…",
     "forgotPassword": "Forgot password?",
     "newHere": "New here?",
-    "createAccount": "Create an account"
+    "createAccount": "Create an account",
+    "accountDeleted": "Your account has been permanently deleted."
   },
   "Recover": {
     "title": "Reset your password",
@@ -713,5 +714,23 @@
     "loadingMore": "Loading…",
     "loading": "Loading saved profiles…",
     "scoreLabel": "{score}% match"
+  },
+  "DeleteAccount": {
+    "title": "Delete account",
+    "summary": "Permanently delete your account and everything in it.",
+    "open": "Delete my account…",
+    "warningTitle": "This is permanent and can't be undone.",
+    "warningBody": "Deleting your account removes it for good. We can't restore it or anything in it afterwards. You will lose:",
+    "lossProfiles": "Your profiles in every category, including photos",
+    "lossConversations": "All your matches and conversations, including voice notes",
+    "lossRatings": "Ratings you gave and received",
+    "lossPosts": "Your feed posts, replies and saved profiles",
+    "lossFeatured": "Any remaining Featured time",
+    "reportsKept": "Reports made by you or about you are kept for safety, without your name.",
+    "confirmLabel": "To confirm, type your account's email:",
+    "confirm": "Delete my account permanently",
+    "deleting": "Deleting…",
+    "cancel": "Cancel",
+    "error": "Your account couldn't be deleted. Nothing was removed — please try again."
   }
 }
