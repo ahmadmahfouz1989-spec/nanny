@@ -1,4 +1,5 @@
 import type { User } from "@supabase/supabase-js";
+import * as Sentry from "@sentry/nextjs";
 import { createClient } from "@/lib/supabase/server";
 
 /**
@@ -25,5 +26,7 @@ export async function requireActiveUser(
   const { data: profile } = await supabase.from("users").select("status").eq("id", user.id).single();
   if (profile?.status === "suspended") return null;
 
+  // Error reports carry who hit them -- id only, never email.
+  Sentry.setUser({ id: user.id });
   return user;
 }
