@@ -3,11 +3,10 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
-import { featuredUserIds } from "@/lib/featured";
 import { savedProfileIds } from "@/lib/saved-profiles";
-import { matchesSearch } from "@/lib/profile-search";
+import { searchWords } from "@/lib/profile-search";
+import { fillMissingSearchText } from "@/lib/search-text";
 import { asAttributes } from "@/lib/attributes";
-import type { Json } from "@/lib/supabase/database.types";
 
 /**
  * Lists matches for the caller's own profile in a category, best first:
@@ -59,46 +58,55 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Create your profile before browsing matches" }, { status: 404 });
   }
 
-  const column = myProfile.role === "seeker" ? "seeker_profile_id" : "provider_profile_id";
-  const otherIdOf = (m: { seeker_profile_id: string; provider_profile_id: string }) =>
-    myProfile.role === "seeker" ? m.provider_profile_id : m.seeker_profile_id;
+  // Profiles saved before search_text existed get it now (once).
+  await fillMissingSearchText(category.id);
 
-  // Two plain queries rather than an embedded select: generic_matches has
-  // two FKs to generic_profiles, and PostgREST's `!column` disambiguation
-  // hint for that case can't be verified against a live project here.
-  // Selecting both id columns (rather than just "the other one") also
-  // sidesteps a template-literal select producing a union return type.
-  const { data: matches, error } = await supabase
-    .from("generic_matches")
-    .select("id, score, score_breakdown, status, interest_expires_at, seeker_profile_id, provider_profile_id")
-    .eq(column, myProfile.id)
-    .order("score", { ascending: false });
+  // Filters, search, order (Featured first, then best match) and paging all
+  // happen in the database -- see list_profile_matches. matchId is a
+  // notification's target card, returned on its own even when the
+  // viewer's current filters or page would hide it.
+  const matchId = searchParams.get("matchId");
+  const minYears = Number(searchParams.get("minYearsExperience"));
+  const words = searchWords(searchParams.get("q")?.slice(0, 100) ?? "");
+  const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
+  const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
 
+  const { data: rows, error } = await supabase.rpc("list_profile_matches", {
+    p_profile_id: myProfile.id,
+    p_governorate_id: searchParams.get("governorateId") || undefined,
+    p_day: searchParams.get("day") || undefined,
+    p_min_years: minYears > 0 ? minYears : undefined,
+    p_words: words.length ? words : undefined,
+    p_match_id: matchId || undefined,
+    p_limit: pageSize,
+    p_offset: (page - 1) * pageSize,
+  });
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+  const pageRows = rows ?? [];
+  const total = Number(pageRows[0]?.total ?? 0);
+  if (pageRows.length === 0) {
+    return NextResponse.json({ myRole: myProfile.role, results: [], total });
+  }
 
-  type OtherProfile = {
-    id: string;
-    full_name: string;
-    profile_photo_url: string | null;
-    location_id: string | null;
-    attributes: Json;
-    locations: { name_en: string; name_ar: string; name_fr: string } | null;
-  };
-  type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
-
-  const otherIds = (matches ?? []).map(otherIdOf);
-  const { data: otherProfiles } =
-    otherIds.length > 0
-      ? await supabase
-          .from("generic_profiles")
-          .select("id, full_name, profile_photo_url, location_id, attributes, locations(name_en, name_ar, name_fr)")
-          .in("id", otherIds)
-      : { data: [] as OtherProfile[] };
+  // Details for just this page.
+  const matchIds = pageRows.map((r) => r.match_id);
+  const otherIds = pageRows.map((r) => r.other_profile_id);
+  const [{ data: matches }, { data: otherProfiles }] = await Promise.all([
+    supabase
+      .from("generic_matches")
+      .select("id, score, score_breakdown, status, interest_expires_at, seeker_profile_id, provider_profile_id")
+      .in("id", matchIds),
+    supabase
+      .from("generic_profiles")
+      .select("id, full_name, profile_photo_url, location_id, attributes, locations(name_en, name_ar, name_fr)")
+      .in("id", otherIds),
+  ]);
 
   // Languages are stored as bare ids in attributes -- resolve them once for
-  // the whole list so cards can show names.
+  // the page so cards can show names.
+  type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
   const languageIds = [
     ...new Set(
       (otherProfiles ?? []).flatMap((p) => {
@@ -121,78 +129,32 @@ export async function GET(request: Request) {
       return [p.id, { ...p, attributes, languages }];
     }),
   );
+  const matchById = new Map((matches ?? []).map((m) => [m.id, m]));
 
-  // Attach each counterpart's aggregate rating and Featured status -- the
-  // profile→user_id mapping stays server-side (user_id is never part of
-  // the response).
-  const ratingByProfileId = new Map<string, { average: number | null; count: number }>();
-  const featuredProfileIds = new Set<string>();
-  if (otherIds.length > 0) {
-    const admin = createAdminClient();
-    const { data: owners } = await admin.from("generic_profiles").select("id, user_id").in("id", otherIds);
-    const [aggregates, featuredUsers] = await Promise.all([
-      ratingAggregatesByUser((owners ?? []).map((o) => o.user_id)),
-      featuredUserIds((owners ?? []).map((o) => o.user_id)),
-    ]);
-    for (const owner of owners ?? []) {
-      ratingByProfileId.set(owner.id, aggregates.get(owner.user_id) ?? { average: null, count: 0 });
-      if (featuredUsers.has(owner.user_id)) featuredProfileIds.add(owner.id);
-    }
-  }
-
+  // Each counterpart's aggregate rating -- the profile→user_id mapping stays
+  // server-side (user_id is never part of the response).
+  const admin = createAdminClient();
+  const { data: owners } = await admin.from("generic_profiles").select("id, user_id").in("id", otherIds);
+  const aggregates = await ratingAggregatesByUser((owners ?? []).map((o) => o.user_id));
+  const ratingByProfileId = new Map(
+    (owners ?? []).map((o) => [o.id, aggregates.get(o.user_id) ?? { average: null, count: 0 }]),
+  );
   const savedIds = await savedProfileIds(supabase, user.id, otherIds);
 
-  const results = (matches ?? []).map((m) => {
-    const otherId = otherIdOf(m);
-    return {
-      ...m,
-      other: otherById.get(otherId) ?? null,
-      rating: ratingByProfileId.get(otherId) ?? { average: null, count: 0 },
-      featured: featuredProfileIds.has(otherId),
-      isSaved: savedIds.has(otherId),
-    };
+  const results = pageRows.flatMap((r) => {
+    const match = matchById.get(r.match_id);
+    const other = otherById.get(r.other_profile_id);
+    if (!match || !other) return [];
+    return [
+      {
+        ...match,
+        other,
+        rating: ratingByProfileId.get(other.id) ?? { average: null, count: 0 },
+        featured: r.featured,
+        isSaved: savedIds.has(other.id),
+      },
+    ];
   });
 
-  // Manual overrides on top of the algorithm's score order -- narrows the
-  // already-complete match set rather than querying a separate index.
-  // availability lives under different attribute keys depending on
-  // category/role (availability.days vs neededDays), so both are checked.
-  // matchId: a notification's target card, fetched on its own so it can be
-  // shown even when the viewer's current filters or page would hide it --
-  // bypasses every filter and always returns that one row (or nothing).
-  const matchId = searchParams.get("matchId");
-  const governorateId = searchParams.get("governorateId");
-  const day = searchParams.get("day");
-  const minYearsExperience = searchParams.get("minYearsExperience");
-  // Free-text search (name, area, languages, intro, tagged details in
-  // English and Arabic) -- see src/lib/profile-search.ts.
-  const q = searchParams.get("q")?.trim().slice(0, 100) ?? "";
-
-  const filtered = results.filter((r) => {
-    if (!r.other) return false;
-    if (matchId) return r.id === matchId;
-    const a = r.other.attributes ?? {};
-    if (governorateId && r.other.location_id !== governorateId) return false;
-    if (day) {
-      const days = ((a.availability as { days?: string[] } | undefined)?.days ?? a.neededDays ?? []) as string[];
-      // Empty = a flexible seeker (generic-engine scores it as full
-      // availability) -- fits any day. Providers always list at least one.
-      if (days.length > 0 && !days.includes(day)) return false;
-    }
-    if (minYearsExperience && !(typeof a.yearsExperience === "number" && a.yearsExperience >= Number(minYearsExperience))) {
-      return false;
-    }
-    if (q && !matchesSearch(r.other, q)) return false;
-    return true;
-  });
-
-  // Featured has to be applied before slicing to a page, or a Featured
-  // profile ranked below the cutoff by score alone would never surface on
-  // page 1. Stable sort: score order is kept within each group.
-  const ranked = [...filtered].sort((a, b) => Number(b.featured) - Number(a.featured));
-  const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
-  const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
-  const from = (page - 1) * pageSize;
-
-  return NextResponse.json({ myRole: myProfile.role, results: ranked.slice(from, from + pageSize), total: ranked.length });
+  return NextResponse.json({ myRole: myProfile.role, results, total });
 }
