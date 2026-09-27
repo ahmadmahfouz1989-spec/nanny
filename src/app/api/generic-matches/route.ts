@@ -6,6 +6,8 @@ import { ratingAggregatesByUser } from "@/lib/ratings";
 import { featuredUserIds } from "@/lib/featured";
 import { savedProfileIds } from "@/lib/saved-profiles";
 import { matchesSearch } from "@/lib/profile-search";
+import { asAttributes } from "@/lib/attributes";
+import type { Json } from "@/lib/supabase/database.types";
 
 /**
  * Lists matches for the caller's own profile in a category, best first:
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
     full_name: string;
     profile_photo_url: string | null;
     location_id: string | null;
-    attributes: Record<string, unknown>;
+    attributes: Json;
     locations: { name_en: string; name_ar: string; name_fr: string } | null;
   };
   type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
@@ -100,7 +102,7 @@ export async function GET(request: Request) {
   const languageIds = [
     ...new Set(
       (otherProfiles ?? []).flatMap((p) => {
-        const ids = (p.attributes as { languageIds?: unknown } | null)?.languageIds;
+        const ids = asAttributes(p.attributes).languageIds;
         return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
       }),
     ),
@@ -113,9 +115,10 @@ export async function GET(request: Request) {
 
   const otherById = new Map(
     (otherProfiles ?? []).map((p) => {
-      const ids = (p.attributes as { languageIds?: unknown } | null)?.languageIds;
+      const attributes = asAttributes(p.attributes);
+      const ids = attributes.languageIds;
       const languages = (Array.isArray(ids) ? ids : []).map((id) => languageById.get(id)).filter((l): l is Language => !!l);
-      return [p.id, { ...p, languages }];
+      return [p.id, { ...p, attributes, languages }];
     }),
   );
 

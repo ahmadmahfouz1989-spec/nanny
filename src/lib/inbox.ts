@@ -60,7 +60,7 @@ export async function allConversations(supabase: Supabase, userId: string): Prom
   const seekerProfileIds = myProfiles.filter((p) => p.role === "seeker").map((p) => p.id);
   const providerProfileIds = myProfiles.filter((p) => p.role === "provider").map((p) => p.id);
   const categorySlugById = new Map(
-    myProfiles.map((p) => [p.id, (p.categories as unknown as { slug: string } | null)?.slug ?? ""]),
+    myProfiles.map((p) => [p.id, p.categories?.slug ?? ""]),
   );
 
   const [{ data: asSeeker }, { data: asProvider }] = await Promise.all([

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { toJson, type JsonObject } from "@/lib/attributes";
 import {
   computeCareMatchScore,
   type CareProviderMatchInput,
@@ -109,7 +110,7 @@ async function loadActiveApproved(admin: Admin, categoryId: string, role: "seeke
 
 async function upsertGenericMatches(
   admin: Admin,
-  rows: { category_id: string; seeker_profile_id: string; provider_profile_id: string; score: number; score_breakdown: unknown }[],
+  rows: { category_id: string; seeker_profile_id: string; provider_profile_id: string; score: number; score_breakdown: JsonObject }[],
 ) {
   if (rows.length === 0) return;
   await admin.from("generic_matches").upsert(rows, { onConflict: "seeker_profile_id,provider_profile_id" });
@@ -133,7 +134,7 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
 
   if (!profile || profile.status !== "active") return;
   const row = profile as GenericProfileRow;
-  const categorySlug = (profile.categories as unknown as { slug: string } | null)?.slug ?? "";
+  const categorySlug = profile.categories?.slug ?? "";
 
   if (row.role === "seeker") {
     // Exclude the same account's own provider profile in this category --
@@ -150,7 +151,7 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
         seeker_profile_id: row.id,
         provider_profile_id: p.id,
         score,
-        score_breakdown: breakdown,
+        score_breakdown: toJson(breakdown),
       };
     });
     await upsertGenericMatches(admin, rows);
@@ -165,7 +166,7 @@ export async function recomputeGenericMatchesForProfile(profileId: string) {
       seeker_profile_id: s.id,
       provider_profile_id: row.id,
       score,
-      score_breakdown: breakdown,
+      score_breakdown: toJson(breakdown),
     };
   });
   await upsertGenericMatches(admin, rows);

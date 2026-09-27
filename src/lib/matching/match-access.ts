@@ -62,7 +62,7 @@ export async function resolveMatchAccess(supabase: Supabase, matchId: string, us
     otherUserId: isSeeker ? providerUserId : seekerUserId,
     myProfileId: isSeeker ? match.seeker_profile_id : match.provider_profile_id,
     otherProfileId: isSeeker ? match.provider_profile_id : match.seeker_profile_id,
-    categorySlug: (match.categories as unknown as { slug: string } | null)?.slug ?? "",
+    categorySlug: match.categories?.slug ?? "",
   };
 }
 

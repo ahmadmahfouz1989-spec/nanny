@@ -43,9 +43,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { status, notes } = parsed.data;
 
   const db = createAdminClient();
-  const table = "generic_profiles";
-  // The category deep-links the notification to the right dashboard.
-  const selectCols = "id, user_id, full_name, categories(slug)";
+  // Selected columns include the category, which deep-links the
+  // notification to the right dashboard.
 
   if (status === "rejected") {
     // A submission that never went mutual with anyone has nothing to
@@ -64,17 +63,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // it) without touching what already exists.
     if (await hasMutualMatch(db, id)) {
       const { data: updated, error } = await db
-        .from(table)
+        .from("generic_profiles")
         .update({ moderation_status: "rejected" })
         .eq("id", id)
-        .select(selectCols)
+        .select("id, user_id, full_name, categories(slug)")
         .single();
 
       if (error || !updated) {
         return NextResponse.json({ error: error?.message ?? "Profile not found" }, { status: 404 });
       }
 
-      const row = updated as unknown as { user_id: string; categories?: { slug: string } | null };
+      const row = updated;
 
       await db.from("notifications").insert({
         user_id: row.user_id,
@@ -85,21 +84,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ profile: updated, deleted: false });
     }
 
-    // Fetch the photo too, so the storage file is cleaned up alongside the
-    // DB row.
-    const deleteSelectCols = `${selectCols}, profile_photo_url`;
-
-    const { data: deleted, error } = await db.from(table).delete().eq("id", id).select(deleteSelectCols).single();
+    const { data: deleted, error } = await db.from("generic_profiles").delete().eq("id", id).select("id, user_id, full_name, categories(slug), profile_photo_url").single();
 
     if (error || !deleted) {
       return NextResponse.json({ error: error?.message ?? "Profile not found" }, { status: 404 });
     }
 
-    const row = deleted as unknown as {
-      user_id: string;
-      categories?: { slug: string } | null;
-      profile_photo_url?: string | null;
-    };
+    const row = deleted;
 
     if (row.profile_photo_url) {
       // Only ever delete a path under this profile's own owner folder, in
@@ -118,13 +109,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return NextResponse.json({ profile: deleted, deleted: true });
   }
 
-  const { data: updated, error } = await db.from(table).update({ moderation_status: status }).eq("id", id).select(selectCols).single();
+  const { data: updated, error } = await db.from("generic_profiles").update({ moderation_status: status }).eq("id", id).select("id, user_id, full_name, categories(slug)").single();
 
   if (error || !updated) {
     return NextResponse.json({ error: error?.message ?? "Profile not found" }, { status: 404 });
   }
 
-  const row = updated as unknown as { user_id: string; categories?: { slug: string } | null };
+  const row = updated;
 
   await db.from("notifications").insert({
     user_id: row.user_id,

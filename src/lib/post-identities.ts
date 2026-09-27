@@ -25,7 +25,7 @@ export async function listPostIdentities(supabase: Supabase, userId: string): Pr
     .order("created_at", { ascending: true });
 
   return (profiles ?? []).map((g) => {
-    const category = g.categories as unknown as { name_en: string; name_ar: string } | null;
+    const category = g.categories;
     return {
       profileId: g.id,
       fullName: g.full_name,

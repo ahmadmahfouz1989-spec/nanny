@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { conversationUrl, effectiveStatus, matchNotificationPayload, type MatchAccess } from "@/lib/matching/match-access";
 import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
@@ -13,7 +14,7 @@ export async function applyInterest(request: Request, access: MatchAccess) {
   const otherPending = `${access.otherSide}_interested`;
 
   const admin = createAdminClient();
-  const updatePayload: Record<string, unknown> = {};
+  const updatePayload: TablesUpdate<"generic_matches"> = {};
   let notify: { user_id: string; type: string }[] = [];
 
   if (status === "suggested" || status === "expired") {

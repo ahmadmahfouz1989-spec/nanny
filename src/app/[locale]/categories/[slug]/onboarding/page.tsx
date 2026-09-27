@@ -1,5 +1,6 @@
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { asAttributes } from "@/lib/attributes";
 import CategoryOnboardingClient from "./category-onboarding-client";
 
 // Each entry here also needs a schema pair in CATEGORY_SCHEMAS
@@ -45,8 +46,10 @@ export default async function CategoryOnboardingPage({
   ]);
 
   const accountContactPhone = userRow?.contact_phone ?? null;
-  const withContact = (p: NonNullable<typeof profiles>[number]) => ({
+  const withContact = (p: NonNullable<typeof profiles>[number], role: "seeker" | "provider") => ({
     ...p,
+    role,
+    attributes: asAttributes(p.attributes),
     contact_phone: accountContactPhone,
   });
   const seekerProfile = (profiles ?? []).find((p) => p.role === "seeker");
@@ -64,8 +67,8 @@ export default async function CategoryOnboardingPage({
     <CategoryOnboardingClient
       categorySlug={slug}
       categoryName={locale === "ar" ? category!.name_ar : category!.name_en}
-      seekerProfile={seekerProfile ? withContact(seekerProfile) : null}
-      providerProfile={providerProfile ? withContact(providerProfile) : null}
+      seekerProfile={seekerProfile ? withContact(seekerProfile, "seeker") : null}
+      providerProfile={providerProfile ? withContact(providerProfile, "provider") : null}
       initialRole={initialRole}
       // The account's shared contact_phone, independent of whether a
       // profile already exists in *this* category -- without this,

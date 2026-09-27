@@ -35,7 +35,7 @@ export default async function DashboardPage({
   const slugs = [
     ...new Set(
       (profiles ?? [])
-        .map((p) => (p.categories as unknown as { slug: string } | null)?.slug)
+        .map((p) => p.categories?.slug)
         .filter((s): s is string => !!s),
     ),
   ];

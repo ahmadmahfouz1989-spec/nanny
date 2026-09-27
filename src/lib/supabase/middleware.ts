@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
+import type { Database } from "./database.types";
 
 const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/saved", "/settings", "/featured", "/admin"];
 
@@ -23,7 +24,7 @@ function splitLocale(pathname: string): { locale: string; rest: string } {
 }
 
 export async function updateSession(request: NextRequest, response: NextResponse) {
-  const supabase = createServerClient(
+  const supabase = createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
