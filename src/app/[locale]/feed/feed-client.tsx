@@ -1,163 +1,15 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
-import ReportButton from "@/components/matches/report-button";
-import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { LogoLoader } from "@/components/animated-logo";
-import AvatarIllustration from "@/components/illustrations/avatar-illustration";
-import { ChatIcon, HeartIcon } from "@/components/nav-icons";
 import type { PostIdentityOption } from "@/lib/post-identities";
 import { FEED_TARGET_EVENT, type FeedTargetDetail } from "@/lib/feed-target";
-
-type Post = {
-  id: string;
-  user_id: string;
-  kind: "looking_for" | "offering";
-  caption: string;
-  created_at: string;
-  author: { fullName: string; profileId: string | null; photoUrl: string | null } | null;
-  likeCount: number;
-  likedByMe: boolean;
-  replyCount: number;
-  featured: boolean;
-  isMine: boolean;
-};
-
-type Reply = {
-  id: string;
-  user_id: string;
-  body: string;
-  parent_reply_id: string | null;
-  created_at: string;
-  authorName: string | null;
-  authorPhotoUrl: string | null;
-  isMine: boolean;
-};
-
-function formatRelative(iso: string, locale: string, justNow: string) {
-  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return justNow;
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  if (min < 60) return rtf.format(-min, "minute");
-  const hr = Math.round(min / 60);
-  if (hr < 24) return rtf.format(-hr, "hour");
-  return rtf.format(-Math.round(hr / 24), "day");
-}
-
-function Avatar({ photoUrl, size = 44, className = "" }: { photoUrl: string | null; size?: number; className?: string }) {
-  return photoUrl ? (
-    <Image
-      src={photoUrl}
-      alt=""
-      width={size}
-      height={size}
-      className={`rounded-full object-cover shrink-0 ${className}`}
-      style={{ width: size, height: size }}
-    />
-  ) : (
-    <AvatarIllustration
-      tone="primary"
-      className={`rounded-full overflow-hidden shrink-0 ${className}`}
-      style={{ width: size, height: size }}
-    />
-  );
-}
-
-// Renders one level of the cascade, then recurses into each reply's own
-// children -- matching X's "a reply is a full mini-post, and replying to
-// a reply nests under it" shape, adapted to a page instead of X's
-// click-into-a-new-page navigation.
-function ReplyThread({
-  allReplies,
-  parentId,
-  depth,
-  t,
-  locale,
-  onReplyClick,
-  onDeleteClick,
-  collapsed,
-  onToggleCollapse,
-  highlightId,
-  adminMode = false,
-}: {
-  allReplies: Reply[];
-  parentId: string | null;
-  depth: number;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  t: any;
-  locale: string;
-  onReplyClick: (reply: Reply) => void;
-  onDeleteClick: (reply: Reply) => void;
-  collapsed: Set<string>;
-  onToggleCollapse: (replyId: string) => void;
-  highlightId: string | null;
-  adminMode?: boolean;
-}) {
-  const children = allReplies.filter((r) => r.parent_reply_id === parentId);
-  if (children.length === 0) return null;
-
-  return (
-    <div className={depth > 0 ? "flex flex-col gap-3 mt-3 ps-4 border-s border-border" : "flex flex-col gap-3"}>
-      {children.map((r) => {
-        const descendantCount = allReplies.filter((x) => x.parent_reply_id === r.id).length;
-        const isCollapsed = collapsed.has(r.id);
-        return (
-          <div key={r.id} id={`reply-${r.id}`}>
-            <div className={`flex gap-2.5 rounded-lg transition-colors ${highlightId === r.id ? "bg-primary-soft -mx-1.5 px-1.5 py-1" : ""}`}>
-              <Avatar photoUrl={r.authorPhotoUrl} size={28} />
-              <div className="min-w-0 flex-1">
-                <div className="flex items-baseline gap-1.5 flex-wrap">
-                  <span className="text-sm font-semibold text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}</span>
-                  <span className="text-xs text-muted">{formatRelative(r.created_at, locale, t("justNow"))}</span>
-                </div>
-                <p dir="auto" className="text-sm text-ink/90 whitespace-pre-wrap">{r.body}</p>
-                <div className="flex items-center gap-3 mt-0.5">
-                  {!adminMode && (
-                    <button type="button" onClick={() => onReplyClick(r)} className="text-xs text-muted hover:text-ink transition">
-                      {t("reply")}
-                    </button>
-                  )}
-                  {descendantCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => onToggleCollapse(r.id)}
-                      className="text-xs text-primary hover:underline"
-                    >
-                      {isCollapsed ? t("showReplies", { count: descendantCount }) : t("hideReplies")}
-                    </button>
-                  )}
-                  {(r.isMine || adminMode) && (
-                    <button type="button" onClick={() => onDeleteClick(r)} className="text-xs text-muted hover:text-danger transition">
-                      {t("deleteReply")}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-            {!isCollapsed && (
-              <ReplyThread
-                allReplies={allReplies}
-                parentId={r.id}
-                depth={depth + 1}
-                t={t}
-                locale={locale}
-                onReplyClick={onReplyClick}
-                onDeleteClick={onDeleteClick}
-                collapsed={collapsed}
-                onToggleCollapse={onToggleCollapse}
-                highlightId={highlightId}
-                adminMode={adminMode}
-              />
-            )}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+import type { Post, Reply } from "./feed-shared";
+import PostCard from "./post-card";
+import PostComposer from "./post-composer";
+import PostReplies from "./post-replies";
 
 export default function FeedClient({
   targetPostId = null,
@@ -173,15 +25,6 @@ export default function FeedClient({
   targetReplyId?: string | null;
 }) {
   const t = useTranslations("Feed");
-  const tSaved = useTranslations("SavedProfiles");
-  const tAdmin = useTranslations("Admin");
-  const locale = useLocale();
-
-  function identityLabel(identity: PostIdentityOption) {
-    const categoryName = locale === "ar" ? identity.categoryNameAr : identity.categoryNameEn;
-    const roleLabel = identity.role === "provider" ? tSaved("roleOffering") : tSaved("roleSeeking");
-    return `${categoryName} · ${roleLabel} — ${identity.fullName}`;
-  }
 
   const [posts, setPosts] = useState<Post[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -463,47 +306,19 @@ export default function FeedClient({
         {/* Composer — avatar + borderless input, X-style. Admins moderate
             the feed rather than post to it (/admin/feed). */}
         {!adminMode && (
-          <div className="flex gap-3 p-4 border-b border-border">
-            <Avatar photoUrl={selectedIdentityOption?.photoUrl ?? null} size={44} className="mt-0.5" />
-            <div className="flex-1 min-w-0 flex flex-col gap-2">
-              {identities && identities.length > 1 && (
-                <select
-                  className={ui.select + " w-auto text-xs py-1.5"}
-                  value={selectedIdentity?.profileId ?? ""}
-                  onChange={(e) => setSelectedIdentity({ profileId: e.target.value })}
-                >
-                  {identities.map((identity) => (
-                    <option key={identity.profileId} value={identity.profileId}>
-                      {identityLabel(identity)}
-                    </option>
-                  ))}
-                </select>
-              )}
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setKind("looking_for")} className={ui.pill(kind === "looking_for")}>
-                  {t("kindLookingFor")}
-                </button>
-                <button type="button" onClick={() => setKind("offering")} className={ui.pill(kind === "offering")}>
-                  {t("kindOffering")}
-                </button>
-              </div>
-              <textarea
-                dir="auto"
-                className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none"
-                rows={2}
-                maxLength={500}
-                placeholder={t("captionPlaceholder")}
-                value={caption}
-                onChange={(e) => setCaption(e.target.value)}
-              />
-              {composerError && <p className="text-sm text-danger">{composerError}</p>}
-              <div className="flex justify-end">
-                <button type="button" onClick={submitPost} disabled={posting || !caption.trim() || identities === null} className={ui.buttonPrimary + " px-5! py-2!"}>
-                  {posting ? t("posting") : t("post")}
-                </button>
-              </div>
-            </div>
-          </div>
+          <PostComposer
+            identities={identities}
+            selectedProfileId={selectedIdentity?.profileId ?? null}
+            onSelectIdentity={(profileId) => setSelectedIdentity({ profileId })}
+            avatarUrl={selectedIdentityOption?.photoUrl ?? null}
+            kind={kind}
+            onKind={setKind}
+            caption={caption}
+            onCaption={setCaption}
+            error={composerError}
+            posting={posting}
+            onSubmit={submitPost}
+          />
         )}
 
         {posts === null && <LogoLoader label={t("loading")} fullHeight={!adminMode} />}
@@ -511,160 +326,36 @@ export default function FeedClient({
 
         <div className="divide-y divide-border">
           {posts?.map((post) => (
-            <article key={post.id} id={`post-${post.id}`} className="flex gap-3 p-4 scroll-mt-6">
-              <Avatar photoUrl={post.author?.photoUrl ?? null} size={44} className="mt-0.5" />
-
-              <div className="flex-1 min-w-0 flex flex-col gap-1">
-                <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
-                  {post.author?.profileId ? (
-                    <button
-                      type="button"
-                      onClick={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
-                      className="font-semibold text-ink hover:underline"
-                    >
-                      {post.author.fullName}
-                    </button>
-                  ) : (
-                    <span className="font-semibold text-ink">{post.author?.fullName ?? t("someone")}</span>
-                  )}
-                  <span className={ui.badge(post.kind === "looking_for" ? "secondary" : "accent") + " py-0!"}>
-                    {t(post.kind === "looking_for" ? "kindLookingFor" : "kindOffering")}
-                  </span>
-                  {post.featured && <span className={ui.badge("berry") + " py-0!"}>★ {t("featuredBadge")}</span>}
-                  <span className="text-muted">·</span>
-                  <span className="text-muted">{formatRelative(post.created_at, locale, t("justNow"))}</span>
-
-                  <div className="ms-auto shrink-0">
-                    {!post.isMine && !adminMode && <ReportButton postId={post.id} trigger="icon" />}
-                    {post.isMine && !adminMode && (
-                      <button
-                        type="button"
-                        onClick={() => deletePost(post)}
-                        className="text-xs text-muted hover:text-danger transition"
-                      >
-                        {t("deletePost")}
-                      </button>
-                    )}
-                    {/* Two-step, same as deleting a user on /admin/users --
-                        this removes someone else's post and its replies. */}
-                    {adminMode &&
-                      (confirmingDelete === post.id ? (
-                        <span className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => deletePost(post)}
-                            className="text-xs font-semibold text-danger hover:underline"
-                          >
-                            {tAdmin("confirmDelete")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setConfirmingDelete(null)}
-                            className="text-xs text-muted hover:text-ink"
-                          >
-                            {t("cancelReplyTarget")}
-                          </button>
-                        </span>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => setConfirmingDelete(post.id)}
-                          className="text-xs text-muted hover:text-danger transition"
-                        >
-                          {tAdmin("delete")}
-                        </button>
-                      ))}
-                  </div>
-                </div>
-
-                <p dir="auto" className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
-
-                {openProfile === post.id && post.author?.profileId && (
-                  <ProfileSummaryPanel profileId={post.author.profileId} />
-                )}
-
-                <div className="flex items-center justify-between max-w-[280px] mt-2">
-                  <button
-                    type="button"
-                    onClick={() => toggleReplies(post.id)}
-                    className="flex items-center gap-2 text-muted hover:text-ink transition"
-                  >
-                    <ChatIcon className="h-[18px] w-[18px]" />
-                    <span className="text-sm">{post.replyCount > 0 ? post.replyCount : ""}</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => toggleLike(post)}
-                    disabled={adminMode}
-                    className={`flex items-center gap-2 transition ${post.likedByMe ? "text-primary" : "text-muted hover:text-primary"} disabled:hover:text-muted`}
-                  >
-                    <HeartIcon className="h-[18px] w-[18px]" fill={post.likedByMe ? "currentColor" : "none"} />
-                    <span className="text-sm">{post.likeCount > 0 ? post.likeCount : ""}</span>
-                  </button>
-                </div>
-
-                {openReplies === post.id && (
-                  <div className="mt-2 flex flex-col gap-3 border-t border-border pt-3">
-                    {replies[post.id] === null && <p className="text-xs text-muted">{t("loading")}</p>}
-                    {replies[post.id] && (
-                      <ReplyThread
-                        allReplies={replies[post.id]!}
-                        parentId={null}
-                        depth={0}
-                        t={t}
-                        locale={locale}
-                        onReplyClick={(r) => setReplyTarget((prev) => ({ ...prev, [post.id]: { id: r.id, name: r.isMine ? t("you") : (r.authorName ?? t("someone")) } }))}
-                        onDeleteClick={(r) => deleteReply(post.id, r)}
-                        adminMode={adminMode}
-                        collapsed={collapsedReplies}
-                        onToggleCollapse={toggleCollapse}
-                        highlightId={targetReplyId}
-                      />
-                    )}
-
-                    {!adminMode && (
-                      <>
-                        {replyTarget[post.id] && (
-                          <p className="text-xs text-muted">
-                            {t("replyingTo", { name: replyTarget[post.id]!.name })}{" "}
-                            <button
-                              type="button"
-                              onClick={() => setReplyTarget((prev) => ({ ...prev, [post.id]: null }))}
-                              className="text-primary hover:underline"
-                            >
-                              {t("cancelReplyTarget")}
-                            </button>
-                          </p>
-                    )}
-                    <div className="flex gap-2 items-center">
-                      <Avatar photoUrl={null} size={28} />
-                      <input
-                        type="text"
-                        dir="auto"
-                        className={ui.input + " py-1.5!"}
-                        placeholder={t("replyPlaceholder")}
-                        maxLength={500}
-                        value={replyDraft[post.id] ?? ""}
-                        disabled={!!sendingReply[post.id]}
-                        onChange={(e) => setReplyDraft((prev) => ({ ...prev, [post.id]: e.target.value }))}
-                        onKeyDown={(e) => e.key === "Enter" && submitReply(post.id)}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => submitReply(post.id)}
-                        disabled={!!sendingReply[post.id]}
-                        className={ui.buttonSecondary + " px-4! py-1.5! text-xs shrink-0"}
-                      >
-                        {t("send")}
-                      </button>
-                    </div>
-                      </>
-                    )}
-                    {replyError[post.id] && <p className="text-xs text-danger">{replyError[post.id]}</p>}
-                  </div>
-                )}
-              </div>
-            </article>
+            <PostCard
+              key={post.id}
+              post={post}
+              adminMode={adminMode}
+              profileOpen={openProfile === post.id}
+              onToggleProfile={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
+              onDelete={() => deletePost(post)}
+              confirmingDelete={confirmingDelete === post.id}
+              onConfirmingDelete={(confirming) => setConfirmingDelete(confirming ? post.id : null)}
+              onToggleReplies={() => toggleReplies(post.id)}
+              onToggleLike={() => toggleLike(post)}
+            >
+              {openReplies === post.id && (
+                <PostReplies
+                  replies={replies[post.id] ?? null}
+                  adminMode={adminMode}
+                  collapsed={collapsedReplies}
+                  onToggleCollapse={toggleCollapse}
+                  highlightId={targetReplyId}
+                  onDeleteReply={(r) => deleteReply(post.id, r)}
+                  replyTarget={replyTarget[post.id] ?? null}
+                  onReplyTarget={(target) => setReplyTarget((prev) => ({ ...prev, [post.id]: target }))}
+                  draft={replyDraft[post.id] ?? ""}
+                  onDraft={(value) => setReplyDraft((prev) => ({ ...prev, [post.id]: value }))}
+                  sending={!!sendingReply[post.id]}
+                  onSubmit={() => submitReply(post.id)}
+                  error={replyError[post.id]}
+                />
+              )}
+            </PostCard>
           ))}
         </div>
       </div>
