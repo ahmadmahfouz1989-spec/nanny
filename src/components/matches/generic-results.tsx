@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import CriteriaChecklist from "./criteria-checklist";
 import MatchActions from "@/components/matches/match-actions";
@@ -141,8 +141,12 @@ export default function GenericResults({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, role, t, governorateId, day, minYearsExperience, search]);
 
+  // A ref as well as state: the scroll observer can fire again before a
+  // re-render, and must never start a second request for the same page.
+  const loadingMoreRef = useRef(false);
   function loadMore() {
-    if (!results) return;
+    if (!results || loadingMoreRef.current) return;
+    loadingMoreRef.current = true;
     setLoadingMore(true);
     const params = listParams();
     params.set("page", String(Math.floor(results.length / PAGE_SIZE) + 1));
@@ -158,8 +162,33 @@ export default function GenericResults({
         });
         setTotal(body.total);
       })
-      .finally(() => setLoadingMore(false));
+      .finally(() => {
+        loadingMoreRef.current = false;
+        setLoadingMore(false);
+      });
   }
+
+  // Infinite scroll: load the next page when the end of the list comes
+  // within about a screen of view. The button below stays as a fallback.
+  const canLoadMore = !!results && results.length > 0 && results.length < total;
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  const loadMoreRef = useRef(loadMore);
+  useEffect(() => {
+    loadMoreRef.current = loadMore;
+  });
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel || !canLoadMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) loadMoreRef.current();
+      },
+      // The app shell's <main> is what scrolls, not the window.
+      { root: sentinel.closest("main"), rootMargin: "0px 0px 800px 0px" },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [canLoadMore, results?.length]);
 
   // Minimum experience only makes sense filtering providers (a seeker has
   // no years-of-experience field), so only show it once we know the
@@ -474,7 +503,8 @@ export default function GenericResults({
         })}
       </div>
 
-      {results && results.length > 0 && results.length < total && (
+      <div ref={sentinelRef} aria-hidden />
+      {canLoadMore && (
         <button type="button" onClick={loadMore} disabled={loadingMore} className={ui.buttonGhost + " mt-6 w-full"}>
           {loadingMore ? t("loadingMore") : t("loadMore")}
         </button>
