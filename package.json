@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "db:types": "npx supabase gen types typescript --local --schema public > src/lib/supabase/database.types.ts",
+    "db:types": "npx supabase gen types typescript --local --schema public | sed '/./,$!d' > src/lib/supabase/database.types.ts",
     "test": "vitest run --project unit",
     "test:integration": "vitest run --project integration",
     "typecheck": "tsc --noEmit -p ."
