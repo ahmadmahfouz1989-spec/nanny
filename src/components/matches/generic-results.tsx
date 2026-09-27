@@ -11,6 +11,7 @@ import Image from "next/image";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ReportButton from "@/components/matches/report-button";
 import SaveProfileButton from "@/components/save-profile-button";
+import { SearchIcon } from "@/components/nav-icons";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -105,6 +106,14 @@ export default function GenericResults({
   const [governorateId, setGovernorateId] = useState("");
   const [day, setDay] = useState("");
   const [minYearsExperience, setMinYearsExperience] = useState("");
+  // What's typed, and what's actually searched: the list only refetches
+  // once typing pauses, not on every keystroke.
+  const [searchInput, setSearchInput] = useState("");
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    const timer = setTimeout(() => setSearch(searchInput.trim()), 300);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   function listParams() {
     const params = new URLSearchParams({ categorySlug, pageSize: String(PAGE_SIZE) });
@@ -112,6 +121,7 @@ export default function GenericResults({
     if (governorateId) params.set("governorateId", governorateId);
     if (day) params.set("day", day);
     if (minYearsExperience) params.set("minYearsExperience", minYearsExperience);
+    if (search) params.set("q", search);
     return params;
   }
 
@@ -129,7 +139,7 @@ export default function GenericResults({
       })
       .catch(() => setError(t("errorNoProfile")));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, role, t, governorateId, day, minYearsExperience]);
+  }, [categorySlug, role, t, governorateId, day, minYearsExperience, search]);
 
   function loadMore() {
     if (!results) return;
@@ -155,11 +165,13 @@ export default function GenericResults({
   // no years-of-experience field), so only show it once we know the
   // viewer is a seeker looking at providers.
   const showExperienceFilter = myRole === "seeker";
-  const hasFilters = !!(governorateId || day || (showExperienceFilter && minYearsExperience));
+  const hasFilters = !!(search || governorateId || day || (showExperienceFilter && minYearsExperience));
   function clearFilters() {
     setGovernorateId("");
     setDay("");
     setMinYearsExperience("");
+    setSearchInput("");
+    setSearch("");
   }
 
   return (
@@ -168,6 +180,18 @@ export default function GenericResults({
       <p className="text-sm text-muted mb-4">{t("resultsSubtitle")}</p>
 
       <div className="flex flex-wrap items-center gap-2 mb-6 rounded-2xl border border-border bg-surface-sunken/50 p-3">
+        <div className="relative w-full">
+          <SearchIcon className="pointer-events-none absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted" />
+          <input
+            type="search"
+            dir="auto"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder={t("filterSearch")}
+            aria-label={t("filterSearch")}
+            className={ui.input + " ps-9!"}
+          />
+        </div>
         <GovernorateSelect value={governorateId} onChange={setGovernorateId} placeholder={t("filterAllAreas")} />
         <select className={ui.select + " w-auto"} value={day} onChange={(e) => setDay(e.target.value)}>
           <option value="">{t("filterAnyDay")}</option>

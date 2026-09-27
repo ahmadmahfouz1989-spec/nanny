@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
 import { featuredUserIds } from "@/lib/featured";
 import { savedProfileIds } from "@/lib/saved-profiles";
+import { matchesSearch } from "@/lib/profile-search";
 
 /**
  * Lists matches for the caller's own profile in a category, best first:
@@ -160,6 +161,9 @@ export async function GET(request: Request) {
   const governorateId = searchParams.get("governorateId");
   const day = searchParams.get("day");
   const minYearsExperience = searchParams.get("minYearsExperience");
+  // Free-text search (name, area, languages, intro, tagged details in
+  // English and Arabic) -- see src/lib/profile-search.ts.
+  const q = searchParams.get("q")?.trim().slice(0, 100) ?? "";
 
   const filtered = results.filter((r) => {
     if (!r.other) return false;
@@ -175,6 +179,7 @@ export async function GET(request: Request) {
     if (minYearsExperience && !(typeof a.yearsExperience === "number" && a.yearsExperience >= Number(minYearsExperience))) {
       return false;
     }
+    if (q && !matchesSearch(r.other, q)) return false;
     return true;
   });
 

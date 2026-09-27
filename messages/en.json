@@ -507,7 +507,8 @@
     "messageSendError": "Couldn't send — please try again.",
     "voiceNoteLoading": "Voice note unavailable — try reloading.",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "filterSearch": "Search name, skills, area…"
   },
   "Featured": {
     "title": "Get Featured",
