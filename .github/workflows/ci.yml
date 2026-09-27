@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    name: Lint, types, unit tests, build
+    runs-on: ubuntu-latest
+    env:
+      # Builds need these to exist; nothing connects to them.
+      NEXT_PUBLIC_SUPABASE_URL: http://127.0.0.1:54321
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder
+      SUPABASE_SERVICE_ROLE_KEY: ci-placeholder
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+
+  integration:
+    name: Database + integration tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      # A throwaway local Supabase with every migration applied. Only the
+      # services the tests use.
+      - run: supabase start -x realtime,studio,imgproxy,edge-runtime,logflare,vector,supavisor,mailpit,postgres-meta
+
+      - name: Generated database types match the migrations
+        run: |
+          supabase gen types typescript --local --schema public | sed '/./,$!d' > /tmp/database.types.ts
+          diff -u src/lib/supabase/database.types.ts /tmp/database.types.ts \
+            || (echo "::error::database.types.ts is stale -- run npm run db:types and commit it" && exit 1)
+
+      - name: Nanny migration still passes its checks
+        run: |
+          psql() { docker exec -i supabase_db_nanny_app psql -U postgres -d postgres -v ON_ERROR_STOP=1 -q "$@"; }
+          psql < supabase/tests/nanny-migration-fixture.sql
+          psql -1 < supabase/migrations/20260926000001_nanny_to_generic.sql
+          psql < supabase/tests/nanny-migration-checks.sql
+
+      - run: npm run test:integration
