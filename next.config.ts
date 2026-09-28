@@ -4,26 +4,25 @@ import { withSentryConfig } from "@sentry/nextjs/config";
 
 const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
+// Profile photos live in this project's Supabase Storage (public buckets).
+// Next's image optimizer only loads hosts allow-listed here -- without
+// this, <Image src={photoUrl}> fails for every uploaded photo. Only our
+// own project: allowing every *.supabase.co would let anyone have our
+// server fetch and process images from a Supabase project of their own.
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : null;
+
 const nextConfig: NextConfig = {
   images: {
-    // Nanny profile photos live in Supabase Storage (public bucket). Next's
-    // image optimizer refuses to load any remote host that isn't
-    // explicitly allow-listed here -- without this, <Image src={photoUrl}>
-    // fails or renders a broken/partial image for every real uploaded
-    // photo, on every page that shows one (dashboard, feed, profile panel).
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-      {
-        protocol: "http",
-        hostname: "127.0.0.1",
-        port: "54321",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
+    remotePatterns: supabaseUrl
+      ? [
+          {
+            protocol: supabaseUrl.protocol === "http:" ? "http" : "https",
+            hostname: supabaseUrl.hostname,
+            port: supabaseUrl.port,
+            pathname: "/storage/v1/object/public/**",
+          },
+        ]
+      : [],
   },
 };
 
