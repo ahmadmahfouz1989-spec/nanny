@@ -30,6 +30,10 @@ export default function ThemeSwitcher({ className = "" }: { className?: string }
 
   useLayoutEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
+    // The installed app's status bar follows <meta name="theme-color">, whose
+    // media variants only know the OS preference -- pin it to the chosen theme.
+    const color = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();
+    document.querySelectorAll('meta[name="theme-color"]').forEach((m) => m.setAttribute("content", color));
   }, [theme]);
 
   function toggle() {

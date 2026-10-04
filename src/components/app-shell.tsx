@@ -10,6 +10,7 @@ import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon } from "@/components/nav-
 import CategoryIcon from "@/components/category-icon";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
+import InstallPrompt from "@/components/install-prompt";
 
 type ActiveKey = "categories" | "nanny" | "nursing" | "tutoring" | "feed" | "saved" | "messages" | "profile";
 
@@ -40,7 +41,7 @@ export default async function AppShell({
   return (
     <ToastProvider>
       <SavedProfilesProvider>
-        <div className="flex min-h-screen">
+        <div className="flex min-h-dvh">
           <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5">
             <div className="px-3 mb-5">
               <BrandMark />
@@ -113,7 +114,7 @@ export default async function AppShell({
             </div>
           </aside>
 
-          <header className="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 border-b border-border bg-background/90 backdrop-blur">
+          <header className="sm:hidden fixed top-0 inset-x-0 z-30 flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top))] border-b border-border bg-background/90 backdrop-blur">
             <BrandMark />
             <div className="flex items-center gap-1">
               <NotificationBell variant="header" />
@@ -123,7 +124,7 @@ export default async function AppShell({
             </div>
           </header>
 
-          <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-border bg-background/90 backdrop-blur py-1.5">
+          <nav className="sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center justify-around border-t border-border bg-background/90 backdrop-blur pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
             <Link
               href="/categories"
               className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
@@ -163,7 +164,9 @@ export default async function AppShell({
             </Link>
           </nav>
 
-          <main className="flex-1 min-w-0 h-screen overflow-y-auto pt-16 pb-20 sm:pt-0 sm:pb-0">
+          <InstallPrompt />
+
+          <main className="flex-1 min-w-0 h-dvh overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
             <div className="oui-in">{children}</div>
           </main>
         </div>
