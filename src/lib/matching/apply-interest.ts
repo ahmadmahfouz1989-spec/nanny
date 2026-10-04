@@ -4,6 +4,7 @@ import type { TablesUpdate } from "@/lib/supabase/database.types";
 import { conversationUrl, effectiveStatus, matchNotificationPayload, type MatchAccess } from "@/lib/matching/match-access";
 import { sendEmail, interestReceivedEmail, mutualMatchEmail } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
+import { notify } from "@/lib/push";
 
 const INTEREST_WINDOW_DAYS = 14;
 
@@ -15,17 +16,17 @@ export async function applyInterest(request: Request, access: MatchAccess) {
 
   const admin = createAdminClient();
   const updatePayload: TablesUpdate<"generic_matches"> = {};
-  let notify: { user_id: string; type: string }[] = [];
+  let toNotify: { user_id: string; type: string }[] = [];
 
   if (status === "suggested" || status === "expired") {
     updatePayload.status = ownPending;
     updatePayload.initiated_by = access.side;
     updatePayload.interest_expires_at = new Date(Date.now() + INTEREST_WINDOW_DAYS * 86400000).toISOString();
-    notify = [{ user_id: access.otherUserId, type: "interest_received" }];
+    toNotify = [{ user_id: access.otherUserId, type: "interest_received" }];
   } else if (status === otherPending) {
     updatePayload.status = "mutual";
     updatePayload.responded_at = new Date().toISOString();
-    notify = [
+    toNotify = [
       { user_id: access.myUserId, type: "interest_accepted" },
       { user_id: access.otherUserId, type: "interest_accepted" },
     ];
@@ -59,9 +60,9 @@ export async function applyInterest(request: Request, access: MatchAccess) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  if (notify.length > 0) {
+  if (toNotify.length > 0) {
     const payload = matchNotificationPayload(access);
-    await admin.from("notifications").insert(notify.map((n) => ({ ...n, payload })));
+    await notify(toNotify.map((n) => ({ ...n, payload })));
 
     const [{ data: recipients }, { data: myProfile }, { data: otherProfile }] = await Promise.all([
       admin
@@ -69,7 +70,7 @@ export async function applyInterest(request: Request, access: MatchAccess) {
         .select("id, email, preferred_language")
         .in(
           "id",
-          notify.map((n) => n.user_id),
+          toNotify.map((n) => n.user_id),
         ),
       admin.from("generic_profiles").select("full_name").eq("id", access.myProfileId).single(),
       admin.from("generic_profiles").select("full_name").eq("id", access.otherProfileId).single(),
@@ -78,7 +79,7 @@ export async function applyInterest(request: Request, access: MatchAccess) {
     const recipientById = new Map((recipients ?? []).map((r) => [r.id, r]));
 
     await Promise.all(
-      notify.map((n) => {
+      toNotify.map((n) => {
         const recipient = recipientById.get(n.user_id);
         if (!recipient?.email) return Promise.resolve();
 

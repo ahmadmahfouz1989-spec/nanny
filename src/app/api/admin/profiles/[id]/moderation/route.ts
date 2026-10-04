@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { ownProfilePhotoObject } from "@/lib/storage-cleanup";
+import { notify } from "@/lib/push";
 
 const bodySchema = z.object({
   status: z.enum(["approved", "rejected"]),
@@ -75,7 +76,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
       const row = updated;
 
-      await db.from("notifications").insert({
+      await notify({
         user_id: row.user_id,
         type: "profile_rejected",
         payload: { profile_type: "generic", notes: notes ?? null, category_slug: row.categories?.slug ?? null },
@@ -100,7 +101,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       if (photo) await db.storage.from(photo.bucket).remove([photo.path]).catch(() => {});
     }
 
-    await db.from("notifications").insert({
+    await notify({
       user_id: row.user_id,
       type: "profile_rejected",
       payload: { profile_type: "generic", notes: notes ?? null, category_slug: row.categories?.slug ?? null },
@@ -117,7 +118,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const row = updated;
 
-  await db.from("notifications").insert({
+  await notify({
     user_id: row.user_id,
     type: "profile_approved",
     payload: { profile_type: "generic", category_slug: row.categories?.slug ?? null },

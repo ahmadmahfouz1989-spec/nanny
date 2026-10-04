@@ -12,6 +12,7 @@ import { sendEmail, pendingReviewEmail } from "@/lib/email";
 import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 import { asAttributes } from "@/lib/attributes";
 import type { Json } from "@/lib/supabase/database.types";
+import { notify } from "@/lib/push";
 
 type GenericRole = "seeker" | "provider";
 
@@ -46,7 +47,7 @@ async function notifyAdminsOfPendingReview(
   // opt-out-able, per-admin (notify_new_profiles). Same convention as the
   // nanny/parent side in /api/profile/route.ts, which this mirrors --
   // this route used to skip the email entirely.
-  await admin.from("notifications").insert(
+  await notify(
     admins.map((a) => ({
       user_id: a.id,
       type: "profile_pending_review" as const,

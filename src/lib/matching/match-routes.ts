@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
@@ -21,6 +21,7 @@ import {
   SIGNED_URL_TTL_SECONDS,
   VOICE_NOTE_PLACEHOLDER_BODY,
 } from "@/lib/voice-notes";
+import { notify, pushEnabled, pushTranslator, sendPush } from "@/lib/push";
 
 /**
  * Route handlers for everything a party can do on one match, in any
@@ -131,6 +132,7 @@ export const messagesPost: Handler = withAccess(async ({ request, supabase, user
 
   const snippet = parsed.data.body.length > 140 ? `${parsed.data.body.slice(0, 140)}…` : parsed.data.body;
   await emailRecipientOnFirstUnread(request, access, snippet);
+  pushNewMessage(access, snippet);
 
   return NextResponse.json({ message: data }, { status: 201 });
 });
@@ -193,6 +195,7 @@ export const messagesAudioPost: Handler = withAccess(async ({ request, supabase,
   const { data: signed } = await admin.storage.from("voice-notes").createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
   await emailRecipientOnFirstUnread(request, access, VOICE_NOTE_PLACEHOLDER_BODY);
+  pushNewMessage(access, null);
 
   return NextResponse.json({ message: { ...message, audioUrl: signed?.signedUrl ?? null } }, { status: 201 });
 });
@@ -220,6 +223,28 @@ export const messagesMarkRead: Handler = withAccess(async ({ supabase, userId, a
  * The counter re-arms once they read (which clears read_at on all of the
  * sender's messages). Best-effort: a mail failure never fails the send.
  */
+/**
+ * Pushes every message (unlike the email, which only goes out for the first
+ * unread one) -- one notification per conversation, replaced as new messages
+ * arrive. `preview` null means a voice note. Runs after the response.
+ */
+function pushNewMessage(access: MatchAccess, preview: string | null) {
+  if (!pushEnabled()) return;
+  after(async () => {
+    const admin = createAdminClient();
+    const { data: sender } = await admin.from("generic_profiles").select("full_name").eq("id", access.myProfileId).single();
+    await sendPush([access.otherUserId], (locale) => {
+      const t = pushTranslator(locale, "Push");
+      return {
+        title: sender?.full_name ?? t("someone"),
+        body: preview ?? t("voiceMessage"),
+        url: `/${locale}/messages?match=${access.id}`,
+        tag: `message-${access.id}`,
+      };
+    });
+  });
+}
+
 async function emailRecipientOnFirstUnread(request: Request, access: MatchAccess, snippet: string) {
   if (!activityEmailsEnabled()) return;
 
@@ -365,8 +390,7 @@ export const ratingPut: Handler = withAccess(async ({ request, supabase, userId,
   }
 
   // Notifications are server-written only (service role). Best-effort.
-  const admin = createAdminClient();
-  await admin.from("notifications").insert({
+  await notify({
     user_id: access.otherUserId,
     type: "rating_received",
     payload: { ...matchNotificationPayload(access), score: parsed.data.score },

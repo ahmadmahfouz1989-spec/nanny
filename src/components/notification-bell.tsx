@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { HeartIcon } from "@/components/nav-icons";
 import { announceFeedTarget } from "@/lib/feed-target";
 import { announceMatchTarget } from "@/lib/match-target";
+import { notificationHref, notificationLabel } from "@/lib/notification-content";
 
 type Notification = {
   id: string;
@@ -14,56 +15,6 @@ type Notification = {
   read_at: string | null;
   created_at: string;
 };
-
-const KNOWN_TYPES = new Set([
-  "interest_accepted",
-  "interest_received",
-  "rating_received",
-  "new_match",
-  "profile_approved",
-  "profile_rejected",
-  "profile_pending_review",
-  "verification_updated",
-  "report_resolved",
-  "post_reply",
-  "post_like",
-]);
-
-// The app has no per-match detail route — match cards live on the
-// dashboard, so match notifications deep-link to the specific card
-// (?match=<id>, which the dashboard page also uses to pick the right
-// seeking/offering tab); a rating you received opens the ratings section
-// of your profile.
-function hrefFor(n: Notification): string {
-  const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
-  const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
-  switch (n.type) {
-    case "interest_accepted":
-    case "interest_received":
-    case "new_match":
-      return matchId && categorySlug ? `/categories/${categorySlug}/dashboard?match=${matchId}` : "/dashboard";
-    case "rating_received":
-      return "/profile#ratings";
-    case "profile_approved":
-    case "profile_rejected":
-      return categorySlug ? `/categories/${categorySlug}/dashboard` : "/dashboard";
-    case "profile_pending_review":
-      return "/admin/profiles";
-    case "verification_updated":
-      return "/profile";
-    case "post_reply":
-    case "post_like": {
-      // Deep-link to the post itself (and the reply, when there is one)
-      // -- the feed loads it directly, regardless of how far back it is.
-      const postId = typeof n.payload?.post_id === "string" ? n.payload.post_id : null;
-      const replyId = typeof n.payload?.reply_id === "string" ? n.payload.reply_id : null;
-      if (!postId) return "/feed";
-      return replyId ? `/feed?post=${postId}&reply=${replyId}` : `/feed?post=${postId}`;
-    }
-    default:
-      return "/dashboard";
-  }
-}
 
 function formatRelative(iso: string, locale: string, justNow: string) {
   const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
@@ -109,11 +60,7 @@ export default function NotificationBell({
   const unread = (items ?? []).filter((n) => !n.read_at).length;
 
   function label(n: Notification) {
-    if (n.type === "rating_received") {
-      const score = typeof n.payload?.score === "number" ? (n.payload.score as number) : null;
-      return score ? t("rating_received", { score }) : t("rating_received_generic");
-    }
-    return KNOWN_TYPES.has(n.type) ? t(n.type) : t("generic");
+    return notificationLabel(n, t);
   }
 
   function openRow(n: Notification) {
@@ -124,7 +71,7 @@ export default function NotificationBell({
       );
       fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
     }
-    router.push(hrefFor(n));
+    router.push(notificationHref(n));
     const matchTarget = n.payload?.generic_match_id;
     if (
       (n.type === "interest_received" || n.type === "interest_accepted" || n.type === "new_match") &&

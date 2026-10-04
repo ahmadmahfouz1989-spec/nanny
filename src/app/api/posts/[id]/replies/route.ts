@@ -7,6 +7,7 @@ import { containsContactInfo } from "@/lib/content-filter";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postReplyEmail, activityEmailsEnabled } from "@/lib/email";
 import { defaultIdentityByUser } from "@/lib/posts";
+import { notify } from "@/lib/push";
 
 const createSchema = z.object({
   body: z.string().trim().min(1).max(500),
@@ -100,9 +101,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const recipientId = notifyUserId ?? post?.user_id ?? null;
 
   if (recipientId && recipientId !== user.id) {
-    await admin
-      .from("notifications")
-      .insert({ user_id: recipientId, type: "post_reply", payload: { post_id: id, reply_id: reply.id } });
+    await notify({ user_id: recipientId, type: "post_reply", payload: { post_id: id, reply_id: reply.id } });
 
     if (activityEmailsEnabled()) {
       const [{ data: recipient }, myAuthors] = await Promise.all([

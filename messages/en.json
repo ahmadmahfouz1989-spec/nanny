@@ -57,6 +57,16 @@
     "post_reply": "Someone replied to your post",
     "post_like": "Someone liked your post"
   },
+  "Push": {
+    "title": "Push notifications",
+    "description": "Get notified on this device about new messages, matches and replies, even when ouiKnow is closed.",
+    "blocked": "Notifications are blocked for ouiKnow. Allow them in your browser or phone settings, then come back here.",
+    "needsInstall": "On iPhone, add ouiKnow to your home screen first (Share → Add to Home Screen), then turn notifications on from the installed app.",
+    "unsupported": "This browser doesn't support push notifications.",
+    "error": "Couldn't change notifications — please try again.",
+    "someone": "Someone",
+    "voiceMessage": "🎤 Voice message"
+  },
   "Feed": {
     "title": "Feed",
     "subtitle": "Post what you're looking for or what you offer, in any category.",
