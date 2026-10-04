@@ -42,9 +42,13 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Pinned: the types check below diffs against this CLI's output, and a
+      # new CLI release can change formatting (2.119.0 dropped the trailing
+      # newline) and fail unrelated commits. Bump deliberately, then run
+      # `npm run db:types` with the same version and commit the result.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.119.0
 
       # A throwaway local Supabase with every migration applied. Only the
       # services the tests use.
