@@ -11,6 +11,7 @@ import CategoryIcon from "@/components/category-icon";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
 import InstallPrompt from "@/components/install-prompt";
+import PushSync from "@/components/push-sync";
 
 type ActiveKey = "categories" | "nanny" | "nursing" | "tutoring" | "feed" | "saved" | "messages" | "profile";
 
@@ -165,6 +166,7 @@ export default async function AppShell({
           </nav>
 
           <InstallPrompt />
+          <PushSync />
 
           <main className="flex-1 min-w-0 h-dvh overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
             <div className="oui-in">{children}</div>

@@ -554,6 +554,25 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": string,"locale": string,"p256dh": string,"updated_at": string,"user_id": string
+                  }
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"locale"?: string,"p256dh": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: string,"locale"?: string,"p256dh"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "push_subscriptions_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"ratings": {
                   Row: {
                     "comment": string | null,"created_at": string,"id": string,"match_id": string,"ratee_user_id": string,"rater_user_id": string,"score": number,"updated_at": string
@@ -974,4 +993,3 @@ export const Constants = {
           }
         }
 } as const
-

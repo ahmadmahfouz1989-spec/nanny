@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { sendEmail, postLikeEmail } from "@/lib/email";
 import { defaultIdentityByUser } from "@/lib/posts";
+import { notify } from "@/lib/push";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -37,7 +38,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { data: post } = await admin.from("posts").select("user_id").eq("id", id).maybeSingle();
 
   if (post && post.user_id !== user.id) {
-    await admin.from("notifications").insert({ user_id: post.user_id, type: "post_like", payload: { post_id: id } });
+    await notify({ user_id: post.user_id, type: "post_like", payload: { post_id: id } });
 
     const [{ data: recipient }, myAuthors] = await Promise.all([
       admin.from("users").select("email, preferred_language").eq("id", post.user_id).single(),
