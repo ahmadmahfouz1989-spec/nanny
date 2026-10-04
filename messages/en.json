@@ -20,6 +20,13 @@
     "instagram": "Instagram",
     "adminPanel": "Admin panel"
   },
+  "Install": {
+    "title": "Get the ouiKnow app",
+    "body": "Install it on your home screen for quicker access.",
+    "iosHint": "Tap Share, then “Add to Home Screen”.",
+    "install": "Install",
+    "dismiss": "Dismiss"
+  },
   "Categories": {
     "hubTitle": "Browse categories",
     "hubSubtitle": "Pick a category to find people offering that service — or offering to do the work.",

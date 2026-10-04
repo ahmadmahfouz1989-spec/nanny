@@ -1,10 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Baloo_2, Inter, Cairo, Plus_Jakarta_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
+import ServiceWorkerRegister from "@/components/service-worker-register";
 import "../globals.css";
 
 const THEME_INIT_SCRIPT = `
@@ -55,8 +56,25 @@ export async function generateMetadata({
   return {
     title: `ouiKnow — ${t("subhead")}`,
     description: t("subhead"),
+    appleWebApp: {
+      capable: true,
+      title: "ouiKnow",
+      statusBarStyle: "default",
+    },
   };
 }
+
+// viewportFit "cover" lets the installed app draw under the notch / home
+// indicator; app-shell pads its fixed bars with env(safe-area-inset-*).
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#fbf8f4" },
+    { media: "(prefers-color-scheme: dark)", color: "#1b1712" },
+  ],
+};
 
 export default async function LocaleLayout({
   children,
@@ -84,6 +102,7 @@ export default async function LocaleLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
         </Script>
+        <ServiceWorkerRegister />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

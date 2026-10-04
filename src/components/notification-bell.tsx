@@ -194,7 +194,7 @@ export default function NotificationBell({
           <div
             className={`z-50 overflow-hidden rounded-2xl border border-border bg-surface shadow-lg ${
               variant === "header"
-                ? "fixed inset-x-3 top-16"
+                ? "fixed inset-x-3 top-[calc(4rem+env(safe-area-inset-top))]"
                 : "absolute start-0 top-full mt-1 w-[20rem] max-w-[calc(100vw-1.5rem)] sm:start-full sm:top-0 sm:ms-2"
             }`}
           >
