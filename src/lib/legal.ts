@@ -10,7 +10,7 @@ type LegalDoc = {
 export const TERMS: Record<"en" | "ar", LegalDoc> = {
   en: {
     title: "Terms of Service",
-    updated: "Last updated: September 2026",
+    updated: "Last updated: October 2026",
     intro: "By creating an account you agree to the following terms.",
     sections: [
       {
@@ -33,11 +33,15 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
         heading: "5. Cooperation with Law Enforcement",
         body: "In the event of any legal dispute or fraudulent activity, the platform's obligation is strictly limited to cooperating with official judicial and security authorities by providing available data (such as registration logs or reports) in accordance with applicable laws, without assuming any liability for compensation on behalf of the wrongdoer.",
       },
+      {
+        heading: "6. Advertising and Analytics (Meta Pixel)",
+        body: "The platform uses the Meta Pixel, a tool provided by Meta Platforms (Facebook and Instagram), to measure how visitors use the website and how effective our advertising is. When you visit the website, the Meta Pixel may collect technical information such as the pages you view, the actions you take (for example, creating an account), your browser and device type, and your IP address, and send it to Meta. Meta may combine this with information it already holds, under its own privacy policy, to show you relevant ads. The platform does not send your messages or the contents of your profile to Meta. You can limit the use of this information for ads through your Facebook or Instagram ad settings, or by blocking third-party cookies in your browser.",
+      },
     ],
   },
   ar: {
     title: "شروط الخدمة",
-    updated: "آخر تحديث: أيلول ٢٠٢٦",
+    updated: "آخر تحديث: تشرين الأول ٢٠٢٦",
     intro: "بإنشائك حسابًا فإنك توافق على الشروط التالية.",
     sections: [
       {
@@ -59,6 +63,10 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
       {
         heading: "٥. التعاون مع الجهات المختصة",
         body: "في حال وجود أي نزاع قانوني أو نشاط احتيالي، يقتصر التزام المنصة حصراً على التعاون مع السلطات القضائية والأمنية الرسمية من خلال تزويدها بالبيانات المتاحة (مثل سجلّات التسجيل أو البلاغات) وفقاً للقوانين المرعية الإجراء، دون تحمّل أي مسؤولية عن التعويض نيابةً عن المتسبّب بالضرر.",
+      },
+      {
+        heading: "٦. الإعلانات والتحليلات (Meta Pixel)",
+        body: "تستخدم المنصة أداة Meta Pixel المقدَّمة من شركة Meta Platforms (فيسبوك وإنستغرام) لقياس كيفية استخدام الزوار للموقع ومدى فعالية إعلاناتنا. عند زيارتك للموقع، قد تجمع أداة Meta Pixel معلومات تقنية مثل الصفحات التي تتصفّحها والإجراءات التي تقوم بها (كإنشاء حساب) ونوع المتصفح والجهاز وعنوان IP الخاص بك، وترسلها إلى Meta. وقد تربط Meta هذه المعلومات بمعلومات أخرى لديها، وفقاً لسياسة الخصوصية الخاصة بها، لعرض إعلانات مناسبة لك. لا ترسل المنصة رسائلك أو محتوى ملفك الشخصي إلى Meta. يمكنك الحدّ من استخدام هذه المعلومات في الإعلانات من خلال إعدادات الإعلانات في حسابك على فيسبوك أو إنستغرام، أو بحظر ملفات تعريف الارتباط الخاصة بالأطراف الثالثة في متصفحك.",
       },
     ],
   },

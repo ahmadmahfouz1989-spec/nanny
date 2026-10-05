@@ -5,6 +5,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { routing } from "@/i18n/routing";
 import { RETURN_PATH_COOKIE, safeReturnPath } from "@/lib/return-path";
+import { META_SIGNUP_COOKIE } from "@/lib/meta-signup";
+
+// An account created this recently is a sign-up, not a returning sign-in.
+const NEW_ACCOUNT_WINDOW_MS = 10 * 60 * 1000;
 
 async function currentLocale() {
   const cookieStore = await cookies();
@@ -48,6 +52,15 @@ export async function GET(request: Request) {
     if (!error) {
       const response = NextResponse.redirect(`${origin}/${locale}${next}`);
       response.cookies.delete(RETURN_PATH_COOKIE);
+
+      // A brand-new Google account: let the Meta Pixel report the sign-up on
+      // the next page (see MetaPixel). Email sign-ups report it from the
+      // signup form instead, so they're skipped here to avoid counting twice.
+      const createdAt = data.user?.created_at ? Date.parse(data.user.created_at) : NaN;
+      const provider = data.user?.app_metadata?.provider;
+      if (provider && provider !== "email" && Date.now() - createdAt < NEW_ACCOUNT_WINDOW_MS) {
+        response.cookies.set(META_SIGNUP_COOKIE, "1", { path: "/", maxAge: 300, sameSite: "lax" });
+      }
       return response;
     }
   }
