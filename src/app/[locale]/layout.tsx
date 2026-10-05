@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import ServiceWorkerRegister from "@/components/service-worker-register";
+import MetaPixel from "@/components/meta-pixel";
 import "../globals.css";
 
 const THEME_INIT_SCRIPT = `
@@ -103,6 +104,7 @@ export default async function LocaleLayout({
           {THEME_INIT_SCRIPT}
         </Script>
         <ServiceWorkerRegister />
+        <MetaPixel />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>
