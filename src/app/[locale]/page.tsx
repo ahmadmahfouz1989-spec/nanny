@@ -53,24 +53,24 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/70 px-6 py-4 backdrop-blur-md sm:px-10">
-        <BrandMark />
-        <nav className="flex items-center gap-2 sm:gap-3">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/70 px-4 py-4 backdrop-blur-md sm:px-10">
+        <BrandMark compact />
+        <nav className="flex items-center gap-1.5 sm:gap-3">
           <ThemeSwitcher />
           <LocaleSwitcher />
           {user ? (
             <>
-              <Link href={isAdmin ? "/admin" : "/categories"} className={ui.buttonGhost}>
+              <Link href={isAdmin ? "/admin" : "/categories"} className={ui.buttonGhost + " whitespace-nowrap px-2.5! sm:px-4!"}>
                 {isAdmin ? tNav("adminPanel") : tNav("categories")}
               </Link>
               <SignOutButton />
             </>
           ) : (
             <>
-              <Link href="/login" className={ui.buttonGhost}>
+              <Link href="/login" className={ui.buttonGhost + " whitespace-nowrap px-2.5! sm:px-4!"}>
                 {tNav("login")}
               </Link>
-              <Link href="/signup" className={ui.buttonPrimary}>
+              <Link href="/signup" className={ui.buttonPrimary + " whitespace-nowrap px-3.5! sm:px-5!"}>
                 {tNav("signup")}
               </Link>
             </>
@@ -79,7 +79,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden px-6 pt-14 pb-20 sm:pt-20 sm:pb-28">
+      <section className="relative overflow-hidden px-6 pt-10 pb-12 sm:pt-20 sm:pb-28">
         <div
           aria-hidden
           className="oui-float pointer-events-none absolute -top-24 -start-24 h-80 w-80 rounded-full bg-primary/25 blur-3xl"
@@ -93,7 +93,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(var(--color-border-strong)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_35%,#000,transparent)]"
         />
 
-        <div className="relative mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-[1.05fr_1fr]">
+        <div className="relative mx-auto grid max-w-5xl items-center gap-8 sm:gap-12 lg:grid-cols-[1.05fr_1fr]">
           <div className="flex flex-col items-center gap-5 text-center lg:items-start lg:text-start">
             <span className="oui-in inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-secondary">
               <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
@@ -135,14 +135,17 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             </div>
           </div>
 
-          <div className="oui-in relative mx-auto w-full max-w-md" style={{ animationDelay: "0.15s" }}>
+          {/* Hidden on phones: the header already shows the logo, and here it sat
+              between the sign-up button and the categories, pushing them a
+              full screen down. */}
+          <div className="oui-in relative mx-auto hidden w-full max-w-sm sm:block lg:max-w-md" style={{ animationDelay: "0.15s" }}>
             <div className="relative aspect-square rotate-1 overflow-hidden rounded-3xl border border-border bg-background shadow-2xl">
               <Image
                 src="/images/brand-mark.png"
                 alt={t("heroPhotoAlt")}
                 fill
                 priority
-                sizes="(min-width: 1024px) 460px, 90vw"
+                sizes="(min-width: 1024px) 460px, 384px"
                 className="oui-logo-pop object-contain p-10 sm:p-14"
                 style={{ animationDelay: "0.3s" }}
               />
@@ -163,7 +166,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
       </section>
 
       {/* Categories */}
-      <section className="border-t border-border bg-surface-sunken px-6 py-16 sm:py-20">
+      <section className="border-t border-border bg-surface-sunken px-6 pt-10 pb-16 sm:py-20">
         <div className="oui-reveal mx-auto max-w-5xl">
           <h2 className="mb-2 text-center font-display text-2xl font-bold sm:text-3xl">{tCat("landingTitle")}</h2>
           <p className="mx-auto mb-10 max-w-lg text-center text-muted">{tCat("landingSubtitle")}</p>
