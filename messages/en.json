@@ -99,14 +99,14 @@
     "profileError": "Couldn't load this profile."
   },
   "Home": {
-    "badge": "Now across Lebanon — starting with nannies",
+    "badge": "Now live across Lebanon",
     "heroPhotoAlt": "The ouiKnow logo",
     "headline": "Find the right <mark>help</mark> — or your next job.",
     "subhead": "A marketplace connecting people who need a service with people who provide it, across Lebanon.",
     "bullet1": "Every category has a transparent match score",
     "bullet2": "Message anyone directly — your phone number stays private",
     "bullet3": "Nannies, nursing, tutoring and home maintenance are all live now",
-    "bullet2Short": "Private until you match",
+    "bullet2Short": "Your number stays private",
     "ctaGetStarted": "Get started",
     "howItWorksTitle": "How it works",
     "step1Title": "Create a profile",
