@@ -9,9 +9,10 @@ import { LogoLoader } from "@/components/animated-logo";
 import { ui } from "@/lib/ui";
 import type { SavedListItem } from "@/lib/saved-profiles";
 import { useSavedProfiles } from "@/components/saved-profiles-provider";
+import { CATEGORY_SLUGS } from "@/lib/category-slugs";
 
 const TONES = ["primary", "secondary", "berry"] as const;
-const CATEGORIES = ["nanny", "nursing", "tutoring"] as const;
+const CATEGORIES = CATEGORY_SLUGS;
 
 export default function SavedClient() {
   const t = useTranslations("SavedProfiles");

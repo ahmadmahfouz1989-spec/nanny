@@ -14,6 +14,12 @@ import {
   type TutoringProviderMatchInput,
   type TutoringSeekerMatchInput,
 } from "./tutoring-engine";
+import {
+  computeMaintenanceMatchScore,
+  type MaintenanceProviderMatchInput,
+  type MaintenanceSeekerMatchInput,
+  type Urgency,
+} from "./maintenance-engine";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
@@ -85,6 +91,28 @@ function tutoringProviderInput(profile: GenericProfileRow): TutoringProviderMatc
   };
 }
 
+function maintenanceSeekerInput(profile: GenericProfileRow): MaintenanceSeekerMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    tradesNeeded: (a.tradesNeeded as string[]) ?? [],
+    urgency: (a.urgency as Urgency) ?? "flexible",
+    neededDays: (a.neededDays as string[]) ?? [],
+  };
+}
+
+function maintenanceProviderInput(profile: GenericProfileRow): MaintenanceProviderMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    serviceAreaIds: (a.serviceAreaIds as string[]) ?? [],
+    trades: (a.trades as string[]) ?? [],
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    takesUrgentJobs: !!a.takesUrgentJobs,
+    yearsExperience: (a.yearsExperience as number) ?? 0,
+  };
+}
+
 function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
   if (categorySlug === "nanny") {
     return computeNannyMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
@@ -92,9 +120,15 @@ function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: Gen
   if (categorySlug === "tutoring") {
     return computeTutoringMatchScore(tutoringSeekerInput(seeker), tutoringProviderInput(provider));
   }
-  // nursing is the default/fallback -- the only other category wired up
-  // when this was written. A third category needs its own branch here.
-  return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));
+  if (categorySlug === "maintenance") {
+    return computeMaintenanceMatchScore(maintenanceSeekerInput(seeker), maintenanceProviderInput(provider));
+  }
+  if (categorySlug === "nursing") {
+    return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));
+  }
+  // No silent fallback: scoring a new category with another category's
+  // rubric would store plausible-looking but meaningless scores.
+  throw new Error(`No matching rubric for category "${categorySlug}"`);
 }
 
 async function loadActiveApproved(admin: Admin, categoryId: string, role: "seeker" | "provider") {

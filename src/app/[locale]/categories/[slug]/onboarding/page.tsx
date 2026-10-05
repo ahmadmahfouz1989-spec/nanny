@@ -1,12 +1,8 @@
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { asAttributes } from "@/lib/attributes";
+import { isCategorySlug } from "@/lib/category-slugs";
 import CategoryOnboardingClient from "./category-onboarding-client";
-
-// Each entry here also needs a schema pair in CATEGORY_SCHEMAS
-// (src/app/api/generic-profile/route.ts) and a form pair rendered by
-// CategoryOnboardingClient before it can actually onboard.
-const SUPPORTED_SLUGS = ["nanny", "nursing", "tutoring"];
 
 export default async function CategoryOnboardingPage({
   params,
@@ -32,7 +28,7 @@ export default async function CategoryOnboardingPage({
     .eq("slug", slug)
     .maybeSingle();
 
-  if (!category || category.status !== "live" || !SUPPORTED_SLUGS.includes(slug)) {
+  if (!category || category.status !== "live" || !isCategorySlug(slug)) {
     redirect({ href: "/categories", locale });
   }
 

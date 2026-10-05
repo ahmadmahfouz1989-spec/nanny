@@ -34,6 +34,9 @@ const TAGGED: Record<string, string> = {
   liveArrangement: "LiveArrangementOptions",
   liveArrangementPref: "LiveArrangementOptions",
   format: "TutoringFormats",
+  trades: "Trades",
+  tradesNeeded: "Trades",
+  urgency: "Urgency",
   additionalDuties: "Duties",
   patientAgeGroup: "PatientAgeGroups",
 };
@@ -41,7 +44,7 @@ const TAGGED: Record<string, string> = {
 // Free text the profile owner wrote for others to read. Private fields
 // (license numbers, medical notes) are deliberately not listed, so search
 // can never be used to probe them.
-const FREE_TEXT = ["locationDetail", "shortIntro", "familyDescription", "additionalNotes"];
+const FREE_TEXT = ["locationDetail", "shortIntro", "familyDescription", "additionalNotes", "jobDescription"];
 
 /** Lowercase, accent- and Arabic-diacritic-insensitive form for matching. */
 export function normalizeForSearch(text: string): string {

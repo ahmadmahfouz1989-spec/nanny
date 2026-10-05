@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { nursingProviderSchema, nursingSeekerSchema } from "@/lib/validation/nursing";
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
+import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
 const base = { fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra", nationality: "lebanese", languageIds: [] };
@@ -54,6 +55,26 @@ describe("profile validation", () => {
     const seeker = { ...base, subjectsNeeded: ["math"], gradeLevel: "middle_school", format: "either", neededDays: [], desiredStartDate: "2026-11-01", transportationRequired: false };
     const seekerResult = tutoringSeekerSchema.safeParse(seeker);
     expect(seekerResult.success, JSON.stringify(seekerResult.error?.issues)).toBe(true);
+  });
+
+  it("validates home maintenance profiles", () => {
+    const worker = {
+      ...base, trades: ["plumber", "tiler"], serviceAreaIds: [LOCATION], availability,
+      yearsExperience: 6, takesUrgentJobs: true,
+    };
+    const workerResult = maintenanceProviderSchema.safeParse(worker);
+    expect(workerResult.success, JSON.stringify(workerResult.error?.issues)).toBe(true);
+    expect(maintenanceProviderSchema.safeParse({ ...worker, trades: [] }).success).toBe(false);
+    expect(maintenanceProviderSchema.safeParse({ ...worker, trades: ["astronaut"] }).success).toBe(false);
+
+    const request = {
+      fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra",
+      tradesNeeded: ["electrician"], jobDescription: "Two sockets in the kitchen stopped working", urgency: "urgent",
+    };
+    const requestResult = maintenanceSeekerSchema.safeParse(request);
+    expect(requestResult.success, JSON.stringify(requestResult.error?.issues)).toBe(true);
+    expect(maintenanceSeekerSchema.safeParse({ ...request, jobDescription: "fix" }).success).toBe(false);
+    expect(maintenanceSeekerSchema.safeParse({ ...request, urgency: "someday" }).success).toBe(false);
   });
 
   it("rejects a missing governorate with a readable message", () => {

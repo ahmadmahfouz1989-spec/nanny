@@ -12,6 +12,11 @@ import {
   type TutoringProviderMatchInput,
   type TutoringSeekerMatchInput,
 } from "@/lib/matching/tutoring-engine";
+import {
+  computeMaintenanceMatchScore,
+  type MaintenanceProviderMatchInput,
+  type MaintenanceSeekerMatchInput,
+} from "@/lib/matching/maintenance-engine";
 
 const BEIRUT = { governorateId: "beirut" };
 const MOUNT = { governorateId: "mount" };
@@ -146,5 +151,51 @@ describe("tutoring rubric", () => {
 
   it("requires the exact grade level", () => {
     expect(computeTutoringMatchScore({ ...seeker, gradeLevel: "high_school" }, provider).breakdown.gradeLevel.raw).toBe(0);
+  });
+});
+
+describe("maintenance rubric", () => {
+  const seeker: MaintenanceSeekerMatchInput = {
+    governorateId: "beirut",
+    tradesNeeded: ["plumber"],
+    urgency: "this_week",
+    neededDays: ["mon", "tue"],
+  };
+  const provider: MaintenanceProviderMatchInput = {
+    governorateId: "beirut",
+    serviceAreaIds: [],
+    trades: ["plumber", "tiler"],
+    availabilityDays: ["mon", "tue", "wed"],
+    takesUrgentJobs: false,
+    yearsExperience: 8,
+  };
+
+  it("scores a perfect fit 100", () => {
+    expect(computeMaintenanceMatchScore(seeker, provider).score).toBe(100);
+  });
+
+  it("scores 0 without a trade in common, however good the rest is", () => {
+    const r = computeMaintenanceMatchScore(seeker, { ...provider, trades: ["painter"] });
+    expect(r.score).toBe(0);
+    expect(r.breakdown.location.met).toBe(true);
+  });
+
+  it("counts the provider's extra service areas as covered", () => {
+    const elsewhere = { ...provider, governorateId: "mount" };
+    expect(computeMaintenanceMatchScore(seeker, elsewhere).breakdown.location.raw).toBe(0);
+    expect(computeMaintenanceMatchScore(seeker, { ...elsewhere, serviceAreaIds: ["beirut"] }).breakdown.location.raw).toBe(1);
+  });
+
+  it("needs someone who takes urgent jobs for an urgent request, whatever the days", () => {
+    const urgent = { ...seeker, urgency: "urgent" as const, neededDays: [] };
+    expect(computeMaintenanceMatchScore(urgent, provider).breakdown.availability.raw).toBe(0);
+    expect(computeMaintenanceMatchScore(urgent, { ...provider, takesUrgentJobs: true }).breakdown.availability.raw).toBe(1);
+  });
+
+  it("scales experience up to five years and splits partly covered trades", () => {
+    const r = computeMaintenanceMatchScore({ ...seeker, tradesNeeded: ["plumber", "painter"] }, { ...provider, yearsExperience: 2 });
+    expect(r.breakdown.experience.raw).toBe(0.4);
+    expect(r.breakdown.trade.raw).toBe(0.5);
+    expect(r.score).toBe(71);
   });
 });

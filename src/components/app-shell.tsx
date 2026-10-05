@@ -12,8 +12,9 @@ import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
 import InstallPrompt from "@/components/install-prompt";
 import PushSync from "@/components/push-sync";
+import type { CategorySlug } from "@/lib/category-slugs";
 
-type ActiveKey = "categories" | "nanny" | "nursing" | "tutoring" | "feed" | "saved" | "messages" | "profile";
+type ActiveKey = "categories" | CategorySlug | "feed" | "saved" | "messages" | "profile";
 
 // Each category's nav entry (icon matches the one seeded on that
 // category's row -- see category-icon.tsx).
@@ -21,7 +22,8 @@ const CATEGORY_NAV = [
   { slug: "nanny", icon: "heart" },
   { slug: "nursing", icon: "hand" },
   { slug: "tutoring", icon: "book" },
-] as const;
+  { slug: "maintenance", icon: "wrench" },
+] as const satisfies readonly { slug: CategorySlug; icon: string }[];
 
 /**
  * The sidebar shows the category you're currently in, not every category

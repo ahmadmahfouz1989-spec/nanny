@@ -4,11 +4,13 @@ import { useTranslations } from "next-intl";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
 
 // Covers every criterion key across every matching engine (nanny's
-// engine.ts, nursing's generic-engine.ts, tutoring's tutoring-engine.ts, and
+// engine.ts, nursing's generic-engine.ts, tutoring's tutoring-engine.ts,
+// maintenance's maintenance-engine.ts, and
 // whatever a future category adds) -- a breakdown only ever has a subset of
 // these, and unknown keys are simply skipped, so one shared component/order/
 // label map works for all of them instead of one per category.
 const ORDER = [
+  "trade",
   "location",
   "availability",
   "employmentType",
@@ -19,10 +21,12 @@ const ORDER = [
   "subject",
   "gradeLevel",
   "childAgeExperience",
+  "experience",
   "transportation",
 ] as const;
 
 const LABEL_KEY: Record<(typeof ORDER)[number], string> = {
+  trade: "criteriaTrade",
   location: "criteriaLocation",
   availability: "criteriaAvailability",
   employmentType: "criteriaEmploymentType",
@@ -33,6 +37,7 @@ const LABEL_KEY: Record<(typeof ORDER)[number], string> = {
   subject: "criteriaSubject",
   gradeLevel: "criteriaGradeLevel",
   childAgeExperience: "criteriaChildAgeExperience",
+  experience: "criteriaExperience",
   transportation: "criteriaTransportation",
 };
 

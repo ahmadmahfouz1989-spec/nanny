@@ -18,7 +18,8 @@
     "terms": "شروط الخدمة",
     "contact": "تواصل معنا",
     "instagram": "إنستغرام",
-    "adminPanel": "لوحة الإدارة"
+    "adminPanel": "لوحة الإدارة",
+    "maintenance": "صيانة المنزل"
   },
   "Install": {
     "title": "احصل على تطبيق ouiKnow",
@@ -292,6 +293,18 @@
     "in_person": "حضوريًا",
     "either": "كلاهما"
   },
+  "Trades": {
+    "plumber": "سبّاك",
+    "electrician": "كهربجي",
+    "painter": "دهّان",
+    "tiler": "بلّاط",
+    "carpenter": "نجّار"
+  },
+  "Urgency": {
+    "urgent": "مستعجل (اليوم)",
+    "this_week": "هذا الأسبوع",
+    "flexible": "مرن"
+  },
   "ScheduleOptions": {
     "full_time": "دوام كامل",
     "part_time": "دوام جزئي",
@@ -346,6 +359,12 @@
       "roleSeekerDescription": "ابحث وتواصل مع مدرّسين خصوصيين بالقرب منك.",
       "roleProviderTitle": "أنا مدرّس/ة خصوصي/ة أبحث عن طلاب",
       "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الطلاب والعائلات من إيجادك والتواصل معك."
+    },
+    "maintenance": {
+      "roleSeekerTitle": "أحتاج إلى عمل في المنزل",
+      "roleSeekerDescription": "صف العمل المطلوب وتواصل مع سبّاكين وكهربجية ودهّانين وبلّاطين ونجّارين بالقرب منك.",
+      "roleProviderTitle": "أنا صاحب مهنة وأبحث عن عمل",
+      "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الزبائن بالقرب منك من إيجادك وتوظيفك."
     }
   },
   "NursingProviderOnboarding": {
@@ -431,6 +450,40 @@
     "section2Title": "ما تحتاجه",
     "section3Title": "الجدول الزمني",
     "section4Title": "اللغات"
+  },
+  "MaintenanceProviderOnboarding": {
+    "createTitle": "أنشئ ملفك المهني",
+    "editTitle": "عدّل ملفك المهني",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "nationality": "الجنسية",
+    "trades": "مهنتك (اختر كل ما ينطبق)",
+    "yearsExperience": "سنوات الخبرة",
+    "serviceAreas": "محافظات أخرى تعمل فيها",
+    "serviceAreasHint": "اختياري — محافظتك مشمولة تلقائيًا.",
+    "availableDays": "الأيام المتاحة",
+    "takesUrgentJobs": "أقبل الأعمال المستعجلة في نفس اليوم",
+    "shortIntro": "نبذة عن عملك",
+    "shortIntroPlaceholder": "مثلاً: ١٠ سنوات خبرة في السباكة: تسريبات، سخانات مياه، تمديدات حمّامات",
+    "section1Title": "بياناتك ومنطقتك",
+    "section2Title": "مهنتك",
+    "section3Title": "أين ومتى تعمل",
+    "section4Title": "نبذة عنك"
+  },
+  "MaintenanceSeekerOnboarding": {
+    "createTitle": "أنشئ طلبك",
+    "editTitle": "عدّل طلبك",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "tradesNeeded": "من تحتاج؟",
+    "jobDescription": "صف العمل المطلوب",
+    "jobDescriptionPlaceholder": "مثلاً: تسريب مياه تحت مجلى المطبخ",
+    "urgency": "متى تحتاجه؟",
+    "neededDays": "ما الأيام المناسبة لك؟ (اختياري)",
+    "desiredStartDate": "التاريخ المفضل (اختياري)",
+    "section1Title": "بياناتك ومنطقتك",
+    "section2Title": "العمل المطلوب",
+    "section3Title": "التوقيت"
   },
   "ParentOnboarding": {
     "editTitle": "تعديل ملفك الشخصي",
@@ -526,7 +579,12 @@
     "voiceNoteLoading": "الرسالة الصوتية غير متاحة — حاول إعادة التحميل.",
     "yes": "نعم",
     "no": "لا",
-    "filterSearch": "ابحث بالاسم أو المهارات أو المنطقة…"
+    "filterSearch": "ابحث بالاسم أو المهارات أو المنطقة…",
+    "criteriaTrade": "المهنة",
+    "criteriaExperience": "الخبرة",
+    "urgency": "متى",
+    "serviceAreas": "يعمل أيضًا في",
+    "takesUrgentJobs": "يقبل الأعمال المستعجلة"
   },
   "Featured": {
     "title": "كن مميّزًا",

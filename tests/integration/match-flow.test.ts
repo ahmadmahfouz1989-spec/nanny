@@ -106,3 +106,30 @@ describe("race guard", () => {
     expect(results.map((r) => r.status).sort()).toEqual([200, 409]);
   });
 });
+
+describe("home maintenance", () => {
+  it("scores with its own rubric, and a different trade scores 0", async () => {
+    const [customer, plumber, painter] = await Promise.all([
+      createUser("maint-customer"),
+      createUser("maint-plumber"),
+      createUser("maint-painter"),
+    ]);
+    const jobRequest = await createProfile(customer, "maintenance", "seeker", {
+      tradesNeeded: ["plumber"],
+      jobDescription: "Kitchen sink is leaking",
+      urgency: "urgent",
+      neededDays: [],
+    });
+    const worker = { availability: { days: ["mon"] }, takesUrgentJobs: true, yearsExperience: 6, serviceAreaIds: [] };
+    const plumberProfile = await createProfile(plumber, "maintenance", "provider", { ...worker, trades: ["plumber"] });
+    const painterProfile = await createProfile(painter, "maintenance", "provider", { ...worker, trades: ["painter"] });
+    await recomputeGenericMatchesForProfile(jobRequest);
+
+    const { data: good } = await admin.from("generic_matches").select("score, score_breakdown").eq("id", await matchBetween(jobRequest, plumberProfile)).single();
+    expect(Object.keys(good!.score_breakdown as object).sort()).toEqual(["availability", "experience", "location", "trade"]);
+    expect(Number(good!.score)).toBe(100);
+
+    const { data: wrongTrade } = await admin.from("generic_matches").select("score").eq("id", await matchBetween(jobRequest, painterProfile)).single();
+    expect(Number(wrongTrade!.score)).toBe(0);
+  });
+});

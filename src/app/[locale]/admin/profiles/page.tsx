@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
+import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 
 type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
@@ -60,7 +61,11 @@ export default function AdminProfilesPage() {
   const tNursingProvider = useTranslations("NursingProviderOnboarding");
   const tNursingSeeker = useTranslations("NursingSeekerOnboarding");
   const tTutoringSeeker = useTranslations("TutoringSeekerOnboarding");
+  const tTrade = useTranslations("Trades");
+  const tUrgency = useTranslations("Urgency");
+  const tMaintenanceSeeker = useTranslations("MaintenanceSeekerOnboarding");
   const locale = useLocale();
+  const governorates = useGovernorates();
   const [profiles, setProfiles] = useState<QueueProfile[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -185,6 +190,12 @@ export default function AdminProfilesPage() {
       gradeLevels: { label: tMatches("criteriaGradeLevel"), value: (v) => list(v, (x) => labelOr(tGrade, x)) },
       format: { label: tMatches("criteriaFormat"), value: (v) => labelOr(tFormat, String(v)) },
       additionalNotes: { label: tTutoringSeeker("additionalNotes"), value: String },
+      trades: { label: tMatches("criteriaTrade"), value: (v) => list(v, (x) => labelOr(tTrade, x)) },
+      tradesNeeded: { label: tMatches("criteriaTrade"), value: (v) => list(v, (x) => labelOr(tTrade, x)) },
+      urgency: { label: tMatches("urgency"), value: (v) => labelOr(tUrgency, String(v)) },
+      jobDescription: { label: tMaintenanceSeeker("jobDescription"), value: String },
+      serviceAreaIds: { label: tMatches("serviceAreas"), value: (v) => governorateNames(v, governorates, locale).join(", ") },
+      takesUrgentJobs: { label: tMatches("takesUrgentJobs"), value: yesNo },
     };
     // Shown elsewhere on the card (area line) or resolved separately.
     const skip = new Set(["locationDetail", "languageIds"]);
