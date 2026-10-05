@@ -713,6 +713,16 @@ isOneToOne: false
             "account_is_suspended":
 { Args: { "check_user_id": string }; Returns: boolean
                            },
+"admin_conversation_stats":
+{ Args: { "p_since": string }; Returns: {
+              "conversations": number,"messages_since": number,"started_since": number,"two_way": number
+            }[]
+                           },
+"admin_conversations":
+{ Args: { "p_active_since"?: string,"p_category"?: string,"p_limit"?: number,"p_offset"?: number }; Returns: {
+              "category_name_ar": string,"category_name_en": string,"category_slug": string,"from_provider": number,"from_seeker": number,"last_message_at": string,"match_id": string,"messages": number,"provider_name": string,"provider_profile_id": string,"seeker_name": string,"seeker_profile_id": string,"started_at": string,"started_by_side": string,"status": string,"total_count": number
+            }[]
+                           },
 "create_nanny_profile":
 { Args: { "p_availability": Json,"p_can_drive": boolean,"p_certifications": (string)[],"p_employment_type": string,"p_experience": Json,"p_full_name": string,"p_has_transportation": boolean,"p_language_ids": (string)[],"p_live_arrangement_pref": string,"p_location_detail": string,"p_location_id": string,"p_profile_photo_url": string,"p_short_intro": string,"p_work_radius_km": number,"p_years_experience": number }; Returns: {
               "availability": NonNullable<Json>,
