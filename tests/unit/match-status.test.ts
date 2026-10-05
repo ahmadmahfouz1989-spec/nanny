@@ -1,19 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { effectiveStatus, matchNotificationPayload, conversationUrl } from "@/lib/matching/match-access";
+import { isBlocked, matchNotificationPayload, conversationUrl } from "@/lib/matching/match-access";
 
-const future = new Date(Date.now() + 86_400_000).toISOString();
-const past = new Date(Date.now() - 86_400_000).toISOString();
-
-describe("effectiveStatus", () => {
-  it("reads an expired pending interest as expired", () => {
-    expect(effectiveStatus({ status: "seeker_interested", interestExpiresAt: past })).toBe("expired");
-    expect(effectiveStatus({ status: "provider_interested", interestExpiresAt: past })).toBe("expired");
+describe("isBlocked", () => {
+  it("treats either side's decline as a block", () => {
+    expect(isBlocked("declined_by_seeker")).toBe(true);
+    expect(isBlocked("declined_by_provider")).toBe(true);
   });
-  it("leaves live and settled statuses alone", () => {
-    expect(effectiveStatus({ status: "seeker_interested", interestExpiresAt: future })).toBe("seeker_interested");
-    expect(effectiveStatus({ status: "mutual", interestExpiresAt: past })).toBe("mutual");
-    expect(effectiveStatus({ status: "declined_by_provider", interestExpiresAt: past })).toBe("declined_by_provider");
-    expect(effectiveStatus({ status: "suggested", interestExpiresAt: null })).toBe("suggested");
+  it("leaves every other status open for messaging", () => {
+    for (const status of ["suggested", "mutual", "seeker_interested"]) expect(isBlocked(status)).toBe(false);
   });
 });
 

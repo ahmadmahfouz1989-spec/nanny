@@ -13,14 +13,14 @@ type CategoryStats = {
   providers: number;
   seekers: number;
   pending: number;
-  mutualMatches: number;
+  conversations: number;
 };
 
 type Analytics = {
   categories: CategoryStats[];
   totalProfiles: number;
   pendingProfiles: number;
-  mutualMatches: number;
+  conversations: number;
   openReports: number;
   suspendedUsers: number;
 };
@@ -39,7 +39,7 @@ export default function AdminOverviewPage() {
   const tiles: { label: string; value: number | undefined }[] = [
     { label: t("statTotalProfiles"), value: data?.totalProfiles },
     { label: t("statPending"), value: data?.pendingProfiles },
-    { label: t("statMutualMatches"), value: data?.mutualMatches },
+    { label: t("statConversations"), value: data?.conversations },
     { label: t("statOpenReports"), value: data?.openReports },
     { label: t("statSuspendedUsers"), value: data?.suspendedUsers },
   ];
@@ -84,7 +84,7 @@ export default function AdminOverviewPage() {
                 {t("statPending")}: <span className="font-semibold text-ink">{category.pending}</span>
               </span>
               <span>
-                {t("statMutualMatches")}: <span className="font-semibold text-ink">{category.mutualMatches}</span>
+                {t("statConversations")}: <span className="font-semibold text-ink">{category.conversations}</span>
               </span>
             </div>
           </div>

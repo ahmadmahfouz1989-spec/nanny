@@ -11,6 +11,8 @@ export type InboxConversation = {
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 /**
  * Per-match last-message and unread-count. Computed in SQL (see
  * generic_message_summaries_for_matches,
@@ -44,10 +46,17 @@ export async function messageSummariesByMatch(supabase: Supabase, matchIds: stri
 }
 
 /**
- * Every mutual conversation the user has, across every category they hold
- * a profile in -- including both roles in one category -- newest first.
+ * Every conversation the user has (a match with at least one message),
+ * across every category they hold a profile in -- including both roles in
+ * one category -- newest first. Blocked matches are left out.
+ * `includeMatchId` also returns that one match before anything has been
+ * written in it, so "Message" on a match card opens an empty thread.
  */
-export async function allConversations(supabase: Supabase, userId: string): Promise<InboxConversation[]> {
+export async function allConversations(
+  supabase: Supabase,
+  userId: string,
+  includeMatchId: string | null = null,
+): Promise<InboxConversation[]> {
   const { data: myProfiles } = await supabase
     .from("generic_profiles")
     .select("id, role, categories(slug)")
@@ -63,21 +72,22 @@ export async function allConversations(supabase: Supabase, userId: string): Prom
     myProfiles.map((p) => [p.id, p.categories?.slug ?? ""]),
   );
 
+  // Only a well-formed uuid is spliced into the filter below.
+  const include = includeMatchId && UUID.test(includeMatchId) ? includeMatchId : null;
+  const conversationFilter = include ? `last_message_at.not.is.null,id.eq.${include}` : "last_message_at.not.is.null";
+  const mine = (column: "seeker_profile_id" | "provider_profile_id", ids: string[]) =>
+    ids.length > 0
+      ? supabase
+          .from("generic_matches")
+          .select("id, seeker_profile_id, provider_profile_id")
+          .in(column, ids)
+          .not("status", "in", "(declined_by_seeker,declined_by_provider)")
+          .or(conversationFilter)
+      : Promise.resolve({ data: [] });
+
   const [{ data: asSeeker }, { data: asProvider }] = await Promise.all([
-    seekerProfileIds.length > 0
-      ? supabase
-          .from("generic_matches")
-          .select("id, seeker_profile_id, provider_profile_id")
-          .in("seeker_profile_id", seekerProfileIds)
-          .eq("status", "mutual")
-      : Promise.resolve({ data: [] }),
-    providerProfileIds.length > 0
-      ? supabase
-          .from("generic_matches")
-          .select("id, seeker_profile_id, provider_profile_id")
-          .in("provider_profile_id", providerProfileIds)
-          .eq("status", "mutual")
-      : Promise.resolve({ data: [] }),
+    mine("seeker_profile_id", seekerProfileIds),
+    mine("provider_profile_id", providerProfileIds),
   ]);
 
   type MatchRow = { id: string; seeker_profile_id: string; provider_profile_id: string };

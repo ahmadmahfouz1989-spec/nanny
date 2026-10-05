@@ -55,7 +55,10 @@ export default function MessagesClient() {
 
   useEffect(() => {
     function loadInbox() {
-      fetch("/api/inbox")
+      // The open conversation is asked for by id, so one started from a
+      // match card stays listed before its first message is sent.
+      const open = selectedRef.current;
+      fetch(open ? `/api/inbox?match=${encodeURIComponent(open)}` : "/api/inbox")
         .then((res) => res.json())
         .then((body) => {
           const fresh: Conversation[] = body.conversations ?? [];
@@ -73,7 +76,7 @@ export default function MessagesClient() {
     loadInbox();
     // Without this, only the thread the user has open ever updates (via
     // handleMessage) -- every other conversation's preview, ordering, and
-    // unread badge, plus any new match that becomes mutual after this page
+    // unread badge, plus any conversation someone starts after this page
     // loaded, would stay stale until a full reload.
     const interval = setInterval(loadInbox, INBOX_POLL_MS);
     return () => clearInterval(interval);
@@ -93,6 +96,11 @@ export default function MessagesClient() {
         return bt - at;
       });
     });
+  }
+
+  function removeConversation(matchId: string) {
+    setConversations((cs) => cs?.filter((c) => c.matchId !== matchId) ?? cs);
+    setSelected(null);
   }
 
   function select(matchId: string) {
@@ -201,6 +209,7 @@ export default function MessagesClient() {
               tone={TONES[selectedIndex % TONES.length]}
               profileId={selectedConversation.counterpart.id}
               onBack={() => setSelected(null)}
+              onBlocked={() => removeConversation(selectedConversation.matchId)}
             />
             <ChatThread
               key={`thread-${selectedConversation.matchId}`}

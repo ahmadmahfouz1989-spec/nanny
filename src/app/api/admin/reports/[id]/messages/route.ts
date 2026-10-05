@@ -18,8 +18,8 @@ type ConversationMessage = {
 // Reports made from within a conversation record exactly which one
 // (match_id, see /api/reports) -- used directly here when present. Older
 // reports (or ones filed outside a conversation, e.g. against a feed post)
-// don't, so this falls back to searching for a mutual match between the
-// two of them.
+// don't, so this falls back to searching for a conversation (a match with
+// messages) between the two of them.
 // That fallback is inherently ambiguous once the same two people share
 // more than one active service relationship -- exactly what recording
 // the match up front avoids. Goes through the service role throughout:
@@ -95,7 +95,7 @@ async function directConversation(
   return { matchId, ...page };
 }
 
-async function mutualConversation(
+async function sharedConversation(
   db: Admin,
   reporterUserId: string,
   reportedUserId: string,
@@ -116,14 +116,14 @@ async function mutualConversation(
   const [{ data: reporterAsSeeker }, { data: reportedAsSeeker }] = await Promise.all([
     db
       .from("generic_matches")
-      .select("id, status")
-      .eq("status", "mutual")
+      .select("id")
+      .not("last_message_at", "is", null)
       .in("seeker_profile_id", reporterProfileIds)
       .in("provider_profile_id", reportedProfileIds),
     db
       .from("generic_matches")
-      .select("id, status")
-      .eq("status", "mutual")
+      .select("id")
+      .not("last_message_at", "is", null)
       .in("seeker_profile_id", reportedProfileIds)
       .in("provider_profile_id", reporterProfileIds),
   ]);
@@ -168,7 +168,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
   const conversation =
     (report.match_id ? await directConversation(db, report.match_id, reporterUserId, reportedUserId, before) : null) ??
-    (await mutualConversation(db, reporterUserId, reportedUserId, before));
+    (await sharedConversation(db, reporterUserId, reportedUserId, before));
 
   if (!conversation) {
     return NextResponse.json({ matchId: null, messages: [], hasOlder: false });

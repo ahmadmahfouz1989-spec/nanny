@@ -5,12 +5,11 @@ import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import {
   conversationUrl,
-  effectiveStatus,
+  isBlocked,
   matchNotificationPayload,
   resolveMatchAccess,
   type MatchAccess,
 } from "@/lib/matching/match-access";
-import { applyInterest } from "@/lib/matching/apply-interest";
 import { ratingAggregateForUser } from "@/lib/ratings";
 import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
@@ -34,7 +33,22 @@ type Authed = { request: Request; supabase: Awaited<ReturnType<typeof createClie
 
 const MESSAGE_PAGE_SIZE = 200;
 const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at";
-const CHAT_LOCKED = "Chat unlocks once both sides say yes";
+const CONVERSATION_CLOSED = "This conversation is closed";
+
+// Raised by before_generic_message_insert (20261005000001_open_messaging.sql).
+const SEND_REFUSALS: Record<string, { status: number; error: string }> = {
+  new_conversation_limit: { status: 429, error: "You've started the maximum number of new conversations for today" },
+  profile_not_available: { status: 409, error: "This profile isn't available to message right now" },
+  conversation_blocked: { status: 403, error: CONVERSATION_CLOSED },
+};
+
+/** The response for a refused message insert, using the trigger's reason when there is one. */
+function sendRefused(error: { message: string }) {
+  const code = Object.keys(SEND_REFUSALS).find((c) => error.message.includes(c));
+  if (!code) return NextResponse.json({ error: error.message }, { status: 400 });
+  const { status, error: text } = SEND_REFUSALS[code]!;
+  return NextResponse.json({ error: text, code }, { status });
+}
 
 /** Authenticates the caller and resolves their side of the match before running `fn`. */
 function withAccess(fn: (ctx: Authed) => Promise<NextResponse>): Handler {
@@ -59,10 +73,6 @@ function withAccess(fn: (ctx: Authed) => Promise<NextResponse>): Handler {
 // ---------------------------------------------------------------- messages
 
 export const messagesGet: Handler = withAccess(async ({ request, supabase, access }) => {
-  if (access.status !== "mutual") {
-    return NextResponse.json({ error: CHAT_LOCKED }, { status: 403 });
-  }
-
   // Fetched newest-first and reversed, rather than oldest-first with no
   // bound -- PostgREST's max_rows cap (supabase/config.toml) otherwise
   // silently truncates a long thread to its OLDEST rows, hiding whatever
@@ -111,8 +121,8 @@ export const messagesGet: Handler = withAccess(async ({ request, supabase, acces
 const messageBodySchema = z.object({ body: z.string().trim().min(1).max(2000) });
 
 export const messagesPost: Handler = withAccess(async ({ request, supabase, userId, access }) => {
-  if (access.status !== "mutual") {
-    return NextResponse.json({ error: CHAT_LOCKED }, { status: 403 });
+  if (isBlocked(access.status)) {
+    return NextResponse.json({ error: CONVERSATION_CLOSED, code: "conversation_blocked" }, { status: 403 });
   }
 
   const parsed = messageBodySchema.safeParse(await request.json().catch(() => null));
@@ -127,7 +137,7 @@ export const messagesPost: Handler = withAccess(async ({ request, supabase, user
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    return sendRefused(error);
   }
 
   const snippet = parsed.data.body.length > 140 ? `${parsed.data.body.slice(0, 140)}…` : parsed.data.body;
@@ -138,8 +148,8 @@ export const messagesPost: Handler = withAccess(async ({ request, supabase, user
 });
 
 export const messagesAudioPost: Handler = withAccess(async ({ request, supabase, userId, access }) => {
-  if (access.status !== "mutual") {
-    return NextResponse.json({ error: CHAT_LOCKED }, { status: 403 });
+  if (isBlocked(access.status)) {
+    return NextResponse.json({ error: CONVERSATION_CLOSED, code: "conversation_blocked" }, { status: 403 });
   }
 
   const formData = await request.formData().catch(() => null);
@@ -187,11 +197,14 @@ export const messagesAudioPost: Handler = withAccess(async ({ request, supabase,
     .select(MESSAGE_COLUMNS)
     .single();
 
+  const admin = createAdminClient();
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    // The upload already happened -- don't leave an orphaned voice note
+    // behind a refused message (e.g. the daily new-conversation limit).
+    await admin.storage.from("voice-notes").remove([path]).catch(() => {});
+    return sendRefused(error);
   }
 
-  const admin = createAdminClient();
   const { data: signed } = await admin.storage.from("voice-notes").createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
   await emailRecipientOnFirstUnread(request, access, VOICE_NOTE_PLACEHOLDER_BODY);
@@ -280,44 +293,22 @@ async function emailRecipientOnFirstUnread(request: Request, access: MatchAccess
   }
 }
 
-// ----------------------------------------------------------------- contact
+// ------------------------------------------------------------------- block
 
-export const contactGet: Handler = withAccess(async ({ access }) => {
-  if (access.status !== "mutual") {
-    return NextResponse.json({ error: "Contact details unlock once both sides say yes" }, { status: 403 });
-  }
-
-  // users RLS only allows self-reads -- the mutual-status check above is the
-  // authorization for this cross-user read, so it goes through the service role.
-  const admin = createAdminClient();
-  const { data: counterpart } = await admin
-    .from("users")
-    .select("contact_phone, email")
-    .eq("id", access.otherUserId)
-    .single();
-
-  const phone = counterpart?.contact_phone ?? null;
-  const whatsappUrl = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : null;
-
-  return NextResponse.json({ phone, email: counterpart?.email ?? null, whatsappUrl });
-});
-
-// ---------------------------------------------------- interest and decline
-
-export const interestPost: Handler = withAccess(async ({ request, access }) => applyInterest(request, access));
-
+/**
+ * "Not interested" on a match card, or Block in a conversation: no new
+ * messages in either direction from then on (generic_messages_insert and
+ * before_generic_message_insert both refuse a declined_by_* match).
+ */
 export const declinePost: Handler = withAccess(async ({ access }) => {
-  const status = effectiveStatus(access);
-  if (status === "mutual" || status.startsWith("declined_by_")) {
-    return NextResponse.json({ error: "This match can no longer be declined" }, { status: 409 });
+  if (isBlocked(access.status)) {
+    return NextResponse.json({ error: CONVERSATION_CLOSED }, { status: 409 });
   }
 
   const admin = createAdminClient();
-  // Compare-and-swap on the raw status this decision was based on -- same
-  // guard as applyInterest, and the same reason: without it, a decline
-  // racing against a concurrent interest/accept on the same row could
-  // silently clobber the other side's transition instead of one erroring
-  // out with a clean "this changed, refresh" response.
+  // Compare-and-swap on the status this decision was based on, so a block
+  // racing another change on the same row errors out cleanly instead of
+  // silently overwriting it.
   const { data: updated, error } = await admin
     .from("generic_matches")
     .update({ status: `declined_by_${access.side}`, responded_at: new Date().toISOString() })
@@ -338,6 +329,18 @@ export const declinePost: Handler = withAccess(async ({ access }) => {
 
 // ------------------------------------------------------------------ rating
 
+/**
+ * Rating needs a real exchange, not just a match card: at least one
+ * message from each side (generic_ratings_insert enforces the same).
+ */
+async function bothHaveWritten(access: MatchAccess) {
+  const admin = createAdminClient();
+  const sent = (senderId: string) =>
+    admin.from("generic_messages").select("id", { count: "exact", head: true }).eq("match_id", access.id).eq("sender_id", senderId);
+  const [{ count: mine }, { count: theirs }] = await Promise.all([sent(access.myUserId), sent(access.otherUserId)]);
+  return (mine ?? 0) > 0 && (theirs ?? 0) > 0;
+}
+
 const ratingBodySchema = z.object({
   score: z.number().int().min(1).max(5),
   comment: z.string().trim().max(1000).optional(),
@@ -351,12 +354,12 @@ export const ratingGet: Handler = withAccess(async ({ supabase, userId, access }
     .eq("rater_user_id", userId)
     .maybeSingle();
 
-  const counterpart = await ratingAggregateForUser(access.otherUserId);
+  const [counterpart, canRate] = await Promise.all([ratingAggregateForUser(access.otherUserId), bothHaveWritten(access)]);
 
   return NextResponse.json({
     mine: mine ?? null,
     counterpart,
-    canRate: effectiveStatus(access) === "mutual",
+    canRate,
   });
 });
 
@@ -366,8 +369,8 @@ export const ratingPut: Handler = withAccess(async ({ request, supabase, userId,
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  if (effectiveStatus(access) !== "mutual") {
-    return NextResponse.json({ error: "You can rate each other once you've matched" }, { status: 403 });
+  if (!(await bothHaveWritten(access))) {
+    return NextResponse.json({ error: "You can rate each other once you've both sent a message" }, { status: 403 });
   }
 
   const { data: saved, error } = await supabase

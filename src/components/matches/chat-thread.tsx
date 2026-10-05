@@ -209,6 +209,15 @@ export default function ChatThread({
     isNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
   }
 
+  // The specific reason the server refused a message (daily limit, blocked,
+  // profile unavailable -- see SEND_REFUSALS in match-routes.ts), else the
+  // generic fallback.
+  async function refusalText(res: Response, fallback: string) {
+    const body = await res.json().catch(() => ({}));
+    const key = `sendRefused.${body.code}`;
+    return typeof body.code === "string" && t.has(key) ? t(key) : fallback;
+  }
+
   async function send() {
     const body = draft.trim();
     if (!body || sending) return;
@@ -223,7 +232,7 @@ export default function ChatThread({
       });
       if (!res.ok) {
         restoreDraft(body);
-        setSendError(t("messageSendError"));
+        setSendError(await refusalText(res, t("messageSendError")));
         return;
       }
       const { message } = await res.json();
@@ -262,7 +271,7 @@ export default function ChatThread({
     try {
       const res = await fetch(`${threadUrl}/audio`, { method: "POST", body: formData });
       if (!res.ok) {
-        setUploadError(t("voiceNoteUploadError"));
+        setUploadError(await refusalText(res, t("voiceNoteUploadError")));
         return;
       }
 

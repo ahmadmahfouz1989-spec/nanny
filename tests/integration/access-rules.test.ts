@@ -1,7 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
-import { resolveMatchAccess } from "@/lib/matching/match-access";
-import { applyInterest } from "@/lib/matching/apply-interest";
 import {
   admin,
   categoryId,
@@ -12,7 +10,6 @@ import {
   matchBetween,
   NANNY_PROVIDER,
   NANNY_SEEKER,
-  request,
   type TestUser,
 } from "./helpers";
 
@@ -75,8 +72,6 @@ describe("suspension", () => {
     const nannyProfile = await createProfile(n, "nanny", "provider", NANNY_PROVIDER);
     await recomputeGenericMatchesForProfile(nannyProfile);
     const matchId = await matchBetween(parentProfile, nannyProfile);
-    await applyInterest(request(), (await resolveMatchAccess(p.client, matchId, p.id))!);
-    await applyInterest(request(), (await resolveMatchAccess(n.client, matchId, n.id))!);
 
     const { error: before } = await p.client.from("generic_messages").insert({ match_id: matchId, sender_id: p.id, body: "hi" });
     expect(before).toBeNull();

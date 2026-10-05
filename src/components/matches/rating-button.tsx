@@ -39,9 +39,8 @@ function Stars({
 }
 
 /**
- * Rate-your-match widget. Lives in the conversation menu and the mutual
- * match card; both pass the match id. Loads any existing rating so it can
- * be edited rather than duplicated.
+ * Rate-your-match widget. Lives in the conversation menu. Loads any
+ * existing rating so it can be edited rather than duplicated.
  */
 export default function RatingButton({
   matchId,

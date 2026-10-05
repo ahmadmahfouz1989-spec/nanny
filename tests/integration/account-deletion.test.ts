@@ -1,9 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
-import { resolveMatchAccess } from "@/lib/matching/match-access";
-import { applyInterest } from "@/lib/matching/apply-interest";
 import { deleteUserAccount } from "@/lib/account-deletion";
-import { admin, cleanupUsers, createProfile, createUser, matchBetween, NANNY_PROVIDER, NANNY_SEEKER, request, type TestUser } from "./helpers";
+import { admin, cleanupUsers, createProfile, createUser, matchBetween, NANNY_PROVIDER, NANNY_SEEKER, type TestUser } from "./helpers";
 
 // Deleting an account must take everything of theirs -- including the
 // other person's voice notes in their conversations and other users'
@@ -38,8 +36,6 @@ beforeAll(async () => {
   const stayingProfile = await createProfile(staying, "nanny", "provider", NANNY_PROVIDER);
   await recomputeGenericMatchesForProfile(stayingProfile);
   matchId = await matchBetween(leavingProfile, stayingProfile);
-  await applyInterest(request(), (await resolveMatchAccess(leaving.client, matchId, leaving.id))!);
-  await applyInterest(request(), (await resolveMatchAccess(staying.client, matchId, staying.id))!);
 
   // A conversation with a voice note each way, plus an unrelated file.
   const leavingNote = `${leaving.id}/to-staying.webm`;
