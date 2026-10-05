@@ -8,7 +8,7 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
-import { AdminIcon, FeedIcon, FlagIcon, GridIcon, UsersIcon } from "@/components/nav-icons";
+import { AdminIcon, ChatIcon, FeedIcon, FlagIcon, GridIcon, UsersIcon } from "@/components/nav-icons";
 import { ToastProvider } from "@/components/toast-provider";
 
 type NavItem = {
@@ -57,6 +57,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     { href: "/admin", label: t("navOverview"), Icon: GridIcon },
     { href: "/admin/profiles", label: t("navProfiles"), Icon: AdminIcon, count: counts?.pending },
     { href: "/admin/reports", label: t("navReports"), Icon: FlagIcon, count: counts?.reports },
+    { href: "/admin/activity", label: t("navActivity"), Icon: ChatIcon },
     { href: "/admin/users", label: t("navUsers"), Icon: UsersIcon },
     { href: "/admin/feed", label: t("navFeed"), Icon: FeedIcon },
   ];

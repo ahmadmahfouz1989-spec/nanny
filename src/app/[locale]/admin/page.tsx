@@ -5,6 +5,7 @@ import { useTranslations, useLocale } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson } from "@/lib/request";
+import { Link } from "@/i18n/navigation";
 
 type CategoryStats = {
   slug: string;
@@ -35,10 +36,10 @@ export default function AdminOverviewPage() {
     getJson("/api/admin/analytics").then((body) => body && setData(body));
   }, []);
 
-  const tiles: { label: string; value: number | undefined }[] = [
+  const tiles: { label: string; value: number | undefined; href?: string }[] = [
     { label: t("statTotalProfiles"), value: data?.totalProfiles },
     { label: t("statPending"), value: data?.pendingProfiles },
-    { label: t("statConversations"), value: data?.conversations },
+    { label: t("statConversations"), value: data?.conversations, href: "/admin/activity" },
     { label: t("statOpenReports"), value: data?.openReports },
     { label: t("statSuspendedUsers"), value: data?.suspendedUsers },
   ];
@@ -48,12 +49,23 @@ export default function AdminOverviewPage() {
       <AdminPageHeader title={t("overviewTitle")} description={t("overviewDescription")} />
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        {tiles.map((tile) => (
-          <div key={tile.label} className={ui.card + " p-5"}>
-            <p className="text-2xl font-display font-semibold">{tile.value ?? "—"}</p>
-            <p className="text-xs text-muted mt-1">{tile.label}</p>
-          </div>
-        ))}
+        {tiles.map((tile) => {
+          const body = (
+            <>
+              <p className="text-2xl font-display font-semibold">{tile.value ?? "—"}</p>
+              <p className="text-xs text-muted mt-1">{tile.label}</p>
+            </>
+          );
+          return tile.href ? (
+            <Link key={tile.label} href={tile.href} className={ui.cardHover + " p-5"}>
+              {body}
+            </Link>
+          ) : (
+            <div key={tile.label} className={ui.card + " p-5"}>
+              {body}
+            </div>
+          );
+        })}
       </div>
 
       <h2 className="font-display text-xl font-semibold mt-10 mb-4">{t("byCategoryTitle")}</h2>
