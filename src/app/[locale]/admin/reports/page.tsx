@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { getJson, request } from "@/lib/request";
 
 type AdminReport = {
   id: string;
@@ -52,21 +53,19 @@ export default function AdminReportsPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/reports?status=open")
-      .then((res) => res.json())
-      .then((body) => setReports(body.reports));
+    getJson("/api/admin/reports?status=open").then((body) => body && setReports(body.reports));
   }, []);
 
   async function decide(report: AdminReport, status: "resolved" | "dismissed") {
     setSubmitting(report.id);
-    const res = await fetch(`/api/admin/reports/${report.id}`, {
+    const res = await request(`/api/admin/reports/${report.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, resolutionNotes: notes[report.id] }),
     });
     setSubmitting(null);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setNotice(t("moderationActionError"));
       setTimeout(() => setNotice(null), 8000);
       return;
@@ -80,9 +79,9 @@ export default function AdminReportsPage() {
     setExpanded(next);
     if (next && conversations[next] === undefined) {
       setConversations((prev) => ({ ...prev, [next]: null }));
-      fetch(`/api/admin/reports/${next}/messages`)
-        .then((res) => res.json())
-        .then((body) =>
+      getJson(`/api/admin/reports/${next}/messages`).then(
+        (body) =>
+          body &&
           setConversations((prev) => ({
             ...prev,
             [next]: { messages: body.messages ?? [], hasOlder: !!body.hasOlder, loadingOlder: false },
@@ -98,10 +97,10 @@ export default function AdminReportsPage() {
     if (!current || current.loadingOlder || !current.hasOlder || current.messages.length === 0) return;
     setConversations((prev) => ({ ...prev, [reportId]: { ...current, loadingOlder: true } }));
     try {
-      const res = await fetch(
+      const res = await request(
         `/api/admin/reports/${reportId}/messages?before=${encodeURIComponent(current.messages[0]!.created_at)}`,
       );
-      const body = res.ok ? await res.json() : null;
+      const body = res?.ok ? await res.json() : null;
       setConversations((prev) => {
         const latest = prev[reportId];
         if (!latest) return prev;

@@ -7,6 +7,7 @@ import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
 import { trackMetaEvent } from "@/components/meta-pixel";
 import { ui } from "@/lib/ui";
+import { request } from "@/lib/request";
 
 // No category chooses a role at signup -- see signupSchema in
 // src/lib/validation/auth.ts. Every account lands on /categories after
@@ -33,15 +34,15 @@ export default function SignupForm() {
     }
 
     setSubmitting(true);
-    const res = await fetch("/api/auth/signup", {
+    const res = await request("/api/auth/signup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
     });
     setSubmitting(false);
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
+    if (!res || !res.ok) {
+      const body = ((await res?.json().catch(() => ({}))) ?? {});
       const err = body.error;
       const message =
         typeof err === "string"

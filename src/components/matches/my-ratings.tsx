@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import RatingStars from "@/components/matches/rating-stars";
 import { useHashScroll } from "@/components/matches/use-hash-scroll";
 import { ui } from "@/lib/ui";
+import { getJson } from "@/lib/request";
 
 type Review = { score: number; comment: string | null; createdAt: string };
 type Response = { average: number | null; count: number; reviews: Review[] };
@@ -30,9 +31,7 @@ export default function MyRatings() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/ratings/received")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((body: Response | null) => {
+    getJson<Response>("/api/ratings/received").then((body) => {
         if (active && body) setData(body);
       });
     return () => {

@@ -14,6 +14,7 @@ import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannyProviderSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { request } from "@/lib/request";
 
 const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_care_specialist"] as const;
 
@@ -153,10 +154,10 @@ export default function NannyProviderForm({
     if (initialProfile) formData.append("genericProfileId", initialProfile.id);
     formData.append("stage", "true");
 
-    const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
+    const res = await request("/api/profile/photo", { method: "POST", body: formData });
     setUploading(false);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setError(tw("genericError"));
       return;
     }
@@ -205,14 +206,14 @@ export default function NannyProviderForm({
     }
 
     setSubmitting(true);
-    const res = await fetch("/api/generic-profile", {
+    const res = await request("/api/generic-profile", {
       method: initialProfile ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, categorySlug, role: "provider" }),
     });
     setSubmitting(false);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setError(tw("genericError"));
       return;
     }

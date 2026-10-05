@@ -10,6 +10,7 @@ import type { Post, Reply } from "./feed-shared";
 import PostCard from "./post-card";
 import PostComposer from "./post-composer";
 import PostReplies from "./post-replies";
+import { getJson, request } from "@/lib/request";
 
 export default function FeedClient({
   targetPostId = null,
@@ -27,6 +28,8 @@ export default function FeedClient({
   const t = useTranslations("Feed");
 
   const [posts, setPosts] = useState<Post[] | null>(null);
+  // The first page failed to arrive (offline, dropped connection).
+  const [loadFailed, setLoadFailed] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
 
@@ -81,21 +84,24 @@ export default function FeedClient({
         });
         setNextCursor(body.nextCursor ?? null);
       })
+      .catch(() => {})
       .finally(() => setLoadingMore(false));
   }
 
   useEffect(() => {
     let active = true;
     async function init() {
-      const [postsRes, identitiesRes] = await Promise.all([
-        fetch("/api/posts"),
-        adminMode ? Promise.resolve(null) : fetch("/api/posts/identities"),
-      ]);
       const [postsBody, identitiesBody] = await Promise.all([
-        postsRes.json(),
-        identitiesRes ? identitiesRes.json() : { identities: [], defaultIdentity: null },
+        getJson<{ posts?: Post[]; nextCursor?: string | null }>("/api/posts"),
+        adminMode
+          ? Promise.resolve({ identities: [], defaultIdentity: null })
+          : getJson<{ identities?: PostIdentityOption[]; defaultIdentity?: { profileId: string } | null }>("/api/posts/identities"),
       ]);
       if (!active) return;
+      if (!postsBody) {
+        setLoadFailed(true);
+        return;
+      }
       const firstPage: Post[] = postsBody.posts ?? [];
       // A deep-linked post (effect below) may already have been pinned
       // before this first page arrived -- keep it on top, don't drop it.
@@ -105,8 +111,8 @@ export default function FeedClient({
         return [...pinned, ...firstPage.filter((p) => !pinnedIds.has(p.id))];
       });
       setNextCursor(postsBody.nextCursor ?? null);
-      setIdentities(identitiesBody.identities ?? []);
-      setSelectedIdentity(identitiesBody.defaultIdentity ?? null);
+      setIdentities(identitiesBody?.identities ?? []);
+      setSelectedIdentity(identitiesBody?.defaultIdentity ?? null);
     }
     init();
     return () => {
@@ -158,14 +164,14 @@ export default function FeedClient({
     setComposerError(null);
     if (!caption.trim() || identities === null) return;
     setPosting(true);
-    const res = await fetch("/api/posts", {
+    const res = await request("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ caption: caption.trim(), kind, postedAs: selectedIdentity }),
     });
-    const body = await res.json();
+    const body = (await res?.json().catch(() => ({}))) ?? {};
     setPosting(false);
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setComposerError(typeof body.error === "string" ? body.error : t("postError"));
       return;
     }
@@ -182,8 +188,8 @@ export default function FeedClient({
             : p,
         ) ?? null,
     );
-    const res = await fetch(`/api/posts/${post.id}/like`, { method: "POST" });
-    if (!res.ok) {
+    const res = await request(`/api/posts/${post.id}/like`, { method: "POST" });
+    if (!res || !res.ok) {
       // revert on failure
       setPosts(
         (prev) =>
@@ -211,9 +217,15 @@ export default function FeedClient({
     setOpenReplies(next);
     if (next && replies[next] === undefined) {
       setReplies((prev) => ({ ...prev, [next]: null }));
-      fetch(`/api/posts/${next}/replies`)
-        .then((res) => res.json())
-        .then((body) => setReplies((prev) => ({ ...prev, [next]: body.replies ?? [] })));
+      getJson<{ replies?: Reply[] }>(`/api/posts/${next}/replies`).then((body) =>
+        setReplies((prev) => {
+          const updated = { ...prev };
+          // On failure, forget the attempt so opening the thread again retries.
+          if (body) updated[next] = body.replies ?? [];
+          else delete updated[next];
+          return updated;
+        }),
+      );
     }
   }
 
@@ -224,14 +236,14 @@ export default function FeedClient({
     setSendingReply((prev) => ({ ...prev, [postId]: true }));
     setReplyError((prev) => ({ ...prev, [postId]: "" }));
     const parentReplyId = replyTarget[postId]?.id;
-    const res = await fetch(`/api/posts/${postId}/replies`, {
+    const res = await request(`/api/posts/${postId}/replies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ body, parentReplyId }),
     });
-    const data = await res.json();
+    const data = (await res?.json().catch(() => ({}))) ?? {};
     setSendingReply((prev) => ({ ...prev, [postId]: false }));
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setReplyError((prev) => ({ ...prev, [postId]: typeof data.error === "string" ? data.error : t("replyError") }));
       return;
     }
@@ -267,8 +279,8 @@ export default function FeedClient({
     const replyId = reply.id;
     const url =
       adminMode && !reply.isMine ? `/api/admin/posts/${postId}/replies/${replyId}` : `/api/posts/${postId}/replies/${replyId}`;
-    const res = await fetch(url, { method: "DELETE" });
-    if (!res.ok) return;
+    const res = await request(url, { method: "DELETE" });
+    if (!res || !res.ok) return;
     const current = replies[postId] ?? [];
     const removed = collectDescendantIds(current, replyId);
     setReplies((prev) => ({ ...prev, [postId]: current.filter((r) => !removed.has(r.id)) }));
@@ -279,9 +291,9 @@ export default function FeedClient({
 
   async function deletePost(post: Post) {
     const url = adminMode && !post.isMine ? `/api/admin/posts/${post.id}` : `/api/posts/${post.id}`;
-    const res = await fetch(url, { method: "DELETE" });
+    const res = await request(url, { method: "DELETE" });
     setConfirmingDelete(null);
-    if (!res.ok) return;
+    if (!res || !res.ok) return;
     setPosts((prev) => prev?.filter((p) => p.id !== post.id) ?? null);
   }
 
@@ -321,7 +333,8 @@ export default function FeedClient({
           />
         )}
 
-        {posts === null && <CardListSkeleton label={t("loading")} />}
+        {posts === null && loadFailed && <p className="text-sm text-muted text-center py-10">{t("loadError")}</p>}
+        {posts === null && !loadFailed && <CardListSkeleton label={t("loading")} />}
         {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-10">{t("empty")}</p>}
 
         <div className="divide-y divide-border">

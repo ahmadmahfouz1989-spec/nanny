@@ -9,6 +9,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { MoreIcon } from "@/components/nav-icons";
 import { MATCHES_API } from "@/lib/matching/match-access";
+import { request } from "@/lib/request";
 
 /** Header for an open conversation, in any category. */
 export default function ConversationHeader({
@@ -39,9 +40,9 @@ export default function ConversationHeader({
   async function block() {
     setBlocking(true);
     setBlockError(false);
-    const res = await fetch(`${MATCHES_API}/${matchId}/decline`, { method: "POST" });
+    const res = await request(`${MATCHES_API}/${matchId}/decline`, { method: "POST" });
     setBlocking(false);
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setBlockError(true);
       return;
     }

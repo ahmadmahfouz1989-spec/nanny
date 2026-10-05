@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale } from "next-intl";
 import { ui } from "@/lib/ui";
+import { getJson } from "@/lib/request";
 
 type Language = { id: string; code: string; name_en: string; name_ar: string; name_fr: string };
 
@@ -23,9 +24,7 @@ export default function LanguageSelect({
   const [languages, setLanguages] = useState<Language[]>([]);
 
   useEffect(() => {
-    fetch("/api/languages")
-      .then((res) => res.json())
-      .then((body) => setLanguages(body.languages ?? []));
+    getJson("/api/languages").then((body) => body && setLanguages(body.languages ?? []));
   }, []);
 
   function toggle(id: string) {

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { getJson } from "@/lib/request";
 
 type CategoryStats = {
   slug: string;
@@ -31,9 +32,7 @@ export default function AdminOverviewPage() {
   const [data, setData] = useState<Analytics | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/analytics")
-      .then((res) => res.json())
-      .then(setData);
+    getJson("/api/admin/analytics").then((body) => body && setData(body));
   }, []);
 
   const tiles: { label: string; value: number | undefined }[] = [

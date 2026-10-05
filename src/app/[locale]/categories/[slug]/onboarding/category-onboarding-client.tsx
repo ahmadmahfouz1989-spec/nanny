@@ -15,6 +15,7 @@ import TutoringSeekerForm from "./tutoring-seeker-form";
 import MaintenanceProviderForm from "./maintenance-provider-form";
 import MaintenanceSeekerForm from "./maintenance-seeker-form";
 import { ui } from "@/lib/ui";
+import { request } from "@/lib/request";
 
 // Each category's form pair is registered here -- also needs a schema
 // pair in CATEGORY_SCHEMAS (src/app/api/generic-profile/route.ts) and a
@@ -89,14 +90,14 @@ export default function CategoryOnboardingClient({
 
     setClaiming(role);
     setError(null);
-    const res = await fetch("/api/generic-profile/claim", {
+    const res = await request("/api/generic-profile/claim", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ categorySlug, role }),
     });
     setClaiming(null);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setError(tw("genericError"));
       return;
     }
@@ -121,7 +122,7 @@ export default function CategoryOnboardingClient({
   async function changeRole(current: "seeker" | "provider") {
     const profile = current === "seeker" ? seeker : provider;
     if (profile && profile.status === "draft") {
-      await fetch("/api/generic-profile/claim", {
+      await request("/api/generic-profile/claim", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ categorySlug, role: current }),

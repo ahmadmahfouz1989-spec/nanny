@@ -10,6 +10,7 @@ import { announceUnreadChanged } from "@/lib/unread-events";
 import ChatComposer from "./chat-composer";
 import ChatMessage, { type ChatMessageData } from "./chat-message";
 import { useVoiceRecorder, type RecordedVoiceNote } from "./use-voice-recorder";
+import { getJson } from "@/lib/request";
 
 type Message = ChatMessageData;
 
@@ -106,9 +107,10 @@ export default function ChatThread({
   }
 
   function refreshMessages() {
-    fetch(threadUrl)
-      .then((res) => res.json())
-      .then((body) => {
+    // Runs on a timer and on realtime events: a failed refresh (phone
+    // asleep, network switch) keeps the thread as it is until the next one.
+    getJson(threadUrl).then((body) => {
+        if (!body) return;
         const now = Date.now();
         const receivedAt = audioUrlReceivedAtRef.current;
         // This fetch always returns the newest window, regardless of how
@@ -162,9 +164,9 @@ export default function ChatThread({
     const oldest = messages[0]!.created_at;
     const el = listRef.current;
     const prevScrollHeight = el?.scrollHeight ?? 0;
-    fetch(`${threadUrl}?before=${encodeURIComponent(oldest)}`)
-      .then((res) => res.json())
+    getJson(`${threadUrl}?before=${encodeURIComponent(oldest)}`)
       .then((body) => {
+        if (!body) return;
         setMessages((prev) => [...(body.messages ?? []), ...(prev ?? [])]);
         setHasMoreOlder(body.hasMore ?? false);
         // isNearBottomRef is false here (the user had to scroll up to reach

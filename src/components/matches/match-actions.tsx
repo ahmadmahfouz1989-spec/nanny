@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { MATCHES_API, isBlocked, type MatchSide } from "@/lib/matching/match-access";
+import { request } from "@/lib/request";
 
 /**
  * Message / Not interested on a match card -- the same for every category.
@@ -37,11 +38,11 @@ export default function MatchActions({
   async function notInterested() {
     setLoading(true);
     setError(null);
-    const res = await fetch(`${MATCHES_API}/${matchId}/decline`, { method: "POST" });
+    const res = await request(`${MATCHES_API}/${matchId}/decline`, { method: "POST" });
     setLoading(false);
 
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
+    if (!res || !res.ok) {
+      const body = ((await res?.json().catch(() => ({}))) ?? {});
       setError(typeof body.error === "string" ? body.error : t("actionError"));
       return;
     }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
+import { getJson } from "@/lib/request";
 
 const WHISH_NUMBER = process.env.NEXT_PUBLIC_WHISH_NUMBER ?? "";
 const WHISH_NAME = process.env.NEXT_PUBLIC_WHISH_NAME ?? "";
@@ -16,9 +17,7 @@ export default function FeaturedClient() {
   const [me, setMe] = useState<Me | null>(null);
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((body) => body?.user && setMe({ email: body.user.email, featured_until: body.user.featured_until }));
+    getJson("/api/auth/me").then((body) => body?.user && setMe({ email: body.user.email, featured_until: body.user.featured_until }));
   }, []);
 
   const activeUntil =

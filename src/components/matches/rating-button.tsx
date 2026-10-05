@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { MATCHES_API } from "@/lib/matching/match-access";
+import { getJson, request } from "@/lib/request";
 
 type RatingResponse = {
   mine: { score: number; comment: string | null; updated_at: string } | null;
@@ -59,9 +60,7 @@ export default function RatingButton({
 
   useEffect(() => {
     let active = true;
-    fetch(`${MATCHES_API}/${matchId}/rating`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((body: RatingResponse | null) => {
+    getJson<RatingResponse>(`${MATCHES_API}/${matchId}/rating`).then((body) => {
         if (!active || !body) return;
         setData(body);
         if (body.mine) {
@@ -78,14 +77,14 @@ export default function RatingButton({
     if (score < 1) return;
     setSubmitting(true);
     setError(null);
-    const res = await fetch(`${MATCHES_API}/${matchId}/rating`, {
+    const res = await request(`${MATCHES_API}/${matchId}/rating`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ score, comment: comment.trim() || undefined }),
     });
     setSubmitting(false);
-    if (!res.ok) {
-      const body = await res.json().catch(() => ({}));
+    if (!res || !res.ok) {
+      const body = ((await res?.json().catch(() => ({}))) ?? {});
       setError(typeof body.error === "string" ? body.error : t("error"));
       return;
     }

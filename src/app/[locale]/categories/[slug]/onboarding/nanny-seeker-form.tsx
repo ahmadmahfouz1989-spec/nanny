@@ -14,6 +14,7 @@ import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannySeekerSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { request } from "@/lib/request";
 
 const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_help", "laundry"] as const;
 
@@ -137,10 +138,10 @@ export default function NannySeekerForm({
     if (initialProfile) formData.append("genericProfileId", initialProfile.id);
     formData.append("stage", "true");
 
-    const res = await fetch("/api/profile/photo", { method: "POST", body: formData });
+    const res = await request("/api/profile/photo", { method: "POST", body: formData });
     setUploading(false);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setError(tw("genericError"));
       return;
     }
@@ -201,14 +202,14 @@ export default function NannySeekerForm({
     }
 
     setSubmitting(true);
-    const res = await fetch("/api/generic-profile", {
+    const res = await request("/api/generic-profile", {
       method: initialProfile ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, categorySlug, role: "seeker" }),
     });
     setSubmitting(false);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setError(tw("genericError"));
       return;
     }
