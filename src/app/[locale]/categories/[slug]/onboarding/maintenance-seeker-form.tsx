@@ -4,12 +4,14 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, URGENCIES, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { ui } from "@/lib/ui";
+import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
 
 type Urgency = (typeof URGENCIES)[number];
 
@@ -88,6 +90,9 @@ export default function MaintenanceSeekerForm({
   const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set by the first failed save; from then on errors update live as the
+  // fields are fixed.
+  const [showErrors, setShowErrors] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -103,26 +108,28 @@ export default function MaintenanceSeekerForm({
   // Days and a start date mean nothing for a job that has to happen now.
   const urgent = form.urgency === "urgent";
 
+  const payload = {
+    categorySlug,
+    role: "seeker" as const,
+    fullName: form.fullName,
+    contactPhone: form.contactPhone || undefined,
+    locationId: form.locationId,
+    locationDetail: form.locationDetail,
+    tradesNeeded: form.tradesNeeded,
+    jobDescription: form.jobDescription,
+    urgency: form.urgency,
+    neededDays: urgent ? [] : form.neededDays,
+    desiredStartDate: urgent ? undefined : form.desiredStartDate || undefined,
+  };
+  const fieldErrors = showErrors ? fieldErrorsFrom(maintenanceSeekerSchema.safeParse(payload)) : {};
+
   async function handleSave() {
     setError(null);
-    const payload = {
-      categorySlug,
-      role: "seeker" as const,
-      fullName: form.fullName,
-      contactPhone: form.contactPhone || undefined,
-      locationId: form.locationId,
-      locationDetail: form.locationDetail,
-      tradesNeeded: form.tradesNeeded,
-      jobDescription: form.jobDescription,
-      urgency: form.urgency,
-      neededDays: urgent ? [] : form.neededDays,
-      desiredStartDate: urgent ? undefined : form.desiredStartDate || undefined,
-    };
 
     const parsed = maintenanceSeekerSchema.safeParse(payload);
     if (!parsed.success) {
-      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
-      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
+      setShowErrors(true);
+      scrollToFirstError();
       return;
     }
 
@@ -146,7 +153,7 @@ export default function MaintenanceSeekerForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
-      error={error}
+      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
       onBack={onBack}
@@ -156,7 +163,10 @@ export default function MaintenanceSeekerForm({
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <FieldError field="fullName" errors={fieldErrors} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <FieldError field="contactPhone" errors={fieldErrors} />
+        <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
@@ -166,11 +176,13 @@ export default function MaintenanceSeekerForm({
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
         />
+        <FieldError field="locationId" errors={fieldErrors} />
+        <FieldError field="locationDetail" errors={fieldErrors} />
       </div>
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section2Title")}</SectionHeading>
-        <label className={ui.label}>{t("tradesNeeded")}</label>
+        <FieldLabel field="tradesNeeded" errors={fieldErrors}>{t("tradesNeeded")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TRADES.map((trade) => (
             <button type="button" key={trade} onClick={() => toggle("tradesNeeded", trade)} className={ui.pill(form.tradesNeeded.includes(trade))}>
@@ -179,13 +191,13 @@ export default function MaintenanceSeekerForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("jobDescription")}</label>
+        <FieldLabel field="jobDescription" errors={fieldErrors}>{t("jobDescription")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={1000} placeholder={t("jobDescriptionPlaceholder")} value={form.jobDescription} onChange={(e) => update("jobDescription", e.target.value)} />
       </div>
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section3Title")}</SectionHeading>
-        <label className={ui.label}>{t("urgency")}</label>
+        <FieldLabel field="urgency" errors={fieldErrors}>{t("urgency")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {URGENCIES.map((u) => (
             <button type="button" key={u} onClick={() => update("urgency", u)} className={ui.pill(form.urgency === u)}>
@@ -196,7 +208,7 @@ export default function MaintenanceSeekerForm({
 
         {!urgent && (
           <>
-            <label className={ui.label}>{t("neededDays")}</label>
+            <FieldLabel field="neededDays" errors={fieldErrors} optional>{t("neededDays")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {DAYS.map((day) => (
                 <button type="button" key={day} onClick={() => toggle("neededDays", day)} className={ui.pill(form.neededDays.includes(day))}>
@@ -205,7 +217,7 @@ export default function MaintenanceSeekerForm({
               ))}
             </div>
 
-            <label className={ui.label}>{t("desiredStartDate")}</label>
+            <FieldLabel field="desiredStartDate" errors={fieldErrors} optional>{t("desiredStartDate")}</FieldLabel>
             <input type="date" className={ui.input} min={new Date().toISOString().slice(0, 10)} value={form.desiredStartDate} onChange={(e) => update("desiredStartDate", e.target.value)} />
           </>
         )}

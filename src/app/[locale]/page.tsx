@@ -24,6 +24,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const tNav = await getTranslations("Nav");
   const tPreview = await getTranslations("Preview");
   const tCat = await getTranslations("Categories");
+  const tAge = await getTranslations("AgeGroups");
+  const tCare = await getTranslations("CareSpecialties");
+  const tSubject = await getTranslations("Subjects");
+  const tTrade = await getTranslations("Trades");
   const categories = await getCategories();
 
   const supabase = await createClient();
@@ -45,11 +49,14 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   const bullets = [t("bullet1"), t("bullet2"), t("bullet3")];
 
+  // One made-up example per live category, labelled "Example" on the card.
   const previewCards = [
-    { name: "Layla", area: "Achrafieh", tone: "primary" as const, years: 5, availableDays: ["mon", "tue", "wed", "thu", "fri"] },
-    { name: "Maya", area: "Jounieh", tone: "secondary" as const, years: 3, availableDays: ["mon", "wed", "fri", "sat"] },
-    { name: "Sara", area: "Hazmieh", tone: "berry" as const, years: 2, availableDays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] },
+    { name: "Layla", area: "Achrafieh", tone: "primary" as const, years: 5, availableDays: ["mon", "tue", "wed", "thu", "fri"], category: tNav("nanny"), skill: tAge("toddler") },
+    { name: "Maya", area: "Jounieh", tone: "secondary" as const, years: 8, availableDays: ["mon", "wed", "fri", "sat"], category: tNav("nursing"), skill: tCare("elderly_care") },
+    { name: "Sara", area: "Hazmieh", tone: "berry" as const, years: 3, availableDays: ["tue", "thu", "sat", "sun"], category: tNav("tutoring"), skill: tSubject("math") },
+    { name: "Karim", area: "Jdeideh", tone: "primary" as const, years: 12, availableDays: ["mon", "tue", "wed", "thu", "fri", "sat"], category: tNav("maintenance"), skill: tTrade("plumber") },
   ];
+  const liveCategoryCount = categories.filter((c) => c.status === "live").length;
 
   return (
     <>
@@ -151,7 +158,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               />
             </div>
             <div className="oui-float-2 absolute -start-5 top-8 flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 text-sm font-semibold shadow-lg">
-              <span className="text-accent-hover">★</span> 4.9
+              <span className="text-accent-hover">★</span> {t("liveServices", { count: liveCategoryCount })}
             </div>
             <div className="oui-float absolute -end-4 bottom-6 flex items-center gap-2 rounded-2xl border border-border bg-surface px-3 py-2 text-xs font-semibold shadow-lg">
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-success-soft text-success">
@@ -183,7 +190,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </h2>
           <p className="oui-reveal mx-auto mb-10 max-w-lg text-center text-muted">{tPreview("subtitle")}</p>
 
-          <div className="grid gap-5 sm:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {previewCards.map((card, i) => (
               <div key={card.name} className="oui-reveal" style={{ animationDelay: `${i * 0.06}s` }}>
                 <PreviewProfileCard {...card} />

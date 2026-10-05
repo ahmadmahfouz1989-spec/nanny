@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import SavedProfileCard from "@/components/matches/saved-profile-card";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
-import { LogoLoader } from "@/components/animated-logo";
+import { CardListSkeleton } from "@/components/skeletons";
 import { ui } from "@/lib/ui";
 import type { SavedListItem } from "@/lib/saved-profiles";
 import { useSavedProfiles } from "@/components/saved-profiles-provider";
@@ -137,7 +137,7 @@ export default function SavedClient() {
         </select>
       </div>
 
-      {!items && !error && <LogoLoader label={t("loading")} fullHeight />}
+      {!items && !error && <CardListSkeleton label={t("loading")} />}
       {error && <p className="text-sm text-muted">{error}</p>}
 
       {visibleItems && visibleItems.length === 0 && !hasFilters && (

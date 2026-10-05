@@ -7,6 +7,7 @@ import { HeartIcon } from "@/components/nav-icons";
 import { announceFeedTarget } from "@/lib/feed-target";
 import { announceMatchTarget } from "@/lib/match-target";
 import { notificationHref, notificationLabel } from "@/lib/notification-content";
+import { RowListSkeleton } from "@/components/skeletons";
 
 type Notification = {
   id: string;
@@ -161,7 +162,7 @@ export default function NotificationBell({
               </div>
             </div>
             <div className="max-h-[22rem] overflow-y-auto">
-              {!items && <p className="px-4 py-6 text-center text-sm text-muted">{t("loading")}</p>}
+              {!items && <RowListSkeleton count={3} label={t("loading")} />}
               {items && items.length === 0 && (
                 <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
                   <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-sunken text-muted">

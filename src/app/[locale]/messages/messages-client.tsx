@@ -10,6 +10,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ConnectIllustration from "@/components/illustrations/connect-illustration";
 import { SearchIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
+import { RowListSkeleton } from "@/components/skeletons";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 const INBOX_POLL_MS = 6000;
@@ -37,7 +38,6 @@ function relativeTime(iso: string, locale: string) {
 
 export default function MessagesClient() {
   const t = useTranslations("Inbox");
-  const tMatches = useTranslations("Matches");
   const tNav = useTranslations("Nav");
   const locale = useLocale();
   const searchParams = useSearchParams();
@@ -137,7 +137,7 @@ export default function MessagesClient() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
-          {!conversations && <p className="text-sm text-muted p-4">{tMatches("loading")}</p>}
+          {!conversations && <RowListSkeleton label={t("loading")} />}
           {conversations && conversations.length === 0 && (
             <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
               <ConnectIllustration className="h-24 w-auto" />
@@ -183,7 +183,7 @@ export default function MessagesClient() {
                   )}
                 </div>
                 <div className="flex items-center justify-between gap-2">
-                  <p className="text-sm text-muted truncate">
+                  <p dir={c.lastMessage ? "auto" : undefined} className="text-sm text-muted truncate">
                     {c.lastMessage ? c.lastMessage.body : t("noMessagesYet")}
                   </p>
                   {c.unreadCount > 0 && (
@@ -218,6 +218,10 @@ export default function MessagesClient() {
               onMessage={(m) => handleMessage(selectedConversation.matchId, m)}
             />
           </>
+        ) : selected && !conversations ? (
+          // A conversation was asked for (e.g. Message on a match card) and
+          // is still loading -- don't tell the user to go pick one.
+          <RowListSkeleton count={1} label={t("loading")} />
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center gap-3 p-6">
             <ConnectIllustration className="h-28 w-auto opacity-80" />

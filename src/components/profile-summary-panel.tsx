@@ -11,6 +11,7 @@ import { labelOr } from "@/lib/i18n-fallback";
 import { ui } from "@/lib/ui";
 import { formatHoursRange } from "@/lib/format-hours";
 import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
+import { TextSkeleton } from "@/components/skeletons";
 
 type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
 type LocationRef = { name_en: string; name_ar: string; name_fr: string } | null;
@@ -107,7 +108,7 @@ export default function ProfileSummaryPanel({
   }, [profileId]);
 
   if (failed) return <p className="mt-2 text-xs text-danger">{t("profileError")}</p>;
-  if (!data) return <p className="mt-2 text-xs text-muted">{t("loading")}</p>;
+  if (!data) return <TextSkeleton label={t("loading")} />;
 
   const area = localizedLocationName(data.profile.locations, locale);
   const langs = (data.profile.languages ?? []).map((l) => localizedLangName(l, locale));
@@ -207,10 +208,10 @@ export default function ProfileSummaryPanel({
 
             return (
               <>
-                {typeof a.shortIntro === "string" && a.shortIntro && <p className="text-sm text-ink/80">{a.shortIntro}</p>}
-                {typeof a.jobDescription === "string" && a.jobDescription && <p className="text-sm text-ink/80">{a.jobDescription}</p>}
+                {typeof a.shortIntro === "string" && a.shortIntro && <p dir="auto" className="text-sm text-ink/80">{a.shortIntro}</p>}
+                {typeof a.jobDescription === "string" && a.jobDescription && <p dir="auto" className="text-sm text-ink/80">{a.jobDescription}</p>}
                 {typeof a.familyDescription === "string" && a.familyDescription && (
-                  <p className="text-sm text-ink/80">{a.familyDescription}</p>
+                  <p dir="auto" className="text-sm text-ink/80">{a.familyDescription}</p>
                 )}
                 {rows.length > 0 && (
                   <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm">

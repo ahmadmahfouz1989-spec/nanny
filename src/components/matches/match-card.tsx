@@ -85,7 +85,7 @@ export default function MatchCard({
             className="h-28 w-full object-cover"
           />
         ) : (
-          <AvatarIllustration tone={tone} className="h-28 w-full" />
+          <AvatarIllustration tone={tone} banner className="h-28 w-full" />
         )}
         {other.profile_photo_url && (
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />
@@ -111,13 +111,15 @@ export default function MatchCard({
       </div>
 
       <div className="p-5">
-        <div className="mb-3">
-          <ProfileRating
-            profileId={other.id}
-            average={match.rating?.average ?? null}
-            count={match.rating?.count ?? 0}
-          />
-        </div>
+        {(match.rating?.count ?? 0) > 0 && (
+          <div className="mb-3">
+            <ProfileRating
+              profileId={other.id}
+              average={match.rating?.average ?? null}
+              count={match.rating?.count ?? 0}
+            />
+          </div>
+        )}
 
         {availableDays.length > 0 && (
           <div className="mb-3">
@@ -132,10 +134,10 @@ export default function MatchCard({
           </div>
         )}
 
-        {typeof a.shortIntro === "string" && <p className="text-sm text-ink/80 mb-3">{a.shortIntro}</p>}
-        {typeof a.jobDescription === "string" && <p className="text-sm text-ink/80 mb-3">{a.jobDescription}</p>}
+        {typeof a.shortIntro === "string" && <p dir="auto" className="text-sm text-ink/80 mb-3">{a.shortIntro}</p>}
+        {typeof a.jobDescription === "string" && <p dir="auto" className="text-sm text-ink/80 mb-3">{a.jobDescription}</p>}
         {typeof a.familyDescription === "string" && (
-          <p className="text-sm text-ink/80 mb-3">{a.familyDescription}</p>
+          <p dir="auto" className="text-sm text-ink/80 mb-3">{a.familyDescription}</p>
         )}
 
         <MatchDetails profile={other} />

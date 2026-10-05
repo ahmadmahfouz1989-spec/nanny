@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
-import { LogoLoader } from "@/components/animated-logo";
+import { CardListSkeleton } from "@/components/skeletons";
 import { useLiveMatches } from "@/components/matches/use-live-matches";
 import MatchCard, { type Match } from "./match-card";
 import MatchFilters from "./match-filters";
@@ -164,7 +164,7 @@ export default function GenericResults({
         onClear={clearFilters}
       />
 
-      {!results && !error && <LogoLoader label={t("loading")} fullHeight />}
+      {!results && !error && <CardListSkeleton label={t("loading")} />}
       {error && <p className="text-sm text-muted">{error}</p>}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>

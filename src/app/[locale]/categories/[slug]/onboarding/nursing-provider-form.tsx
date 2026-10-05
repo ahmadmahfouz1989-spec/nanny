@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -12,6 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
 import { CARE_SPECIALTIES, nursingProviderSchema } from "@/lib/validation/nursing";
 import { ui } from "@/lib/ui";
+import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
 
 type FormState = {
   fullName: string;
@@ -126,6 +128,9 @@ export default function NursingProviderForm({
   const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set by the first failed save; from then on errors update live as the
+  // fields are fixed.
+  const [showErrors, setShowErrors] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -138,35 +143,37 @@ export default function NursingProviderForm({
     }));
   }
 
+  const payload = {
+    categorySlug,
+    role: "provider" as const,
+    fullName: form.fullName,
+    contactPhone: form.contactPhone || undefined,
+    locationId: form.locationId,
+    locationDetail: form.locationDetail,
+    nationality: form.nationality,
+    workRadiusKm: form.workRadiusKm,
+    employmentType: form.employmentType,
+    liveArrangementPref: form.liveArrangementPref,
+    availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
+    yearsExperience: form.yearsExperience,
+    hasTransportation: form.hasTransportation,
+    canDrive: form.canDrive,
+    licenseNumber: form.licenseNumber,
+    licenseIssuingAuthority: form.licenseIssuingAuthority || undefined,
+    hasNursingDiploma: form.hasNursingDiploma,
+    careSpecialties: form.careSpecialties,
+    shortIntro: form.shortIntro || undefined,
+    languageIds: form.languageIds,
+  };
+  const fieldErrors = showErrors ? fieldErrorsFrom(nursingProviderSchema.safeParse(payload)) : {};
+
   async function handleSave() {
     setError(null);
-    const payload = {
-      categorySlug,
-      role: "provider" as const,
-      fullName: form.fullName,
-      contactPhone: form.contactPhone || undefined,
-      locationId: form.locationId,
-      locationDetail: form.locationDetail,
-      nationality: form.nationality,
-      workRadiusKm: form.workRadiusKm,
-      employmentType: form.employmentType,
-      liveArrangementPref: form.liveArrangementPref,
-      availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
-      yearsExperience: form.yearsExperience,
-      hasTransportation: form.hasTransportation,
-      canDrive: form.canDrive,
-      licenseNumber: form.licenseNumber,
-      licenseIssuingAuthority: form.licenseIssuingAuthority || undefined,
-      hasNursingDiploma: form.hasNursingDiploma,
-      careSpecialties: form.careSpecialties,
-      shortIntro: form.shortIntro || undefined,
-      languageIds: form.languageIds,
-    };
 
     const parsed = nursingProviderSchema.safeParse(payload);
     if (!parsed.success) {
-      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
-      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
+      setShowErrors(true);
+      scrollToFirstError();
       return;
     }
 
@@ -190,7 +197,7 @@ export default function NursingProviderForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
-      error={error}
+      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
       onBack={onBack}
@@ -200,7 +207,10 @@ export default function NursingProviderForm({
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <FieldError field="fullName" errors={fieldErrors} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <FieldError field="contactPhone" errors={fieldErrors} />
+        <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
@@ -210,15 +220,17 @@ export default function NursingProviderForm({
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
         />
-        <label className={ui.label}>{t("nationality")}</label>
+        <FieldError field="locationId" errors={fieldErrors} />
+        <FieldError field="locationDetail" errors={fieldErrors} />
+        <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
         <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
       </div>
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section2Title")}</SectionHeading>
-        <label className={ui.label}>{t("licenseNumber")}</label>
+        <FieldLabel field="licenseNumber" errors={fieldErrors}>{t("licenseNumber")}</FieldLabel>
         <input className={ui.input} value={form.licenseNumber} onChange={(e) => update("licenseNumber", e.target.value)} />
-        <label className={ui.label}>{t("licenseIssuingAuthority")}</label>
+        <FieldLabel field="licenseIssuingAuthority" errors={fieldErrors} optional>{t("licenseIssuingAuthority")}</FieldLabel>
         <input className={ui.input} value={form.licenseIssuingAuthority} onChange={(e) => update("licenseIssuingAuthority", e.target.value)} />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={form.hasNursingDiploma} onChange={(e) => update("hasNursingDiploma", e.target.checked)} className="accent-primary" />
@@ -228,24 +240,24 @@ export default function NursingProviderForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section3Title")}</SectionHeading>
-        <label className={ui.label}>{t("workRadius")}</label>
+        <FieldLabel field="workRadiusKm" errors={fieldErrors}>{t("workRadius")}</FieldLabel>
         <input type="number" min={1} max={50} className={ui.input} value={form.workRadiusKm} onChange={(e) => update("workRadiusKm", Number(e.target.value))} />
 
-        <label className={ui.label}>{t("employmentType")}</label>
+        <FieldLabel field="employmentType" errors={fieldErrors}>{t("employmentType")}</FieldLabel>
         <select className={ui.select} value={form.employmentType} onChange={(e) => update("employmentType", e.target.value as FormState["employmentType"])}>
           <option value="full_time">{tSchedule("full_time")}</option>
           <option value="part_time">{tSchedule("part_time")}</option>
           <option value="either">{tSchedule("either")}</option>
         </select>
 
-        <label className={ui.label}>{t("liveArrangementPref")}</label>
+        <FieldLabel field="liveArrangementPref" errors={fieldErrors}>{t("liveArrangementPref")}</FieldLabel>
         <select className={ui.select} value={form.liveArrangementPref} onChange={(e) => update("liveArrangementPref", e.target.value as FormState["liveArrangementPref"])}>
           <option value="live_in">{tLive("live_in")}</option>
           <option value="live_out">{tLive("live_out")}</option>
           <option value="either">{tLive("either")}</option>
         </select>
 
-        <label className={ui.label}>{t("availableDays")}</label>
+        <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
             <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
@@ -254,7 +266,7 @@ export default function NursingProviderForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("yearsExperience")}</label>
+        <FieldLabel field="yearsExperience" errors={fieldErrors}>{t("yearsExperience")}</FieldLabel>
         <input type="number" min={0} step={0.5} className={ui.input} value={form.yearsExperience} onChange={(e) => update("yearsExperience", Number(e.target.value))} />
 
         <label className="flex items-center gap-2 text-sm">
@@ -269,7 +281,7 @@ export default function NursingProviderForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section4Title")}</SectionHeading>
-        <label className={ui.label}>{t("careSpecialties")}</label>
+        <FieldLabel field="careSpecialties" errors={fieldErrors}>{t("careSpecialties")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {CARE_SPECIALTIES.map((s) => (
             <button type="button" key={s} onClick={() => toggle("careSpecialties", s)} className={ui.pill(form.careSpecialties.includes(s))}>
@@ -278,10 +290,10 @@ export default function NursingProviderForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("preferredLanguages")}</label>
+        <FieldLabel field="languageIds" errors={fieldErrors} optional>{t("preferredLanguages")}</FieldLabel>
         <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
 
-        <label className={ui.label}>{t("shortIntro")}</label>
+        <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
       </div>
     </EditShell>

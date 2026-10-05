@@ -10,13 +10,19 @@ export default function AvatarIllustration({
   tone,
   className = "",
   style,
+  banner = false,
 }: {
   tone: "primary" | "secondary" | "berry";
   className?: string;
   style?: CSSProperties;
+  /** Full-width card banner: keep the figure towards the far side, clear of the name written at the start. */
+  banner?: boolean;
 }) {
   return (
-    <div className={`flex items-center justify-center ${TONE_BG[tone]} ${className}`} style={style}>
+    <div
+      className={`flex items-center ${banner ? "justify-end pe-16" : "justify-center"} ${TONE_BG[tone]} ${className}`}
+      style={style}
+    >
       <svg viewBox="0 0 100 100" className="h-16 w-16" fill="none" xmlns="http://www.w3.org/2000/svg">
         <circle cx="50" cy="36" r="17" fill="white" fillOpacity="0.92" />
         <path d="M18 92c0-21 14-36 32-36s32 15 32 36" fill="white" fillOpacity="0.92" />

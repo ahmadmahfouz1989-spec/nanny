@@ -103,7 +103,7 @@ export default function SavedProfileCard({
         {profile.photoUrl ? (
           <Image src={profile.photoUrl} alt="" width={640} height={160} unoptimized className="h-28 w-full object-cover" />
         ) : (
-          <AvatarIllustration tone={tone} className="h-28 w-full" />
+          <AvatarIllustration tone={tone} banner className="h-28 w-full" />
         )}
         {profile.photoUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />}
         {match && (

@@ -73,7 +73,7 @@ export default function MyPostsCard() {
               {/* Opens the post in the feed with its thread expanded -- the
                   same deep link a reply notification uses. */}
               <Link href={`/feed?post=${post.id}`} className="block group">
-                <p className="text-sm text-ink whitespace-pre-wrap group-hover:underline underline-offset-2">{post.caption}</p>
+                <p dir="auto" className="text-sm text-ink whitespace-pre-wrap group-hover:underline underline-offset-2">{post.caption}</p>
                 <p className="text-xs text-muted mt-1">
                   <span className="text-primary group-hover:underline underline-offset-2">
                     {tFeed("repliesCount", { count: post.replyCount })}

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
-import { LogoLoader } from "@/components/animated-logo";
+import { CardListSkeleton } from "@/components/skeletons";
 import type { PostIdentityOption } from "@/lib/post-identities";
 import { FEED_TARGET_EVENT, type FeedTargetDetail } from "@/lib/feed-target";
 import type { Post, Reply } from "./feed-shared";
@@ -321,7 +321,7 @@ export default function FeedClient({
           />
         )}
 
-        {posts === null && <LogoLoader label={t("loading")} fullHeight={!adminMode} />}
+        {posts === null && <CardListSkeleton label={t("loading")} />}
         {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-10">{t("empty")}</p>}
 
         <div className="divide-y divide-border">

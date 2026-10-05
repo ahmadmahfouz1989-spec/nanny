@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import EditShell from "@/components/onboarding/edit-shell";
+import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
@@ -12,6 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannyProviderSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
+import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
 
 const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_care_specialist"] as const;
 
@@ -123,6 +125,9 @@ export default function NannyProviderForm({
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set by the first failed save; from then on errors update live as the
+  // fields are fixed.
+  const [showErrors, setShowErrors] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -162,38 +167,40 @@ export default function NannyProviderForm({
 
   const activeAgeGroups = Object.keys(form.experience).filter((g) => form.experience[g] !== "");
 
+  const payload = {
+    fullName: form.fullName,
+    contactPhone: form.contactPhone || undefined,
+    profilePhotoUrl: form.profilePhotoUrl || undefined,
+    locationId: form.locationId,
+    locationDetail: form.locationDetail,
+    nationality: form.nationality,
+    workRadiusKm: Number(form.workRadiusKm),
+    employmentType: form.employmentType,
+    liveArrangementPref: form.liveArrangementPref,
+    availability: { days: form.days, startTime: form.startTime, endTime: form.endTime },
+    yearsExperience: Number(form.yearsExperience),
+    hasTransportation: form.hasTransportation,
+    canDrive: form.canDrive,
+    certifications: form.certifications,
+    shortIntro: form.shortIntro || undefined,
+    languageIds: form.languageIds,
+    experience: activeAgeGroups.map((ageGroup) => ({
+      ageGroup,
+      yearsExperience: Number(form.experience[ageGroup]),
+    })),
+  };
+  const fieldErrors = showErrors ? fieldErrorsFrom(nannyProviderSchema.safeParse(payload)) : {};
+
   async function handleSave() {
     setError(null);
     // A photo still uploading would be left out of the save.
     if (uploading) return;
 
-    const payload = {
-      fullName: form.fullName,
-      contactPhone: form.contactPhone || undefined,
-      profilePhotoUrl: form.profilePhotoUrl || undefined,
-      locationId: form.locationId,
-      locationDetail: form.locationDetail,
-      nationality: form.nationality,
-      workRadiusKm: Number(form.workRadiusKm),
-      employmentType: form.employmentType,
-      liveArrangementPref: form.liveArrangementPref,
-      availability: { days: form.days, startTime: form.startTime, endTime: form.endTime },
-      yearsExperience: Number(form.yearsExperience),
-      hasTransportation: form.hasTransportation,
-      canDrive: form.canDrive,
-      certifications: form.certifications,
-      shortIntro: form.shortIntro || undefined,
-      languageIds: form.languageIds,
-      experience: activeAgeGroups.map((ageGroup) => ({
-        ageGroup,
-        yearsExperience: Number(form.experience[ageGroup]),
-      })),
-    };
 
     const parsed = nannyProviderSchema.safeParse(payload);
     if (!parsed.success) {
-      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
-      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
+      setShowErrors(true);
+      scrollToFirstError();
       return;
     }
 
@@ -222,8 +229,7 @@ export default function NannyProviderForm({
 
   const content = (
     <>
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(1)}
           <input
             className={ui.input}
@@ -231,6 +237,7 @@ export default function NannyProviderForm({
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
           />
+        <FieldError field="fullName" errors={fieldErrors} />
           <input
             type="tel"
             className={ui.input}
@@ -238,6 +245,7 @@ export default function NannyProviderForm({
             value={form.contactPhone}
             onChange={(e) => update("contactPhone", e.target.value)}
           />
+        <FieldError field="contactPhone" errors={fieldErrors} />
           <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
 
           <div className="flex items-center gap-4">
@@ -287,9 +295,11 @@ export default function NannyProviderForm({
             onGovernorate={(id) => update("locationId", id)}
             onDetail={(v) => update("locationDetail", v)}
           />
-          <label className={ui.label}>{t("nationality")}</label>
+        <FieldError field="locationId" errors={fieldErrors} />
+        <FieldError field="locationDetail" errors={fieldErrors} />
+          <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
           <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
-          <label className={ui.label}>{t("workRadius")}</label>
+          <FieldLabel field="workRadiusKm" errors={fieldErrors}>{t("workRadius")}</FieldLabel>
           <input
             type="number"
             min={1}
@@ -298,13 +308,11 @@ export default function NannyProviderForm({
             value={form.workRadiusKm}
             onChange={(e) => update("workRadiusKm", e.target.value)}
           />
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(2)}
-          <label className={ui.label}>{t("employmentType")}</label>
+          <FieldLabel field="employmentType" errors={fieldErrors}>{t("employmentType")}</FieldLabel>
           <select
             className={ui.select}
             value={form.employmentType}
@@ -314,7 +322,7 @@ export default function NannyProviderForm({
             <option value="part_time">{tEmployment("part_time")}</option>
             <option value="either">{tEmployment("either")}</option>
           </select>
-          <label className={ui.label}>{t("liveArrangementPref")}</label>
+          <FieldLabel field="liveArrangementPref" errors={fieldErrors}>{t("liveArrangementPref")}</FieldLabel>
           <select
             className={ui.select}
             value={form.liveArrangementPref}
@@ -324,13 +332,11 @@ export default function NannyProviderForm({
             <option value="live_out">{tLive("live_out")}</option>
             <option value="either">{tLive("either")}</option>
           </select>
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(3)}
-          <label className={ui.label}>{t("availableDays")}</label>
+          <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {DAYS.map((day) => (
               <button
@@ -363,15 +369,13 @@ export default function NannyProviderForm({
               />
             </div>
           </div>
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(4)}
-          <label className={ui.label}>{t("languages")}</label>
+          <FieldLabel field="languageIds" errors={fieldErrors} optional>{t("languages")}</FieldLabel>
           <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
-          <label className={ui.label}>{t("yearsExperience")}</label>
+          <FieldLabel field="yearsExperience" errors={fieldErrors}>{t("yearsExperience")}</FieldLabel>
           <input
             type="number"
             min={0}
@@ -380,13 +384,11 @@ export default function NannyProviderForm({
             value={form.yearsExperience}
             onChange={(e) => update("yearsExperience", e.target.value)}
           />
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(5)}
-          <label className={ui.label}>{t("experienceByAge")}</label>
+          <FieldLabel field="experience" errors={fieldErrors}>{t("experienceByAge")}</FieldLabel>
           {AGE_GROUPS.map((group) => (
             <div key={group} className="flex items-center justify-between gap-3">
               <span className="text-sm text-ink/80">{tAge(group)}</span>
@@ -403,11 +405,9 @@ export default function NannyProviderForm({
               />
             </div>
           ))}
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(6)}
           <label className="flex items-center gap-2 text-sm mt-2">
             <input
@@ -427,13 +427,11 @@ export default function NannyProviderForm({
             />
             {t("canDrive")}
           </label>
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(7)}
-          <label className={ui.label}>{t("certifications")}</label>
+          <FieldLabel field="certifications" errors={fieldErrors} optional>{t("certifications")}</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {CERTIFICATION_OPTIONS.map((cert) => (
               <button
@@ -446,7 +444,7 @@ export default function NannyProviderForm({
               </button>
             ))}
           </div>
-          <label className={ui.label + " mt-2"}>{t("shortIntro")}</label>
+          <FieldLabel field="shortIntro" errors={fieldErrors} optional className="mt-2">{t("shortIntro")}</FieldLabel>
           <textarea
             className={ui.input}
             rows={4}
@@ -454,15 +452,14 @@ export default function NannyProviderForm({
             value={form.shortIntro}
             onChange={(e) => update("shortIntro", e.target.value)}
           />
-        </>
-      )}
+      </div>
     </>
   );
 
   return (
     <EditShell
       title={isEdit ? t("editTitle") : t("createTitle")}
-      error={error}
+      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={handleCancel}
       onSave={handleSave}
       onBack={onBack}

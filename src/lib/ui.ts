@@ -19,7 +19,7 @@ export const ui = {
   link: "text-primary underline decoration-primary/25 underline-offset-[3px] transition-colors hover:text-primary-hover hover:decoration-primary/60",
 
   pill: (active: boolean) =>
-    `rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+    `min-h-10 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
       active
         ? "border-primary bg-primary text-white"
         : "border-border text-ink/70 hover:border-border-strong hover:text-ink"

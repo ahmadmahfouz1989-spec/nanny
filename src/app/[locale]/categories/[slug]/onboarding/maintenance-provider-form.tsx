@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -12,6 +13,7 @@ import { useGovernorates, governorateName } from "@/components/onboarding/use-go
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, maintenanceProviderSchema } from "@/lib/validation/maintenance";
 import { ui } from "@/lib/ui";
+import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
 
 type FormState = {
   fullName: string;
@@ -102,6 +104,9 @@ export default function MaintenanceProviderForm({
   const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set by the first failed save; from then on errors update live as the
+  // fields are fixed.
+  const [showErrors, setShowErrors] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -114,29 +119,31 @@ export default function MaintenanceProviderForm({
     }));
   }
 
+  const payload = {
+    categorySlug,
+    role: "provider" as const,
+    fullName: form.fullName,
+    contactPhone: form.contactPhone || undefined,
+    locationId: form.locationId,
+    locationDetail: form.locationDetail,
+    nationality: form.nationality,
+    trades: form.trades,
+    // The home governorate is matched on its own -- don't store it twice.
+    serviceAreaIds: form.serviceAreaIds.filter((id) => id !== form.locationId),
+    availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
+    yearsExperience: form.yearsExperience,
+    takesUrgentJobs: form.takesUrgentJobs,
+    shortIntro: form.shortIntro || undefined,
+  };
+  const fieldErrors = showErrors ? fieldErrorsFrom(maintenanceProviderSchema.safeParse(payload)) : {};
+
   async function handleSave() {
     setError(null);
-    const payload = {
-      categorySlug,
-      role: "provider" as const,
-      fullName: form.fullName,
-      contactPhone: form.contactPhone || undefined,
-      locationId: form.locationId,
-      locationDetail: form.locationDetail,
-      nationality: form.nationality,
-      trades: form.trades,
-      // The home governorate is matched on its own -- don't store it twice.
-      serviceAreaIds: form.serviceAreaIds.filter((id) => id !== form.locationId),
-      availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
-      yearsExperience: form.yearsExperience,
-      takesUrgentJobs: form.takesUrgentJobs,
-      shortIntro: form.shortIntro || undefined,
-    };
 
     const parsed = maintenanceProviderSchema.safeParse(payload);
     if (!parsed.success) {
-      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
-      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
+      setShowErrors(true);
+      scrollToFirstError();
       return;
     }
 
@@ -160,7 +167,7 @@ export default function MaintenanceProviderForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
-      error={error}
+      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
       onBack={onBack}
@@ -170,7 +177,10 @@ export default function MaintenanceProviderForm({
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <FieldError field="fullName" errors={fieldErrors} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <FieldError field="contactPhone" errors={fieldErrors} />
+        <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
@@ -180,13 +190,15 @@ export default function MaintenanceProviderForm({
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
         />
-        <label className={ui.label}>{t("nationality")}</label>
+        <FieldError field="locationId" errors={fieldErrors} />
+        <FieldError field="locationDetail" errors={fieldErrors} />
+        <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
         <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
       </div>
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section2Title")}</SectionHeading>
-        <label className={ui.label}>{t("trades")}</label>
+        <FieldLabel field="trades" errors={fieldErrors}>{t("trades")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TRADES.map((trade) => (
             <button type="button" key={trade} onClick={() => toggle("trades", trade)} className={ui.pill(form.trades.includes(trade))}>
@@ -195,13 +207,13 @@ export default function MaintenanceProviderForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("yearsExperience")}</label>
+        <FieldLabel field="yearsExperience" errors={fieldErrors}>{t("yearsExperience")}</FieldLabel>
         <input type="number" min={0} step={1} className={ui.input} value={form.yearsExperience} onChange={(e) => update("yearsExperience", Number(e.target.value))} />
       </div>
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section3Title")}</SectionHeading>
-        <label className={ui.label}>{t("serviceAreas")}</label>
+        <FieldLabel field="serviceAreaIds" errors={fieldErrors} optional>{t("serviceAreas")}</FieldLabel>
         <p className="text-xs text-muted -mt-1">{t("serviceAreasHint")}</p>
         <div className="flex flex-wrap gap-2">
           {governorates
@@ -213,7 +225,7 @@ export default function MaintenanceProviderForm({
             ))}
         </div>
 
-        <label className={ui.label}>{t("availableDays")}</label>
+        <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
             <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
@@ -230,7 +242,7 @@ export default function MaintenanceProviderForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section4Title")}</SectionHeading>
-        <label className={ui.label}>{t("shortIntro")}</label>
+        <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} placeholder={t("shortIntroPlaceholder")} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
       </div>
     </EditShell>
