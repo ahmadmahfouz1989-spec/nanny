@@ -18,7 +18,8 @@
     "terms": "Terms of Service",
     "contact": "Contact us",
     "instagram": "Instagram",
-    "adminPanel": "Admin panel"
+    "adminPanel": "Admin panel",
+    "maintenance": "Home Maintenance"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -292,6 +293,18 @@
     "in_person": "In person",
     "either": "Either"
   },
+  "Trades": {
+    "plumber": "Plumber",
+    "electrician": "Electrician",
+    "painter": "Painter",
+    "tiler": "Tiler",
+    "carpenter": "Carpenter"
+  },
+  "Urgency": {
+    "urgent": "Urgent (today)",
+    "this_week": "This week",
+    "flexible": "Flexible"
+  },
   "ScheduleOptions": {
     "full_time": "Full-time",
     "part_time": "Part-time",
@@ -346,6 +359,12 @@
       "roleSeekerDescription": "Find and connect with tutors near you.",
       "roleProviderTitle": "I'm a tutor looking for students",
       "roleProviderDescription": "Create a profile so students and families can find and match with you."
+    },
+    "maintenance": {
+      "roleSeekerTitle": "I need work done at home",
+      "roleSeekerDescription": "Describe the job and get matched with plumbers, electricians, painters, tilers and carpenters near you.",
+      "roleProviderTitle": "I'm a tradesperson looking for work",
+      "roleProviderDescription": "Create a profile so customers near you can find and hire you."
     }
   },
   "NursingProviderOnboarding": {
@@ -431,6 +450,40 @@
     "section2Title": "What you need",
     "section3Title": "Schedule",
     "section4Title": "Languages"
+  },
+  "MaintenanceProviderOnboarding": {
+    "createTitle": "Create your work profile",
+    "editTitle": "Edit your work profile",
+    "namePlaceholder": "Your name",
+    "contactPhonePlaceholder": "Phone number (optional)",
+    "nationality": "Nationality",
+    "trades": "Your trades (pick all that apply)",
+    "yearsExperience": "Years of experience",
+    "serviceAreas": "Other governorates you work in",
+    "serviceAreasHint": "Optional — your own governorate is already included.",
+    "availableDays": "Available days",
+    "takesUrgentJobs": "I take urgent, same-day jobs",
+    "shortIntro": "About your work",
+    "shortIntroPlaceholder": "e.g. 10 years of plumbing: leaks, water heaters, bathroom fittings",
+    "section1Title": "You and your area",
+    "section2Title": "Your trade",
+    "section3Title": "Where and when you work",
+    "section4Title": "About you"
+  },
+  "MaintenanceSeekerOnboarding": {
+    "createTitle": "Create your request",
+    "editTitle": "Edit your request",
+    "namePlaceholder": "Your name",
+    "contactPhonePlaceholder": "Phone number (optional)",
+    "tradesNeeded": "Who do you need?",
+    "jobDescription": "Describe the job",
+    "jobDescriptionPlaceholder": "e.g. The kitchen sink is leaking under the cabinet",
+    "urgency": "How soon do you need it?",
+    "neededDays": "Which days suit you? (optional)",
+    "desiredStartDate": "Preferred date (optional)",
+    "section1Title": "You and your area",
+    "section2Title": "The job",
+    "section3Title": "When"
   },
   "ParentOnboarding": {
     "editTitle": "Edit your profile",
@@ -526,7 +579,12 @@
     "voiceNoteLoading": "Voice note unavailable — try reloading.",
     "yes": "Yes",
     "no": "No",
-    "filterSearch": "Search name, skills, area…"
+    "filterSearch": "Search name, skills, area…",
+    "criteriaTrade": "Trade",
+    "criteriaExperience": "Experience",
+    "urgency": "How soon",
+    "serviceAreas": "Also works in",
+    "takesUrgentJobs": "Takes urgent jobs"
   },
   "Featured": {
     "title": "Get Featured",

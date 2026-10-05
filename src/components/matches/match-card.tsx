@@ -133,6 +133,7 @@ export default function MatchCard({
         )}
 
         {typeof a.shortIntro === "string" && <p className="text-sm text-ink/80 mb-3">{a.shortIntro}</p>}
+        {typeof a.jobDescription === "string" && <p className="text-sm text-ink/80 mb-3">{a.jobDescription}</p>}
         {typeof a.familyDescription === "string" && (
           <p className="text-sm text-ink/80 mb-3">{a.familyDescription}</p>
         )}

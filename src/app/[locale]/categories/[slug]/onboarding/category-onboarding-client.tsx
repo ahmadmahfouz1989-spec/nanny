@@ -12,15 +12,18 @@ import NursingProviderForm from "./nursing-provider-form";
 import NursingSeekerForm from "./nursing-seeker-form";
 import TutoringProviderForm from "./tutoring-provider-form";
 import TutoringSeekerForm from "./tutoring-seeker-form";
+import MaintenanceProviderForm from "./maintenance-provider-form";
+import MaintenanceSeekerForm from "./maintenance-seeker-form";
 import { ui } from "@/lib/ui";
 
 // Each category's form pair is registered here -- also needs a schema
 // pair in CATEGORY_SCHEMAS (src/app/api/generic-profile/route.ts) and a
-// SUPPORTED_SLUGS entry (../page.tsx) before it's reachable at all.
+// CATEGORY_SLUGS entry (src/lib/category-slugs.ts) before it's reachable at all.
 const FORMS: Record<string, { provider: typeof NursingProviderForm; seeker: typeof NursingSeekerForm }> = {
   nanny: { provider: NannyProviderForm, seeker: NannySeekerForm },
   nursing: { provider: NursingProviderForm, seeker: NursingSeekerForm },
   tutoring: { provider: TutoringProviderForm, seeker: TutoringSeekerForm },
+  maintenance: { provider: MaintenanceProviderForm, seeker: MaintenanceSeekerForm },
 };
 
 type ExistingProfile = {

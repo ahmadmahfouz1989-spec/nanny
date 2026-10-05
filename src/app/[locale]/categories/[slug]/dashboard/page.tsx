@@ -5,6 +5,7 @@ import AppShell from "@/components/app-shell";
 import GenericResults from "@/components/matches/generic-results";
 import CategoryDashboardTabs from "@/components/category-dashboard-tabs";
 import { ui } from "@/lib/ui";
+import { isCategorySlug } from "@/lib/category-slugs";
 
 const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
   success: "bg-success-soft",
@@ -33,8 +34,9 @@ export default async function CategoryDashboardPage({
   }
 
   const { data: category } = await supabase.from("categories").select("id, status").eq("slug", slug).maybeSingle();
-  if (!category || category.status !== "live") {
+  if (!category || category.status !== "live" || !isCategorySlug(slug)) {
     redirect({ href: "/categories", locale });
+    return;
   }
 
   const { data: profiles } = await supabase
@@ -77,7 +79,7 @@ export default async function CategoryDashboardPage({
     }
 
     return (
-      <AppShell active={slug as "nanny" | "nursing" | "tutoring"}>
+      <AppShell active={slug}>
         <CategoryDashboardTabs
           categorySlug={slug}
           profiles={myProfiles.map((p) => ({ role: p.role as "seeker" | "provider", moderationStatus: p.moderation_status }))}
@@ -92,7 +94,7 @@ export default async function CategoryDashboardPage({
 
   if (myProfile.moderation_status === "approved") {
     return (
-      <AppShell active={slug as "nanny" | "nursing" | "tutoring"}>
+      <AppShell active={slug}>
         <GenericResults
           categorySlug={slug}
           role={myProfile.role as "seeker" | "provider"}
@@ -105,7 +107,7 @@ export default async function CategoryDashboardPage({
   const moderationTone = myProfile.moderation_status === "rejected" ? "danger" : "warning";
 
   return (
-    <AppShell active={slug as "nanny" | "nursing" | "tutoring"}>
+    <AppShell active={slug}>
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
 

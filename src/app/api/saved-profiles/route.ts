@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
+import { isCategorySlug } from "@/lib/category-slugs";
 import { listSavedProfiles } from "@/lib/saved-profiles";
 
 const DEFAULT_LIMIT = 20;
@@ -31,7 +32,7 @@ export async function GET(request: Request) {
   const limit = Math.min(MAX_LIMIT, Math.max(1, Number(searchParams.get("limit")) || DEFAULT_LIMIT));
   const rawCursor = searchParams.get("cursor");
 
-  if (category && !["nanny", "nursing", "tutoring"].includes(category)) {
+  if (category && !isCategorySlug(category)) {
     return NextResponse.json({ error: "Invalid category" }, { status: 400 });
   }
   if (role && !["seeking", "offering"].includes(role)) {

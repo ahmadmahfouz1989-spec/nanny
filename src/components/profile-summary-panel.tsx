@@ -10,6 +10,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { labelOr } from "@/lib/i18n-fallback";
 import { ui } from "@/lib/ui";
 import { formatHoursRange } from "@/lib/format-hours";
+import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 
 type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
 type LocationRef = { name_en: string; name_ar: string; name_fr: string } | null;
@@ -82,7 +83,10 @@ export default function ProfileSummaryPanel({
   const tGrade = useTranslations("GradeLevels");
   const tFormat = useTranslations("TutoringFormats");
   const tNursingSeeker = useTranslations("NursingSeekerOnboarding");
+  const tTrade = useTranslations("Trades");
+  const tUrgency = useTranslations("Urgency");
   const locale = useLocale();
+  const governorates = useGovernorates();
 
   const [data, setData] = useState<Response | null>(null);
   const [failed, setFailed] = useState(false);
@@ -190,6 +194,12 @@ export default function ProfileSummaryPanel({
             const grades = typeof a.gradeLevel === "string" ? [a.gradeLevel] : asStrings(a.gradeLevels);
             if (grades.length) add(tMatches("criteriaGradeLevel"), grades.map((v) => labelOr(tGrade, v)).join(", "));
             if (typeof a.format === "string") add(tMatches("criteriaFormat"), labelOr(tFormat, a.format));
+            const trades = asStrings(a.trades ?? a.tradesNeeded);
+            if (trades.length) add(tMatches("criteriaTrade"), trades.map((v) => labelOr(tTrade, v)).join(", "));
+            if (typeof a.urgency === "string") add(tMatches("urgency"), labelOr(tUrgency, a.urgency));
+            const serviceAreas = governorateNames(a.serviceAreaIds, governorates, locale);
+            if (serviceAreas.length) add(tMatches("serviceAreas"), serviceAreas.join(", "));
+            if (typeof a.takesUrgentJobs === "boolean") add(tMatches("takesUrgentJobs"), yesNo(a.takesUrgentJobs));
             const transport = a.hasTransportation ?? a.transportationRequired;
             if (typeof transport === "boolean") add(tMatches("criteriaTransportation"), yesNo(transport));
             if (typeof a.canDrive === "boolean") add(tNanny("canDrive"), yesNo(a.canDrive));
@@ -198,6 +208,7 @@ export default function ProfileSummaryPanel({
             return (
               <>
                 {typeof a.shortIntro === "string" && a.shortIntro && <p className="text-sm text-ink/80">{a.shortIntro}</p>}
+                {typeof a.jobDescription === "string" && a.jobDescription && <p className="text-sm text-ink/80">{a.jobDescription}</p>}
                 {typeof a.familyDescription === "string" && a.familyDescription && (
                   <p className="text-sm text-ink/80">{a.familyDescription}</p>
                 )}

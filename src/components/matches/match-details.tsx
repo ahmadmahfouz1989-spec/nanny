@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { labelOr } from "@/lib/i18n-fallback";
+import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 import type { OtherProfile } from "./match-card";
 
 /**
@@ -23,7 +24,10 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
   const tAgeGroups = useTranslations("AgeGroups");
   const tCerts = useTranslations("Certifications");
   const tDuties = useTranslations("Duties");
+  const tTrade = useTranslations("Trades");
+  const tUrgency = useTranslations("Urgency");
   const locale = useLocale();
+  const governorates = useGovernorates();
 
   const a = profile.attributes ?? {};
   const langs = (profile.languages ?? []).map((l) => (locale === "ar" ? l.name_ar : locale === "fr" ? l.name_fr : l.name_en));
@@ -33,6 +37,8 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
   const additionalDuties = (Array.isArray(a.additionalDuties) ? a.additionalDuties : []) as string[];
   const specialties = ((a.careSpecialties ?? a.careSpecialtiesNeeded ?? []) as string[]) ?? [];
   const subjects = ((a.subjects ?? a.subjectsNeeded ?? []) as string[]) ?? [];
+  const trades = ((a.trades ?? a.tradesNeeded ?? []) as string[]) ?? [];
+  const serviceAreas = governorateNames(a.serviceAreaIds, governorates, locale);
 
   return (
     <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-sm mb-3">
@@ -160,6 +166,30 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
         <>
           <dt className="text-muted">{t("criteriaSubject")}</dt>
           <dd>{subjects.map((s) => labelOr(tSubject, s)).join(", ")}</dd>
+        </>
+      )}
+      {trades.length > 0 && (
+        <>
+          <dt className="text-muted">{t("criteriaTrade")}</dt>
+          <dd>{trades.map((s) => labelOr(tTrade, s)).join(", ")}</dd>
+        </>
+      )}
+      {typeof a.urgency === "string" && (
+        <>
+          <dt className="text-muted">{t("urgency")}</dt>
+          <dd>{labelOr(tUrgency, a.urgency)}</dd>
+        </>
+      )}
+      {serviceAreas.length > 0 && (
+        <>
+          <dt className="text-muted">{t("serviceAreas")}</dt>
+          <dd>{serviceAreas.join(", ")}</dd>
+        </>
+      )}
+      {typeof a.takesUrgentJobs === "boolean" && (
+        <>
+          <dt className="text-muted">{t("takesUrgentJobs")}</dt>
+          <dd>{a.takesUrgentJobs ? t("yes") : t("no")}</dd>
         </>
       )}
     </dl>
