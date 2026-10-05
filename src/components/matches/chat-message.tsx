@@ -46,7 +46,9 @@ export default function ChatMessage({
             <span className="text-xs opacity-80 px-1.5">{t("voiceNoteLoading")}</span>
           )
         ) : (
-          m.body
+          // Either language can appear in either UI -- let the text pick
+          // its own direction so brackets and punctuation land right.
+          <span dir="auto" className="whitespace-pre-wrap">{m.body}</span>
         )}
       </div>
       {time && (

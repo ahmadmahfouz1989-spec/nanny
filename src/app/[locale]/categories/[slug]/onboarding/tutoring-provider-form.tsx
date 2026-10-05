@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -12,6 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
 import { SUBJECTS, GRADE_LEVELS, TUTORING_FORMATS, tutoringProviderSchema } from "@/lib/validation/tutoring";
 import { ui } from "@/lib/ui";
+import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
 
 type FormState = {
   fullName: string;
@@ -108,6 +110,9 @@ export default function TutoringProviderForm({
   const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set by the first failed save; from then on errors update live as the
+  // fields are fixed.
+  const [showErrors, setShowErrors] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -120,30 +125,32 @@ export default function TutoringProviderForm({
     }));
   }
 
+  const payload = {
+    categorySlug,
+    role: "provider" as const,
+    fullName: form.fullName,
+    contactPhone: form.contactPhone || undefined,
+    locationId: form.locationId,
+    locationDetail: form.locationDetail,
+    nationality: form.nationality,
+    subjects: form.subjects,
+    gradeLevels: form.gradeLevels,
+    format: form.format,
+    availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
+    yearsExperience: form.yearsExperience,
+    hasTransportation: form.hasTransportation,
+    shortIntro: form.shortIntro || undefined,
+    languageIds: form.languageIds,
+  };
+  const fieldErrors = showErrors ? fieldErrorsFrom(tutoringProviderSchema.safeParse(payload)) : {};
+
   async function handleSave() {
     setError(null);
-    const payload = {
-      categorySlug,
-      role: "provider" as const,
-      fullName: form.fullName,
-      contactPhone: form.contactPhone || undefined,
-      locationId: form.locationId,
-      locationDetail: form.locationDetail,
-      nationality: form.nationality,
-      subjects: form.subjects,
-      gradeLevels: form.gradeLevels,
-      format: form.format,
-      availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
-      yearsExperience: form.yearsExperience,
-      hasTransportation: form.hasTransportation,
-      shortIntro: form.shortIntro || undefined,
-      languageIds: form.languageIds,
-    };
 
     const parsed = tutoringProviderSchema.safeParse(payload);
     if (!parsed.success) {
-      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
-      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
+      setShowErrors(true);
+      scrollToFirstError();
       return;
     }
 
@@ -167,7 +174,7 @@ export default function TutoringProviderForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
-      error={error}
+      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
       onBack={onBack}
@@ -177,7 +184,10 @@ export default function TutoringProviderForm({
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
         <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <FieldError field="fullName" errors={fieldErrors} />
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <FieldError field="contactPhone" errors={fieldErrors} />
+        <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
@@ -187,13 +197,15 @@ export default function TutoringProviderForm({
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
         />
-        <label className={ui.label}>{t("nationality")}</label>
+        <FieldError field="locationId" errors={fieldErrors} />
+        <FieldError field="locationDetail" errors={fieldErrors} />
+        <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
         <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
       </div>
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section2Title")}</SectionHeading>
-        <label className={ui.label}>{t("subjects")}</label>
+        <FieldLabel field="subjects" errors={fieldErrors}>{t("subjects")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {SUBJECTS.map((s) => (
             <button type="button" key={s} onClick={() => toggle("subjects", s)} className={ui.pill(form.subjects.includes(s))}>
@@ -202,7 +214,7 @@ export default function TutoringProviderForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("gradeLevels")}</label>
+        <FieldLabel field="gradeLevels" errors={fieldErrors}>{t("gradeLevels")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {GRADE_LEVELS.map((g) => (
             <button type="button" key={g} onClick={() => toggle("gradeLevels", g)} className={ui.pill(form.gradeLevels.includes(g))}>
@@ -211,7 +223,7 @@ export default function TutoringProviderForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("format")}</label>
+        <FieldLabel field="format" errors={fieldErrors}>{t("format")}</FieldLabel>
         <select className={ui.select} value={form.format} onChange={(e) => update("format", e.target.value as FormState["format"])}>
           {TUTORING_FORMATS.map((f) => (
             <option key={f} value={f}>
@@ -223,7 +235,7 @@ export default function TutoringProviderForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section3Title")}</SectionHeading>
-        <label className={ui.label}>{t("availableDays")}</label>
+        <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
             <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
@@ -232,7 +244,7 @@ export default function TutoringProviderForm({
           ))}
         </div>
 
-        <label className={ui.label}>{t("yearsExperience")}</label>
+        <FieldLabel field="yearsExperience" errors={fieldErrors}>{t("yearsExperience")}</FieldLabel>
         <input type="number" min={0} step={0.5} className={ui.input} value={form.yearsExperience} onChange={(e) => update("yearsExperience", Number(e.target.value))} />
 
         <label className="flex items-center gap-2 text-sm">
@@ -243,10 +255,10 @@ export default function TutoringProviderForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section4Title")}</SectionHeading>
-        <label className={ui.label}>{t("preferredLanguages")}</label>
+        <FieldLabel field="languageIds" errors={fieldErrors} optional>{t("preferredLanguages")}</FieldLabel>
         <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
 
-        <label className={ui.label}>{t("shortIntro")}</label>
+        <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
       </div>
     </EditShell>

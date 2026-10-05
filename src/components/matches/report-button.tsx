@@ -62,14 +62,14 @@ export default function ReportButton({
           type="button"
           onClick={() => setOpen(true)}
           aria-label={t("action")}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-full text-muted transition hover:bg-danger-soft hover:text-danger"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-danger-soft hover:text-danger"
         >
           <MoreIcon className="h-4 w-4" />
         </button>
       );
     }
     return (
-      <button type="button" onClick={() => setOpen(true)} className="text-xs text-muted hover:text-danger transition mt-2">
+      <button type="button" onClick={() => setOpen(true)} className="mt-1 py-2 pe-3 text-xs text-muted transition hover:text-danger">
         {t("action")}
       </button>
     );

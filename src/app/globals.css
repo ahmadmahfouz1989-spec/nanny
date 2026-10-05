@@ -179,6 +179,20 @@ button:not(:disabled),
   }
 }
 
+/* ─── profile forms: numbered sections ───────────────────────────────── */
+
+.oui-form-sections {
+  counter-reset: oui-section;
+}
+.oui-form-sections .oui-section-heading::before {
+  counter-increment: oui-section;
+  content: counter(oui-section) " · ";
+  color: var(--color-primary);
+}
+.oui-form-sections .oui-section-heading:lang(ar)::before {
+  content: counter(oui-section, arabic-indic) " · ";
+}
+
 /* ─── motion ─────────────────────────────────────────────────────────── */
 
 @keyframes oui-fade-up {
@@ -273,7 +287,25 @@ button:not(:disabled),
   }
 }
 
+/* Chat "typing…" dots. */
+@keyframes oui-typing {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+.oui-typing-dot {
+  animation: oui-typing 1.1s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .oui-typing-dot,
   .oui-in,
   .oui-float,
   .oui-float-2,

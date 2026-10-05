@@ -21,7 +21,7 @@ export default function SignOutButton() {
   }
 
   return (
-    <button onClick={handleSignOut} className={ui.buttonGhost}>
+    <button onClick={handleSignOut} className={ui.buttonGhost + " whitespace-nowrap"}>
       {t("logout")}
     </button>
   );

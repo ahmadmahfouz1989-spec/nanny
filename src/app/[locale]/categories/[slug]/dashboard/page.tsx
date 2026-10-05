@@ -41,7 +41,7 @@ export default async function CategoryDashboardPage({
 
   const { data: profiles } = await supabase
     .from("generic_profiles")
-    .select("id, role, status, moderation_status")
+    .select("id, role, status, moderation_status, profile_photo_url")
     .eq("user_id", user!.id)
     .eq("category_id", category!.id);
 
@@ -104,7 +104,33 @@ export default async function CategoryDashboardPage({
     );
   }
 
-  const moderationTone = myProfile.moderation_status === "rejected" ? "danger" : "warning";
+  const rejected = myProfile.moderation_status === "rejected";
+  const moderationTone = rejected ? "danger" : "warning";
+  const editHref = `/categories/${slug}/onboarding?role=${myProfile.role}`;
+
+  // The reviewer's reason travels on the rejection notification (see the
+  // moderation route) -- show the latest one for this category.
+  let rejectionNote: string | null = null;
+  if (rejected) {
+    const { data: note } = await supabase
+      .from("notifications")
+      .select("payload")
+      .eq("user_id", user!.id)
+      .eq("type", "profile_rejected")
+      .eq("payload->>category_slug", slug)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const notes = (note?.payload as { notes?: unknown } | null)?.notes;
+    rejectionNote = typeof notes === "string" && notes.trim() ? notes : null;
+  }
+
+  // Where the profile is: submitted -> under review -> live.
+  const steps = [
+    { label: t("stepSubmitted"), state: "done" },
+    { label: rejected ? t("stepNeedsChanges") : t("stepInReview"), state: rejected ? "problem" : "current" },
+    { label: t("stepLive"), state: "todo" },
+  ] as const;
 
   return (
     <AppShell active={slug}>
@@ -114,19 +140,56 @@ export default async function CategoryDashboardPage({
         <div className={ui.card + " overflow-hidden"}>
           <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
             <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
-            <span className={ui.badge(moderationTone)}>
-              {myProfile.moderation_status === "pending" && t("statusPending")}
-              {myProfile.moderation_status === "rejected" && t("statusRejected")}
-            </span>
+            <span className={ui.badge(moderationTone)}>{rejected ? t("statusRejected") : t("statusPending")}</span>
           </div>
-          <div className="p-6">
-            <p className="text-sm text-muted">
-              {myProfile.moderation_status === "pending" && t("descriptionPending")}
-              {myProfile.moderation_status === "rejected" && t("descriptionRejected")}
-            </p>
-            <Link href={`/categories/${slug}/onboarding`} className={ui.link + " text-sm mt-3 inline-block"}>
-              {t("editProfileLink")}
-            </Link>
+          <div className="flex flex-col gap-5 p-6">
+            <ol className="flex items-start">
+              {steps.map((step, i) => (
+                <li key={step.label} className="flex flex-1 flex-col items-center gap-1.5 text-center">
+                  <span
+                    className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${
+                      step.state === "done"
+                        ? "bg-success text-white"
+                        : step.state === "current"
+                          ? "bg-warning text-white"
+                          : step.state === "problem"
+                            ? "bg-danger text-white"
+                            : "bg-surface-sunken text-muted"
+                    }`}
+                  >
+                    {step.state === "done" ? "✓" : i + 1}
+                  </span>
+                  <span className={`text-xs ${step.state === "todo" ? "text-muted" : "font-semibold text-ink"}`}>{step.label}</span>
+                </li>
+              ))}
+            </ol>
+
+            <p className="text-sm text-ink/80">{rejected ? t("descriptionRejected") : t("descriptionPendingNext")}</p>
+
+            {rejectionNote && (
+              <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm">
+                <p className="font-semibold text-danger">{t("rejectionReason")}</p>
+                <p dir="auto" className="mt-0.5 text-ink/80">{rejectionNote}</p>
+              </div>
+            )}
+
+            {!rejected && !myProfile.profile_photo_url && (
+              <div className="rounded-xl bg-primary-soft/50 px-4 py-3 text-sm">
+                <p className="font-semibold">{t("addPhotoTitle")}</p>
+                <p className="mt-0.5 text-ink/80">{t("addPhotoBody")}</p>
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-3">
+              <Link href={editHref} className={ui.buttonPrimary}>
+                {rejected ? t("editAndResubmit") : !myProfile.profile_photo_url ? t("addPhotoAction") : t("editProfile")}
+              </Link>
+              {!rejected && (
+                <Link href="/feed" className={ui.buttonSecondary}>
+                  {t("browseFeed")}
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </div>

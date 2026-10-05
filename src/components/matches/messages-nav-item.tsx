@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ChatIcon } from "@/components/nav-icons";
+import { UNREAD_CHANGED_EVENT } from "@/lib/unread-events";
 
 function useUnreadCount() {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -23,7 +24,11 @@ function useUnreadCount() {
     }
     load();
     const interval = setInterval(load, 30000);
-    return () => clearInterval(interval);
+    window.addEventListener(UNREAD_CHANGED_EVENT, load);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener(UNREAD_CHANGED_EVENT, load);
+    };
   }, []);
 
   return unreadCount;

@@ -171,7 +171,10 @@ export default async function AppShell({
           <PushSync />
 
           <main className="flex-1 min-w-0 h-dvh overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
-            <div className="oui-in">{children}</div>
+            {/* No entrance animation here: sliding every page in made moving
+                around the app feel slow. h-full lets a page (Messages) fill
+                the screen. */}
+            <div className="h-full">{children}</div>
           </main>
         </div>
       </SavedProfilesProvider>

@@ -153,7 +153,10 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </header>
 
           <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-10 py-8">
-            <div className="oui-in">{children}</div>
+            {/* No entrance animation here: sliding every page in made moving
+                around the app feel slow. h-full lets a page (Messages) fill
+                the screen. */}
+            <div className="h-full">{children}</div>
           </main>
         </div>
       </div>

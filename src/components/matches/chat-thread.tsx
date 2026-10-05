@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { SIGNED_URL_TTL_SECONDS } from "@/lib/voice-notes";
 import { MATCHES_API } from "@/lib/matching/match-access";
+import { announceUnreadChanged } from "@/lib/unread-events";
 import ChatComposer from "./chat-composer";
 import ChatMessage, { type ChatMessageData } from "./chat-message";
 import { useVoiceRecorder, type RecordedVoiceNote } from "./use-voice-recorder";
@@ -21,6 +22,18 @@ const SAFETY_REFRESH_MS = 30000;
 // fresh one once the held URL is missing (signing failed earlier) or has
 // used up most of its lifetime.
 const AUDIO_URL_REFRESH_AFTER_MS = SIGNED_URL_TTL_SECONDS * 1000 * 0.75;
+// "Typing…" is sent at most this often while someone types, and shown for
+// this long after the last signal (or until their message arrives).
+const TYPING_SEND_EVERY_MS = 2000;
+const TYPING_SHOW_FOR_MS = 4000;
+// Suggested openers for an empty conversation -- tapping one fills the box,
+// it's never sent automatically.
+const STARTERS = ["starter1", "starter2", "starter3"] as const;
+
+// Only ever called from event handlers (typing), never while rendering.
+function currentTime() {
+  return Date.now();
+}
 
 function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
@@ -64,16 +77,32 @@ export default function ChatThread({
   const olderLoadedRef = useRef(false);
   // When each message's currently-held audioUrl was received, keyed by id.
   const audioUrlReceivedAtRef = useRef(new Map<string, number>());
+  // Typing indicator: a Realtime broadcast channel per conversation. Only a
+  // bare "typing" ping travels over it -- never any of the text.
+  const typingChannelRef = useRef<ReturnType<ReturnType<typeof createClient>["channel"]> | null>(null);
+  const lastTypingSentRef = useRef(0);
+  const otherTypingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [otherTyping, setOtherTyping] = useState(false);
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
+  function stopOtherTyping() {
+    if (otherTypingTimerRef.current) clearTimeout(otherTypingTimerRef.current);
+    otherTypingTimerRef.current = null;
+    setOtherTyping(false);
+  }
 
   function markRead() {
     // Only the dedicated Messages thread (variant "full") represents the user
     // deliberately opening a conversation -- the compact widget embedded on
     // match cards renders unconditionally, so mounting it shouldn't clear
     // the unread badge before the user has actually looked at their inbox.
-    if (variant === "full") fetch(`${threadUrl}/read`, { method: "PATCH" });
+    if (variant === "full") {
+      fetch(`${threadUrl}/read`, { method: "PATCH" })
+        .then(() => announceUnreadChanged())
+        .catch(() => {});
+    }
   }
 
   function refreshMessages() {
@@ -178,6 +207,8 @@ export default function ChatThread({
             });
           }
           onMessageRef.current?.(incoming);
+          // Their message landed, so they're no longer typing it.
+          if (incoming.sender_id !== userIdRef.current) stopOtherTyping();
           // New content arrived while the thread is open -- re-mark read,
           // or it would stay unread server-side until the thread is
           // closed and reopened.
@@ -186,11 +217,25 @@ export default function ChatThread({
       )
       .subscribe();
 
+    const typingChannel = supabase
+      .channel(`typing:${matchId}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "typing" }, ({ payload }) => {
+        if (payload?.userId === userIdRef.current) return;
+        setOtherTyping(true);
+        if (otherTypingTimerRef.current) clearTimeout(otherTypingTimerRef.current);
+        otherTypingTimerRef.current = setTimeout(() => setOtherTyping(false), TYPING_SHOW_FOR_MS);
+      })
+      .subscribe();
+    typingChannelRef.current = typingChannel;
+
     const safetyRefresh = setInterval(refreshMessages, SAFETY_REFRESH_MS);
 
     return () => {
       clearInterval(safetyRefresh);
       supabase.removeChannel(channel);
+      supabase.removeChannel(typingChannel);
+      typingChannelRef.current = null;
+      stopOtherTyping();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchId, variant]);
@@ -201,7 +246,15 @@ export default function ChatThread({
     // is embedded mid-page on the dashboard).
     const el = listRef.current;
     if (el && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+  }, [messages, otherTyping]);
+
+  function handleDraftChange(value: string) {
+    setDraft(value);
+    const now = currentTime();
+    if (!value.trim() || now - lastTypingSentRef.current < TYPING_SEND_EVERY_MS) return;
+    lastTypingSentRef.current = now;
+    typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { userId: userIdRef.current } });
+  }
 
   function handleScroll() {
     const el = listRef.current;
@@ -321,8 +374,25 @@ export default function ChatThread({
             : "max-h-64 overflow-y-auto flex flex-col gap-2 p-3"
         }
       >
+        {/* Pushes a short thread to the bottom, next to the composer, the
+            way chat apps read -- without breaking scrolling once it's long. */}
+        {full && <div className="mt-auto" aria-hidden />}
         {messages && messages.length === 0 && (
-          <p className="text-sm text-muted text-center py-4">{t("chatEmpty")}</p>
+          <div className="flex flex-col items-center gap-3 py-4 text-center">
+            <p className="text-sm text-muted">{t("chatEmpty")}</p>
+            <div className="flex flex-wrap justify-center gap-2">
+              {STARTERS.map((key) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => handleDraftChange(t(key))}
+                  className="rounded-full border border-border bg-surface px-3.5 py-2 text-sm text-ink/80 transition hover:border-primary/40 hover:bg-primary-soft/40"
+                >
+                  {t(key)}
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {full && hasMoreOlder && (
           <button
@@ -347,6 +417,19 @@ export default function ChatThread({
             />
           );
         })}
+        {otherTyping && (
+          <div className="flex items-center gap-1.5 self-start rounded-2xl bg-surface-sunken px-3 py-2" role="status" aria-live="polite">
+            <span className="sr-only">{t("typing")}</span>
+            {[0, 1, 2].map((i) => (
+              <span
+                key={i}
+                aria-hidden
+                className="oui-typing-dot h-1.5 w-1.5 rounded-full bg-muted"
+                style={{ animationDelay: `${i * 0.15}s` }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {(recorder.error ?? uploadError) && (
@@ -357,7 +440,7 @@ export default function ChatThread({
       <ChatComposer
         compact={!full}
         draft={draft}
-        onDraftChange={setDraft}
+        onDraftChange={handleDraftChange}
         onSend={send}
         sending={sending}
         uploading={uploadingAudio}

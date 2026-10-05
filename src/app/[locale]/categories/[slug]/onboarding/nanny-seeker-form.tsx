@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
@@ -12,6 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannySeekerSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
+import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
 
 const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_help", "laundry"] as const;
 
@@ -112,6 +114,9 @@ export default function NannySeekerForm({
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  // Set by the first failed save; from then on errors update live as the
+  // fields are fixed.
+  const [showErrors, setShowErrors] = useState(false);
   const [uploading, setUploading] = useState(false);
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
@@ -162,34 +167,36 @@ export default function NannySeekerForm({
     );
   }
 
+  const payload = {
+    fullName: form.fullName,
+    contactPhone: form.contactPhone || undefined,
+    profilePhotoUrl: form.profilePhotoUrl || undefined,
+    locationId: form.locationId,
+    locationDetail: form.locationDetail,
+    nationality: form.nationality,
+    numChildren: form.numChildren,
+    childrenAgeRanges: form.childrenAgeRanges,
+    scheduleType: form.scheduleType,
+    neededDays: form.neededDays,
+    liveArrangement: form.liveArrangement,
+    desiredStartDate: form.desiredStartDate,
+    transportationRequired: form.transportationRequired,
+    additionalDuties: form.additionalDuties,
+    familyDescription: form.familyDescription || undefined,
+    languageIds: form.languageIds,
+  };
+  const fieldErrors = showErrors ? fieldErrorsFrom(nannySeekerSchema.safeParse(payload)) : {};
+
   async function handleSave() {
     setError(null);
     // A photo still uploading would be left out of the save.
     if (uploading) return;
 
-    const payload = {
-      fullName: form.fullName,
-      contactPhone: form.contactPhone || undefined,
-      profilePhotoUrl: form.profilePhotoUrl || undefined,
-      locationId: form.locationId,
-      locationDetail: form.locationDetail,
-      nationality: form.nationality,
-      numChildren: form.numChildren,
-      childrenAgeRanges: form.childrenAgeRanges,
-      scheduleType: form.scheduleType,
-      neededDays: form.neededDays,
-      liveArrangement: form.liveArrangement,
-      desiredStartDate: form.desiredStartDate,
-      transportationRequired: form.transportationRequired,
-      additionalDuties: form.additionalDuties,
-      familyDescription: form.familyDescription || undefined,
-      languageIds: form.languageIds,
-    };
 
     const parsed = nannySeekerSchema.safeParse(payload);
     if (!parsed.success) {
-      const msgs = [...new Set(parsed.error.issues.map((i) => i.message))];
-      setError(msgs.length ? msgs.join(", ") : tw("validationError"));
+      setShowErrors(true);
+      scrollToFirstError();
       return;
     }
 
@@ -218,8 +225,7 @@ export default function NannySeekerForm({
 
   const content = (
     <>
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(1)}
           <input
             className={ui.input}
@@ -227,6 +233,7 @@ export default function NannySeekerForm({
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
           />
+        <FieldError field="fullName" errors={fieldErrors} />
           <input
             type="tel"
             className={ui.input}
@@ -234,6 +241,7 @@ export default function NannySeekerForm({
             value={form.contactPhone}
             onChange={(e) => update("contactPhone", e.target.value)}
           />
+        <FieldError field="contactPhone" errors={fieldErrors} />
           <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
 
           <div className="flex items-center gap-4">
@@ -278,15 +286,15 @@ export default function NannySeekerForm({
             onGovernorate={(id) => update("locationId", id)}
             onDetail={(v) => update("locationDetail", v)}
           />
-          <label className={ui.label}>{t("nationality")}</label>
+        <FieldError field="locationId" errors={fieldErrors} />
+        <FieldError field="locationDetail" errors={fieldErrors} />
+          <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
           <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(2)}
-          <label className={ui.label}>{t("numChildren")}</label>
+          <FieldLabel field="numChildren" errors={fieldErrors}>{t("numChildren")}</FieldLabel>
           <input
             type="number"
             min={1}
@@ -295,7 +303,7 @@ export default function NannySeekerForm({
             value={form.numChildren}
             onChange={(e) => update("numChildren", Number(e.target.value))}
           />
-          <label className={ui.label}>{t("ageRanges")}</label>
+          <FieldLabel field="childrenAgeRanges" errors={fieldErrors}>{t("ageRanges")}</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {AGE_GROUPS.map((range) => (
               <button
@@ -308,13 +316,11 @@ export default function NannySeekerForm({
               </button>
             ))}
           </div>
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(3)}
-          <label className={ui.label}>{t("schedule")}</label>
+          <FieldLabel field="scheduleType" errors={fieldErrors}>{t("schedule")}</FieldLabel>
           <select
             className={ui.select}
             value={form.scheduleType}
@@ -325,7 +331,7 @@ export default function NannySeekerForm({
             <option value="either">{tSchedule("either")}</option>
           </select>
 
-          <label className={ui.label}>{t("neededDays")}</label>
+          <FieldLabel field="neededDays" errors={fieldErrors} optional>{t("neededDays")}</FieldLabel>
           <p className="text-xs text-muted -mt-2">{t("neededDaysHint")}</p>
           <div className="flex flex-wrap gap-2">
             {DAYS.map((day) => (
@@ -347,7 +353,7 @@ export default function NannySeekerForm({
             ))}
           </div>
 
-          <label className={ui.label}>{t("liveArrangement")}</label>
+          <FieldLabel field="liveArrangement" errors={fieldErrors}>{t("liveArrangement")}</FieldLabel>
           <select
             className={ui.select}
             value={form.liveArrangement}
@@ -357,7 +363,7 @@ export default function NannySeekerForm({
             <option value="live_out">{tLive("live_out")}</option>
             <option value="either">{tLive("either")}</option>
           </select>
-          <label className={ui.label}>{t("desiredStartDate")}</label>
+          <FieldLabel field="desiredStartDate" errors={fieldErrors}>{t("desiredStartDate")}</FieldLabel>
           <input
             type="date"
             className={ui.input}
@@ -365,13 +371,11 @@ export default function NannySeekerForm({
             value={form.desiredStartDate}
             onChange={(e) => update("desiredStartDate", e.target.value)}
           />
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(4)}
-          <label className={ui.label}>{t("preferredLanguages")}</label>
+          <FieldLabel field="languageIds" errors={fieldErrors} optional>{t("preferredLanguages")}</FieldLabel>
           <LanguageSelect value={form.languageIds} onChange={(ids) => update("languageIds", ids)} />
           <label className="flex items-center gap-2 text-sm mt-2">
             <input
@@ -382,13 +386,11 @@ export default function NannySeekerForm({
             />
             {t("transportationRequired")}
           </label>
-        </>
-      )}
+      </div>
 
-      {(
-        <>
+      <div className="flex flex-col gap-3">
           {sectionHeading(5)}
-          <label className={ui.label}>{t("additionalDuties")}</label>
+          <FieldLabel field="additionalDuties" errors={fieldErrors} optional>{t("additionalDuties")}</FieldLabel>
           <div className="flex flex-wrap gap-2">
             {DUTY_OPTIONS.map((duty) => (
               <button
@@ -401,7 +403,7 @@ export default function NannySeekerForm({
               </button>
             ))}
           </div>
-          <label className={ui.label + " mt-2"}>{t("familyDescription")}</label>
+          <FieldLabel field="familyDescription" errors={fieldErrors} optional className="mt-2">{t("familyDescription")}</FieldLabel>
           <textarea
             className={ui.input}
             rows={4}
@@ -409,15 +411,14 @@ export default function NannySeekerForm({
             value={form.familyDescription}
             onChange={(e) => update("familyDescription", e.target.value)}
           />
-        </>
-      )}
+      </div>
     </>
   );
 
   return (
     <EditShell
       title={isEdit ? t("editTitle") : t("createTitle")}
-      error={error}
+      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={handleCancel}
       onSave={handleSave}
       onBack={onBack}

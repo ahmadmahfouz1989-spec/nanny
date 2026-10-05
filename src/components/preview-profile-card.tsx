@@ -11,12 +11,17 @@ export default function PreviewProfileCard({
   tone,
   years,
   availableDays,
+  category,
+  skill,
 }: {
   name: string;
   area: string;
   tone: "primary" | "secondary" | "berry";
   years: number;
   availableDays: readonly string[];
+  /** Category name and one example skill, e.g. "Home Maintenance" / "Plumber". */
+  category: string;
+  skill: string;
 }) {
   const t = useTranslations("Preview");
   const tDay = useTranslations("Days");
@@ -24,7 +29,7 @@ export default function PreviewProfileCard({
   return (
     <div className={ui.card + " overflow-hidden"}>
       <div className="relative">
-        <AvatarIllustration tone={tone} className="h-32 w-full" />
+        <AvatarIllustration tone={tone} banner className="h-32 w-full" />
         <span className="absolute top-3 end-3 rounded-full bg-surface/90 px-2.5 py-1 text-[11px] font-semibold text-ink">
           {t("example")}
         </span>
@@ -34,7 +39,10 @@ export default function PreviewProfileCard({
         </div>
       </div>
       <div className="p-4">
-        <p className="text-sm font-semibold mb-3">{t("yearsExperience", { years })}</p>
+        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-secondary">{category}</p>
+        <p className="mb-3 text-sm font-semibold first-letter:uppercase">
+          {skill} · {t("yearsExperience", { years })}
+        </p>
         <div className="grid grid-cols-7 gap-1">
           {DAYS.map((day) => (
             <div key={day} className={ui.dayChip(availableDays.includes(day))}>
