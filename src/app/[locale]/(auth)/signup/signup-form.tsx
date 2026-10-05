@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
+import { trackMetaEvent } from "@/components/meta-pixel";
 import { ui } from "@/lib/ui";
 
 // No category chooses a role at signup -- see signupSchema in
@@ -52,6 +53,7 @@ export default function SignupForm() {
       return;
     }
 
+    trackMetaEvent("CompleteRegistration");
     setSubmitted(true);
   }
 
