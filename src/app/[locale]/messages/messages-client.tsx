@@ -11,6 +11,7 @@ import ConnectIllustration from "@/components/illustrations/connect-illustration
 import { SearchIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
 import { RowListSkeleton } from "@/components/skeletons";
+import { getJson } from "@/lib/request";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 const INBOX_POLL_MS = 6000;
@@ -44,6 +45,7 @@ export default function MessagesClient() {
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
   const [selected, setSelected] = useState<string | null>(searchParams.get("match"));
   const [query, setQuery] = useState("");
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // A ref, not the `selected` state directly, so the polling interval
   // (set up once) always reads the current selection instead of whatever
@@ -58,9 +60,16 @@ export default function MessagesClient() {
       // The open conversation is asked for by id, so one started from a
       // match card stays listed before its first message is sent.
       const open = selectedRef.current;
-      fetch(open ? `/api/inbox?match=${encodeURIComponent(open)}` : "/api/inbox")
-        .then((res) => res.json())
+      // A failed poll (dropped connection, phone asleep) keeps what's on
+      // screen and tries again on the next tick; only a first load that
+      // fails says so.
+      getJson<{ conversations?: Conversation[] }>(open ? `/api/inbox?match=${encodeURIComponent(open)}` : "/api/inbox")
         .then((body) => {
+          if (!body) {
+            setLoadFailed(true);
+            return;
+          }
+          setLoadFailed(false);
           const fresh: Conversation[] = body.conversations ?? [];
           // The open thread already marks its own messages read as they
           // arrive, but there's a brief window between that happening and
@@ -137,7 +146,8 @@ export default function MessagesClient() {
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
-          {!conversations && <RowListSkeleton label={t("loading")} />}
+          {!conversations && loadFailed && <p className="p-4 text-sm text-muted">{t("loadError")}</p>}
+          {!conversations && !loadFailed && <RowListSkeleton label={t("loading")} />}
           {conversations && conversations.length === 0 && (
             <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
               <ConnectIllustration className="h-24 w-auto" />

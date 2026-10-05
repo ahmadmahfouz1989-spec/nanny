@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
+import { getJson, request } from "@/lib/request";
 
 type MyPost = {
   id: string;
@@ -35,11 +36,9 @@ export default function MyPostsCard() {
 
   useEffect(() => {
     let active = true;
-    fetch("/api/posts?mine=1")
-      .then((res) => res.json())
-      .then((body) => {
-        if (active) setPosts(body.posts ?? []);
-      });
+    getJson("/api/posts?mine=1").then((body) => {
+      if (active && body) setPosts(body.posts ?? []);
+    });
     return () => {
       active = false;
     };
@@ -47,9 +46,9 @@ export default function MyPostsCard() {
 
   async function deletePost(id: string) {
     setDeleting(id);
-    const res = await fetch(`/api/posts/${id}`, { method: "DELETE" });
+    const res = await request(`/api/posts/${id}`, { method: "DELETE" });
     setDeleting(null);
-    if (res.ok) setPosts((prev) => prev?.filter((p) => p.id !== id) ?? null);
+    if (res?.ok) setPosts((prev) => prev?.filter((p) => p.id !== id) ?? null);
   }
 
   return (

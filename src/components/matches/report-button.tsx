@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { MoreIcon } from "@/components/nav-icons";
+import { request } from "@/lib/request";
 
 const REASONS = ["inappropriate_content", "harassment", "fraud_scam", "fake_profile", "other"] as const;
 
@@ -35,7 +36,7 @@ export default function ReportButton({
 
   async function submit() {
     setSubmitting(true);
-    const res = await fetch("/api/reports", {
+    const res = await request("/api/reports", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
@@ -45,7 +46,7 @@ export default function ReportButton({
       ),
     });
     setSubmitting(false);
-    if (res.ok) {
+    if (res?.ok) {
       setSubmitted(true);
       setOpen(false);
     }

@@ -79,7 +79,7 @@ export default function GenericResults({
         setResults(body.results);
         setTotal(body.total);
       })
-      .catch(() => setError(t("errorNoProfile")));
+      .catch(() => setError(t("loadError")));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, role, t, governorateId, day, minYearsExperience, search]);
 
@@ -104,6 +104,8 @@ export default function GenericResults({
         });
         setTotal(body.total);
       })
+      // A failed page leaves the list as it is; scrolling tries again.
+      .catch(() => {})
       .finally(() => {
         loadingMoreRef.current = false;
         setLoadingMore(false);

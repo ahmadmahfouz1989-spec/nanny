@@ -96,7 +96,8 @@
     "send": "Send",
     "replyError": "Couldn't send reply — please try again.",
     "loadMore": "Load more",
-    "profileError": "Couldn't load this profile."
+    "profileError": "Couldn't load this profile.",
+    "loadError": "Couldn't load — check your connection and try again."
   },
   "Home": {
     "badge": "Now live across Lebanon",
@@ -611,7 +612,8 @@
     "starter1": "Hi! Are you available this week?",
     "starter2": "Hello, I saw your profile and I'm interested.",
     "starter3": "Hi! Could you tell me a bit more about your experience?",
-    "typing": "typing…"
+    "typing": "typing…",
+    "loadError": "Couldn't load — check your connection and try again."
   },
   "Featured": {
     "title": "Get Featured",
@@ -643,7 +645,8 @@
     "backToList": "Back to messages",
     "search": "Search",
     "noResults": "No conversations match \"{query}\"",
-    "loading": "Loading conversations…"
+    "loading": "Loading conversations…",
+    "loadError": "Couldn't load — check your connection and try again."
   },
   "Report": {
     "action": "Report",
@@ -681,7 +684,8 @@
     "raterGenericSeeker": "— a {category} client they matched with",
     "raterGenericProvider": "— a {category} provider they matched with",
     "myRatingsTitle": "Ratings you've received",
-    "myRatingsEmpty": "No one has rated you yet. Ratings appear here after a match."
+    "myRatingsEmpty": "No one has rated you yet. Ratings appear here after a match.",
+    "loadError": "Couldn't load — check your connection and try again."
   },
   "Admin": {
     "navOverview": "Overview",
@@ -754,7 +758,8 @@
     "usersDescription": "Find an account by email or phone to verify, feature, suspend or delete it.",
     "reportsDescription": "Open reports from users. Review the conversation, then resolve or dismiss.",
     "feedTitle": "Feed moderation",
-    "feedDescription": "The public feed as users see it. Delete any post or reply that breaks the rules."
+    "feedDescription": "The public feed as users see it. Delete any post or reply that breaks the rules.",
+    "loadError": "Couldn't load — check your connection and try again."
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",
@@ -816,7 +821,8 @@
     "loadMore": "Load more",
     "loadingMore": "Loading…",
     "loading": "Loading saved profiles…",
-    "scoreLabel": "{score}% match"
+    "scoreLabel": "{score}% match",
+    "loadError": "Couldn't load — check your connection and try again."
   },
   "DeleteAccount": {
     "title": "Delete account",

@@ -7,6 +7,7 @@ import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
 import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { getJson, request } from "@/lib/request";
 
 type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
 
@@ -78,18 +79,14 @@ export default function AdminProfilesPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/analytics")
-      .then((res) => res.json())
-      .then((body) => setCategories(body.categories ?? []));
+    getJson("/api/admin/analytics").then((body) => body && setCategories(body.categories ?? []));
   }, []);
 
   function load() {
     const params = new URLSearchParams({ moderationStatus: statusFilter });
     if (categoryFilter) params.set("categorySlug", categoryFilter);
     if (roleFilter) params.set("role", roleFilter);
-    fetch(`/api/admin/profiles?${params}`)
-      .then((res) => res.json())
-      .then((body) => setProfiles(body.profiles));
+    getJson(`/api/admin/profiles?${params}`).then((body) => body && setProfiles(body.profiles));
   }
 
   useEffect(() => {
@@ -108,14 +105,14 @@ export default function AdminProfilesPage() {
 
   async function decide(profile: QueueProfile, status: "approved" | "rejected", rejectNotes?: string) {
     setSubmitting(profile.id);
-    const res = await fetch(`/api/admin/profiles/${profile.id}/moderation`, {
+    const res = await request(`/api/admin/profiles/${profile.id}/moderation`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, notes: rejectNotes }),
     });
     setSubmitting(null);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setNotice(t("moderationActionError"));
       setTimeout(() => setNotice(null), 8000);
       return;

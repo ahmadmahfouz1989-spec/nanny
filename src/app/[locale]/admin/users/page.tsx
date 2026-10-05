@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import { getJson, request } from "@/lib/request";
 
 type AdminUser = {
   id: string;
@@ -29,9 +30,7 @@ export default function AdminUsersPage() {
   function load(query: string) {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
-    fetch(`/api/admin/users?${params.toString()}`)
-      .then((res) => res.json())
-      .then((body) => setUsers(body.users));
+    getJson(`/api/admin/users?${params.toString()}`).then((body) => body && setUsers(body.users));
   }
 
   useEffect(() => {
@@ -55,26 +54,26 @@ export default function AdminUsersPage() {
   async function toggleStatus(user: AdminUser) {
     const nextStatus = user.status === "suspended" ? "active" : "suspended";
     setSubmitting(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}/status`, {
+    const res = await request(`/api/admin/users/${user.id}/status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: nextStatus }),
     });
     setSubmitting(null);
-    if (res.ok) {
+    if (res?.ok) {
       setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)) ?? null);
     }
   }
 
   async function grant(user: AdminUser, plan: "monthly" | "yearly") {
     setSubmitting(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}/featured`, {
+    const res = await request(`/api/admin/users/${user.id}/featured`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan }),
     });
     setSubmitting(null);
-    if (res.ok) {
+    if (res?.ok) {
       const { featured_until } = await res.json();
       setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, featured_until } : u)) ?? null);
     }
@@ -82,19 +81,19 @@ export default function AdminUsersPage() {
 
   async function revoke(user: AdminUser) {
     setSubmitting(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}/featured`, { method: "DELETE" });
+    const res = await request(`/api/admin/users/${user.id}/featured`, { method: "DELETE" });
     setSubmitting(null);
-    if (res.ok) {
+    if (res?.ok) {
       setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, featured_until: null } : u)) ?? null);
     }
   }
 
   async function remove(user: AdminUser) {
     setSubmitting(user.id);
-    const res = await fetch(`/api/admin/users/${user.id}`, { method: "DELETE" });
+    const res = await request(`/api/admin/users/${user.id}`, { method: "DELETE" });
     setSubmitting(null);
     setConfirmDelete(null);
-    if (res.ok) {
+    if (res?.ok) {
       setUsers((prev) => prev?.filter((u) => u.id !== user.id) ?? null);
     }
   }

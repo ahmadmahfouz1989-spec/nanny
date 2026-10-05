@@ -14,6 +14,7 @@ import { DAYS } from "@/lib/validation/profile";
 import { CARE_SPECIALTIES, nursingProviderSchema } from "@/lib/validation/nursing";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { request } from "@/lib/request";
 
 type FormState = {
   fullName: string;
@@ -178,14 +179,14 @@ export default function NursingProviderForm({
     }
 
     setSubmitting(true);
-    const res = await fetch("/api/generic-profile", {
+    const res = await request("/api/generic-profile", {
       method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...payload, profilePhotoUrl: photoUrl ?? undefined }),
     });
     setSubmitting(false);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
       setError(tw("genericError"));
       return;
     }

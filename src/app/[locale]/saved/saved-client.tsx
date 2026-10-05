@@ -47,7 +47,7 @@ export default function SavedClient() {
       })
       .catch(() => {
         if (requestIdRef.current !== requestId) return;
-        setError(t("loading"));
+        setError(t("loadError"));
       });
   }, [category, role, t]);
 
@@ -77,6 +77,8 @@ export default function SavedClient() {
         setItems((prev) => [...(prev ?? []), ...(body.items ?? [])]);
         setNextCursor(body.nextCursor ?? null);
       })
+      // A failed page just leaves Load more there to try again.
+      .catch(() => {})
       .finally(() => setLoadingMore(false));
   }
 

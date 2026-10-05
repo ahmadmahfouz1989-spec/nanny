@@ -9,6 +9,7 @@ import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
 import { ui } from "@/lib/ui";
 import { safeReturnPath } from "@/lib/return-path";
+import { request } from "@/lib/request";
 
 export default function LoginForm() {
   const t = useTranslations("Login");
@@ -64,8 +65,8 @@ export default function LoginForm() {
     // Fire-and-forget — never delay navigation for a logging call.
     fetch("/api/auth/log-login", { method: "POST" }).catch(() => {});
 
-    const meRes = await fetch("/api/auth/me");
-    const me = await meRes.json().catch(() => null);
+    const meRes = await request("/api/auth/me");
+    const me = meRes ? await meRes.json().catch(() => null) : null;
     setSubmitting(false);
 
     if (me?.user?.status === "suspended") {

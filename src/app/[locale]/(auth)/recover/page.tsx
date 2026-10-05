@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import AuthCard from "@/components/auth-card";
 import { ui } from "@/lib/ui";
+import { request } from "@/lib/request";
 
 export default function RecoverPage() {
   const t = useTranslations("Recover");
@@ -16,7 +17,7 @@ export default function RecoverPage() {
     e.preventDefault();
     setSubmitting(true);
 
-    await fetch("/api/auth/recover", {
+    await request("/api/auth/recover", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
