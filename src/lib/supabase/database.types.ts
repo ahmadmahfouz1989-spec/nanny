@@ -106,13 +106,13 @@ isOneToOne: false
                   ]
                 },"generic_matches": {
                   Row: {
-                    "category_id": string,"created_at": string,"id": string,"initiated_by": string | null,"interest_expires_at": string | null,"provider_profile_id": string,"responded_at": string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"status": string,"updated_at": string
+                    "category_id": string,"created_at": string,"id": string,"initiated_by": string | null,"interest_expires_at": string | null,"last_message_at": string | null,"provider_profile_id": string,"responded_at": string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"started_at": string | null,"started_by": string | null,"status": string,"updated_at": string
                   }
                   Insert: {
-                    "category_id": string,"created_at"?: string,"id"?: string,"initiated_by"?: string | null,"interest_expires_at"?: string | null,"provider_profile_id": string,"responded_at"?: string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"status"?: string,"updated_at"?: string
+                    "category_id": string,"created_at"?: string,"id"?: string,"initiated_by"?: string | null,"interest_expires_at"?: string | null,"last_message_at"?: string | null,"provider_profile_id": string,"responded_at"?: string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"started_at"?: string | null,"started_by"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "category_id"?: string,"created_at"?: string,"id"?: string,"initiated_by"?: string | null,"interest_expires_at"?: string | null,"provider_profile_id"?: string,"responded_at"?: string | null,"score"?: number,"score_breakdown"?: NonNullable<Json>,"seeker_profile_id"?: string,"status"?: string,"updated_at"?: string
+                    "category_id"?: string,"created_at"?: string,"id"?: string,"initiated_by"?: string | null,"interest_expires_at"?: string | null,"last_message_at"?: string | null,"provider_profile_id"?: string,"responded_at"?: string | null,"score"?: number,"score_breakdown"?: NonNullable<Json>,"seeker_profile_id"?: string,"started_at"?: string | null,"started_by"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {

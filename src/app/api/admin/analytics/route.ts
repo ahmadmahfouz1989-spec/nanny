@@ -11,7 +11,7 @@ type CategoryStats = {
   providers: number;
   seekers: number;
   pending: number;
-  mutualMatches: number;
+  conversations: number;
 };
 
 export async function GET() {
@@ -26,7 +26,7 @@ export async function GET() {
   const [
     { data: categories },
     { data: profiles },
-    { data: mutualMatches },
+    { data: conversations },
     { count: openReports },
     { count: suspendedUsers },
   ] = await Promise.all([
@@ -34,7 +34,7 @@ export async function GET() {
     // A draft row is just a claimed role with nothing filled in yet (see
     // /api/generic-profile/claim) -- not a profile anyone can be shown.
     db.from("generic_profiles").select("category_id, role, moderation_status").neq("status", "draft"),
-    db.from("generic_matches").select("category_id").eq("status", "mutual"),
+    db.from("generic_matches").select("category_id").not("last_message_at", "is", null),
     db.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     db.from("users").select("id", { count: "exact", head: true }).eq("status", "suspended"),
   ]);
@@ -49,7 +49,7 @@ export async function GET() {
       providers: mine.filter((p) => p.role === "provider").length,
       seekers: mine.filter((p) => p.role === "seeker").length,
       pending: mine.filter((p) => p.moderation_status === "pending").length,
-      mutualMatches: (mutualMatches ?? []).filter((m) => m.category_id === category.id).length,
+      conversations: (conversations ?? []).filter((m) => m.category_id === category.id).length,
     };
   });
 
@@ -57,7 +57,7 @@ export async function GET() {
     categories: stats,
     totalProfiles: stats.reduce((sum, c) => sum + c.providers + c.seekers, 0),
     pendingProfiles: stats.reduce((sum, c) => sum + c.pending, 0),
-    mutualMatches: stats.reduce((sum, c) => sum + c.mutualMatches, 0),
+    conversations: stats.reduce((sum, c) => sum + c.conversations, 0),
     openReports: openReports ?? 0,
     suspendedUsers: suspendedUsers ?? 0,
   });

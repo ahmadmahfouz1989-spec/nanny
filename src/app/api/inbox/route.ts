@@ -4,7 +4,7 @@ import { requireActiveUser } from "@/lib/session";
 import { allConversations } from "@/lib/inbox";
 
 /** One conversation list across every category an account is active in. */
-export async function GET() {
+export async function GET(request: Request) {
   const supabase = await createClient();
   const user = await requireActiveUser(supabase);
 
@@ -12,5 +12,8 @@ export async function GET() {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  return NextResponse.json({ conversations: await allConversations(supabase, user.id) });
+  // The conversation the user has open, so a just-started one (nothing
+  // sent yet) stays listed while they write the first message.
+  const match = new URL(request.url).searchParams.get("match");
+  return NextResponse.json({ conversations: await allConversations(supabase, user.id, match) });
 }

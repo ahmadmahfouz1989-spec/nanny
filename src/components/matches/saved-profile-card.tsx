@@ -143,7 +143,6 @@ export default function SavedProfileCard({
           <MatchActions
             matchId={match.id}
             status={match.status}
-            interestExpiresAt={match.interestExpiresAt}
             viewerSide={match.viewerSide}
           />
         )}

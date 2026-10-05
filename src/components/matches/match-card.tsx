@@ -145,7 +145,6 @@ export default function MatchCard({
           <MatchActions
             matchId={match.id}
             status={match.status}
-            interestExpiresAt={match.interest_expires_at}
             viewerSide={viewerSide}
           />
         )}

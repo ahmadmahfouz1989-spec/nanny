@@ -1,9 +1,9 @@
 /**
  * Heuristic contact-info detector for free text that lands in public view
- * before a mutual match exists (post captions, replies). The app's whole
- * trust model is "contact details only after a mutual match" -- an open
- * feed is exactly where that discipline erodes first if it isn't held at
- * write time, so this rejects rather than silently strips.
+ * (post captions, replies). Phone numbers are only ever shared person to
+ * person, in a private conversation -- an open feed is exactly where that
+ * discipline erodes first if it isn't held at write time, so this rejects
+ * rather than silently strips.
  *
  * This is deliberately best-effort, not airtight -- a determined user can
  * still evade a regex. It's paired with reporting + admin review, the same

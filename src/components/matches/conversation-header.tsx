@@ -8,10 +8,7 @@ import RatingButton from "@/components/matches/rating-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileSummaryPanel from "@/components/profile-summary-panel";
 import { MoreIcon } from "@/components/nav-icons";
-import { ui } from "@/lib/ui";
 import { MATCHES_API } from "@/lib/matching/match-access";
-
-type ContactInfo = { phone: string | null; email: string | null; whatsappUrl: string | null };
 
 /** Header for an open conversation, in any category. */
 export default function ConversationHeader({
@@ -21,6 +18,7 @@ export default function ConversationHeader({
   tone,
   profileId,
   onBack,
+  onBlocked,
 }: {
   matchId: string;
   name: string;
@@ -28,19 +26,27 @@ export default function ConversationHeader({
   tone: "primary" | "secondary" | "berry";
   profileId: string;
   onBack?: () => void;
+  /** Called once the user blocks this conversation. */
+  onBlocked?: () => void;
 }) {
   const t = useTranslations("Matches");
   const tInbox = useTranslations("Inbox");
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
-  const [contact, setContact] = useState<ContactInfo | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+  const [blockError, setBlockError] = useState(false);
 
-  async function loadContact() {
-    setLoading(true);
-    const res = await fetch(`${MATCHES_API}/${matchId}/contact`);
-    setLoading(false);
-    if (res.ok) setContact(await res.json());
+  async function block() {
+    setBlocking(true);
+    setBlockError(false);
+    const res = await fetch(`${MATCHES_API}/${matchId}/decline`, { method: "POST" });
+    setBlocking(false);
+    if (!res.ok) {
+      setBlockError(true);
+      return;
+    }
+    setMenuOpen(false);
+    onBlocked?.();
   }
 
   return (
@@ -86,31 +92,21 @@ export default function ConversationHeader({
           <>
             <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
             <div className="absolute top-full end-4 mt-1 w-64 rounded-xl border border-border bg-surface shadow-lg p-3 z-20 flex flex-col gap-2">
-              {!contact ? (
-                <button
-                  type="button"
-                  onClick={loadContact}
-                  disabled={loading}
-                  className={ui.buttonSecondary + " text-sm justify-start"}
-                >
-                  {t("viewContact")}
-                </button>
-              ) : (
-                <div className="rounded-xl bg-secondary-soft p-3 text-sm flex flex-col gap-1">
-                  {contact.phone && <span>{contact.phone}</span>}
-                  {contact.email && <span>{contact.email}</span>}
-                  {contact.whatsappUrl && (
-                    <a href={contact.whatsappUrl} target="_blank" rel="noopener noreferrer" className={ui.link}>
-                      {t("openWhatsapp")}
-                    </a>
-                  )}
-                </div>
-              )}
-              <div className="border-t border-border pt-2">
-                <RatingButton matchId={matchId} counterpartName={name} />
-              </div>
+              <RatingButton matchId={matchId} counterpartName={name} />
               <div className="border-t border-border pt-2">
                 <ReportButton profileId={profileId} matchId={matchId} />
+              </div>
+              <div className="border-t border-border pt-2">
+                <button
+                  type="button"
+                  onClick={block}
+                  disabled={blocking}
+                  className="text-sm text-danger hover:underline disabled:opacity-60"
+                >
+                  {t("block")}
+                </button>
+                <p className="text-xs text-muted mt-1">{t("blockHint")}</p>
+                {blockError && <p className="text-xs text-danger mt-1">{t("actionError")}</p>}
               </div>
             </div>
           </>

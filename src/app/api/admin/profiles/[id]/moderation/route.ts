@@ -15,16 +15,14 @@ const bodySchema = z.object({
 type Admin = ReturnType<typeof createAdminClient>;
 
 /**
- * Messaging only ever unlocks once a match goes mutual (see the
- * generic_messages RLS, which gates on match status, not on the profile's
- * own moderation_status) -- so "has a mutual match" is exactly the signal
- * that this profile might have a real conversation behind it, not just an
- * unrequited score.
+ * Whether this profile has a real conversation behind it (a match with at
+ * least one message, see generic_matches.last_message_at), not just
+ * scored matches nobody has written in.
  */
-async function hasMutualMatch(db: Admin, profileId: string) {
+async function hasConversation(db: Admin, profileId: string) {
   const [{ count: asSeeker }, { count: asProvider }] = await Promise.all([
-    db.from("generic_matches").select("id", { count: "exact", head: true }).eq("seeker_profile_id", profileId).eq("status", "mutual"),
-    db.from("generic_matches").select("id", { count: "exact", head: true }).eq("provider_profile_id", profileId).eq("status", "mutual"),
+    db.from("generic_matches").select("id", { count: "exact", head: true }).eq("seeker_profile_id", profileId).not("last_message_at", "is", null),
+    db.from("generic_matches").select("id", { count: "exact", head: true }).eq("provider_profile_id", profileId).not("last_message_at", "is", null),
   ]);
   return (asSeeker ?? 0) > 0 || (asProvider ?? 0) > 0;
 }
@@ -48,12 +46,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // notification to the right dashboard.
 
   if (status === "rejected") {
-    // A submission that never went mutual with anyone has nothing to
+    // A submission nobody ever messaged with has nothing to
     // protect -- delete it outright (cascades take its matches/messages
     // with it, but there's no conversation to lose) so the user lands
     // back at "no profile yet" and can resubmit from a clean slate.
     //
-    // A profile that DID go mutual might be a resubmission of an edit to
+    // A profile WITH conversations might be a resubmission of an edit to
     // an already-thriving profile (any save, including a plain photo
     // change, resets moderation_status to pending -- see
     // /api/generic-profile) -- deleting that would take real
@@ -62,7 +60,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // profile just goes invisible to new matching (RLS requires
     // status=active + moderation_status=approved for anyone else to see
     // it) without touching what already exists.
-    if (await hasMutualMatch(db, id)) {
+    if (await hasConversation(db, id)) {
       const { data: updated, error } = await db
         .from("generic_profiles")
         .update({ moderation_status: "rejected" })

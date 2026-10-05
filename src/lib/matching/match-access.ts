@@ -9,7 +9,6 @@ export type MatchSide = "seeker" | "provider";
 export interface MatchAccess {
   id: string;
   status: string;
-  interestExpiresAt: string | null;
   /** The caller's side of the match. */
   side: MatchSide;
   otherSide: MatchSide;
@@ -34,7 +33,7 @@ export async function resolveMatchAccess(supabase: Supabase, matchId: string, us
   // `!column` disambiguation hint for an embedded select.
   const { data: match } = await supabase
     .from("generic_matches")
-    .select("id, status, interest_expires_at, seeker_profile_id, provider_profile_id, categories(slug)")
+    .select("id, status, seeker_profile_id, provider_profile_id, categories(slug)")
     .eq("id", matchId)
     .maybeSingle();
   if (!match) return null;
@@ -55,7 +54,6 @@ export async function resolveMatchAccess(supabase: Supabase, matchId: string, us
   return {
     id: match.id,
     status: match.status,
-    interestExpiresAt: match.interest_expires_at,
     side,
     otherSide: isSeeker ? "provider" : "seeker",
     myUserId: isSeeker ? seekerUserId : providerUserId,
@@ -66,13 +64,9 @@ export async function resolveMatchAccess(supabase: Supabase, matchId: string, us
   };
 }
 
-/** Applies lazy expiry: a still-pending interest whose window has passed reads as 'expired'. */
-export function effectiveStatus(access: Pick<MatchAccess, "status" | "interestExpiresAt">): string {
-  const isPending = access.status.endsWith("_interested");
-  if (isPending && access.interestExpiresAt && new Date(access.interestExpiresAt) < new Date()) {
-    return "expired";
-  }
-  return access.status;
+/** A match one side has blocked ("not interested"): no new messages either way. */
+export function isBlocked(status: string): boolean {
+  return status.startsWith("declined_by_");
 }
 
 /** Notification payload identifying a match -- the bell resolves its link from this. */

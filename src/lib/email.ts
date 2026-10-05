@@ -185,17 +185,6 @@ export function newSignupAdminEmail(lang: Lang, newUserEmail: string) {
   };
 }
 
-export function interestReceivedEmail(lang: Lang, fromName: string) {
-  return {
-    subject: pick(lang, "Someone is interested in connecting", "شخص ما مهتم بالتواصل معك"),
-    html: pick(
-      lang,
-      `<p>${fromName} is interested in connecting with you on ouiKnow.</p><p>Log in to view the match and respond.</p>`,
-      `<p>${fromName} مهتم/ة بالتواصل معك على ouiKnow.</p><p>سجّل الدخول لعرض التطابق والرد عليه.</p>`,
-    ),
-  };
-}
-
 export function alreadyRegisteredEmail(lang: Lang, loginUrl: string, recoverUrl: string) {
   return {
     subject: pick(lang, "You already have an account", "لديك حساب بالفعل"),
@@ -242,18 +231,6 @@ export function postReplyEmail(lang: Lang, fromName: string, snippet: string, po
       lang,
       `<p>${name} replied to your post on ouiKnow:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${postUrl}">View the feed</a> to reply.</p>`,
       `<p>رد/ردّت ${name} على منشورك على ouiKnow:</p><blockquote style="margin:0;padding:8px 12px;border-inline-start:3px solid #ddd;color:#555">${body}</blockquote><p><a href="${postUrl}">افتح المنشورات</a> للرد.</p>`,
-    ),
-  };
-}
-
-export function mutualMatchEmail(lang: Lang, otherName: string, matchUrl: string) {
-  const name = escapeHtml(otherName);
-  return {
-    subject: pick(lang, "It's a match!", "لقد تطابقتما!"),
-    html: pick(
-      lang,
-      `<p>You and ${name} are both interested — it's a match!</p><p>Contact details are unlocked and you can now message each other. <a href="${matchUrl}">Log in to view the match and start chatting</a>.</p>`,
-      `<p>أنت و${name} مهتمّان ببعضكما — لقد تطابقتما!</p><p>تم فتح معلومات التواصل ويمكنكما الآن مراسلة بعضكما. <a href="${matchUrl}">سجّل الدخول لعرض التطابق وبدء المحادثة</a>.</p>`,
     ),
   };
 }
