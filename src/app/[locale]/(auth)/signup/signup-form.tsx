@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
+import WhatsAppAuth from "@/components/whatsapp-auth";
 import { trackMetaEvent } from "@/components/meta-pixel";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
@@ -91,6 +92,7 @@ export default function SignupForm() {
       <p className="text-muted text-sm mb-6">{t("subheadCategory")}</p>
 
       <GoogleAuthButton />
+      <WhatsAppAuth mode="signup" />
 
       <div className="flex items-center gap-3 my-5">
         <div className="h-px flex-1 bg-border" />

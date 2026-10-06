@@ -2,34 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signupSchema } from "@/lib/validation/auth";
-import { sendEmail, alreadyRegisteredEmail, newSignupAdminEmail } from "@/lib/email";
+import { sendEmail, alreadyRegisteredEmail } from "@/lib/email";
+import { notifyAdminsOfNewSignup } from "@/lib/signup-notify";
 import { getPublicOrigin } from "@/lib/site-url";
-
-// Email every admin when a genuinely new account is created. Best-effort:
-// a failure here must never break the signup response.
-async function notifyAdminsOfNewSignup(newUserEmail: string) {
-  try {
-    const admin = createAdminClient();
-    const { data: admins } = await admin
-      .from("users")
-      .select("email, preferred_language, notify_new_profiles")
-      .eq("role", "admin");
-
-    // Same opt-out as the pending-review email -- an admin who's muted new
-    // profiles doesn't want the even-earlier "someone just signed up" email
-    // either.
-    await Promise.all(
-      (admins ?? [])
-        .filter((a) => a.email && a.notify_new_profiles)
-        .map((a) => {
-          const { subject, html } = newSignupAdminEmail(a.preferred_language, newUserEmail);
-          return sendEmail(a.email!, subject, html);
-        }),
-    );
-  } catch (err) {
-    console.error("[signup] admin new-signup email failed:", err);
-  }
-}
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);

@@ -256,7 +256,9 @@ otp_expiry = 3600
 
 [auth.sms]
 # Allow/disallow new user signups via SMS to your project.
-enable_signup = false
+# Phone sign-ups are WhatsApp sign-ups: the Send SMS hook below delivers
+# the code over WhatsApp, so no SMS provider is configured.
+enable_signup = true
 # If enabled, users need to confirm their phone number before signing in.
 enable_confirmations = false
 # Template for sending OTP to users
@@ -280,18 +282,31 @@ max_frequency = "5s"
 # enabled = true
 # uri = "pg-functions://postgres/auth/before-user-created-hook"
 
+# Delivers phone sign-in codes over WhatsApp (src/app/api/auth/sms-hook) instead
+# of by SMS. Local only: points at `next dev` on port 3000, and this secret is a
+# throwaway for the local stack -- production's lives in the dashboard and in
+# SUPABASE_SMS_HOOK_SECRET. Without WhatsApp credentials the route just prints
+# the code to the dev server log.
+[auth.hook.send_sms]
+enabled = true
+uri = "http://host.docker.internal:3000/api/auth/sms-hook"
+secrets = "v1,whsec_Y3oFKEI8dSdVDS4Bwx5bqht/SQQMMG9uOPe4+8DOV7g="
+
 # This hook runs before a token is issued and allows you to add additional claims based on the authentication method used.
 # [auth.hook.custom_access_token]
 # enabled = true
 # uri = "pg-functions://<database>/<schema>/<hook_name>"
 
 # Configure one of the supported SMS providers: `twilio`, `twilio_verify`, `messagebird`, `textlocal`, `vonage`.
+# Enabled only so local phone sign-in switches on: the Send SMS hook above
+# delivers every code over WhatsApp, so these placeholders are never used.
 [auth.sms.twilio]
-enabled = false
-account_sid = ""
-message_service_sid = ""
-# DO NOT commit your Twilio auth token to git. Use environment variable substitution instead:
-auth_token = "env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN)"
+enabled = true
+account_sid = "unused-send-sms-hook-delivers"
+message_service_sid = "unused-send-sms-hook-delivers"
+# Placeholder (see above) -- never a real token. If Twilio is ever used for
+# real, switch this back to env(SUPABASE_AUTH_SMS_TWILIO_AUTH_TOKEN).
+auth_token = "unused-send-sms-hook-delivers"
 
 # Multi-factor-authentication is available to Supabase Pro plan.
 [auth.mfa]
