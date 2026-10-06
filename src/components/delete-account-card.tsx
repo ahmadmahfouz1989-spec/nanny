@@ -13,9 +13,10 @@ const DANGER_BUTTON =
  * Lets a user permanently delete their own account. Deliberately two
  * steps: the button only opens a warning that spells out what is lost,
  * and the final delete stays disabled until the user types their own
- * email -- the same email the server re-checks before deleting anything.
+ * email (or, for a WhatsApp sign-up with no email, phone number) -- the
+ * same thing the server re-checks before deleting anything.
  */
-export default function DeleteAccountCard({ email }: { email: string }) {
+export default function DeleteAccountCard({ identifier, kind }: { identifier: string; kind: "email" | "phone" }) {
   const t = useTranslations("DeleteAccount");
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -23,7 +24,11 @@ export default function DeleteAccountCard({ email }: { email: string }) {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const confirmed = typed.trim().toLowerCase() === email.toLowerCase();
+  const digits = (s: string) => s.replace(/\D/g, "");
+  const confirmed =
+    kind === "email"
+      ? typed.trim().toLowerCase() === identifier.toLowerCase()
+      : digits(typed).length > 0 && digits(typed) === digits(identifier);
 
   function cancel() {
     setOpen(false);
@@ -39,7 +44,7 @@ export default function DeleteAccountCard({ email }: { email: string }) {
       const res = await fetch("/api/account", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ confirmEmail: typed.trim() }),
+        body: JSON.stringify({ confirm: typed.trim() }),
       });
       if (!res.ok) {
         setError(t("error"));
@@ -83,17 +88,17 @@ export default function DeleteAccountCard({ email }: { email: string }) {
           </div>
 
           <label className="flex flex-col gap-1.5 text-sm">
-            <span>{t("confirmLabel")}</span>
+            <span>{kind === "email" ? t("confirmLabel") : t("confirmLabelPhone")}</span>
             <span className="font-medium" dir="ltr">
-              {email}
+              {identifier}
             </span>
             <input
-              type="email"
+              type={kind === "email" ? "email" : "tel"}
               dir="ltr"
               autoComplete="off"
               value={typed}
               onChange={(e) => setTyped(e.target.value)}
-              placeholder={email}
+              placeholder={identifier}
               className={ui.input}
             />
           </label>

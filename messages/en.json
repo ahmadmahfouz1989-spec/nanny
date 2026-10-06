@@ -220,7 +220,8 @@
     "addPhotoBody": "A clear photo helps people trust your profile when it goes live.",
     "addPhotoAction": "Add a photo",
     "editAndResubmit": "Edit and resubmit",
-    "browseFeed": "Browse the feed"
+    "browseFeed": "Browse the feed",
+    "whatsappNumber": "WhatsApp number"
   },
   "Wizard": {
     "changeRole": "Choose a different role",
@@ -862,6 +863,30 @@
     "confirm": "Delete my account permanently",
     "deleting": "Deleting…",
     "cancel": "Cancel",
-    "error": "Your account couldn't be deleted. Nothing was removed — please try again."
+    "error": "Your account couldn't be deleted. Nothing was removed — please try again.",
+    "confirmLabelPhone": "To confirm, type your account's phone number:"
+  },
+  "WhatsAppAuth": {
+    "continue": "Continue with WhatsApp",
+    "phoneTitle": "Your WhatsApp number",
+    "codeTitle": "Enter the code",
+    "countryCode": "Country code",
+    "numberPlaceholder": "e.g. 03 123 456",
+    "phoneHint": "We'll send a 6-digit code to this number on WhatsApp. Your number is never shown to other users.",
+    "sendCode": "Send code",
+    "sending": "Sending…",
+    "codeSentTo": "We sent a code to <mark>{phone}</mark> on WhatsApp.",
+    "verify": "Continue",
+    "verifying": "Checking…",
+    "changeNumber": "Change number",
+    "resend": "Resend code",
+    "resendIn": "Resend in {seconds}s",
+    "invalidNumber": "Enter a valid phone number.",
+    "sendFailed": "Couldn't send the code. Check the number and try again.",
+    "tooManyCodes": "Too many codes requested. Please wait a minute and try again.",
+    "wrongCode": "That code isn't right. Check it and try again.",
+    "codeExpired": "That code has expired. Tap \"Resend code\" for a new one.",
+    "suspended": "This account has been suspended.",
+    "termsNote": "By continuing you agree to the <terms>Terms of Service</terms>."
   }
 }

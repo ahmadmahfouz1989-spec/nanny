@@ -29,7 +29,7 @@ export default async function ProfilePage({
 
   const { data: profile } = await supabase
     .from("users")
-    .select("email, email_verified_at, featured_until")
+    .select("email, email_verified_at, phone, phone_verified_at, featured_until")
     .eq("id", user!.id)
     .single();
 
@@ -86,15 +86,28 @@ export default async function ProfilePage({
         <div className={ui.card + " p-6 mb-5"}>
           <p className="text-xs font-medium uppercase tracking-wide text-muted mb-4">{t("accountLabel")}</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-3 text-sm">
-            <dt className="text-muted">{t("email")}</dt>
-            <dd className="flex items-center gap-2">
-              {profile?.email ?? "—"}
-              {profile?.email && (
-                <span className={ui.badge(profile.email_verified_at ? "success" : "warning")}>
-                  {profile.email_verified_at ? t("verified") : t("unverified")}
-                </span>
-              )}
-            </dd>
+            {/* WhatsApp sign-ups have a phone number instead of an email. */}
+            {profile?.email || !profile?.phone ? (
+              <>
+                <dt className="text-muted">{t("email")}</dt>
+                <dd className="flex items-center gap-2">
+                  {profile?.email ?? "—"}
+                  {profile?.email && (
+                    <span className={ui.badge(profile.email_verified_at ? "success" : "warning")}>
+                      {profile.email_verified_at ? t("verified") : t("unverified")}
+                    </span>
+                  )}
+                </dd>
+              </>
+            ) : (
+              <>
+                <dt className="text-muted">{t("whatsappNumber")}</dt>
+                <dd className="flex items-center gap-2">
+                  <span dir="ltr">+{profile.phone}</span>
+                  <span className={ui.badge("success")}>{t("verified")}</span>
+                </dd>
+              </>
+            )}
           </dl>
         </div>
 
@@ -126,7 +139,11 @@ export default async function ProfilePage({
 
         <MyPostsCard />
 
-        {profile?.email && <DeleteAccountCard email={profile.email} />}
+        {profile?.email ? (
+          <DeleteAccountCard identifier={profile.email} kind="email" />
+        ) : profile?.phone ? (
+          <DeleteAccountCard identifier={`+${profile.phone}`} kind="phone" />
+        ) : null}
       </div>
     </AppShell>
   );

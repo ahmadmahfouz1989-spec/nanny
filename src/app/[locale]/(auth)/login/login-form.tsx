@@ -7,6 +7,7 @@ import { useRouter, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
+import WhatsAppAuth from "@/components/whatsapp-auth";
 import { ui } from "@/lib/ui";
 import { safeReturnPath } from "@/lib/return-path";
 import { request } from "@/lib/request";
@@ -93,6 +94,7 @@ export default function LoginForm() {
       <p className="text-muted text-sm mb-6">{t("subhead")}</p>
 
       <GoogleAuthButton next={explicitNext} />
+      <WhatsAppAuth mode="login" next={explicitNext} />
 
       <div className="flex items-center gap-3 my-5">
         <div className="h-px flex-1 bg-border" />
