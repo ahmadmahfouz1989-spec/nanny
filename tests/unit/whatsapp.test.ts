@@ -13,6 +13,21 @@ describe("WhatsApp numbers", () => {
     expect(internationalNumber("961", "12")).toBeNull();
     expect(internationalNumber("961", "")).toBeNull();
   });
+
+  it("doesn't add the country code twice when people type it themselves", () => {
+    for (const typed of ["961 3 123 456", "+961 3 123 456", "00961 3 123 456", "+961 03 123 456", "961 71 234 567"]) {
+      expect(internationalNumber("961", typed), typed).toMatch(/^961(3123456|71234567)$/);
+    }
+    // A full number with + wins over whatever country is selected.
+    expect(internationalNumber("961", "+971 50 123 4567")).toBe("971501234567");
+    expect(internationalNumber("961", "00971 50 123 4567")).toBe("971501234567");
+  });
+
+  it("keeps a short local number that only looks like it starts with the code", () => {
+    // Jbeil landline 09 612 345 -> 9612345: seven digits, not +961 + 2345.
+    expect(internationalNumber("961", "09 612 345")).toBe("9619612345");
+    expect(internationalNumber("961", "9612345")).toBe("9619612345");
+  });
 });
 
 describe("WhatsApp code message", () => {
