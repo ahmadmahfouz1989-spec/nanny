@@ -2,6 +2,7 @@ import createMiddleware from "next-intl/middleware";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 import { updateSession } from "@/lib/supabase/middleware";
+import { canonicalHostRedirect } from "@/lib/site-url";
 
 const handleI18nRouting = createMiddleware(routing);
 
@@ -23,6 +24,9 @@ function isBlockedWrite(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest) {
+  const canonical = canonicalHostRedirect(request.headers.get("host"), request.nextUrl.pathname + request.nextUrl.search);
+  if (canonical) return NextResponse.redirect(canonical, 308);
+
   if (request.nextUrl.pathname.startsWith("/api/")) {
     if (isBlockedWrite(request)) {
       return NextResponse.json(
