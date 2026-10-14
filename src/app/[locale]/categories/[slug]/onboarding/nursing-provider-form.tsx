@@ -13,7 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
 import { CARE_SPECIALTIES, nursingProviderSchema } from "@/lib/validation/nursing";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type FormState = {
@@ -166,7 +166,7 @@ export default function NursingProviderForm({
     shortIntro: form.shortIntro || undefined,
     languageIds: form.languageIds,
   };
-  const fieldErrors = showErrors ? fieldErrorsFrom(nursingProviderSchema.safeParse(payload)) : {};
+  const fieldErrors = showErrors ? fieldErrorsFor(nursingProviderSchema, payload) : {};
 
   async function handleSave() {
     setError(null);

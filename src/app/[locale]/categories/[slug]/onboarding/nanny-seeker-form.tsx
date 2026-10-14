@@ -13,7 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannySeekerSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_help", "laundry"] as const;
@@ -186,7 +186,7 @@ export default function NannySeekerForm({
     familyDescription: form.familyDescription || undefined,
     languageIds: form.languageIds,
   };
-  const fieldErrors = showErrors ? fieldErrorsFrom(nannySeekerSchema.safeParse(payload)) : {};
+  const fieldErrors = showErrors ? fieldErrorsFor(nannySeekerSchema, payload) : {};
 
   async function handleSave() {
     setError(null);

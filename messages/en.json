@@ -234,6 +234,8 @@
     "optional": "optional",
     "fixHighlighted": "Please fix the highlighted fields above.",
     "errorRequired": "Please fill this in.",
+    "errorChoose": "Please choose one.",
+    "errorTooShort": "That's too short.",
     "errorPickOne": "Pick at least one.",
     "errorNumber": "Enter a valid number.",
     "errorTooLong": "That's too long.",
