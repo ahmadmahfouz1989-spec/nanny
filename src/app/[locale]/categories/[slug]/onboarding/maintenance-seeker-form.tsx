@@ -176,9 +176,8 @@ export default function MaintenanceSeekerForm({
           detail={form.locationDetail}
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
+          errors={fieldErrors}
         />
-        <FieldError field="locationId" errors={fieldErrors} />
-        <FieldError field="locationDetail" errors={fieldErrors} />
       </div>
 
       <div className="flex flex-col gap-3">

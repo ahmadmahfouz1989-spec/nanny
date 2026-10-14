@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
+import { FieldError } from "@/components/onboarding/field-label";
+import type { FieldErrors } from "@/lib/form-errors";
 
 type Location = {
   id: string;
@@ -22,18 +24,21 @@ function localizedName(location: Location, locale: string) {
 /**
  * Pick a governorate from the list, then type the specific location
  * (street / building / neighbourhood) as free text. Only the governorate
- * feeds the match score.
+ * feeds the match score. Each box shows its own error right under it, so a
+ * missing governorate isn't reported under a filled-in neighbourhood.
  */
 export default function LocationPicker({
   governorateId,
   detail,
   onGovernorate,
   onDetail,
+  errors = {},
 }: {
   governorateId: string | null;
   detail: string;
   onGovernorate: (id: string | null) => void;
   onDetail: (value: string) => void;
+  errors?: FieldErrors;
 }) {
   const locale = useLocale();
   const t = useTranslations("Location");
@@ -49,7 +54,9 @@ export default function LocationPicker({
   return (
     <div className="flex flex-col gap-2">
       <select
-        className={ui.select}
+        className={`${ui.select} ${errors.locationId ? "border-danger!" : ""}`}
+        aria-invalid={!!errors.locationId}
+        aria-label={t("governorate")}
         value={governorateId ?? ""}
         onChange={(e) => onGovernorate(e.target.value || null)}
       >
@@ -60,15 +67,19 @@ export default function LocationPicker({
           </option>
         ))}
       </select>
+      <FieldError field="locationId" errors={errors} />
 
       <input
         type="text"
-        className={ui.input}
+        className={`${ui.input} ${errors.locationDetail ? "border-danger!" : ""}`}
+        aria-invalid={!!errors.locationDetail}
+        aria-label={t("detailPlaceholder")}
         placeholder={t("detailPlaceholder")}
         value={detail}
         onChange={(e) => onDetail(e.target.value)}
         maxLength={120}
       />
+      <FieldError field="locationDetail" errors={errors} />
     </div>
   );
 }
