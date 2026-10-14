@@ -12,6 +12,7 @@ import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
 import InstallPrompt from "@/components/install-prompt";
 import PushSync from "@/components/push-sync";
+import PushPrompt from "@/components/push-prompt";
 import type { CategorySlug } from "@/lib/category-slugs";
 
 type ActiveKey = "categories" | CategorySlug | "feed" | "saved" | "messages" | "profile";
@@ -169,6 +170,7 @@ export default async function AppShell({
 
           <InstallPrompt />
           <PushSync />
+          <PushPrompt />
 
           <main className="flex-1 min-w-0 h-dvh overflow-y-auto pt-[calc(4rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
             {/* No entrance animation here: sliding every page in made moving

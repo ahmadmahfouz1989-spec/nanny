@@ -66,7 +66,11 @@
     "unsupported": "This browser doesn't support push notifications.",
     "error": "Couldn't change notifications — please try again.",
     "someone": "Someone",
-    "voiceMessage": "🎤 Voice message"
+    "voiceMessage": "🎤 Voice message",
+    "promptTitle": "Turn on notifications",
+    "promptBody": "Know right away when someone messages you.",
+    "allow": "Allow",
+    "dismiss": "Not now"
   },
   "Feed": {
     "title": "Feed",
