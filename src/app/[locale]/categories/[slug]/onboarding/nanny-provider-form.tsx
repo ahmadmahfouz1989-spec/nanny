@@ -13,7 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannyProviderSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_care_specialist"] as const;
@@ -190,7 +190,7 @@ export default function NannyProviderForm({
       yearsExperience: Number(form.experience[ageGroup]),
     })),
   };
-  const fieldErrors = showErrors ? fieldErrorsFrom(nannyProviderSchema.safeParse(payload)) : {};
+  const fieldErrors = showErrors ? fieldErrorsFor(nannyProviderSchema, payload) : {};
 
   async function handleSave() {
     setError(null);

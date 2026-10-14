@@ -13,7 +13,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
 import { CARE_SPECIALTIES, PATIENT_AGE_GROUPS, nursingSeekerSchema } from "@/lib/validation/nursing";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type FormState = {
@@ -141,7 +141,7 @@ export default function NursingSeekerForm({
     medicalConditionNotes: form.medicalConditionNotes || undefined,
     languageIds: form.languageIds,
   };
-  const fieldErrors = showErrors ? fieldErrorsFrom(nursingSeekerSchema.safeParse(payload)) : {};
+  const fieldErrors = showErrors ? fieldErrorsFor(nursingSeekerSchema, payload) : {};
 
   async function handleSave() {
     setError(null);

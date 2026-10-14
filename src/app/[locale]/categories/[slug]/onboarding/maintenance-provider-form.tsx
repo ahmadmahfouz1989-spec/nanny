@@ -13,7 +13,7 @@ import { useGovernorates, governorateName } from "@/components/onboarding/use-go
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, maintenanceProviderSchema } from "@/lib/validation/maintenance";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type FormState = {
@@ -136,7 +136,7 @@ export default function MaintenanceProviderForm({
     takesUrgentJobs: form.takesUrgentJobs,
     shortIntro: form.shortIntro || undefined,
   };
-  const fieldErrors = showErrors ? fieldErrorsFrom(maintenanceProviderSchema.safeParse(payload)) : {};
+  const fieldErrors = showErrors ? fieldErrorsFor(maintenanceProviderSchema, payload) : {};
 
   async function handleSave() {
     setError(null);

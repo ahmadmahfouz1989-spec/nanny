@@ -234,6 +234,8 @@
     "optional": "اختياري",
     "fixHighlighted": "يرجى تصحيح الحقول المحدّدة أعلاه.",
     "errorRequired": "يرجى تعبئة هذا الحقل.",
+    "errorChoose": "يرجى اختيار أحد الخيارات.",
+    "errorTooShort": "النص قصير جدًا.",
     "errorPickOne": "اختر خيارًا واحدًا على الأقل.",
     "errorNumber": "أدخل رقمًا صحيحًا.",
     "errorTooLong": "النص طويل جدًا.",

@@ -6,31 +6,40 @@ export type FieldErrors = Partial<Record<string, string>>;
 // The schemas' own messages are English-only and, where a schema has none,
 // Zod's technical defaults ("Too small: expected…"). The field's label
 // already says what it is, so a short translated hint per kind of problem
-// reads better in both languages.
+// reads better in both languages -- worded for what the person has to do:
+// type something, type more, or choose from a list.
+function isBlank(input: unknown) {
+  return input === undefined || input === null || (typeof input === "string" && input.trim() === "");
+}
+
 function messageKey(issue: z.ZodError["issues"][number]): string {
   switch (issue.code) {
     case "too_small":
       if (issue.origin === "array") return "errorPickOne";
       if (issue.origin === "number") return "errorNumber";
-      return "errorRequired";
+      return isBlank(issue.input) ? "errorRequired" : "errorTooShort";
     case "too_big":
       return issue.origin === "number" ? "errorNumber" : "errorTooLong";
     case "invalid_type":
+      if (issue.expected === "number") return "errorNumber";
+      // Only a select's blank option (null) gets here -- e.g. the governorate.
+      return "errorChoose";
     case "invalid_value":
-      return "errorRequired";
+      return "errorChoose";
     default:
-      return "errorCheck";
+      return isBlank(issue.input) ? "errorRequired" : "errorCheck";
   }
 }
 
 /**
- * The first problem with each field, as a Wizard message key. Nested
- * fields (availability.days, experience[0]) report under their top-level
- * name, which is what the form's labels are keyed by.
+ * The first problem with each field of `data`, as a Wizard message key.
+ * Nested fields (availability.days, experience[0]) report under their
+ * top-level name, which is what the form's labels are keyed by.
  */
-export function fieldErrorsFrom(result: { success: boolean; error?: z.ZodError }): FieldErrors {
+export function fieldErrorsFor(schema: z.ZodType, data: unknown): FieldErrors {
   const errors: FieldErrors = {};
-  if (result.success || !result.error) return errors;
+  const result = schema.safeParse(data, { reportInput: true });
+  if (result.success) return errors;
   for (const issue of result.error.issues) {
     const field = String(issue.path[0] ?? "");
     if (field && !errors[field]) errors[field] = messageKey(issue);

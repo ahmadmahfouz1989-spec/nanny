@@ -11,7 +11,7 @@ import LocationPicker from "@/components/onboarding/location-picker";
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, URGENCIES, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFrom, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type Urgency = (typeof URGENCIES)[number];
@@ -122,7 +122,7 @@ export default function MaintenanceSeekerForm({
     neededDays: urgent ? [] : form.neededDays,
     desiredStartDate: urgent ? undefined : form.desiredStartDate || undefined,
   };
-  const fieldErrors = showErrors ? fieldErrorsFrom(maintenanceSeekerSchema.safeParse(payload)) : {};
+  const fieldErrors = showErrors ? fieldErrorsFor(maintenanceSeekerSchema, payload) : {};
 
   async function handleSave() {
     setError(null);
