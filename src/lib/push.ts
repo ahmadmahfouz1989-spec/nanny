@@ -3,15 +3,19 @@ import webpush from "web-push";
 import { createTranslator, type AbstractIntlMessages } from "next-intl";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notificationHref, notificationLabel } from "@/lib/notification-content";
+import { apnsEnabled, fcmEnabled, sendApns, sendFcm } from "@/lib/native-push";
 import type { Json } from "@/lib/supabase/database.types";
 import en from "../../messages/en.json";
 import ar from "../../messages/ar.json";
 
 /**
- * Web push to every device a user turned notifications on for (rows in
- * push_subscriptions, written by /api/push/subscription). Off unless the
- * VAPID keys are set -- generate a pair with `npx web-push generate-vapid-keys`.
- * Always best-effort: a push failure never fails the action that caused it.
+ * Push to every device a user turned notifications on for: browsers and
+ * home-screen apps via web push (rows in push_subscriptions, written by
+ * /api/push/subscription), and the iOS/Android apps via APNs/FCM (rows in
+ * native_push_tokens, written by /api/push/native -- see native-push.ts).
+ * Web push is off unless the VAPID keys are set -- generate a pair with
+ * `npx web-push generate-vapid-keys`. Always best-effort: a push failure
+ * never fails the action that caused it.
  */
 
 const publicKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
@@ -23,6 +27,11 @@ const subject = process.env.VAPID_SUBJECT || appUrl || "https://ouiknow.com";
 
 export function pushEnabled() {
   return !!publicKey && !!privateKey;
+}
+
+/** Any push channel at all: web push, or the iOS/Android apps. */
+export function anyPushEnabled() {
+  return pushEnabled() || apnsEnabled() || fcmEnabled();
 }
 
 type Locale = "en" | "ar";
@@ -39,15 +48,20 @@ export type PushMessage = {
 
 /** Sends to all of these users' devices, building the text per device language. */
 export async function sendPush(userIds: string[], build: (locale: Locale) => PushMessage) {
-  if (!pushEnabled() || userIds.length === 0) return;
+  if (!anyPushEnabled() || userIds.length === 0) return;
+  const users = [...new Set(userIds)];
+  await Promise.all([sendWebPush(users, build), sendNativePush(users, build)]);
+}
 
+async function sendWebPush(userIds: string[], build: (locale: Locale) => PushMessage) {
+  if (!pushEnabled()) return;
   try {
     webpush.setVapidDetails(subject, publicKey!, privateKey!);
     const admin = createAdminClient();
     const { data: subs } = await admin
       .from("push_subscriptions")
       .select("id, endpoint, p256dh, auth, locale")
-      .in("user_id", [...new Set(userIds)]);
+      .in("user_id", userIds);
 
     const gone: string[] = [];
     await Promise.all(
@@ -75,12 +89,43 @@ export async function sendPush(userIds: string[], build: (locale: Locale) => Pus
   }
 }
 
+async function sendNativePush(userIds: string[], build: (locale: Locale) => PushMessage) {
+  if (!apnsEnabled() && !fcmEnabled()) return;
+  try {
+    const admin = createAdminClient();
+    const { data: rows } = await admin
+      .from("native_push_tokens")
+      .select("id, token, platform, locale")
+      .in("user_id", userIds);
+
+    // One send per platform and language, so each batch shares its text.
+    const gone: string[] = [];
+    const batches = new Map<string, NonNullable<typeof rows>>();
+    for (const row of rows ?? []) {
+      const key = `${row.platform}:${row.locale === "ar" ? "ar" : "en"}`;
+      batches.set(key, [...(batches.get(key) ?? []), row]);
+    }
+    await Promise.all(
+      [...batches].map(async ([key, batch]) => {
+        const [platform, locale] = key.split(":") as ["ios" | "android", Locale];
+        const send = platform === "ios" ? sendApns : sendFcm;
+        const results = await send(batch.map((r) => r.token), build(locale));
+        results.forEach((result, i) => result === "gone" && gone.push(batch[i].id));
+      }),
+    );
+
+    if (gone.length > 0) await admin.from("native_push_tokens").delete().in("id", gone);
+  } catch (err) {
+    console.error("[push] native failed:", err);
+  }
+}
+
 /**
  * Same as sendPush, but runs after the response is sent. Outside a request
  * (scripts, tests) after() throws, so it just sends in the background.
  */
 export function sendPushAfterResponse(userIds: string[], build: (locale: Locale) => PushMessage) {
-  if (!pushEnabled() || userIds.length === 0) return;
+  if (!anyPushEnabled() || userIds.length === 0) return;
   try {
     after(() => sendPush(userIds, build));
   } catch {

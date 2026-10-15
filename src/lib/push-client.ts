@@ -1,13 +1,16 @@
 /**
  * Browser side of web push: subscribe this device via the service worker
- * and tell /api/push/subscription about it. Client components only.
+ * and tell /api/push/subscription about it. Inside the iOS/Android apps,
+ * push is native instead (see native-app.ts). Client components only.
  */
+import { disableNativePush, isNativeApp } from "@/lib/native-app";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 
-export type PushSupport = "supported" | "unsupported" | "needs-install" | "unconfigured";
+export type PushSupport = "native" | "supported" | "unsupported" | "needs-install" | "unconfigured";
 
 export function pushSupport(): PushSupport {
+  if (isNativeApp()) return "native";
   if (!VAPID_PUBLIC_KEY) return "unconfigured";
   const hasApi = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
   if (hasApi) return "supported";
@@ -62,6 +65,7 @@ export async function enablePush(locale: string): Promise<NotificationPermission
 }
 
 export async function disablePush() {
+  if (isNativeApp()) return disableNativePush();
   const sub = await currentSubscription();
   if (!sub) return;
   await fetch("/api/push/subscription", {

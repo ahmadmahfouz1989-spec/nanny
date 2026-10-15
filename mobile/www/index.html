@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>ouiKnow</title>
+  <style>
+    :root { color-scheme: light dark; --bg: #fbf8f4; --ink: #2b241c; --muted: #8a7f73; --primary: #e8552d; }
+    @media (prefers-color-scheme: dark) { :root { --bg: #1b1712; --ink: #f3ede6; --muted: #a89c8f; } }
+    body { margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, system-ui, sans-serif; text-align: center; padding: 24px; box-sizing: border-box; }
+    h1 { font-size: 20px; margin: 0 0 8px; }
+    p { color: var(--muted); margin: 0 0 24px; }
+    button { background: var(--primary); color: #fff; border: 0; border-radius: 999px; padding: 12px 24px; font: inherit; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>You're offline</h1>
+    <p>ouiKnow needs an internet connection. Check your connection and try again.</p>
+    <button onclick="location.href='https://oui-know.com/'">Try again</button>
+  </main>
+</body>
+</html>

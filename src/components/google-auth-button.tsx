@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { RETURN_PATH_COOKIE } from "@/lib/return-path";
+import { isNativeApp, NATIVE_AUTH_CALLBACK, openInSystemBrowser } from "@/lib/native-app";
 
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
@@ -48,6 +49,21 @@ export default function GoogleAuthButton({ next = null }: { next?: string | null
       ? `${RETURN_PATH_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`
       : `${RETURN_PATH_COOKIE}=; path=/; max-age=0; samesite=lax`;
     const supabase = createClient();
+
+    // Google refuses sign-in inside an app's web view: the iOS/Android apps
+    // open it in the system browser, which comes back through ouiknow://
+    // (see listenForNativeEvents).
+    if (isNativeApp()) {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: NATIVE_AUTH_CALLBACK, skipBrowserRedirect: true },
+      });
+      setLoading(false);
+      if (error || !data.url) setError(t("genericError"));
+      else await openInSystemBrowser(data.url);
+      return;
+    }
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: { redirectTo: `${window.location.origin}/auth/callback` },
