@@ -1,4 +1,5 @@
 import { getTranslations } from "next-intl/server";
+import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import BrandMark from "@/components/brand-mark";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -27,10 +28,10 @@ const CATEGORY_NAV = [
 ] as const satisfies readonly { slug: CategorySlug; icon: string }[];
 
 /**
- * The sidebar shows the category you're currently in, not every category
- * you've ever touched -- on the hub, feed, messages, or profile, none of
- * the category items show at all. Purely a function of `active`, no data
- * fetching needed: navigate back to /categories to switch.
+ * The sidebar lists every category you have a profile in (drafts don't
+ * count), plus the one you're currently in, so your dashboards are always
+ * one click away. The phone tab bar has room for one: the current
+ * category, else your first.
  */
 export default async function AppShell({
   active,
@@ -40,7 +41,16 @@ export default async function AppShell({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
-  const currentCategory = CATEGORY_NAV.find((c) => c.slug === active);
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: profiles } = user
+    ? await supabase.from("generic_profiles").select("status, categories(slug)").eq("user_id", user.id).neq("status", "draft")
+    : { data: null };
+  const mySlugs = new Set((profiles ?? []).map((p) => p.categories?.slug));
+  const sidebarCategories = CATEGORY_NAV.filter((c) => c.slug === active || mySlugs.has(c.slug));
+  const tabCategory = sidebarCategories.find((c) => c.slug === active) ?? sidebarCategories[0];
 
   return (
     <ToastProvider>
@@ -85,15 +95,20 @@ export default async function AppShell({
                 <BookmarkIcon className="h-[22px] w-[22px] shrink-0" />
                 <span>{t("saved")}</span>
               </Link>
-              {currentCategory && (
+              {sidebarCategories.map((c) => (
                 <Link
-                  href={`/categories/${currentCategory.slug}/dashboard`}
-                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] bg-surface-sunken font-semibold text-ink"
+                  key={c.slug}
+                  href={`/categories/${c.slug}/dashboard`}
+                  className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+                    active === c.slug
+                      ? "bg-surface-sunken font-semibold text-ink"
+                      : "text-muted hover:bg-surface-sunken hover:text-ink"
+                  }`}
                 >
-                  <CategoryIcon name={currentCategory.icon} className="h-[22px] w-[22px] shrink-0" />
-                  <span>{t(currentCategory.slug)}</span>
+                  <CategoryIcon name={c.icon} className="h-[22px] w-[22px] shrink-0" />
+                  <span>{t(c.slug)}</span>
                 </Link>
-              )}
+              ))}
               <MessagesSidebarItem active={active === "messages"} />
               <NotificationBell variant="sidebar" />
               <Link
@@ -147,13 +162,15 @@ export default async function AppShell({
               <FeedIcon className="h-[22px] w-[22px]" />
               {t("feed")}
             </Link>
-            {currentCategory && (
+            {tabCategory && (
               <Link
-                href={`/categories/${currentCategory.slug}/dashboard`}
-                className="flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] font-semibold text-primary"
+                href={`/categories/${tabCategory.slug}/dashboard`}
+                className={`flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+                  active === tabCategory.slug ? "font-semibold text-primary" : "text-muted"
+                }`}
               >
-                <CategoryIcon name={currentCategory.icon} className="h-[22px] w-[22px]" />
-                {t(currentCategory.slug)}
+                <CategoryIcon name={tabCategory.icon} className="h-[22px] w-[22px]" />
+                {t(tabCategory.slug)}
               </Link>
             )}
             <MessagesTabItem active={active === "messages"} />
