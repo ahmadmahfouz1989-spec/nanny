@@ -6,6 +6,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import ServiceWorkerRegister from "@/components/service-worker-register";
+import NativeAppBridge from "@/components/native-app-bridge";
 import MetaPixel from "@/components/meta-pixel";
 import "../globals.css";
 
@@ -104,6 +105,7 @@ export default async function LocaleLayout({
           {THEME_INIT_SCRIPT}
         </Script>
         <ServiceWorkerRegister />
+        <NativeAppBridge />
         <MetaPixel />
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>

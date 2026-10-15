@@ -1,0 +1,23 @@
+{
+  "name": "ouiknow-mobile",
+  "private": true,
+  "description": "iOS and Android shells around https://oui-know.com (Capacitor). See README.md.",
+  "scripts": {
+    "sync": "cap sync",
+    "ios": "cap open ios",
+    "android": "cap open android",
+    "assets": "npx @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#fbf8f4' --splashBackgroundColor '#fbf8f4' --iconBackgroundColorDark '#fbf8f4' --splashBackgroundColorDark '#fbf8f4'"
+  },
+  "dependencies": {
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.1",
+    "@capacitor/browser": "8.0.4",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "@capacitor/push-notifications": "8.1.2",
+    "@capacitor/splash-screen": "8.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.2"
+  }
+}

@@ -20,7 +20,7 @@ import {
   SIGNED_URL_TTL_SECONDS,
   VOICE_NOTE_PLACEHOLDER_BODY,
 } from "@/lib/voice-notes";
-import { notify, pushEnabled, pushTranslator, sendPush } from "@/lib/push";
+import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
 
 /**
  * Route handlers for everything a party can do on one match, in any
@@ -242,7 +242,7 @@ export const messagesMarkRead: Handler = withAccess(async ({ supabase, userId, a
  * arrive. `preview` null means a voice note. Runs after the response.
  */
 function pushNewMessage(access: MatchAccess, preview: string | null) {
-  if (!pushEnabled()) return;
+  if (!anyPushEnabled()) return;
   after(async () => {
     const admin = createAdminClient();
     const { data: sender } = await admin.from("generic_profiles").select("full_name").eq("id", access.myProfileId).single();

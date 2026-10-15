@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
+import { isNativeApp } from "@/lib/native-app";
 
 const DISMISSED_KEY = "install-prompt-dismissed";
 
@@ -12,6 +13,8 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 function isStandalone() {
+  // The iOS/Android apps count as installed already.
+  if (isNativeApp()) return true;
   return (
     window.matchMedia("(display-mode: standalone)").matches ||
     (navigator as Navigator & { standalone?: boolean }).standalone === true

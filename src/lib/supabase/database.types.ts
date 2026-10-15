@@ -8,6 +8,7 @@ export type Database = {
                   Row: {
                     "blocked_user_id": string,"blocker_user_id": string,"created_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "blocked_user_id": string,"blocker_user_id": string,"created_at"?: string
                   }
@@ -33,6 +34,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"href": string | null,"icon": string,"id": string,"name_ar": string,"name_en": string,"slug": string,"sort_order": number,"status": string,"tagline_ar": string,"tagline_en": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"href"?: string | null,"icon"?: string,"id"?: string,"name_ar": string,"name_en": string,"slug": string,"sort_order"?: number,"status"?: string,"tagline_ar"?: string,"tagline_en"?: string
                   }
@@ -46,6 +48,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"generic_profile_id": string | null,"id": string,"nanny_profile_id": string | null,"parent_profile_id": string | null,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"generic_profile_id"?: string | null,"id"?: string,"nanny_profile_id"?: string | null,"parent_profile_id"?: string | null,"user_id": string
                   }
@@ -83,6 +86,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"expires_at": string,"granted_by": string | null,"id": string,"note": string | null,"plan": string,"starts_at": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"expires_at": string,"granted_by"?: string | null,"id"?: string,"note"?: string | null,"plan": string,"starts_at"?: string,"user_id": string
                   }
@@ -108,6 +112,7 @@ isOneToOne: false
                   Row: {
                     "category_id": string,"created_at": string,"id": string,"initiated_by": string | null,"interest_expires_at": string | null,"last_message_at": string | null,"provider_profile_id": string,"responded_at": string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"started_at": string | null,"started_by": string | null,"status": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "category_id": string,"created_at"?: string,"id"?: string,"initiated_by"?: string | null,"interest_expires_at"?: string | null,"last_message_at"?: string | null,"provider_profile_id": string,"responded_at"?: string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"started_at"?: string | null,"started_by"?: string | null,"status"?: string,"updated_at"?: string
                   }
@@ -139,6 +144,7 @@ isOneToOne: false
                   Row: {
                     "audio_duration_seconds": number | null,"audio_path": string | null,"body": string,"created_at": string,"id": string,"match_id": string,"read_at": string | null,"sender_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body": string,"created_at"?: string,"id"?: string,"match_id": string,"read_at"?: string | null,"sender_id": string
                   }
@@ -164,6 +170,7 @@ isOneToOne: false
                   Row: {
                     "attributes": NonNullable<Json>,"category_id": string,"created_at": string,"full_name": string,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "attributes"?: NonNullable<Json>,"category_id": string,"created_at"?: string,"full_name": string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
@@ -195,6 +202,7 @@ isOneToOne: false
                   Row: {
                     "comment": string | null,"created_at": string,"id": string,"match_id": string,"ratee_user_id": string,"rater_user_id": string,"score": number,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "comment"?: string | null,"created_at"?: string,"id"?: string,"match_id": string,"ratee_user_id": string,"rater_user_id": string,"score": number,"updated_at"?: string
                   }
@@ -226,6 +234,7 @@ isOneToOne: false
                   Row: {
                     "code": string,"id": string,"name_ar": string,"name_en": string,"name_fr": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "code": string,"id"?: string,"name_ar": string,"name_en": string,"name_fr": string
                   }
@@ -239,6 +248,7 @@ isOneToOne: false
                   Row: {
                     "id": string,"level": string,"name_ar": string,"name_en": string,"name_fr": string,"parent_location_id": string | null,"sort_order": number
                   }
+                  ComputedFields: never
                   Insert: {
                     "id"?: string,"level": string,"name_ar": string,"name_en": string,"name_fr": string,"parent_location_id"?: string | null,"sort_order"?: number
                   }
@@ -258,6 +268,7 @@ isOneToOne: false
                   Row: {
                     "city": string | null,"country": string | null,"country_code": string | null,"created_at": string,"id": string,"ip": string | null,"user_agent": string | null,"user_id": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "city"?: string | null,"country"?: string | null,"country_code"?: string | null,"created_at"?: string,"id"?: string,"ip"?: string | null,"user_agent"?: string | null,"user_id"?: string | null
                   }
@@ -277,6 +288,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"id": string,"initiated_by": string | null,"interest_expires_at": string | null,"nanny_profile_id": string,"parent_profile_id": string,"responded_at": string | null,"score": number,"score_breakdown": NonNullable<Json>,"status": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"id"?: string,"initiated_by"?: string | null,"interest_expires_at"?: string | null,"nanny_profile_id": string,"parent_profile_id": string,"responded_at"?: string | null,"score": number,"score_breakdown": NonNullable<Json>,"status"?: string,"updated_at"?: string
                   }
@@ -302,6 +314,7 @@ isOneToOne: false
                   Row: {
                     "audio_duration_seconds": number | null,"audio_path": string | null,"body": string,"created_at": string,"id": string,"match_id": string,"read_at": string | null,"sender_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body": string,"created_at"?: string,"id"?: string,"match_id": string,"read_at"?: string | null,"sender_id": string
                   }
@@ -327,6 +340,7 @@ isOneToOne: false
                   Row: {
                     "age_group": string,"id": string,"nanny_profile_id": string,"years_experience": number
                   }
+                  ComputedFields: never
                   Insert: {
                     "age_group": string,"id"?: string,"nanny_profile_id": string,"years_experience": number
                   }
@@ -346,6 +360,7 @@ isOneToOne: false
                   Row: {
                     "language_id": string,"nanny_profile_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "language_id": string,"nanny_profile_id": string
                   }
@@ -371,6 +386,7 @@ isOneToOne: false
                   Row: {
                     "availability": NonNullable<Json>,"can_drive": boolean,"certifications": (string)[],"created_at": string,"employment_type": string,"full_name": string,"has_transportation": boolean,"id": string,"live_arrangement_pref": string,"location_detail": string | null,"location_id": string,"moderation_status": string,"nationality": string | null,"profile_completion_pct": number,"profile_photo_url": string | null,"short_intro": string | null,"status": string,"updated_at": string,"user_id": string,"work_radius_km": number,"years_experience": number
                   }
+                  ComputedFields: never
                   Insert: {
                     "availability": NonNullable<Json>,"can_drive"?: boolean,"certifications"?: (string)[],"created_at"?: string,"employment_type": string,"full_name": string,"has_transportation"?: boolean,"id"?: string,"live_arrangement_pref": string,"location_detail"?: string | null,"location_id": string,"moderation_status"?: string,"nationality"?: string | null,"profile_completion_pct"?: number,"profile_photo_url"?: string | null,"short_intro"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string,"work_radius_km": number,"years_experience": number
                   }
@@ -392,10 +408,31 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"native_push_tokens": {
+                  Row: {
+                    "created_at": string,"id": string,"locale": string,"platform": string,"token": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"id"?: string,"locale"?: string,"platform": string,"token": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"id"?: string,"locale"?: string,"platform"?: string,"token"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "native_push_tokens_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"notifications": {
                   Row: {
                     "created_at": string,"id": string,"payload": NonNullable<Json>,"read_at": string | null,"type": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"id"?: string,"payload": NonNullable<Json>,"read_at"?: string | null,"type": string,"user_id": string
                   }
@@ -415,6 +452,7 @@ isOneToOne: false
                   Row: {
                     "language_id": string,"parent_profile_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "language_id": string,"parent_profile_id": string
                   }
@@ -440,6 +478,7 @@ isOneToOne: false
                   Row: {
                     "additional_duties": (string)[],"children_age_ranges": (string)[],"created_at": string,"desired_start_date": string,"family_description": string | null,"full_name": string,"id": string,"live_arrangement": string,"location_detail": string | null,"location_id": string,"moderation_status": string,"nationality": string | null,"needed_days": (string)[],"num_children": number,"profile_completion_pct": number,"profile_photo_url": string | null,"schedule_type": string,"status": string,"transportation_required": boolean,"updated_at": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "additional_duties"?: (string)[],"children_age_ranges": (string)[],"created_at"?: string,"desired_start_date": string,"family_description"?: string | null,"full_name": string,"id"?: string,"live_arrangement": string,"location_detail"?: string | null,"location_id": string,"moderation_status"?: string,"nationality"?: string | null,"needed_days"?: (string)[],"num_children": number,"profile_completion_pct"?: number,"profile_photo_url"?: string | null,"schedule_type": string,"status"?: string,"transportation_required"?: boolean,"updated_at"?: string,"user_id": string
                   }
@@ -465,6 +504,7 @@ isOneToOne: true
                   Row: {
                     "created_at": string,"post_id": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"post_id": string,"user_id": string
                   }
@@ -490,6 +530,7 @@ isOneToOne: false
                   Row: {
                     "body": string,"created_at": string,"id": string,"parent_reply_id": string | null,"post_id": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "body": string,"created_at"?: string,"id"?: string,"parent_reply_id"?: string | null,"post_id": string,"user_id": string
                   }
@@ -521,6 +562,7 @@ isOneToOne: false
                   Row: {
                     "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
@@ -558,6 +600,7 @@ isOneToOne: false
                   Row: {
                     "auth": string,"created_at": string,"endpoint": string,"id": string,"locale": string,"p256dh": string,"updated_at": string,"user_id": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "auth": string,"created_at"?: string,"endpoint": string,"id"?: string,"locale"?: string,"p256dh": string,"updated_at"?: string,"user_id": string
                   }
@@ -577,6 +620,7 @@ isOneToOne: false
                   Row: {
                     "comment": string | null,"created_at": string,"id": string,"match_id": string,"ratee_user_id": string,"rater_user_id": string,"score": number,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "comment"?: string | null,"created_at"?: string,"id"?: string,"match_id": string,"ratee_user_id": string,"rater_user_id": string,"score": number,"updated_at"?: string
                   }
@@ -608,6 +652,7 @@ isOneToOne: false
                   Row: {
                     "contact_email": string | null,"contact_phone": string | null,"created_at": string,"id": string,"nanny_profile_id": string,"reference_name": string,"relationship": string,"verified_at": string | null,"verified_by_admin_id": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "contact_email"?: string | null,"contact_phone"?: string | null,"created_at"?: string,"id"?: string,"nanny_profile_id": string,"reference_name": string,"relationship": string,"verified_at"?: string | null,"verified_by_admin_id"?: string | null
                   }
@@ -633,6 +678,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"details": string | null,"id": string,"match_id": string | null,"match_source": string | null,"post_id": string | null,"reason": string,"reported_user_id": string | null,"reporter_user_id": string | null,"resolution_notes": string | null,"resolved_at": string | null,"resolved_by_admin_id": string | null,"status": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"details"?: string | null,"id"?: string,"match_id"?: string | null,"match_source"?: string | null,"post_id"?: string | null,"reason": string,"reported_user_id"?: string | null,"reporter_user_id"?: string | null,"resolution_notes"?: string | null,"resolved_at"?: string | null,"resolved_by_admin_id"?: string | null,"status"?: string
                   }
@@ -670,6 +716,7 @@ isOneToOne: false
                   Row: {
                     "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"id": string,"last_login_at": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
                   }
+                  ComputedFields: never
                   Insert: {
                     "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"id": string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
                   }
@@ -683,6 +730,7 @@ isOneToOne: false
                   Row: {
                     "created_at": string,"document_ref": string | null,"id": string,"status": string,"type": string,"user_id": string,"verified_at": string | null,"verified_by_admin_id": string | null
                   }
+                  ComputedFields: never
                   Insert: {
                     "created_at"?: string,"document_ref"?: string | null,"id"?: string,"status"?: string,"type": string,"user_id": string,"verified_at"?: string | null,"verified_by_admin_id"?: string | null
                   }

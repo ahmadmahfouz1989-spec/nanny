@@ -3,6 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { currentSubscription, disablePush, enablePush, pushSupport, type PushSupport } from "@/lib/push-client";
+import { enableNativePush, nativePushOn, nativePushPermission, setNativePushOptOut } from "@/lib/native-app";
 import { ui } from "@/lib/ui";
 
 const noopSubscribe = () => () => {};
@@ -22,6 +23,15 @@ export default function PushNotificationsCard() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    if (support === "native") {
+      Promise.all([nativePushPermission(), nativePushOn()])
+        .then(([permission, isOn]) => {
+          setDenied(permission === "denied");
+          setOn(isOn);
+        })
+        .catch(() => setOn(false));
+      return;
+    }
     if (support !== "supported") return;
     currentSubscription()
       .then((sub) => {
@@ -38,7 +48,18 @@ export default function PushNotificationsCard() {
     setBusy(true);
     setError(false);
     try {
-      if (on) {
+      if (support === "native") {
+        // Remembered so launches stop turning it back on (see PushPrompt).
+        setNativePushOptOut(!!on);
+        if (on) {
+          await disablePush();
+          setOn(false);
+        } else {
+          const permission = await enableNativePush(locale);
+          setOn(permission === "granted" && (await nativePushOn()));
+          setDenied(permission === "denied");
+        }
+      } else if (on) {
         await disablePush();
         setOn(false);
       } else {
@@ -68,7 +89,7 @@ export default function PushNotificationsCard() {
                   : t("description")}
           </p>
         </div>
-        {support === "supported" && !denied && on !== null && (
+        {(support === "supported" || support === "native") && !denied && on !== null && (
           <button
             type="button"
             role="switch"

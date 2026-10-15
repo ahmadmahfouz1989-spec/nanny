@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "supabase/.temp/**",
     "supabase/.branches/**",
+    // The native app shells (Capacitor) -- generated projects with their own tooling.
+    "mobile/**",
   ]),
 ]);
 
