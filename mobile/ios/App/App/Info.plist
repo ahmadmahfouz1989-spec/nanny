@@ -18,9 +18,9 @@
 		<string>remote-notification</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Take a profile photo or send a photo in a message.</string>
+	<string>Take a profile photo, a photo of your work, or a photo to send in a message.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Choose a profile photo or send a photo in a message.</string>
+	<string>Choose a profile photo, photos of your work, or a photo to send in a message.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record voice messages.</string>
   <key>CAPACITOR_DEBUG</key>
