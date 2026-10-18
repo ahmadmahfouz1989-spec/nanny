@@ -11,10 +11,9 @@ import WorkEditor from "./work-editor";
 import type { WorkProject } from "@/lib/work";
 
 /**
- * The Work grid on a provider's profile page. Visitors see approved
- * projects with photos; tapping one opens it full screen. The owner also
- * sees what's waiting for review or needs changes, and adds, edits and
- * reorders their work here.
+ * The Work grid on a provider's profile page. Visitors see every project
+ * that has a photo (and hasn't been removed by an admin); tapping one opens
+ * it full screen. The owner adds, edits and reorders their work here.
  */
 export default function WorkSection({
   profileId,
@@ -55,8 +54,6 @@ export default function WorkSection({
 
   function statusBadge(project: WorkProject) {
     if (project.photos.length === 0) return <span className={ui.badge("secondary")}>{t("statusNoPhotos")}</span>;
-    if (project.status === "pending") return <span className={ui.badge("warning")}>{t("statusPending")}</span>;
-    if (project.status === "rejected") return <span className={ui.badge("danger")}>{t("statusRejected")}</span>;
     return null;
   }
 
@@ -86,7 +83,6 @@ export default function WorkSection({
           {t("emptyOwn")}
         </button>
       )}
-      {isOwn && projects.some((p) => p.status !== "approved") && <p className="text-xs text-muted">{t("onlyYou")}</p>}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {visible.map((project, i) => {

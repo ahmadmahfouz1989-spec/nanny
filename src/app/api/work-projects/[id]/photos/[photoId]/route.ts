@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
-import { WORK_BUCKET, isOwnWorkPath, ownProject, sendBackToReview } from "@/lib/work";
+import { WORK_BUCKET, isOwnWorkPath, ownProject } from "@/lib/work";
 
 const patchSchema = z.union([
   z.object({ caption: z.string().trim().max(140) }),
@@ -26,7 +26,7 @@ async function context(params: Params["params"]) {
   return { db, user, project, photo };
 }
 
-/** Changes a caption (back to review) or moves the photo one place (no review). */
+/** Changes a caption, or moves the photo one place. */
 export async function PATCH(request: Request, { params }: Params) {
   const ctx = await context(params);
   if ("error" in ctx) return ctx.error;
@@ -58,11 +58,10 @@ export async function PATCH(request: Request, { params }: Params) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  await sendBackToReview(db, project);
-  return NextResponse.json({ ok: true, status: "pending" });
+  return NextResponse.json({ ok: true });
 }
 
-/** Removes a photo. Nothing new is shown, so the project keeps its review status. */
+/** Removes a photo. */
 export async function DELETE(_request: Request, { params }: Params) {
   const ctx = await context(params);
   if ("error" in ctx) return ctx.error;

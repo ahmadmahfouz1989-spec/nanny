@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
-import { ownProject, removeProjectFiles, sendBackToReview } from "@/lib/work";
+import { ownProject, removeProjectFiles } from "@/lib/work";
 
 const patchSchema = z.union([
   z.object({
@@ -13,10 +13,7 @@ const patchSchema = z.union([
   z.object({ move: z.enum(["up", "down"]) }),
 ]);
 
-/**
- * Edits a project's text (back to review) or moves it one place in the
- * profile's order (no review: nothing new is shown).
- */
+/** Edits a project's text, or moves it one place in the profile's order. */
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -59,8 +56,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  await sendBackToReview(db, { ...project, title });
-  return NextResponse.json({ ok: true, status: "pending" });
+  return NextResponse.json({ ok: true });
 }
 
 export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {

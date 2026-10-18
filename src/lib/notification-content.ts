@@ -24,9 +24,7 @@ const KNOWN_TYPES = new Set([
   "report_resolved",
   "post_reply",
   "post_like",
-  "work_approved",
   "work_rejected",
-  "work_pending_review",
 ]);
 
 // The app has no per-match detail route — match cards live on the
@@ -51,13 +49,10 @@ export function notificationHref(n: NotificationLike): string {
       return "/admin/profiles";
     case "verification_updated":
       return "/profile";
-    case "work_approved":
     case "work_rejected": {
       const profileId = typeof n.payload?.profile_id === "string" ? n.payload.profile_id : null;
       return profileId ? `/u/${profileId}#work` : "/profile";
     }
-    case "work_pending_review":
-      return "/admin/work";
     case "post_reply":
     case "post_like": {
       // Deep-link to the post itself (and the reply, when there is one)

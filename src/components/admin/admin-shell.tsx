@@ -36,7 +36,7 @@ function isActive(pathname: string, href: string) {
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("Admin");
   const pathname = usePathname();
-  const [counts, setCounts] = useState<{ pending: number; reports: number; work: number } | null>(null);
+  const [counts, setCounts] = useState<{ pending: number; reports: number } | null>(null);
 
   // Re-read on navigation, so a queue badge drops as soon as an admin has
   // worked through it and moved on.
@@ -45,7 +45,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     fetch("/api/admin/analytics")
       .then((res) => (res.ok ? res.json() : null))
       .then((body) => {
-        if (active && body) setCounts({ pending: body.pendingProfiles ?? 0, reports: body.openReports ?? 0, work: body.pendingWork ?? 0 });
+        if (active && body) setCounts({ pending: body.pendingProfiles ?? 0, reports: body.openReports ?? 0 });
       })
       .catch(() => {});
     return () => {
@@ -56,7 +56,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const items: NavItem[] = [
     { href: "/admin", label: t("navOverview"), Icon: GridIcon },
     { href: "/admin/profiles", label: t("navProfiles"), Icon: AdminIcon, count: counts?.pending },
-    { href: "/admin/work", label: t("navWork"), Icon: PhotoIcon, count: counts?.work },
+    { href: "/admin/work", label: t("navWork"), Icon: PhotoIcon },
     { href: "/admin/reports", label: t("navReports"), Icon: FlagIcon, count: counts?.reports },
     { href: "/admin/activity", label: t("navActivity"), Icon: ChatIcon },
     { href: "/admin/users", label: t("navUsers"), Icon: UsersIcon },

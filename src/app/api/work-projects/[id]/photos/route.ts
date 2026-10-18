@@ -8,7 +8,6 @@ import {
   WORK_PHOTO_MAX_BYTES,
   WORK_PHOTO_TYPES,
   ownProject,
-  sendBackToReview,
   workPhotoPath,
 } from "@/lib/work";
 
@@ -19,7 +18,7 @@ function dimension(value: FormDataEntryValue | null) {
 
 /**
  * Adds a photo to one of the caller's projects (multipart: file, and
- * optionally caption/width/height). The project goes back to review.
+ * optionally caption/width/height).
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -89,6 +88,5 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  await sendBackToReview(db, project, { photoAdded: true });
-  return NextResponse.json({ photo, status: "pending" });
+  return NextResponse.json({ photo });
 }

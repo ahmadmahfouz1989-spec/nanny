@@ -12,9 +12,9 @@ const createSchema = z.object({
 });
 
 /**
- * Starts a work project on one of the caller's provider profiles. It has
- * no photos yet, so nobody sees it and admins aren't told until the first
- * photo arrives (see sendBackToReview).
+ * Starts a work project on one of the caller's provider profiles. Live
+ * straight away, though the profile page only shows it to others once it
+ * has a photo.
  */
 export async function POST(request: Request) {
   const supabase = await createClient();
@@ -51,6 +51,7 @@ export async function POST(request: Request) {
       title,
       description: description || null,
       position: (existing?.[0]?.position ?? -1) + 1,
+      status: "approved",
     })
     .select("id, title, description, status")
     .single();
