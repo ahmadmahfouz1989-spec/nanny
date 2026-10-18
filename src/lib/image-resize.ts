@@ -14,7 +14,12 @@ export async function shrinkImage(
     // Applies the photo's EXIF rotation, so portrait shots stay upright.
     bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
   } catch {
-    return { file, width: null, height: null };
+    try {
+      // Older WebKit rejects that option; current browsers rotate by default.
+      bitmap = await createImageBitmap(file);
+    } catch {
+      return { file, width: null, height: null };
+    }
   }
 
   const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
