@@ -52,7 +52,7 @@ export type ProfilePageData = {
   viewerCanMatch: boolean;
   rating: RatingAggregate;
   reviews: ProfileReview[];
-  /** Provider profiles only: everything for the owner, approved projects for others (RLS). */
+  /** Provider profiles only: their work projects (RLS). */
   work: WorkProject[];
   trust: { memberSince: string; phoneVerified: boolean; emailVerified: boolean };
 };

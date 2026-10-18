@@ -57,9 +57,7 @@
     "report_resolved": "A report you filed was resolved",
     "post_reply": "Someone replied to your post",
     "post_like": "Someone liked your post",
-    "work_approved": "Your work is approved and now on your profile",
-    "work_rejected": "Your work needs changes before it can be shown",
-    "work_pending_review": "New work is waiting for review"
+    "work_rejected": "One of your work projects was removed"
   },
   "Push": {
     "title": "Push notifications",
@@ -791,13 +789,13 @@
     "activityLoadingMore": "Loading…",
     "navWork": "Work",
     "workTitle": "Work photos",
-    "workDescription": "Projects providers add to their profiles wait here until you approve them. Check the photos: no children's faces, no phone numbers or contact details, nothing that isn't their own work.",
-    "workEmpty": "No work waiting for review.",
+    "workDescription": "The latest work providers added to their profiles. It goes live straight away, so look it over and remove anything that breaks the rules: children's faces, phone numbers or contact details, or work that isn't theirs.",
+    "workEmpty": "No work added yet.",
     "workLoading": "Loading…",
-    "workReject": "Send back",
-    "workConfirmReject": "Send back to the owner",
-    "workRejectNotesPlaceholder": "What needs to change (sent to the owner)",
-    "workDecisionError": "Couldn't save that decision. Try again."
+    "workDecisionError": "Couldn't remove it. Try again.",
+    "workRemove": "Remove",
+    "workConfirmRemove": "Remove and tell the owner",
+    "workRemoveNotesPlaceholder": "Why it's being removed (sent to the owner)"
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",
@@ -932,10 +930,7 @@
     "photoCount": "{count, plural, one {# photo} other {# photos}}",
     "emptyOwn": "Show families what you've done: add photos of your work, your certificates or your activities.",
     "add": "Add work",
-    "statusPending": "Waiting for review",
-    "statusRejected": "Needs changes",
     "statusNoPhotos": "Add photos",
-    "onlyYou": "Only you can see work until it's approved.",
     "edit": "Edit",
     "moveEarlier": "Move earlier",
     "moveLater": "Move later",
@@ -966,7 +961,6 @@
     "confirmDelete": "Yes, delete it",
     "cancel": "Cancel",
     "done": "Done",
-    "reviewNote": "Changes are reviewed before others see them.",
     "errorGeneric": "Something went wrong. Try again.",
     "errorTooManyPhotos": "That's the maximum of {max} photos.",
     "errorTooManyProjects": "You've reached the maximum of {max} projects.",

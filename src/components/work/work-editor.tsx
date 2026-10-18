@@ -16,8 +16,8 @@ const TYPES = ["image/jpeg", "image/png", "image/webp"];
 /**
  * Adding or editing one work project. A new one is created as soon as it
  * has a title, then photos are added to it; every change saves straight
- * away, so closing never loses anything. What others will see changes
- * only after review.
+ * away, so closing never loses anything, and shows on the profile
+ * straight away.
  */
 export default function WorkEditor({
   profileId,
@@ -65,7 +65,7 @@ export default function WorkEditor({
       return;
     }
     if (project) {
-      update({ ...project, title: title.trim(), description: description.trim() || null, status: "pending" });
+      update({ ...project, title: title.trim(), description: description.trim() || null });
       setTextSaved(true);
     } else {
       update((await res.json()).project as WorkProject);
@@ -97,7 +97,7 @@ export default function WorkEditor({
         break;
       }
       const { photo } = (await res.json()) as { photo: WorkPhoto };
-      current = { ...current, status: "pending", photos: [...current.photos, photo] };
+      current = { ...current, photos: [...current.photos, photo] };
       update(current);
     }
     setProgress(null);
@@ -117,7 +117,6 @@ export default function WorkEditor({
     }
     update({
       ...project,
-      status: "pending",
       photos: project.photos.map((p) => (p.id === photo.id ? { ...p, caption: caption.trim() || null } : p)),
     });
   }
@@ -299,8 +298,6 @@ export default function WorkEditor({
                   />
                 </div>
               )}
-
-              <p className="text-xs text-muted">{t("reviewNote")}</p>
             </section>
           )}
 

@@ -4,8 +4,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 
 /**
- * Work projects waiting for review, oldest first -- only those with at
- * least one photo (a project with none is still being set up).
+ * The latest work providers added, newest first -- only projects with at
+ * least one photo (a project with none isn't shown to anyone). Work goes
+ * live without review; this is where admins look over it and remove
+ * anything that breaks the rules.
  */
 export async function GET() {
   const supabase = await createClient();
@@ -18,8 +20,7 @@ export async function GET() {
     .select(
       "id, title, description, created_at, updated_at, profile_id, generic_profiles(full_name, categories(name_en, name_ar)), work_photos!inner(id, url, caption, position)",
     )
-    .eq("status", "pending")
-    .order("updated_at", { ascending: true })
+    .order("created_at", { ascending: false })
     .limit(50);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });

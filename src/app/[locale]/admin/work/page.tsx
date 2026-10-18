@@ -18,14 +18,14 @@ type QueueProject = {
 };
 
 /**
- * Work projects waiting for review. Approving puts one on its profile;
- * sending it back keeps it hidden and tells the owner what to change.
+ * The latest work providers added (it goes live without review). An admin
+ * removes anything that breaks the rules; the owner is told why.
  */
 export default function AdminWorkPage() {
   const t = useTranslations("Admin");
   const locale = useLocale();
   const [projects, setProjects] = useState<QueueProject[] | null>(null);
-  const [rejecting, setRejecting] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -34,20 +34,20 @@ export default function AdminWorkPage() {
     getJson<{ projects: QueueProject[] }>("/api/admin/work").then((body) => setProjects(body?.projects ?? []));
   }, []);
 
-  async function decide(project: QueueProject, status: "approved" | "rejected") {
+  async function remove(project: QueueProject) {
     setSubmitting(project.id);
     setError(null);
     const res = await request(`/api/admin/work/${project.id}`, {
-      method: "PATCH",
+      method: "DELETE",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status, notes: status === "rejected" && notes ? notes : undefined }),
+      body: JSON.stringify({ notes: notes || undefined }),
     });
     setSubmitting(null);
     if (!res || !res.ok) {
       setError(t("workDecisionError"));
       return;
     }
-    setRejecting(null);
+    setRemoving(null);
     setNotes("");
     setProjects((prev) => prev?.filter((p) => p.id !== project.id) ?? null);
   }
@@ -100,45 +100,38 @@ export default function AdminWorkPage() {
                 ))}
               </div>
 
-              {rejecting === project.id ? (
+              {removing === project.id ? (
                 <div className="flex flex-col gap-2">
                   <textarea
                     className={ui.input}
                     rows={2}
-                    placeholder={t("workRejectNotesPlaceholder")}
+                    placeholder={t("workRemoveNotesPlaceholder")}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
                   />
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => decide(project, "rejected")}
+                      onClick={() => remove(project)}
                       disabled={submitting === project.id}
-                      className={ui.buttonPrimary + " px-4! py-1.5! text-sm"}
+                      className={ui.buttonPrimary + " px-4! py-1.5! text-sm bg-danger! hover:bg-danger/90!"}
                     >
-                      {t("workConfirmReject")}
+                      {t("workConfirmRemove")}
                     </button>
-                    <button onClick={() => setRejecting(null)} className={ui.buttonGhost + " text-sm"}>
+                    <button onClick={() => setRemoving(null)} className={ui.buttonGhost + " text-sm"}>
                       {t("cancel")}
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => decide(project, "approved")}
-                    disabled={submitting === project.id}
-                    className={ui.buttonPrimary + " px-4! py-1.5! text-sm"}
-                  >
-                    {t("approve")}
-                  </button>
-                  <button
-                    onClick={() => setRejecting(project.id)}
-                    disabled={submitting === project.id}
-                    className={ui.buttonSecondary + " px-4! py-1.5! text-sm"}
-                  >
-                    {t("workReject")}
-                  </button>
-                </div>
+                <button
+                  onClick={() => {
+                    setRemoving(project.id);
+                    setNotes("");
+                  }}
+                  className={ui.buttonSecondary + " px-4! py-1.5! text-sm text-danger!"}
+                >
+                  {t("workRemove")}
+                </button>
               )}
             </div>
           );

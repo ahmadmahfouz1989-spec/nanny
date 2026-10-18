@@ -29,7 +29,6 @@ export async function GET() {
     { data: conversations },
     { count: openReports },
     { count: suspendedUsers },
-    { data: pendingWork },
   ] = await Promise.all([
     db.from("categories").select("id, slug, name_en, name_ar, status").order("sort_order", { ascending: true }),
     // A draft row is just a claimed role with nothing filled in yet (see
@@ -38,8 +37,6 @@ export async function GET() {
     db.from("generic_matches").select("category_id").not("last_message_at", "is", null),
     db.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     db.from("users").select("id", { count: "exact", head: true }).eq("status", "suspended"),
-    // Same rule as the Work queue: only projects with a photo to review.
-    db.from("work_projects").select("id, work_photos!inner(id)").eq("status", "pending"),
   ]);
 
   const stats: CategoryStats[] = (categories ?? []).map((category) => {
@@ -62,7 +59,6 @@ export async function GET() {
     pendingProfiles: stats.reduce((sum, c) => sum + c.pending, 0),
     conversations: stats.reduce((sum, c) => sum + c.conversations, 0),
     openReports: openReports ?? 0,
-    pendingWork: pendingWork?.length ?? 0,
     suspendedUsers: suspendedUsers ?? 0,
   });
 }

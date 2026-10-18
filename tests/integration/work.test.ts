@@ -1,18 +1,18 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { deleteUserAccount } from "@/lib/account-deletion";
 import { loadProfilePage } from "@/lib/profile-page";
-import { WORK_BUCKET, sendBackToReview, workPhotoPath } from "@/lib/work";
+import { WORK_BUCKET, workPhotoPath } from "@/lib/work";
 import { admin, cleanupUsers, createProfile, createUser, NANNY_PROVIDER, type TestUser } from "./helpers";
 
-// Work projects: hidden until approved, only on profiles the viewer can
-// see, and never writable straight from a client.
+// Work projects: live without review, but only on profiles the viewer
+// can see, and never writable straight from a client.
 
 afterAll(cleanupUsers);
 
-async function addProject(user: TestUser, profileId: string, status: "pending" | "approved" = "pending") {
+async function addProject(user: TestUser, profileId: string) {
   const { data, error } = await admin
     .from("work_projects")
-    .insert({ profile_id: profileId, user_id: user.id, title: "Garden", status })
+    .insert({ profile_id: profileId, user_id: user.id, title: "Garden" })
     .select("id")
     .single();
   if (error) throw new Error(error.message);
@@ -37,47 +37,33 @@ describe("work projects", () => {
     pendingProfile = await createProfile(owner, "tutoring", "provider", {}, { approved: false });
   });
 
-  it("is visible to others only once approved", async () => {
+  it("is visible to others straight away, photos included", async () => {
     const id = await addProject(owner, liveProfile);
-    expect((await owner.client.from("work_projects").select("id").eq("id", id)).data).toHaveLength(1);
-    expect((await viewer.client.from("work_projects").select("id").eq("id", id)).data).toEqual([]);
-    expect((await viewer.client.from("work_photos").select("id").eq("project_id", id)).data).toEqual([]);
-
-    await admin.from("work_projects").update({ status: "approved" }).eq("id", id);
     expect((await viewer.client.from("work_projects").select("id").eq("id", id)).data).toHaveLength(1);
     expect((await viewer.client.from("work_photos").select("id").eq("project_id", id)).data).toHaveLength(1);
   });
 
-  it("stays hidden on a profile the viewer can't see, even when approved", async () => {
-    const id = await addProject(owner, pendingProfile, "approved");
+  it("stays hidden on a profile the viewer can't see", async () => {
+    const id = await addProject(owner, pendingProfile);
     expect((await viewer.client.from("work_projects").select("id").eq("id", id)).data).toEqual([]);
   });
 
   it("can't be written straight from a client", async () => {
-    const insert = await owner.client
-      .from("work_projects")
-      .insert({ profile_id: liveProfile, user_id: owner.id, title: "Sneaky", status: "approved" });
+    const insert = await owner.client.from("work_projects").insert({ profile_id: liveProfile, user_id: owner.id, title: "Sneaky" });
     expect(insert.error).not.toBeNull();
 
     const id = await addProject(owner, liveProfile);
-    await owner.client.from("work_projects").update({ status: "approved" }).eq("id", id);
-    const { data } = await admin.from("work_projects").select("status").eq("id", id).single();
-    expect(data!.status).toBe("pending");
+    await owner.client.from("work_projects").update({ title: "Changed" }).eq("id", id);
+    await owner.client.from("work_projects").delete().eq("id", id);
+    const { data } = await admin.from("work_projects").select("title").eq("id", id).single();
+    expect(data!.title).toBe("Garden");
   });
 
-  it("goes back to review when an approved project changes", async () => {
-    const id = await addProject(owner, liveProfile, "approved");
-    await sendBackToReview(admin, { id, status: "approved", title: "Garden" });
-    const { data } = await admin.from("work_projects").select("status").eq("id", id).single();
-    expect(data!.status).toBe("pending");
-  });
-
-  it("appears on the profile page: everything for the owner, approved work for others", async () => {
+  it("appears on the profile page for the owner and for others alike", async () => {
     const own = await loadProfilePage(owner.client, owner.id, liveProfile);
     const other = await loadProfilePage(viewer.client, viewer.id, liveProfile);
-    expect(own!.work.some((p) => p.status === "pending")).toBe(true);
     expect(other!.work.length).toBeGreaterThan(0);
-    expect(other!.work.every((p) => p.status === "approved")).toBe(true);
+    expect(other!.work.map((p) => p.id)).toEqual(own!.work.map((p) => p.id));
   });
 
   it("has its files removed with the account", async () => {

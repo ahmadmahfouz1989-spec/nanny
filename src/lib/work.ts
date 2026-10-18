@@ -1,13 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { notify } from "@/lib/push";
 
 /**
- * Work projects on provider profiles (see the work_projects migration).
- * Reads go through the caller's own client, so RLS decides what's
- * visible; writes go through the service role from the /api/work-projects
- * routes, after the checks here.
+ * Work projects on provider profiles (see the work_projects migrations).
+ * They go live as soon as they have a photo -- no review; admins remove
+ * anything that breaks the rules from Admin > Work. Reads go through the
+ * caller's own client, so RLS decides what's visible; writes go through
+ * the service role from the /api/work-projects routes, after the checks
+ * here.
  */
 
 export const MAX_PROJECTS_PER_PROFILE = 20;
@@ -91,36 +92,6 @@ export async function ownProject(db: Admin, userId: string, projectId: string) {
     .eq("user_id", userId)
     .maybeSingle();
   return data;
-}
-
-/**
- * After the owner changes what a project shows: it goes back to review,
- * and admins hear about it -- once per trip into the queue, and only when
- * it has a photo to look at (a project with none is still being set up
- * and isn't shown to anyone).
- */
-export async function sendBackToReview(
-  db: Admin,
-  project: { id: string; status: string; title: string },
-  { photoAdded = false } = {},
-) {
-  const wasPending = project.status === "pending";
-  if (!wasPending) {
-    await db.from("work_projects").update({ status: "pending", reviewed_at: null }).eq("id", project.id);
-  }
-  const { count } = await db.from("work_photos").select("id", { count: "exact", head: true }).eq("project_id", project.id);
-  const photos = count ?? 0;
-  // Announce it when it enters the queue with something to look at: an
-  // approved/rejected project changed, or a new one got its first photo.
-  if ((!wasPending && photos > 0) || (wasPending && photoAdded && photos === 1)) {
-    await notifyAdmins(db, project.title);
-  }
-}
-
-async function notifyAdmins(db: Admin, title: string) {
-  const { data: admins } = await db.from("users").select("id").eq("role", "admin");
-  if (!admins?.length) return;
-  await notify(admins.map((a) => ({ user_id: a.id, type: "work_pending_review", payload: { title } })));
 }
 
 /** The photo files of these projects that are safe to delete (under the owner's folder). */
