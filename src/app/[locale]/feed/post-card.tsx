@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
-import ProfileSummaryPanel from "@/components/profile-summary-panel";
+import { Link } from "@/i18n/navigation";
 import { ChatIcon, HeartIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
 import { Avatar, formatRelative, type Post } from "./feed-shared";
@@ -11,8 +11,6 @@ import { Avatar, formatRelative, type Post } from "./feed-shared";
 export default function PostCard({
   post,
   adminMode,
-  profileOpen,
-  onToggleProfile,
   onDelete,
   confirmingDelete,
   onConfirmingDelete,
@@ -22,8 +20,6 @@ export default function PostCard({
 }: {
   post: Post;
   adminMode: boolean;
-  profileOpen: boolean;
-  onToggleProfile: () => void;
   onDelete: () => void;
   // Admin deletes are two-step.
   confirmingDelete: boolean;
@@ -38,18 +34,20 @@ export default function PostCard({
 
   return (
     <article id={`post-${post.id}`} className="flex gap-3 p-4 scroll-mt-6">
-      <Avatar photoUrl={post.author?.photoUrl ?? null} size={44} className="mt-0.5" />
+      {post.author?.profileId ? (
+        <Link href={`/u/${post.author.profileId}`} aria-label={post.author.fullName} className="shrink-0 self-start">
+          <Avatar photoUrl={post.author.photoUrl} size={44} className="mt-0.5" />
+        </Link>
+      ) : (
+        <Avatar photoUrl={post.author?.photoUrl ?? null} size={44} className="mt-0.5" />
+      )}
 
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
           {post.author?.profileId ? (
-            <button
-              type="button"
-              onClick={onToggleProfile}
-              className="font-semibold text-ink hover:underline"
-            >
+            <Link href={`/u/${post.author.profileId}`} className="font-semibold text-ink hover:underline">
               {post.author.fullName}
-            </button>
+            </Link>
           ) : (
             <span className="font-semibold text-ink">{post.author?.fullName ?? t("someone")}</span>
           )}
@@ -104,10 +102,6 @@ export default function PostCard({
         </div>
 
         <p dir="auto" className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
-
-        {profileOpen && post.author?.profileId && (
-          <ProfileSummaryPanel profileId={post.author.profileId} />
-        )}
 
         <div className="flex items-center justify-between max-w-[280px] mt-2">
           <button

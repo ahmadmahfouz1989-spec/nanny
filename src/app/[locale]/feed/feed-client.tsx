@@ -44,7 +44,6 @@ export default function FeedClient({
   const [selectedIdentity, setSelectedIdentity] = useState<{ profileId: string } | null>(null);
   const selectedIdentityOption = identities?.find((i) => i.profileId === selectedIdentity?.profileId) ?? null;
 
-  const [openProfile, setOpenProfile] = useState<string | null>(null);
   const [openReplies, setOpenReplies] = useState<string | null>(null);
   const [replies, setReplies] = useState<Record<string, Reply[] | null>>({});
   const [replyDraft, setReplyDraft] = useState<Record<string, string>>({});
@@ -343,8 +342,6 @@ export default function FeedClient({
               key={post.id}
               post={post}
               adminMode={adminMode}
-              profileOpen={openProfile === post.id}
-              onToggleProfile={() => setOpenProfile((prev) => (prev === post.id ? null : post.id))}
               onDelete={() => deletePost(post)}
               confirmingDelete={confirmingDelete === post.id}
               onConfirmingDelete={(confirming) => setConfirmingDelete(confirming ? post.id : null)}
