@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import CriteriaChecklist from "./criteria-checklist";
 import MatchActions from "./match-actions";
-import MatchDetails from "./match-details";
 import ProfileRating from "./profile-rating";
 import ReportButton from "./report-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
@@ -43,7 +43,7 @@ function localizedLocationName(loc: OtherProfile["locations"], locale: string) {
   return loc.name_en;
 }
 
-/** One match on a category's match list, in any category. */
+/** One match on a category's match list, in any category. The name opens the full profile page. */
 export default function MatchCard({
   match,
   viewerSide,
@@ -71,6 +71,10 @@ export default function MatchCard({
   const availability = a.availability as { days?: string[]; startTime?: string; endTime?: string } | undefined;
   const availableDays = (availability?.days ?? a.neededDays ?? []) as string[];
   const availableHours = formatHoursRange(availability?.startTime, availability?.endTime, locale);
+  // The full details live on the profile page; the card keeps a taste.
+  const intro = [a.shortIntro, a.jobDescription, a.familyDescription].find(
+    (v): v is string => typeof v === "string" && v.trim() !== "",
+  );
 
   return (
     <div id={`match-${match.id}`} className={ui.cardHover + " oui-in overflow-hidden scroll-mt-6"}>
@@ -104,10 +108,12 @@ export default function MatchCard({
           initialSaved={match.isSaved}
           className="absolute bottom-3 end-3 inline-flex h-8 w-8 items-center justify-center rounded-full bg-surface/90 text-ink shadow-sm transition hover:bg-surface"
         />
-        <div className="absolute bottom-0 start-0 p-4">
-          <p className="font-display text-lg font-bold text-white drop-shadow">{other.full_name}</p>
+        <Link href={`/u/${other.id}`} className="absolute bottom-0 start-0 p-4 pe-14">
+          <p className="font-display text-lg font-bold text-white drop-shadow underline-offset-2 hover:underline">
+            {other.full_name}
+          </p>
           {headline && <p className="text-xs text-white/90 drop-shadow">{headline}</p>}
-        </div>
+        </Link>
       </div>
 
       <div className="p-5">
@@ -134,13 +140,11 @@ export default function MatchCard({
           </div>
         )}
 
-        {typeof a.shortIntro === "string" && <p dir="auto" className="text-sm text-ink/80 mb-3">{a.shortIntro}</p>}
-        {typeof a.jobDescription === "string" && <p dir="auto" className="text-sm text-ink/80 mb-3">{a.jobDescription}</p>}
-        {typeof a.familyDescription === "string" && (
-          <p dir="auto" className="text-sm text-ink/80 mb-3">{a.familyDescription}</p>
+        {intro && (
+          <p dir="auto" className="text-sm text-ink/80 mb-3 line-clamp-3">
+            {intro}
+          </p>
         )}
-
-        <MatchDetails profile={other} />
 
         <CriteriaChecklist breakdown={match.score_breakdown} />
         {viewerSide && (
@@ -150,7 +154,12 @@ export default function MatchCard({
             viewerSide={viewerSide}
           />
         )}
-        <ReportButton profileId={other.id} matchId={match.id} />
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <Link href={`/u/${other.id}`} className={ui.link + " text-sm"}>
+            {t("viewProfile")}
+          </Link>
+          <ReportButton profileId={other.id} matchId={match.id} />
+        </div>
       </div>
     </div>
   );

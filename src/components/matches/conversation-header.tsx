@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
 import RatingButton from "@/components/matches/rating-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
-import ProfileSummaryPanel from "@/components/profile-summary-panel";
+import { Link } from "@/i18n/navigation";
 import { MoreIcon } from "@/components/nav-icons";
 import { MATCHES_API } from "@/lib/matching/match-access";
 import { request } from "@/lib/request";
@@ -33,7 +33,6 @@ export default function ConversationHeader({
   const t = useTranslations("Matches");
   const tInbox = useTranslations("Inbox");
   const [menuOpen, setMenuOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [blockError, setBlockError] = useState(false);
 
@@ -65,7 +64,7 @@ export default function ConversationHeader({
             </svg>
           </button>
         )}
-        <button type="button" onClick={() => setProfileOpen((v) => !v)} className="flex items-center gap-3 min-w-0 flex-1">
+        <Link href={`/u/${profileId}`} className="flex items-center gap-3 min-w-0 flex-1">
           {photoUrl ? (
             <Image
               src={photoUrl}
@@ -79,7 +78,7 @@ export default function ConversationHeader({
             <AvatarIllustration tone={tone} className="h-10 w-10 rounded-full shrink-0" />
           )}
           <span className="font-display font-semibold min-w-0 truncate hover:underline">{name}</span>
-        </button>
+        </Link>
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}
@@ -113,12 +112,6 @@ export default function ConversationHeader({
           </>
         )}
       </div>
-
-      {profileOpen && (
-        <div className="px-4 pb-3">
-          <ProfileSummaryPanel profileId={profileId} matchId={matchId} />
-        </div>
-      )}
     </div>
   );
 }

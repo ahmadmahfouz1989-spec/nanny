@@ -37,6 +37,7 @@ export default function ProfileHeaderCard({
   moderationStatus: string;
 }) {
   const t = useTranslations("Dashboard");
+  const tProfile = useTranslations("ProfilePage");
   const tNanny = useTranslations("NannyOnboarding");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
@@ -134,6 +135,9 @@ export default function ProfileHeaderCard({
           {t("editProfile")}
         </Link>
       </div>
+      <Link href={`/u/${profileId}`} className={ui.link + " text-sm mt-4 inline-block"}>
+        {tProfile("viewMyProfile")}
+      </Link>
     </div>
   );
 }

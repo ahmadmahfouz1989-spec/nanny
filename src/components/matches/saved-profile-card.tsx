@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
 import { useLocale, useTranslations } from "next-intl";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileRating from "@/components/matches/profile-rating";
 import MatchActions from "@/components/matches/match-actions";
-import ProfileSummaryPanel from "@/components/profile-summary-panel";
+import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { useToast } from "@/components/toast-provider";
 import { useSavedProfiles } from "@/components/saved-profiles-provider";
@@ -35,7 +34,6 @@ export default function SavedProfileCard({
   const locale = useLocale();
   const { show } = useToast();
   const { setSaved } = useSavedProfiles();
-  const [open, setOpen] = useState(false);
 
   // Both mutations update the list optimistically for a snappy toggle, but
   // must roll back on failure -- previously they always kept the optimistic
@@ -111,12 +109,7 @@ export default function SavedProfileCard({
             {t("scoreLabel", { score: Math.round(match.score) })}
           </span>
         )}
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="absolute bottom-0 start-0 p-4 text-start"
-          aria-expanded={open}
-        >
+        <Link href={`/u/${profile.id}`} className="absolute bottom-0 start-0 p-4 text-start">
           <p className="font-display text-lg font-bold text-white drop-shadow underline-offset-2 hover:underline">
             {profile.displayName}
           </p>
@@ -124,7 +117,7 @@ export default function SavedProfileCard({
             {categoryLabel}
             {area ? ` · ${area}` : ""}
           </p>
-        </button>
+        </Link>
       </div>
 
       <div className="p-5">
@@ -133,11 +126,9 @@ export default function SavedProfileCard({
           <ProfileRating profileId={profile.id} average={profile.rating.average} count={profile.rating.count} />
         </div>
 
-        <button type="button" onClick={() => setOpen((v) => !v)} className={ui.buttonGhost + " text-sm mb-3"}>
-          {open ? t("hideProfile") : t("viewProfile")}
-        </button>
-
-        {open && <ProfileSummaryPanel profileId={profile.id} />}
+        <Link href={`/u/${profile.id}`} className={ui.link + " text-sm"}>
+          {t("viewProfile")}
+        </Link>
 
         {match && (
           <MatchActions
