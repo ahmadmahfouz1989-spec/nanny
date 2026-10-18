@@ -144,3 +144,13 @@ export function FlagIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+export function PhotoIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>
+      <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
+      <circle cx="9" cy="10" r="1.6" />
+      <path d="M20.5 16l-4.5-4.5-8.5 8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}

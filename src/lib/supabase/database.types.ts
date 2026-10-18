@@ -168,14 +168,14 @@ isOneToOne: false
                   ]
                 },"generic_profiles": {
                   Row: {
-                    "attributes": NonNullable<Json>,"category_id": string,"created_at": string,"full_name": string,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
+                    "attributes": NonNullable<Json>,"category_id": string,"created_at": string,"full_name": string,"headline": string | null,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attributes"?: NonNullable<Json>,"category_id": string,"created_at"?: string,"full_name": string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
+                    "attributes"?: NonNullable<Json>,"category_id": string,"created_at"?: string,"full_name": string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "attributes"?: NonNullable<Json>,"category_id"?: string,"created_at"?: string,"full_name"?: string,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "attributes"?: NonNullable<Json>,"category_id"?: string,"created_at"?: string,"full_name"?: string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
@@ -747,6 +747,58 @@ isOneToOne: false
     },{
       foreignKeyName: "verification_verified_by_admin_id_fkey"
       columns: ["verified_by_admin_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"work_photos": {
+                  Row: {
+                    "caption": string | null,"created_at": string,"height": number | null,"id": string,"path": string,"position": number,"project_id": string,"url": string,"user_id": string,"width": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "caption"?: string | null,"created_at"?: string,"height"?: number | null,"id"?: string,"path": string,"position"?: number,"project_id": string,"url": string,"user_id": string,"width"?: number | null
+                  }
+                  Update: {
+                    "caption"?: string | null,"created_at"?: string,"height"?: number | null,"id"?: string,"path"?: string,"position"?: number,"project_id"?: string,"url"?: string,"user_id"?: string,"width"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "work_photos_project_id_fkey"
+      columns: ["project_id"]
+isOneToOne: false
+      referencedRelation: "work_projects"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "work_photos_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"work_projects": {
+                  Row: {
+                    "created_at": string,"description": string | null,"id": string,"position": number,"profile_id": string,"reviewed_at": string | null,"status": string,"title": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"position"?: number,"profile_id": string,"reviewed_at"?: string | null,"status"?: string,"title": string,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"description"?: string | null,"id"?: string,"position"?: number,"profile_id"?: string,"reviewed_at"?: string | null,"status"?: string,"title"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "work_projects_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "work_projects_user_id_fkey"
+      columns: ["user_id"]
 isOneToOne: false
       referencedRelation: "users"
       referencedColumns: ["id"]
