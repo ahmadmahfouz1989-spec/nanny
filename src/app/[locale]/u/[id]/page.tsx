@@ -18,6 +18,8 @@ import MatchActions from "@/components/matches/match-actions";
 import CriteriaChecklist from "@/components/matches/criteria-checklist";
 import ReportButton from "@/components/matches/report-button";
 import { ReviewList } from "@/components/matches/reviews-panel";
+import WorkSection from "@/components/work/work-section";
+import HeadlineEditor from "@/components/work/headline-editor";
 
 // generateMetadata and the page both need it; cache() makes it one load.
 const getPage = cache(async (id: string) => {
@@ -144,6 +146,15 @@ async function ProfileHeader({ data, locale }: { data: ProfilePageData; locale: 
       </div>
 
       <div className="p-4 sm:p-5 flex flex-col gap-3">
+        {data.isOwn ? (
+          <HeadlineEditor profileId={profile.id} initial={profile.headline} />
+        ) : (
+          profile.headline && (
+            <p dir="auto" className="text-[15px] font-medium text-ink">
+              {profile.headline}
+            </p>
+          )
+        )}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
           {area && <span>{area}</span>}
           {data.rating.count > 0 && (
@@ -241,6 +252,10 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
 
   return (
     <>
+      {profile.role === "provider" && (
+        <WorkSection profileId={profile.id} initialProjects={data.work} isOwn={data.isOwn} />
+      )}
+
       {about.length > 0 && (
         <Section title={t("about")}>
           {about.map((text, i) => (

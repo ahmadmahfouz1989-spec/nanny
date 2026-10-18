@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { ownProfilePhotoObject } from "@/lib/storage-cleanup";
 import { notify } from "@/lib/push";
+import { WORK_BUCKET, workPhotoPaths } from "@/lib/work";
 
 const bodySchema = z.object({
   status: z.enum(["approved", "rejected"]),
@@ -83,6 +84,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return NextResponse.json({ profile: updated, deleted: false });
     }
 
+    // Work photo files don't go with the cascade -- note them first.
+    const { data: work } = await db.from("work_projects").select("id, user_id").eq("profile_id", id);
+    const workPaths = work?.length ? await workPhotoPaths(db, work.map((w) => w.id), work[0].user_id) : [];
+
     const { data: deleted, error } = await db.from("generic_profiles").delete().eq("id", id).select("id, user_id, full_name, categories(slug), profile_photo_url").single();
 
     if (error || !deleted) {
@@ -90,6 +95,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
 
     const row = deleted;
+
+    if (workPaths.length) await db.storage.from(WORK_BUCKET).remove(workPaths).catch(() => {});
 
     if (row.profile_photo_url) {
       // Only ever delete a path under this profile's own owner folder, in

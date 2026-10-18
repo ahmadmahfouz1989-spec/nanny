@@ -5,6 +5,7 @@ import { reviewsReceivedByUser, type ProfileReview, type RatingAggregate } from 
 import { featuredUserIds } from "@/lib/featured";
 import { savedProfileIds } from "@/lib/saved-profiles";
 import type { CriterionResult } from "@/lib/matching/generic-engine";
+import { loadWork, type WorkProject } from "@/lib/work";
 
 type Localized = { name_en: string; name_ar: string; name_fr: string };
 
@@ -16,6 +17,7 @@ export type ProfilePageProfile = {
   location_id: string | null;
   attributes: Record<string, unknown>;
   moderation_status: string;
+  headline: string | null;
   locations: Localized | null;
   categories: { slug: string; name_en: string; name_ar: string } | null;
   languages: ({ id: string } & Localized)[];
@@ -50,11 +52,13 @@ export type ProfilePageData = {
   viewerCanMatch: boolean;
   rating: RatingAggregate;
   reviews: ProfileReview[];
+  /** Provider profiles only: everything for the owner, approved projects for others (RLS). */
+  work: WorkProject[];
   trust: { memberSince: string; phoneVerified: boolean; emailVerified: boolean };
 };
 
 const FIELDS =
-  "id, user_id, full_name, profile_photo_url, role, location_id, attributes, category_id, moderation_status, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)";
+  "id, user_id, full_name, profile_photo_url, role, location_id, attributes, category_id, moderation_status, headline, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)";
 
 /**
  * Everything the profile page (/u/[id]) shows about one profile and the
@@ -86,7 +90,7 @@ export async function loadProfilePage(
     ? attributes.languageIds.filter((x): x is string => typeof x === "string")
     : [];
 
-  const [siblings, languages, reviews, featured, saved, owner, viewerProfile] = await Promise.all([
+  const [siblings, languages, reviews, featured, saved, owner, viewerProfile, work] = await Promise.all([
     supabase
       .from("generic_profiles")
       .select("id, role, created_at, categories(slug, name_en, name_ar)")
@@ -114,6 +118,7 @@ export async function loadProfilePage(
           .eq("role", role === "seeker" ? "provider" : "seeker")
           .neq("status", "draft")
           .maybeSingle(),
+    role === "provider" ? loadWork(supabase, profileId) : Promise.resolve([]),
   ]);
 
   let match: ProfileMatch | null = null;
@@ -163,6 +168,7 @@ export async function loadProfilePage(
     viewerCanMatch: !!viewerProfile.data,
     rating: { average: reviews.average, count: reviews.count },
     reviews: reviews.reviews,
+    work,
     trust: {
       memberSince: ownerRow?.created_at ?? new Date().toISOString(),
       // A WhatsApp sign-in proves the number, same as the account card on /profile.
