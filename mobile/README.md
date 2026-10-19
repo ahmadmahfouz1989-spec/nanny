@@ -39,20 +39,50 @@ the website instead of returning to the app.
 
 ### iOS
 
-1. Apple Developer account ($99/year).
-2. Open in Xcode (`npm run ios`) → App target → Signing & Capabilities:
-   choose your team. Push Notifications is already set up in
-   `App/App.entitlements`; if Xcode asks, add the **Push Notifications**
-   capability.
-3. Apple Developer → Keys → new key with **Apple Push Notifications service
+Published under Aya Al atat's Apple Developer account (Individual
+membership, team `74NH8J42VR`). On an Individual membership only the
+Account Holder can sign in Xcode, so builds are signed **manually** with a
+distribution certificate created through the App Store Connect API (an
+Admin's API key), and uploaded from the command line. Debug builds in
+Xcode stay on automatic signing.
+
+1. Apple Developer → Keys → new key with **Apple Push Notifications service
    (APNs)** → download the `.p8` (you can only download it once).
-4. Railway env vars:
+2. Railway env vars:
    - `APNS_KEY`: the `.p8` file's contents (line breaks may be written `\n`)
    - `APNS_KEY_ID`: the key's ID
-   - `APNS_TEAM_ID`: your team ID (top right of the developer portal)
+   - `APNS_TEAM_ID`: `74NH8J42VR`
    - `APNS_SANDBOX=1`: **only** while testing builds run straight from
-     Xcode. Remove it for TestFlight and App Store builds.
-5. Product → Archive → Distribute → App Store Connect → TestFlight, then submit.
+     Xcode. Never for TestFlight and App Store builds.
+
+#### TestFlight uploads
+
+```sh
+cd mobile
+ASC_KEY_ID=MKS573L36P ASC_ISSUER_ID=fb53c104-164f-4d43-813c-0d65167559d8 npm run testflight
+```
+
+Archives a Release build (version from `MARKETING_VERSION` in the Xcode
+project, build number = UTC timestamp), signs it and uploads it. It needs,
+on the Mac running it:
+
+- `~/.appstoreconnect/private_keys/AuthKey_MKS573L36P.p8`: App Store
+  Connect API key (Users and Access → Integrations, Admin access).
+- `~/Library/Keychains/ouiknow-signing.keychain-db` holding the
+  **Apple Distribution: Aya Al atat** certificate, and its password in
+  `~/.appstoreconnect/signing/keychain-password` (the certificate's private
+  key is also kept in `~/.appstoreconnect/signing/dist-key.pem`).
+- The **ouiKnow App Store** provisioning profile, installed in
+  `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`.
+
+Release builds use `App/App.Release.entitlements` (`aps-environment`
+production); Debug uses `App/App.entitlements` (development).
+
+**Yearly renewal**: the certificate and profile expire on 2027-10-19.
+Before then: create a new DISTRIBUTION certificate from a fresh CSR via the
+API, import it into the signing keychain, regenerate the "ouiKnow App
+Store" profile with it, and install the profile. Builds already uploaded
+keep working after expiry; only new uploads need the renewed ones.
 
 ### Android
 
