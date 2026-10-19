@@ -6,7 +6,8 @@
     "sync": "cap sync",
     "ios": "cap open ios",
     "android": "cap open android",
-    "assets": "npx @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#fbf8f4' --splashBackgroundColor '#fbf8f4' --iconBackgroundColorDark '#fbf8f4' --splashBackgroundColorDark '#fbf8f4'"
+    "assets": "npx @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#fbf8f4' --splashBackgroundColor '#fbf8f4' --iconBackgroundColorDark '#fbf8f4' --splashBackgroundColorDark '#fbf8f4'",
+    "testflight": "bash scripts/testflight.sh"
   },
   "dependencies": {
     "@capacitor/android": "8.5.2",
