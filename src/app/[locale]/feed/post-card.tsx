@@ -149,7 +149,7 @@ function WorkPhotos({ work, label }: { work: PostWork; label: string }) {
     >
       {photos.map((photo, i) => (
         <span
-          key={photo.url}
+          key={i}
           className={`relative block bg-surface-sunken ${
             photos.length === 1 ? "aspect-[16/10]" : photos.length === 3 && i === 0 ? "row-span-2 aspect-auto" : "aspect-square"
           }`}
