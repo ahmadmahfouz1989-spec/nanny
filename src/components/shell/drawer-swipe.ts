@@ -1,19 +1,21 @@
 "use client";
 
 import { useEffect, useRef, type RefObject } from "react";
-import { haptic } from "@/lib/native-app";
+import { haptic, isNativeApp } from "@/lib/native-app";
 
 /**
  * The phone's main tab screens -- where swiping toward the menu opens it,
  * as on X. Everywhere else the same swipe stays "back".
  */
+// Mirrored in the iPhone app (AppViewController.tabRoot), which hands the
+// screen edge to this swipe on these screens.
 const TAB_ROOTS = [/^\/feed$/, /^\/notifications$/, /^\/profile$/, /^\/messages$/, /^\/dashboard$/, /^\/categories\/[^/]+\/dashboard$/];
 
 export function isTabRoot(pathname: string) {
   return TAB_ROOTS.some((re) => re.test(pathname));
 }
 
-/** The screen edge iOS keeps for its own swipe back. */
+/** The screen edge Safari keeps for its own swipe back (the app gives it to us). */
 const EDGE = 24;
 /** How far a finger moves before we decide it's a sideways swipe, not a scroll. */
 const SLOP = 10;
@@ -90,9 +92,10 @@ export function useDrawerSwipe({
       if (!open && (!enabled || ownsSideways(e.target))) return;
       const dir = document.documentElement.dir === "rtl" ? -1 : 1;
       const t = e.touches[0];
-      // Leave the edge to iOS's swipe back.
+      // In Safari the edge is the browser's back. In the app, tab screens
+      // turn that off, so a swipe from the very edge opens the menu, as on X.
       const fromEdge = dir === 1 ? t.clientX : window.innerWidth - t.clientX;
-      if (!open && fromEdge < EDGE) return;
+      if (!open && !isNativeApp() && fromEdge < EDGE) return;
       g = {
         x: t.clientX,
         y: t.clientY,
