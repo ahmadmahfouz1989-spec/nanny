@@ -8,9 +8,9 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
-import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon, UsersIcon } from "@/components/nav-icons";
+import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon } from "@/components/nav-icons";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
-import { APP_MAIN_ID, HideOnScroll, MobileHeader, NotificationsTabItem } from "@/components/shell/mobile-chrome";
+import { APP_MAIN_ID, HideOnScroll, MatchesTabItem, MobileHeader, NotificationsTabItem } from "@/components/shell/mobile-chrome";
 import CategoryIcon from "@/components/category-icon";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
@@ -167,13 +167,12 @@ export default async function AppShell({
                 <HomeIcon className="h-[22px] w-[22px]" />
                 {t("home")}
               </Link>
-              <Link
+              <MatchesTabItem
                 href={tabCategory ? `/categories/${tabCategory.slug}/dashboard` : "/categories"}
-                className={`${TAB} ${matchesActive ? "font-semibold text-primary" : "text-muted"}`}
-              >
-                <UsersIcon className="h-[22px] w-[22px]" />
-                {t("matches")}
-              </Link>
+                slugs={myCategories.map((c) => c.slug)}
+                active={matchesActive}
+                className={TAB}
+              />
               <MessagesTabItem active={active === "messages"} />
               <NotificationsTabItem active={active === "notifications"} className={TAB} />
               <Link
