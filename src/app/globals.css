@@ -315,3 +315,16 @@ button:not(:disabled),
     animation: none !important;
   }
 }
+
+/* Phone top and bottom bars slide away while scrolling down through a page
+   and come back on scrolling up -- see HideOnScroll in mobile-chrome.tsx. */
+.app-chrome-top,
+.app-chrome-bottom {
+  transition: transform 220ms ease;
+}
+html[data-chrome="hidden"] .app-chrome-top {
+  transform: translateY(-100%);
+}
+html[data-chrome="hidden"] .app-chrome-bottom {
+  transform: translateY(100%);
+}

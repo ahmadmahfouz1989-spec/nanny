@@ -1,102 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { HeartIcon } from "@/components/nav-icons";
-import { announceFeedTarget } from "@/lib/feed-target";
-import { announceMatchTarget } from "@/lib/match-target";
-import { notificationHref, notificationLabel } from "@/lib/notification-content";
-import { RowListSkeleton } from "@/components/skeletons";
+import {
+  NotificationsProvider,
+  useHasNotificationsProvider,
+  useNotifications,
+} from "@/components/notifications/notifications-provider";
+import NotificationList, { NotificationActions } from "@/components/notifications/notification-list";
 
-type Notification = {
-  id: string;
-  type: string;
-  payload: Record<string, unknown> | null;
-  read_at: string | null;
-  created_at: string;
-};
-
-function formatRelative(iso: string, locale: string, justNow: string) {
-  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
-  if (min < 1) return justNow;
-  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-  if (min < 60) return rtf.format(-min, "minute");
-  const hr = Math.round(min / 60);
-  if (hr < 24) return rtf.format(-hr, "hour");
-  return rtf.format(-Math.round(hr / 24), "day");
+/**
+ * The bell with its dropdown. Inside the app frame it shares the frame's
+ * NotificationsProvider; elsewhere (the admin panel) it brings its own.
+ */
+export default function NotificationBell(props: { variant?: "sidebar" | "header" }) {
+  const hasProvider = useHasNotificationsProvider();
+  if (hasProvider) return <Bell {...props} />;
+  return (
+    <NotificationsProvider>
+      <Bell {...props} />
+    </NotificationsProvider>
+  );
 }
 
-export default function NotificationBell({
-  variant = "sidebar",
-}: {
-  variant?: "sidebar" | "header";
-}) {
+function Bell({ variant = "sidebar" }: { variant?: "sidebar" | "header" }) {
   const t = useTranslations("Notifications");
-  const locale = useLocale();
-  const router = useRouter();
-  const [items, setItems] = useState<Notification[] | null>(null);
+  const { unread } = useNotifications();
   const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    async function load() {
-      try {
-        const res = await fetch("/api/notifications?pageSize=10");
-        if (!res.ok || !active) return;
-        const body = await res.json();
-        setItems(body.notifications ?? []);
-      } catch {
-        // keep whatever we had
-      }
-    }
-    load();
-    const id = setInterval(load, 30000);
-    return () => {
-      active = false;
-      clearInterval(id);
-    };
-  }, []);
-
-  const unread = (items ?? []).filter((n) => !n.read_at).length;
-
-  function label(n: Notification) {
-    return notificationLabel(n, t);
-  }
-
-  function openRow(n: Notification) {
-    setOpen(false);
-    if (!n.read_at) {
-      setItems((prev) =>
-        prev?.map((x) => (x.id === n.id ? { ...x, read_at: new Date().toISOString() } : x)) ?? prev,
-      );
-      fetch(`/api/notifications/${n.id}/read`, { method: "PATCH" }).catch(() => {});
-    }
-    router.push(notificationHref(n));
-    const matchTarget = n.payload?.generic_match_id;
-    if (
-      (n.type === "interest_received" || n.type === "interest_accepted" || n.type === "new_match") &&
-      typeof matchTarget === "string"
-    ) {
-      announceMatchTarget({ matchId: matchTarget });
-    }
-    if ((n.type === "post_reply" || n.type === "post_like") && typeof n.payload?.post_id === "string") {
-      announceFeedTarget({
-        postId: n.payload.post_id,
-        replyId: typeof n.payload?.reply_id === "string" ? n.payload.reply_id : null,
-      });
-    }
-  }
-
-  function markAllRead() {
-    setItems((prev) => prev?.map((x) => ({ ...x, read_at: x.read_at ?? new Date().toISOString() })) ?? prev);
-    fetch("/api/notifications/read-all", { method: "PATCH" }).catch(() => {});
-  }
-
-  function clearAll() {
-    setItems([]);
-    fetch("/api/notifications", { method: "DELETE" }).catch(() => {});
-  }
 
   const trigger =
     variant === "header" ? (
@@ -148,48 +79,10 @@ export default function NotificationBell({
           >
             <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
               <p className="font-display text-sm font-bold">{t("title")}</p>
-              <div className="flex items-center gap-3">
-                {unread > 0 && (
-                  <button type="button" onClick={markAllRead} className="text-xs text-primary hover:underline">
-                    {t("markAllRead")}
-                  </button>
-                )}
-                {items && items.length > 0 && (
-                  <button type="button" onClick={clearAll} className="text-xs text-muted hover:text-danger">
-                    {t("clearAll")}
-                  </button>
-                )}
-              </div>
+              <NotificationActions />
             </div>
             <div className="max-h-[22rem] overflow-y-auto">
-              {!items && <RowListSkeleton count={3} label={t("loading")} />}
-              {items && items.length === 0 && (
-                <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-sunken text-muted">
-                    <HeartIcon className="h-4 w-4" />
-                  </span>
-                  <p className="text-sm text-muted">{t("empty")}</p>
-                </div>
-              )}
-              {items?.map((n) => {
-                const notes = typeof n.payload?.notes === "string" && n.payload.notes.trim() ? n.payload.notes : null;
-                return (
-                  <button
-                    key={n.id}
-                    type="button"
-                    onClick={() => openRow(n)}
-                    className={`flex w-full flex-col gap-0.5 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background ${
-                      n.read_at ? "" : "bg-primary-soft/30"
-                    }`}
-                  >
-                    <span className="text-sm text-ink">{label(n)}</span>
-                    {notes && <span className="text-xs text-muted line-clamp-2">{notes}</span>}
-                    <span className="text-[11px] text-muted">
-                      {formatRelative(n.created_at, locale, t("justNow"))}
-                    </span>
-                  </button>
-                );
-              })}
+              <NotificationList onOpen={() => setOpen(false)} />
             </div>
           </div>
         </>

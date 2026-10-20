@@ -1,11 +1,14 @@
 import { redirect } from "@/i18n/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { LAST_CATEGORY_COOKIE } from "@/lib/last-category";
 
 /**
  * Home: where sign-in, email confirmation and old links land. Sends an
  * account with profiles in exactly one category straight to that
- * category's dashboard, and everyone else to the category hub. A match
- * notification's ?match= target (old nanny links) is carried along.
+ * category's dashboard, one with several to the one it was last in, and
+ * everyone else to the category hub. A match notification's ?match=
+ * target (old nanny links) is carried along.
  */
 export default async function DashboardPage({
   params,
@@ -40,8 +43,11 @@ export default async function DashboardPage({
     ),
   ];
 
-  if (slugs.length === 1) {
-    const href = `/categories/${slugs[0]}/dashboard`;
+  // With several services, the one you were last in (if it's still yours).
+  const lastSlug = (await cookies()).get(LAST_CATEGORY_COOKIE)?.value;
+  const slug = slugs.length === 1 ? slugs[0] : slugs.find((s) => s === lastSlug);
+  if (slug) {
+    const href = `/categories/${slug}/dashboard`;
     redirect({ href: match ? `${href}?match=${match}` : href, locale });
   }
   redirect({ href: "/categories", locale });
