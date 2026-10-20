@@ -12,6 +12,7 @@ import SignOutButton from "@/components/sign-out-button";
 import CategoryIcon from "@/components/category-icon";
 import { BellIcon, BookmarkIcon, GridIcon, ProfileIcon, UsersIcon } from "@/components/nav-icons";
 import { useNotifications } from "@/components/notifications/notifications-provider";
+import { BackArrow, useGoBack } from "@/components/back-button";
 import { isTabRoot, useDrawerSwipe } from "./drawer-swipe";
 
 export type ShellService = { slug: string; icon: string; label: string };
@@ -83,9 +84,11 @@ export function MobileHeader({ me, services }: { me: ShellMe | null; services: S
   const t = useTranslations("Nav");
   const [menuOpen, setMenuOpen] = useState(false);
   const pathname = usePathname();
+  const tabRoot = isTabRoot(pathname);
+  const goBack = useGoBack();
   const drawer = useRef<HTMLElement>(null);
   const backdrop = useRef<HTMLDivElement>(null);
-  useDrawerSwipe({ enabled: isTabRoot(pathname), open: menuOpen, setOpen: setMenuOpen, drawer, backdrop });
+  useDrawerSwipe({ enabled: tabRoot, open: menuOpen, setOpen: setMenuOpen, drawer, backdrop });
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -102,15 +105,28 @@ export function MobileHeader({ me, services }: { me: ShellMe | null; services: S
   return (
     <>
       <header className="app-chrome-top sm:hidden fixed top-0 inset-x-0 z-30 grid grid-cols-[1fr_auto_1fr] items-center px-4 py-2 pt-[calc(0.5rem+env(safe-area-inset-top))] border-b border-border bg-background/90 backdrop-blur">
-        <button
-          type="button"
-          onClick={() => setMenuOpen(true)}
-          aria-label={t("menu")}
-          aria-expanded={menuOpen}
-          className="justify-self-start rounded-full"
-        >
-          <Avatar me={me} size={34} />
-        </button>
+        {/* As on X: the tab screens show your photo (the menu); every page
+            you opened from them shows a back arrow in its place. */}
+        {tabRoot ? (
+          <button
+            type="button"
+            onClick={() => setMenuOpen(true)}
+            aria-label={t("menu")}
+            aria-expanded={menuOpen}
+            className="justify-self-start rounded-full"
+          >
+            <Avatar me={me} size={34} />
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label={t("back")}
+            className="justify-self-start -ms-2 inline-flex h-9 w-9 items-center justify-center rounded-full text-ink transition hover:bg-surface-sunken"
+          >
+            <BackArrow className="h-6 w-6" />
+          </button>
+        )}
         <BrandMark />
         <Link
           href="/saved"
@@ -192,7 +208,7 @@ export function NotificationsTabItem({ active, className }: { active: boolean; c
   const t = useTranslations("Notifications");
   const { unread } = useNotifications();
   return (
-    <Link href="/notifications" className={className + (active ? " font-semibold text-primary" : " text-muted")}>
+    <Link href="/notifications" replace className={className + (active ? " font-semibold text-primary" : " text-muted")}>
       <span className="relative">
         <BellIcon className="h-[22px] w-[22px]" fill={active ? "currentColor" : "none"} />
         {unread > 0 && (
@@ -227,12 +243,13 @@ export function MatchesTabItem({
   return (
     <Link
       href={href}
+      replace
       onClick={(e) => {
         const last = lastCategory();
         const target = last && slugs.includes(last) ? `/categories/${last}/dashboard` : null;
         if (target && target !== href) {
           e.preventDefault();
-          router.push(target);
+          router.replace(target);
         }
       }}
       className={className + (active ? " font-semibold text-primary" : " text-muted")}

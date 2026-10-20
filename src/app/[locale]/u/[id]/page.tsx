@@ -84,7 +84,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   return (
     <AppShell active={active}>
       <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-3 sm:gap-5">
-        <BackButton fallback="/feed" className="self-start" />
+        <BackButton className="self-start" />
         <ProfileHeader data={data} locale={locale} />
         {data.growth && <GrowthCard data={data} />}
         <ProfileSectionNav sections={await sectionsFor(data)} />
