@@ -2,6 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { cookies } from "next/headers";
 import { redirect } from "@/i18n/navigation";
 import { LAST_CATEGORY_COOKIE } from "@/lib/last-category";
+import { profileStrength, profileViewCounts } from "@/lib/profile-growth";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
@@ -39,7 +40,7 @@ export default async function ProfilePage({
 
   const { data: genericRows } = await supabase
     .from("generic_profiles")
-    .select("id, role, category_id, full_name, profile_photo_url, status, moderation_status, categories(slug, name_en, name_ar)")
+    .select("id, role, category_id, full_name, profile_photo_url, status, moderation_status, headline, attributes, categories(slug, name_en, name_ar)")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: true });
 
@@ -54,6 +55,14 @@ export default async function ProfilePage({
     redirect({ href: "/categories", locale });
     return;
   }
+
+  // Strength and views per profile -- the full checklist is on /u/[id].
+  const ids = genericProfiles.map((p) => p.id);
+  const [views, { data: workRows }] = await Promise.all([
+    profileViewCounts(ids),
+    supabase.from("work_projects").select("profile_id, work_photos(id)").in("profile_id", ids),
+  ]);
+  const withWork = new Set((workRows ?? []).filter((w) => (w.work_photos ?? []).length > 0).map((w) => w.profile_id));
 
   const tabs: ProfileTabDef[] = [
     ...genericProfiles.map((p) => {
@@ -74,6 +83,16 @@ export default async function ProfilePage({
         roleLabel,
         fullName: p.full_name,
         moderationStatus: p.moderation_status,
+        growth: {
+          percent: profileStrength({
+            role: p.role as "seeker" | "provider",
+            photoUrl: p.profile_photo_url,
+            headline: p.headline,
+            attributes: (p.attributes ?? {}) as Record<string, unknown>,
+            hasWork: withWork.has(p.id),
+          }).percent,
+          views30: views.get(p.id) ?? 0,
+        },
       };
     }),
   ];

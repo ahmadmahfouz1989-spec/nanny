@@ -1,6 +1,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import {
+  profileActivity,
+  profileStrength,
+  profileViewCounts,
+  recordProfileView,
+  type ProfileActivity,
+  type ProfileStrength,
+} from "@/lib/profile-growth";
 import { reviewsReceivedByUser, type ProfileReview, type RatingAggregate } from "@/lib/ratings";
 import { featuredUserIds } from "@/lib/featured";
 import { savedProfileIds } from "@/lib/saved-profiles";
@@ -55,6 +63,10 @@ export type ProfilePageData = {
   /** Provider profiles only: their work projects (RLS). */
   work: WorkProject[];
   trust: { memberSince: string; phoneVerified: boolean; emailVerified: boolean };
+  /** Response time and conversations, shown once there's enough to say. */
+  activity: ProfileActivity;
+  /** The owner only: how complete the profile is and how many people viewed it. */
+  growth: { strength: ProfileStrength; views30: number } | null;
 };
 
 const FIELDS =
@@ -90,7 +102,7 @@ export async function loadProfilePage(
     ? attributes.languageIds.filter((x): x is string => typeof x === "string")
     : [];
 
-  const [siblings, languages, reviews, featured, saved, owner, viewerProfile, work] = await Promise.all([
+  const [siblings, languages, reviews, featured, saved, owner, viewerProfile, work, activity, views] = await Promise.all([
     supabase
       .from("generic_profiles")
       .select("id, role, created_at, categories(slug, name_en, name_ar)")
@@ -119,6 +131,10 @@ export async function loadProfilePage(
           .neq("status", "draft")
           .maybeSingle(),
     role === "provider" ? loadWork(supabase, profileId) : Promise.resolve([]),
+    profileActivity(profileId),
+    isOwn ? profileViewCounts([profileId]) : Promise.resolve(null),
+    // Counted once a day per viewer; the owner never sees who.
+    isOwn ? Promise.resolve() : recordProfileView(profileId, viewerId),
   ]);
 
   let match: ProfileMatch | null = null;
@@ -169,6 +185,20 @@ export async function loadProfilePage(
     rating: { average: reviews.average, count: reviews.count },
     reviews: reviews.reviews,
     work,
+    activity,
+    growth:
+      isOwn && views
+        ? {
+            strength: profileStrength({
+              role,
+              photoUrl: visible.profile_photo_url,
+              headline: visible.headline,
+              attributes,
+              hasWork: work.some((p) => p.photos.length > 0),
+            }),
+            views30: views.get(profileId) ?? 0,
+          }
+        : null,
     trust: {
       memberSince: ownerRow?.created_at ?? new Date().toISOString(),
       // A WhatsApp sign-in proves the number, same as the account card on /profile.

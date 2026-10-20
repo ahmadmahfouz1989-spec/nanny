@@ -560,14 +560,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string
+                    "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string,"work_project_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
+                    "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string,"work_project_id"?: string | null
                   }
                   Update: {
-                    "caption"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind"?: string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "caption"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind"?: string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"work_project_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -591,6 +591,38 @@ isOneToOne: false
     },{
       foreignKeyName: "posts_user_id_fkey"
       columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "posts_work_project_id_fkey"
+      columns: ["work_project_id"]
+isOneToOne: false
+      referencedRelation: "work_projects"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"profile_views": {
+                  Row: {
+                    "day": string,"profile_id": string,"viewer_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "day"?: string,"profile_id": string,"viewer_id": string
+                  }
+                  Update: {
+                    "day"?: string,"profile_id"?: string,"viewer_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "profile_views_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: false
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "profile_views_viewer_id_fkey"
+      columns: ["viewer_id"]
 isOneToOne: false
       referencedRelation: "users"
       referencedColumns: ["id"]
@@ -913,6 +945,11 @@ isOneToOne: false
 "message_summaries_for_matches":
 { Args: { "p_match_ids": (string)[],"p_user_id": string }; Returns: {
               "last_body": string,"last_created_at": string,"match_id": string,"unread_count": number
+            }[]
+                           },
+"profile_activity_stats":
+{ Args: { "p_profile_id": string }; Returns: {
+              "conversations": number,"median_reply_minutes": number,"replies": number
             }[]
                            },
 "report_match_participants_valid":

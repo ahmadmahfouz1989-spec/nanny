@@ -26,6 +26,7 @@ export default function ProfileHeaderCard({
   roleLabel,
   fullName,
   moderationStatus,
+  growth,
 }: {
   profileId: string;
   initialPhotoUrl: string | null;
@@ -35,6 +36,7 @@ export default function ProfileHeaderCard({
   roleLabel: string;
   fullName: string | null;
   moderationStatus: string;
+  growth?: { percent: number; views30: number };
 }) {
   const t = useTranslations("Dashboard");
   const tProfile = useTranslations("ProfilePage");
@@ -135,6 +137,18 @@ export default function ProfileHeaderCard({
           {t("editProfile")}
         </Link>
       </div>
+      {growth && (
+        <Link href={`/u/${profileId}`} className="mt-4 flex flex-col gap-1.5 rounded-xl bg-surface-sunken px-3 py-2.5 hover:bg-surface-sunken/70">
+          <span className="flex items-center justify-between gap-3 text-sm">
+            <span className="font-medium text-ink">{tProfile("strengthTitle")}</span>
+            <span className="font-semibold text-primary tabular-nums">{growth.percent}%</span>
+          </span>
+          <span className="h-1.5 overflow-hidden rounded-full bg-background">
+            <span className="block h-full rounded-full bg-primary" style={{ width: `${growth.percent}%` }} />
+          </span>
+          <span className="text-xs text-muted">{tProfile("views30", { count: growth.views30 })}</span>
+        </Link>
+      )}
       <Link href={`/u/${profileId}`} className={ui.link + " text-sm mt-4 inline-block"}>
         {tProfile("viewMyProfile")}
       </Link>

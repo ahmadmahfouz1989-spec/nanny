@@ -33,6 +33,8 @@ export type WorkProject = {
   description: string | null;
   status: WorkStatus;
   photos: WorkPhoto[];
+  // Already shared to the feed (one post per project).
+  shared: boolean;
 };
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -60,6 +62,12 @@ export async function loadWork(supabase: SupabaseClient<Database>, profileId: st
     .order("position", { ascending: true })
     .order("created_at", { ascending: true });
 
+  const ids = (data ?? []).map((p) => p.id);
+  const { data: posts } = ids.length
+    ? await supabase.from("posts").select("work_project_id").in("work_project_id", ids)
+    : { data: [] as { work_project_id: string | null }[] };
+  const shared = new Set((posts ?? []).map((p) => p.work_project_id));
+
   return (data ?? []).map((p) => ({
     id: p.id,
     title: p.title,
@@ -68,6 +76,7 @@ export async function loadWork(supabase: SupabaseClient<Database>, profileId: st
     photos: [...(p.work_photos ?? [])]
       .sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at))
       .map(({ id, url, caption, width, height }) => ({ id, url, caption, width, height })),
+    shared: shared.has(p.id),
   }));
 }
 

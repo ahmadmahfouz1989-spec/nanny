@@ -8,6 +8,7 @@ import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import { shrinkImage } from "@/lib/image-resize";
 import type { WorkPhoto, WorkProject } from "@/lib/work";
+import { haptic } from "@/lib/native-app";
 
 const MAX_PHOTOS = 10;
 const MAX_PROJECTS = 20;
@@ -40,6 +41,7 @@ export default function WorkEditor({
   const [textSaved, setTextSaved] = useState(false);
   const [progress, setProgress] = useState<{ current: number; total: number } | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [sharing, setSharing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -147,6 +149,22 @@ export default function WorkEditor({
       return;
     }
     update({ ...project, photos: project.photos.filter((p) => p.id !== photo.id) });
+  }
+
+  // Once per project: an "Offering" post in the feed showing these photos.
+  async function shareToFeed() {
+    if (!project || project.shared) return;
+    setSharing(true);
+    setError(null);
+    const res = await request(`/api/work-projects/${project.id}/share`, { method: "POST" });
+    setSharing(false);
+    if (res?.ok || res?.status === 409) {
+      if (res.ok) haptic("success");
+      update({ ...project, shared: true });
+      return;
+    }
+    const code = (await res?.json().catch(() => null))?.error;
+    setError(code === "contact_info" ? t("errorShareContact") : t("errorGeneric"));
   }
 
   async function removeProject() {
@@ -299,6 +317,26 @@ export default function WorkEditor({
                 </div>
               )}
             </section>
+          )}
+
+          {project && project.photos.length > 0 && (
+            <div className="flex flex-col gap-1 border-t border-border pt-4">
+              {project.shared ? (
+                <p className="text-sm text-success">✓ {t("sharedToFeed")}</p>
+              ) : (
+                <>
+                  <button
+                    type="button"
+                    onClick={shareToFeed}
+                    disabled={sharing}
+                    className={ui.buttonSecondary + " self-start"}
+                  >
+                    {t("shareToFeed")}
+                  </button>
+                  <p className="text-xs text-muted">{t("shareToFeedHint")}</p>
+                </>
+              )}
+            </div>
           )}
 
           {error && <p className="text-sm text-danger">{error}</p>}
