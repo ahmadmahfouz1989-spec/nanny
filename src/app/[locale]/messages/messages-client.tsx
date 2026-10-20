@@ -208,7 +208,7 @@ export default function MessagesClient() {
         </div>
       </div>
 
-      <div className={`${selected ? "flex" : "hidden sm:flex"} flex-1 min-w-0 flex-col`}>
+      <div data-no-drawer-swipe={selected ? "" : undefined} className={`${selected ? "flex" : "hidden sm:flex"} flex-1 min-w-0 flex-col`}>
         {selectedConversation ? (
           <>
             <ConversationHeader

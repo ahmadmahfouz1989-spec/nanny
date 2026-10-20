@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { lastCategory } from "@/lib/last-category";
 import BrandMark from "@/components/brand-mark";
 import ThemeSwitcher from "@/components/theme-switcher";
@@ -12,6 +12,7 @@ import SignOutButton from "@/components/sign-out-button";
 import CategoryIcon from "@/components/category-icon";
 import { BellIcon, BookmarkIcon, GridIcon, ProfileIcon, UsersIcon } from "@/components/nav-icons";
 import { useNotifications } from "@/components/notifications/notifications-provider";
+import { isTabRoot, useDrawerSwipe } from "./drawer-swipe";
 
 export type ShellService = { slug: string; icon: string; label: string };
 export type ShellMe = { name: string | null; photoUrl: string | null };
@@ -76,10 +77,15 @@ function Avatar({ me, size }: { me: ShellMe | null; size: number }) {
  * The phone's top bar: your photo (opens the menu), the logo, and Saved.
  * Everything that isn't a place you go every day -- your services, theme,
  * language, signing out -- lives in the menu instead of crowding the bar.
+ * On the tab screens, swiping toward it opens it too.
  */
 export function MobileHeader({ me, services }: { me: ShellMe | null; services: ShellService[] }) {
   const t = useTranslations("Nav");
   const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const drawer = useRef<HTMLElement>(null);
+  const backdrop = useRef<HTMLDivElement>(null);
+  useDrawerSwipe({ enabled: isTabRoot(pathname), open: menuOpen, setOpen: setMenuOpen, drawer, backdrop });
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -116,6 +122,7 @@ export function MobileHeader({ me, services }: { me: ShellMe | null; services: S
       </header>
 
       <div
+        ref={backdrop}
         className={`sm:hidden fixed inset-0 z-50 bg-black/40 transition-opacity duration-200 ${
           menuOpen ? "opacity-100" : "pointer-events-none opacity-0"
         }`}
@@ -123,6 +130,7 @@ export function MobileHeader({ me, services }: { me: ShellMe | null; services: S
         aria-hidden
       />
       <aside
+        ref={drawer}
         inert={!menuOpen}
         aria-label={t("menu")}
         className={`sm:hidden fixed inset-y-0 start-0 z-50 flex w-[82%] max-w-80 flex-col bg-background shadow-xl transition-transform duration-200 ease-out pt-[calc(1rem+env(safe-area-inset-top))] pb-[calc(1rem+env(safe-area-inset-bottom))] ${
