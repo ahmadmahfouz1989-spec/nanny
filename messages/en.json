@@ -903,6 +903,7 @@
     "termsNote": "By continuing you agree to the <terms>Terms of Service</terms>."
   },
   "ProfilePage": {
+    "back": "Back",
     "unavailableTitle": "This profile isn't available",
     "unavailableBody": "It may be waiting for review, paused, or no longer on ouiKnow.",
     "backToFeed": "Back to the feed",

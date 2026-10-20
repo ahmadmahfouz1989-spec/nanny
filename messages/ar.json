@@ -903,6 +903,7 @@
     "termsNote": "بالمتابعة فإنك توافق على <terms>شروط الخدمة</terms>."
   },
   "ProfilePage": {
+    "back": "رجوع",
     "unavailableTitle": "هذا الملف غير متاح",
     "unavailableBody": "قد يكون قيد المراجعة أو متوقفًا مؤقتًا أو لم يعد على ouiKnow.",
     "backToFeed": "العودة إلى المنشورات",
