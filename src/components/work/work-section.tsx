@@ -58,7 +58,7 @@ export default function WorkSection({
   }
 
   return (
-    <section id="work" className={ui.card + " p-4 sm:p-5 flex flex-col gap-3 scroll-mt-6"}>
+    <section id="work" className={ui.card + " p-4 sm:p-5 flex flex-col gap-3 scroll-mt-32 sm:scroll-mt-20"}>
       <div className="flex items-center justify-between gap-3">
         <h2 className="font-display text-lg font-semibold">
           {t("title")}

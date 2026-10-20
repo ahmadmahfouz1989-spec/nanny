@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { BookmarkIcon } from "@/components/nav-icons";
 import { useSavedProfiles } from "@/components/saved-profiles-provider";
 import { useToast } from "@/components/toast-provider";
+import { haptic } from "@/lib/native-app";
 
 type SaveProfileButtonProps = {
   profileId: string;
@@ -35,6 +36,7 @@ export default function SaveProfileButton({ profileId, initialSaved, className =
     if (pending) return;
 
     const nextSaved = !saved;
+    if (nextSaved) haptic();
     setPending(true);
     setSaved(profileId, nextSaved);
 

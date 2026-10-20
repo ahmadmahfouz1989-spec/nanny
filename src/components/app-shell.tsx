@@ -12,6 +12,7 @@ import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon } from "@/compo
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { APP_MAIN_ID, HideOnScroll, MatchesTabItem, MobileHeader, NotificationsTabItem } from "@/components/shell/mobile-chrome";
 import CategoryIcon from "@/components/category-icon";
+import PullToRefresh from "@/components/shell/pull-to-refresh";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
 import InstallPrompt from "@/components/install-prompt";
@@ -158,6 +159,7 @@ export default async function AppShell({
 
             <MobileHeader me={me} services={services} />
             <HideOnScroll />
+            <PullToRefresh />
 
             <nav className="app-chrome-bottom sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center border-t border-border bg-background/90 backdrop-blur pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
               <Link

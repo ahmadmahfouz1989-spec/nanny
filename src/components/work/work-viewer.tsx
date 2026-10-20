@@ -6,12 +6,36 @@ import { useTranslations } from "next-intl";
 import Modal from "./modal";
 import type { WorkProject } from "@/lib/work";
 
-/** One project full screen: swipe (or arrow) through its photos, captions below. */
+/** One project full screen: swipe (or arrow) through its photos, captions below; swipe down to close. */
 export default function WorkViewer({ project, onClose }: { project: WorkProject; onClose: () => void }) {
   const t = useTranslations("Work");
   const track = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
   const total = project.photos.length;
+  // Swipe a photo down to close, like X's photo viewer. Only a mostly
+  // vertical drag counts, so swiping between photos still works.
+  const [dragY, setDragY] = useState(0);
+  const dragStart = useRef<{ x: number; y: number; vertical: boolean | null } | null>(null);
+
+  function onTouchStart(e: React.TouchEvent) {
+    const scroller = e.currentTarget.closest("[data-viewer-scroll]");
+    if (e.touches.length !== 1 || (scroller && scroller.scrollTop > 0)) return;
+    dragStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY, vertical: null };
+  }
+  function onTouchMove(e: React.TouchEvent) {
+    const start = dragStart.current;
+    if (!start) return;
+    const dx = e.touches[0].clientX - start.x;
+    const dy = e.touches[0].clientY - start.y;
+    if (start.vertical === null && Math.abs(dx) + Math.abs(dy) > 8) start.vertical = Math.abs(dy) > Math.abs(dx);
+    if (start.vertical) setDragY(Math.max(0, dy));
+  }
+  function onTouchEnd() {
+    const closing = dragStart.current?.vertical && dragY > 110;
+    dragStart.current = null;
+    if (closing) onClose();
+    else setDragY(0);
+  }
 
   function go(to: number) {
     const el = track.current;
@@ -51,8 +75,19 @@ export default function WorkViewer({ project, onClose }: { project: WorkProject;
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
-          <div className="relative bg-black">
+        <div className="flex-1 overflow-y-auto" data-viewer-scroll>
+          <div
+            className="relative bg-black"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+            onTouchCancel={onTouchEnd}
+            style={{
+              transform: dragY ? `translateY(${dragY}px)` : undefined,
+              opacity: dragY ? Math.max(0.4, 1 - dragY / 400) : undefined,
+              transition: dragY ? undefined : "transform 200ms ease, opacity 200ms ease",
+            }}
+          >
             <div
               ref={track}
               onScroll={onScroll}

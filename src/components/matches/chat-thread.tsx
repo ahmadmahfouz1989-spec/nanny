@@ -11,6 +11,7 @@ import ChatComposer from "./chat-composer";
 import ChatMessage, { type ChatMessageData } from "./chat-message";
 import { useVoiceRecorder, type RecordedVoiceNote } from "./use-voice-recorder";
 import { getJson } from "@/lib/request";
+import { haptic } from "@/lib/native-app";
 
 type Message = ChatMessageData;
 
@@ -276,6 +277,7 @@ export default function ChatThread({
   async function send() {
     const body = draft.trim();
     if (!body || sending) return;
+    haptic();
     setSending(true);
     setSendError(null);
     setDraft("");
