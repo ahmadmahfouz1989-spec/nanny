@@ -21,6 +21,7 @@ import { ReviewList } from "@/components/matches/reviews-panel";
 import WorkSection from "@/components/work/work-section";
 import HeadlineEditor from "@/components/work/headline-editor";
 import BackButton from "@/components/back-button";
+import ProfileSectionNav from "@/components/profile-section-nav";
 
 // generateMetadata and the page both need it; cache() makes it one load.
 const getPage = cache(async (id: string) => {
@@ -85,6 +86,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
       <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-3 sm:gap-5">
         <BackButton fallback="/feed" className="self-start" />
         <ProfileHeader data={data} locale={locale} />
+        <ProfileSectionNav sections={await sectionsFor(data)} />
         <ProfileBody data={data} locale={locale} />
       </div>
     </AppShell>
@@ -236,15 +238,35 @@ async function ProfileTabs({ data, locale }: { data: ProfilePageData; locale: st
   );
 }
 
+function aboutTexts(data: ProfilePageData) {
+  const a = data.profile.attributes;
+  return [a.shortIntro, a.jobDescription, a.familyDescription].filter(
+    (v): v is string => typeof v === "string" && v.trim() !== "",
+  );
+}
+
+// The sticky section bar's entries -- only sections ProfileBody shows.
+async function sectionsFor(data: ProfilePageData) {
+  const t = await getTranslations("ProfilePage");
+  const tWork = await getTranslations("Work");
+  const hasWork =
+    data.profile.role === "provider" &&
+    (data.isOwn || data.work.some((p) => p.status === "approved" && p.photos.length > 0));
+  return [
+    hasWork && { id: "work", label: tWork("title") },
+    aboutTexts(data).length > 0 && { id: "about", label: t("about") },
+    { id: "details", label: t("details") },
+    { id: "reviews", label: t("reviews") },
+  ].filter((x): x is { id: string; label: string } => !!x);
+}
+
 async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: string }) {
   const t = await getTranslations("ProfilePage");
   const tDays = await getTranslations("Days");
   const { profile, match } = data;
   const a = profile.attributes;
 
-  const about = [a.shortIntro, a.jobDescription, a.familyDescription].filter(
-    (v): v is string => typeof v === "string" && v.trim() !== "",
-  );
+  const about = aboutTexts(data);
   const availability = a.availability as { days?: string[]; startTime?: string; endTime?: string } | undefined;
   const days = (availability?.days ?? a.neededDays ?? []) as string[];
   const hours = formatHoursRange(availability?.startTime, availability?.endTime, locale);
@@ -259,7 +281,7 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
       )}
 
       {about.length > 0 && (
-        <Section title={t("about")}>
+        <Section title={t("about")} id="about">
           {about.map((text, i) => (
             <p key={i} dir="auto" className="text-[15px] text-ink/85 whitespace-pre-wrap">
               {text}
@@ -274,7 +296,7 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
         </Section>
       )}
 
-      <Section title={t("details")}>
+      <Section title={t("details")} id="details">
         <MatchDetails profile={profile} />
       </Section>
 
@@ -315,7 +337,7 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
 
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
-    <section id={id} className={ui.card + " p-4 sm:p-5 flex flex-col gap-3 scroll-mt-6"}>
+    <section id={id} className={ui.card + " p-4 sm:p-5 flex flex-col gap-3 scroll-mt-32 sm:scroll-mt-20"}>
       <h2 className="font-display text-lg font-semibold">{title}</h2>
       {children}
     </section>

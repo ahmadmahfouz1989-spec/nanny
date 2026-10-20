@@ -10,8 +10,10 @@ import type { Post, Reply } from "./feed-shared";
 import PostCard from "./post-card";
 import PostComposer, { POST_COMPOSER_INPUT_ID } from "./post-composer";
 import { APP_MAIN_ID } from "@/components/shell/mobile-chrome";
+import { useOnAppRefresh } from "@/components/shell/pull-to-refresh";
 import PostReplies from "./post-replies";
 import { getJson, request } from "@/lib/request";
+import { haptic } from "@/lib/native-app";
 
 export default function FeedClient({
   targetPostId = null,
@@ -120,6 +122,39 @@ export default function FeedClient({
     };
   }, [adminMode]);
 
+  // Posts that arrived since the list loaded, waiting behind the "New
+  // posts" pill (X's way: the list never jumps under your finger).
+  const [incoming, setIncoming] = useState<Post[]>([]);
+  const postsRef = useRef<Post[] | null>(null);
+  useEffect(() => {
+    postsRef.current = posts;
+  }, [posts]);
+  useEffect(() => {
+    if (adminMode) return;
+    const id = window.setInterval(async () => {
+      if (document.visibilityState !== "visible" || !postsRef.current) return;
+      const body = await getJson<{ posts?: Post[] }>("/api/posts");
+      const current = postsRef.current;
+      if (!body?.posts || !current) return;
+      const known = new Set(current.map((p) => p.id));
+      const newest = current.reduce((max, p) => (p.created_at > max ? p.created_at : max), "");
+      setIncoming(body.posts.filter((p) => !known.has(p.id) && !p.isMine && p.created_at > newest));
+    }, 45000);
+    return () => window.clearInterval(id);
+  }, [adminMode]);
+
+  function showIncoming() {
+    setPosts((prev) => [...incoming, ...(prev ?? []).filter((p) => !incoming.some((n) => n.id === p.id))]);
+    setIncoming([]);
+    document.getElementById(APP_MAIN_ID)?.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  useOnAppRefresh(() => {
+    if (adminMode) return;
+    setIncoming([]);
+    loadPosts();
+  });
+
   // Bumped when the bell re-announces the target already in the URL (same
   // notification clicked again) -- the only case the props below can't see.
   const [reopenCount, setReopenCount] = useState(0);
@@ -175,11 +210,13 @@ export default function FeedClient({
       setComposerError(typeof body.error === "string" ? body.error : t("postError"));
       return;
     }
+    haptic("success");
     setPosts((prev) => [body.post as Post, ...(prev ?? [])]);
     setCaption("");
   }
 
   async function toggleLike(post: Post) {
+    if (!post.likedByMe) haptic();
     setPosts(
       (prev) =>
         prev?.map((p) =>
@@ -382,6 +419,17 @@ export default function FeedClient({
         </button>
       )}
       </div>
+
+      {incoming.length > 0 && (
+        <button
+          type="button"
+          onClick={showIncoming}
+          className="fixed inset-x-0 mx-auto z-20 w-max top-[calc(4.25rem+env(safe-area-inset-top))] sm:top-6 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg transition active:scale-95"
+        >
+          <span aria-hidden>↑</span>
+          {t("newPostsPill", { count: incoming.length })}
+        </button>
+      )}
 
       {/* X's floating compose button, on the phone: back to the top and
           straight into the new-post box. */}

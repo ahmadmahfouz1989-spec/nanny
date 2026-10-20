@@ -328,3 +328,21 @@ html[data-chrome="hidden"] .app-chrome-top {
 html[data-chrome="hidden"] .app-chrome-bottom {
   transform: translateY(100%);
 }
+
+/* Sticky bars inside pages (a profile's section tabs) sit just under the
+   phone's top bar, and move up to the top when that bar slides away.
+   Sticky offsets count from inside <main>'s top padding -- which is the
+   top bar's height -- so "under the bar" is 0 and "the very top" is minus
+   the bar. */
+.app-sticky-top {
+  top: 0;
+}
+@media (max-width: 639px) {
+  .app-sticky-top {
+    transition: top 220ms ease, padding 220ms ease;
+  }
+  html[data-chrome="hidden"] .app-sticky-top {
+    top: calc(-3.5rem - env(safe-area-inset-top));
+    padding-top: calc(0.5rem + env(safe-area-inset-top));
+  }
+}

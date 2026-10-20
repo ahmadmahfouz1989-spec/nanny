@@ -23,11 +23,15 @@ type PushPlugin = {
 };
 type AppPlugin = { addListener(event: "appUrlOpen", cb: (e: { url: string }) => void): Promise<Listener> };
 type BrowserPlugin = { open(o: { url: string }): Promise<void>; close(): Promise<void> };
+type HapticsPlugin = {
+  impact(o: { style: "LIGHT" | "MEDIUM" | "HEAVY" }): Promise<void>;
+  notification(o: { type: "SUCCESS" | "WARNING" | "ERROR" }): Promise<void>;
+};
 
 type CapacitorGlobal = {
   isNativePlatform(): boolean;
   getPlatform(): "ios" | "android" | "web";
-  Plugins: { PushNotifications?: PushPlugin; App?: AppPlugin; Browser?: BrowserPlugin };
+  Plugins: { PushNotifications?: PushPlugin; App?: AppPlugin; Browser?: BrowserPlugin; Haptics?: HapticsPlugin };
 };
 
 function capacitor(): CapacitorGlobal | null {
@@ -46,6 +50,20 @@ export const NATIVE_AUTH_CALLBACK = "ouiknow://auth/callback";
 /** Opens a URL (e.g. Google sign-in, which refuses embedded web views) in the in-app system browser. */
 export async function openInSystemBrowser(url: string) {
   await capacitor()?.Plugins.Browser?.open({ url });
+}
+
+// -- haptics ----------------------------------------------------------------
+
+/**
+ * A small buzz for things you did (liked, saved, sent, posted, refreshed),
+ * like X's app -- never for plain taps or navigation. No-op in a browser
+ * and in app builds from before the Haptics plugin.
+ */
+export function haptic(kind: "light" | "medium" | "success" = "light") {
+  const haptics = capacitor()?.Plugins.Haptics;
+  if (!haptics) return;
+  const done = kind === "success" ? haptics.notification({ type: "SUCCESS" }) : haptics.impact({ style: kind === "medium" ? "MEDIUM" : "LIGHT" });
+  done.catch(() => {});
 }
 
 // -- push -------------------------------------------------------------------

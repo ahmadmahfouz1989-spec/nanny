@@ -5,6 +5,7 @@ import { useRouter } from "@/i18n/navigation";
 import { announceFeedTarget } from "@/lib/feed-target";
 import { announceMatchTarget } from "@/lib/match-target";
 import { notificationHref } from "@/lib/notification-content";
+import { APP_REFRESH_EVENT } from "@/components/shell/pull-to-refresh";
 
 export type Notification = {
   id: string;
@@ -47,9 +48,11 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
     }
     load();
     const id = setInterval(load, 30000);
+    window.addEventListener(APP_REFRESH_EVENT, load);
     return () => {
       active = false;
       clearInterval(id);
+      window.removeEventListener(APP_REFRESH_EVENT, load);
     };
   }, []);
 

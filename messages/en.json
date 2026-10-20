@@ -106,7 +106,8 @@
     "loadMore": "Load more",
     "profileError": "Couldn't load this profile.",
     "loadError": "Couldn't load — check your connection and try again.",
-    "newPost": "New post"
+    "newPost": "New post",
+    "newPostsPill": "{count, plural, one {# new post} other {# new posts}}"
   },
   "Home": {
     "badge": "Now live across Lebanon",

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import { CardListSkeleton } from "@/components/skeletons";
 import { useLiveMatches } from "@/components/matches/use-live-matches";
+import { useOnAppRefresh } from "@/components/shell/pull-to-refresh";
 import MatchCard, { type Match } from "./match-card";
 import MatchFilters from "./match-filters";
 import { ui } from "@/lib/ui";
@@ -67,6 +68,10 @@ export default function GenericResults({
     return params;
   }
 
+  // Bumped by pull to refresh: reloads the first page with the same filters.
+  const [refreshKey, setRefreshKey] = useState(0);
+  useOnAppRefresh(() => setRefreshKey((k) => k + 1));
+
   useEffect(() => {
     fetch(`/api/generic-matches?${listParams()}`)
       .then(async (res) => {
@@ -81,7 +86,7 @@ export default function GenericResults({
       })
       .catch(() => setError(t("loadError")));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [categorySlug, role, t, governorateId, day, minYearsExperience, search]);
+  }, [categorySlug, role, t, governorateId, day, minYearsExperience, search, refreshKey]);
 
   // A ref as well as state: the scroll observer can fire again before a
   // re-render, and must never start a second request for the same page.
