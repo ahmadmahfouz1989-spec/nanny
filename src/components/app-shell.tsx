@@ -180,14 +180,8 @@ export default async function AppShell({
               />
               <MessagesTabItem active={active === "messages"} />
               <NotificationsTabItem active={active === "notifications"} className={TAB} />
-              <Link
-                href="/profile"
-                replace
-                className={`${TAB} ${active === "profile" ? "font-semibold text-primary" : "text-muted"}`}
-              >
-                <ProfileIcon className="h-[22px] w-[22px]" />
-                {t("profile")}
-              </Link>
+              {/* Your profile, Saved, your services and settings live in
+                  the menu behind your photo, as on X -- not here too. */}
             </nav>
 
             <InstallPrompt />

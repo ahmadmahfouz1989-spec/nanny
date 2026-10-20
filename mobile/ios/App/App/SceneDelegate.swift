@@ -38,7 +38,7 @@ class AppViewController: CAPBridgeViewController {
 
     /// The tab screens; the same list as TAB_ROOTS in src/components/shell/drawer-swipe.ts.
     private static let tabRoot = try! NSRegularExpression(
-        pattern: "^(/[a-z]{2})?/(feed|notifications|profile|messages|dashboard|categories/[^/]+/dashboard)/?$"
+        pattern: "^(/[a-z]{2})?/(feed|notifications|messages|dashboard|categories/[^/]+/dashboard)/?$"
     )
 
     static func isTabRoot(_ url: URL?) -> Bool {
