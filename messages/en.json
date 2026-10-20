@@ -19,7 +19,14 @@
     "contact": "Contact us",
     "instagram": "Instagram",
     "adminPanel": "Admin panel",
-    "maintenance": "Home Maintenance"
+    "maintenance": "Home Maintenance",
+    "matches": "Matches",
+    "menu": "Menu",
+    "viewProfile": "View your profile",
+    "yourServices": "Your services",
+    "allServices": "All services",
+    "theme": "Dark mode",
+    "language": "Language"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -98,7 +105,8 @@
     "replyError": "Couldn't send reply — please try again.",
     "loadMore": "Load more",
     "profileError": "Couldn't load this profile.",
-    "loadError": "Couldn't load — check your connection and try again."
+    "loadError": "Couldn't load — check your connection and try again.",
+    "newPost": "New post"
   },
   "Home": {
     "badge": "Now live across Lebanon",

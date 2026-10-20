@@ -5,6 +5,9 @@ import type { PostIdentityOption } from "@/lib/post-identities";
 import { ui } from "@/lib/ui";
 import { Avatar } from "./feed-shared";
 
+/** Lets the phone's floating "New post" button jump to the box. */
+export const POST_COMPOSER_INPUT_ID = "post-composer-input";
+
 /** New-post box at the top of the feed, posting as one of the viewer's profiles. */
 export default function PostComposer({
   identities,
@@ -67,6 +70,7 @@ export default function PostComposer({
           </button>
         </div>
         <textarea
+          id={POST_COMPOSER_INPUT_ID}
           dir="auto"
           className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none"
           rows={2}

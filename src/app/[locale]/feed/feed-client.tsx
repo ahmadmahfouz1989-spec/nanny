@@ -8,7 +8,8 @@ import type { PostIdentityOption } from "@/lib/post-identities";
 import { FEED_TARGET_EVENT, type FeedTargetDetail } from "@/lib/feed-target";
 import type { Post, Reply } from "./feed-shared";
 import PostCard from "./post-card";
-import PostComposer from "./post-composer";
+import PostComposer, { POST_COMPOSER_INPUT_ID } from "./post-composer";
+import { APP_MAIN_ID } from "@/components/shell/mobile-chrome";
 import PostReplies from "./post-replies";
 import { getJson, request } from "@/lib/request";
 
@@ -381,6 +382,24 @@ export default function FeedClient({
         </button>
       )}
       </div>
+
+      {/* X's floating compose button, on the phone: back to the top and
+          straight into the new-post box. */}
+      {!adminMode && (
+        <button
+          type="button"
+          onClick={() => {
+            document.getElementById(APP_MAIN_ID)?.scrollTo({ top: 0, behavior: "smooth" });
+            document.getElementById(POST_COMPOSER_INPUT_ID)?.focus({ preventScroll: true });
+          }}
+          aria-label={t("newPost")}
+          className="sm:hidden fixed end-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom))] inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition active:scale-95"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
+            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
+          </svg>
+        </button>
+      )}
     </div>
   );
 }

@@ -154,3 +154,16 @@ export function PhotoIcon({ className = "" }: { className?: string }) {
     </svg>
   );
 }
+
+export function BellIcon({ className = "", fill = "none" }: { className?: string; fill?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill={fill} stroke="currentColor" strokeWidth={1.8}>
+      <path
+        d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2H4.5l1.5-2Z"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M10 21a2.2 2.2 0 0 0 4 0" strokeLinecap="round" />
+    </svg>
+  );
+}

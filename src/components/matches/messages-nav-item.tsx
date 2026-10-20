@@ -65,7 +65,7 @@ export function MessagesTabItem({ active }: { active: boolean }) {
   return (
     <Link
       href="/messages"
-      className={`relative flex flex-col items-center gap-0.5 px-3 py-1 text-[11px] transition-colors ${
+      className={`relative flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] transition-colors ${
         active ? "font-semibold text-primary" : "text-muted"
       }`}
     >
