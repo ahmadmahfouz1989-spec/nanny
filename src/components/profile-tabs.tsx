@@ -3,6 +3,7 @@
 import { useState } from "react";
 import ProfileHeaderCard from "@/components/profile-header-card";
 import { ui } from "@/lib/ui";
+import { rememberCategory } from "@/lib/last-category";
 
 export type ProfileTabDef = {
   key: string;
@@ -20,11 +21,13 @@ export type ProfileTabDef = {
 
 /**
  * An account can hold a profile per category (and both roles in one) --
- * this switches between them on the shared /profile page. Skips the tab bar entirely when there's
- * just one profile, since a switcher with one option is dead weight.
+ * this switches between them on the shared /profile page. Skips the tab
+ * bar entirely when there's just one profile, since a switcher with one option is dead weight.
  */
-export default function ProfileTabs({ tabs }: { tabs: ProfileTabDef[] }) {
-  const [activeKey, setActiveKey] = useState(tabs[0]?.key);
+export default function ProfileTabs({ tabs, initialSlug }: { tabs: ProfileTabDef[]; initialSlug?: string }) {
+  // Opens on the service you were last in; picking another one makes it
+  // the one the phone's Matches tab goes to.
+  const [activeKey, setActiveKey] = useState((tabs.find((t) => t.slug === initialSlug) ?? tabs[0])?.key);
   const active = tabs.find((t) => t.key === activeKey) ?? tabs[0];
 
   if (!active) return null;
@@ -37,7 +40,10 @@ export default function ProfileTabs({ tabs }: { tabs: ProfileTabDef[] }) {
             <button
               key={tab.key}
               type="button"
-              onClick={() => setActiveKey(tab.key)}
+              onClick={() => {
+                setActiveKey(tab.key);
+                rememberCategory(tab.slug);
+              }}
               className={ui.toggleTab(tab.key === active.key)}
             >
               {tab.label}

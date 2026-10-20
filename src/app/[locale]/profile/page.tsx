@@ -1,5 +1,7 @@
 import { getTranslations } from "next-intl/server";
+import { cookies } from "next/headers";
 import { redirect } from "@/i18n/navigation";
+import { LAST_CATEGORY_COOKIE } from "@/lib/last-category";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
@@ -81,7 +83,7 @@ export default async function ProfilePage({
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("yourProfile")}</h1>
 
-        <ProfileTabs tabs={tabs} />
+        <ProfileTabs tabs={tabs} initialSlug={(await cookies()).get(LAST_CATEGORY_COOKIE)?.value} />
 
         <div className={ui.card + " p-6 mb-5"}>
           <p className="text-xs font-medium uppercase tracking-wide text-muted mb-4">{t("accountLabel")}</p>

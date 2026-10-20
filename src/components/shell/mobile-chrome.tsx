@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import { useTranslations } from "next-intl";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { lastCategory } from "@/lib/last-category";
 import BrandMark from "@/components/brand-mark";
 import ThemeSwitcher from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import CategoryIcon from "@/components/category-icon";
-import { BellIcon, BookmarkIcon, GridIcon, ProfileIcon } from "@/components/nav-icons";
+import { BellIcon, BookmarkIcon, GridIcon, ProfileIcon, UsersIcon } from "@/components/nav-icons";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 
 export type ShellService = { slug: string; icon: string; label: string };
@@ -193,6 +194,43 @@ export function NotificationsTabItem({ active, className }: { active: boolean; c
         )}
       </span>
       {t("title")}
+    </Link>
+  );
+}
+
+/**
+ * Matches in the phone tab bar: the dashboard of the service you were last
+ * in. Read when tapped, not when the page was drawn -- picking another
+ * service on Profile changes it without a reload.
+ */
+export function MatchesTabItem({
+  href,
+  slugs,
+  active,
+  className,
+}: {
+  href: string;
+  slugs: string[];
+  active: boolean;
+  className: string;
+}) {
+  const t = useTranslations("Nav");
+  const router = useRouter();
+  return (
+    <Link
+      href={href}
+      onClick={(e) => {
+        const last = lastCategory();
+        const target = last && slugs.includes(last) ? `/categories/${last}/dashboard` : null;
+        if (target && target !== href) {
+          e.preventDefault();
+          router.push(target);
+        }
+      }}
+      className={className + (active ? " font-semibold text-primary" : " text-muted")}
+    >
+      <UsersIcon className="h-[22px] w-[22px]" />
+      {t("matches")}
     </Link>
   );
 }
