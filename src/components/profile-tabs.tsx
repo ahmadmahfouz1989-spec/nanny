@@ -16,6 +16,7 @@ export type ProfileTabDef = {
   roleLabel: string;
   fullName: string | null;
   moderationStatus: string;
+  growth?: { percent: number; views30: number };
 };
 
 
@@ -62,6 +63,7 @@ export default function ProfileTabs({ tabs, initialSlug }: { tabs: ProfileTabDef
         roleLabel={active.roleLabel}
         fullName={active.fullName}
         moderationStatus={active.moderationStatus}
+        growth={active.growth}
       />
     </div>
   );

@@ -41,6 +41,7 @@ type PostWithIdentity = {
   id: string;
   user_id: string;
   posted_as_generic_profile_id: string | null;
+  work_project_id?: string | null;
 };
 
 /**
@@ -111,7 +112,7 @@ export async function postEngagement(postIds: string[], userId: string): Promise
   return out;
 }
 
-export const POST_FEED_COLUMNS = "id, user_id, kind, caption, status, created_at, posted_as_generic_profile_id";
+export const POST_FEED_COLUMNS = "id, user_id, kind, caption, status, created_at, posted_as_generic_profile_id, work_project_id";
 
 /**
  * Everything the feed renders per post beyond its own row -- author,
@@ -135,11 +136,41 @@ async function viewableAuthorProfiles(supabase: SessionClient, authors: PostAuth
   return new Set((data ?? []).map((row) => row.id));
 }
 
+export type PostWork = { projectId: string; profileId: string; title: string; photos: { url: string }[]; photoCount: number };
+
+/**
+ * The work project a shared-work post shows, read through the viewer's own
+ * session: someone who can't see that profile's work gets the caption
+ * only, so sharing to the feed never widens who sees the photos.
+ */
+async function sharedWork(supabase: SessionClient, posts: PostWithIdentity[]): Promise<Map<string, PostWork>> {
+  const ids = [...new Set(posts.map((p) => p.work_project_id).filter((id): id is string => !!id))];
+  const out = new Map<string, PostWork>();
+  if (ids.length === 0) return out;
+  const { data } = await supabase
+    .from("work_projects")
+    .select("id, profile_id, title, work_photos(url, position, created_at)")
+    .in("id", ids);
+  for (const w of data ?? []) {
+    const photos = [...(w.work_photos ?? [])].sort((a, b) => a.position - b.position || a.created_at.localeCompare(b.created_at));
+    if (photos.length === 0) continue;
+    out.set(w.id, {
+      projectId: w.id,
+      profileId: w.profile_id,
+      title: w.title,
+      photos: photos.slice(0, 4).map(({ url }) => ({ url })),
+      photoCount: photos.length,
+    });
+  }
+  return out;
+}
+
 export async function decoratePosts<T extends PostWithIdentity>(posts: T[], userId: string, supabase: SessionClient) {
-  const [authors, engagement, featured] = await Promise.all([
+  const [authors, engagement, featured, work] = await Promise.all([
     resolvePostAuthors(posts),
     postEngagement(posts.map((p) => p.id), userId),
     featuredUserIds(posts.map((p) => p.user_id)),
+    sharedWork(supabase, posts),
   ]);
   const viewable = await viewableAuthorProfiles(supabase, [...authors.values()]);
 
@@ -153,6 +184,7 @@ export async function decoratePosts<T extends PostWithIdentity>(posts: T[], user
       ...(engagement.get(p.id) ?? { likeCount: 0, likedByMe: false, replyCount: 0 }),
       featured: featured.has(p.user_id),
       isMine: p.user_id === userId,
+      work: (p.work_project_id && work.get(p.work_project_id)) || null,
     };
   });
 }

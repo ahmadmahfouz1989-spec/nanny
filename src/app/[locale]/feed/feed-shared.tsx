@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import type { PostWork } from "@/lib/posts";
 
 export type Post = {
   id: string;
@@ -15,6 +16,9 @@ export type Post = {
   replyCount: number;
   featured: boolean;
   isMine: boolean;
+  // A shared work project's photos -- null for ordinary posts, and for
+  // viewers who can't see that profile's work.
+  work: PostWork | null;
 };
 
 export type Reply = {

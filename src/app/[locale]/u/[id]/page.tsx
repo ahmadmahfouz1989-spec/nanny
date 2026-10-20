@@ -86,6 +86,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
       <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-3 sm:gap-5">
         <BackButton fallback="/feed" className="self-start" />
         <ProfileHeader data={data} locale={locale} />
+        {data.growth && <GrowthCard data={data} />}
         <ProfileSectionNav sections={await sectionsFor(data)} />
         <ProfileBody data={data} locale={locale} />
       </div>
@@ -108,7 +109,7 @@ async function ProfileHeader({ data, locale }: { data: ProfilePageData; locale: 
   const roleLabel = profile.role === "seeker" ? tSaved("roleSeeking") : tSaved("roleOffering");
 
   return (
-    <section className={ui.card + " overflow-hidden"}>
+    <section id="profile-top" className={ui.card + " overflow-hidden scroll-mt-20"}>
       <div className="relative">
         {profile.profile_photo_url ? (
           <>
@@ -317,6 +318,12 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
         <ul className="flex flex-col gap-2 text-sm">
           {data.trust.phoneVerified && <TrustRow text={t("phoneVerified")} />}
           {data.trust.emailVerified && <TrustRow text={t("emailVerified")} />}
+          {data.activity.replySpeed && data.activity.replySpeed !== "days" && (
+            <TrustRow text={t(`replySpeed_${data.activity.replySpeed}`)} icon="clock" />
+          )}
+          {data.activity.talkedWith !== null && (
+            <TrustRow text={t("talkedWith", { count: data.activity.talkedWith })} icon="chat" />
+          )}
           <TrustRow text={t("memberSince", { date: memberSince })} icon="calendar" />
         </ul>
       </Section>
@@ -335,6 +342,47 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
   );
 }
 
+/**
+ * The owner's view only: how complete the profile is, what to add next
+ * (each a link to where it's added), and how many people looked at it --
+ * a count, never who.
+ */
+async function GrowthCard({ data }: { data: ProfilePageData }) {
+  const t = await getTranslations("ProfilePage");
+  const { strength, views30 } = data.growth!;
+  const edit = `/categories/${data.profile.categories?.slug ?? ""}/onboarding?role=${data.profile.role}`;
+  const href = { photo: "/profile", headline: "#profile-top", about: edit, availability: edit, work: "#work" } as const;
+
+  return (
+    <section className={ui.card + " p-4 sm:p-5 flex flex-col gap-3"}>
+      <div className="flex items-center justify-between gap-3">
+        <h2 className="font-display text-lg font-semibold">{t("strengthTitle")}</h2>
+        <span className="text-sm font-semibold text-primary tabular-nums">{strength.percent}%</span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-surface-sunken" role="progressbar" aria-valuenow={strength.percent} aria-valuemin={0} aria-valuemax={100}>
+        <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${strength.percent}%` }} />
+      </div>
+      {strength.missing.length === 0 ? (
+        <p className="text-sm text-success">{t("strengthDone")}</p>
+      ) : (
+        <ul className="flex flex-col gap-1.5 text-sm">
+          {strength.missing.map((item) => (
+            <li key={item}>
+              <Link href={href[item]} className={ui.link}>
+                + {t(`strengthAdd_${item}`)}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="border-t border-border pt-3 text-sm text-ink">
+        {t("views30", { count: views30 })}
+        <span className="block text-xs text-muted">{t("viewsPrivate")}</span>
+      </p>
+    </section>
+  );
+}
+
 function Section({ title, id, children }: { title: string; id?: string; children: React.ReactNode }) {
   return (
     <section id={id} className={ui.card + " p-4 sm:p-5 flex flex-col gap-3 scroll-mt-32 sm:scroll-mt-20"}>
@@ -344,7 +392,7 @@ function Section({ title, id, children }: { title: string; id?: string; children
   );
 }
 
-function TrustRow({ text, icon = "check" }: { text: string; icon?: "check" | "calendar" }) {
+function TrustRow({ text, icon = "check" }: { text: string; icon?: "check" | "calendar" | "clock" | "chat" }) {
   return (
     <li className="flex items-center gap-2">
       <span
@@ -353,7 +401,7 @@ function TrustRow({ text, icon = "check" }: { text: string; icon?: "check" | "ca
           icon === "check" ? "bg-success-soft text-success" : "bg-surface-sunken text-muted"
         }`}
       >
-        {icon === "check" ? "✓" : "◷"}
+        {{ check: "✓", calendar: "◷", clock: "⚡", chat: "💬" }[icon]}
       </span>
       {text}
     </li>

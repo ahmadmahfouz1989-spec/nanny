@@ -107,7 +107,8 @@
     "profileError": "تعذّر تحميل هذا الملف الشخصي.",
     "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا.",
     "newPost": "منشور جديد",
-    "newPostsPill": "{count, plural, one {منشور جديد} two {منشوران جديدان} few {# منشورات جديدة} many {# منشورًا جديدًا} other {# منشور جديد}}"
+    "newPostsPill": "{count, plural, one {منشور جديد} two {منشوران جديدان} few {# منشورات جديدة} many {# منشورًا جديدًا} other {# منشور جديد}}",
+    "workPhotosLabel": "الأعمال: {title}"
   },
   "Home": {
     "badge": "متاح الآن في جميع أنحاء لبنان",
@@ -932,7 +933,20 @@
     "notInMatches": "{name} ليس ضمن نتائجك المتوافقة، لذا لا يمكنك مراسلته بعد.",
     "createToMessage": "لمراسلة {name}، أنشئ ملفك في {category}.",
     "getStarted": "ابدأ الآن",
-    "viewMyProfile": "اعرض ملفي كما يراه الآخرون"
+    "viewMyProfile": "اعرض ملفي كما يراه الآخرون",
+    "strengthTitle": "قوة الملف الشخصي",
+    "strengthDone": "ملفك مكتمل. عمل رائع!",
+    "strengthAdd_photo": "أضف صورة شخصية",
+    "strengthAdd_headline": "أضف عنوانًا تحت اسمك",
+    "strengthAdd_about": "اكتب بضع كلمات عن نفسك",
+    "strengthAdd_availability": "أضف الأيام التي تكون فيها متاحًا",
+    "strengthAdd_work": "أضف صورًا لأعمالك",
+    "views30": "{count, plural, =0 {لا توجد مشاهدات لملفك في آخر 30 يومًا بعد} one {مشاهدة واحدة لملفك في آخر 30 يومًا} two {مشاهدتان لملفك في آخر 30 يومًا} few {# مشاهدات لملفك في آخر 30 يومًا} many {# مشاهدة لملفك في آخر 30 يومًا} other {# مشاهدة لملفك في آخر 30 يومًا}}",
+    "viewsPrivate": "أنت فقط ترى هذا، ولا يظهر أبدًا من شاهد ملفك.",
+    "replySpeed_hour": "يرد عادةً خلال ساعة",
+    "replySpeed_hours": "يرد عادةً خلال ساعات قليلة",
+    "replySpeed_day": "يرد عادةً خلال يوم",
+    "talkedWith": "{count, plural, few {تحدث مع # أشخاص على ouiKnow} many {تحدث مع # شخصًا على ouiKnow} other {تحدث مع # شخص على ouiKnow}}"
   },
   "Work": {
     "title": "الأعمال",
@@ -981,6 +995,10 @@
     "headlineSave": "حفظ",
     "headlineCancel": "إلغاء",
     "headlineEdit": "تعديل العنوان",
-    "headlineError": "تعذّر حفظ العنوان. حاول مجددًا."
+    "headlineError": "تعذّر حفظ العنوان. حاول مجددًا.",
+    "shareToFeed": "شارك في المنشورات",
+    "shareToFeedHint": "ينشر هذا العمل مع صوره في المنشورات ليراه عدد أكبر من الناس.",
+    "sharedToFeed": "تمت المشاركة في المنشورات",
+    "errorShareContact": "احذف أرقام الهاتف أو حسابات التواصل من العنوان أو الوصف أولًا."
   }
 }

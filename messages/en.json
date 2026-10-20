@@ -107,7 +107,8 @@
     "profileError": "Couldn't load this profile.",
     "loadError": "Couldn't load — check your connection and try again.",
     "newPost": "New post",
-    "newPostsPill": "{count, plural, one {# new post} other {# new posts}}"
+    "newPostsPill": "{count, plural, one {# new post} other {# new posts}}",
+    "workPhotosLabel": "Work: {title}"
   },
   "Home": {
     "badge": "Now live across Lebanon",
@@ -932,7 +933,20 @@
     "notInMatches": "{name} isn't among your matches, so you can't message them yet.",
     "createToMessage": "To message {name}, create your {category} profile.",
     "getStarted": "Get started",
-    "viewMyProfile": "See my profile as others do"
+    "viewMyProfile": "See my profile as others do",
+    "strengthTitle": "Profile strength",
+    "strengthDone": "Your profile is complete. Nice work!",
+    "strengthAdd_photo": "Add a profile photo",
+    "strengthAdd_headline": "Add a headline under your name",
+    "strengthAdd_about": "Write a few words about yourself",
+    "strengthAdd_availability": "Add the days you're available",
+    "strengthAdd_work": "Add photos of your work",
+    "views30": "{count, plural, =0 {No profile views in the last 30 days yet} one {# profile view in the last 30 days} other {# profile views in the last 30 days}}",
+    "viewsPrivate": "Only you see this, and never who viewed.",
+    "replySpeed_hour": "Usually replies within an hour",
+    "replySpeed_hours": "Usually replies within a few hours",
+    "replySpeed_day": "Usually replies within a day",
+    "talkedWith": "Talked with {count} people on ouiKnow"
   },
   "Work": {
     "title": "Work",
@@ -981,6 +995,10 @@
     "headlineSave": "Save",
     "headlineCancel": "Cancel",
     "headlineEdit": "Edit headline",
-    "headlineError": "Couldn't save the headline. Try again."
+    "headlineError": "Couldn't save the headline. Try again.",
+    "shareToFeed": "Share to the feed",
+    "shareToFeedHint": "Posts this project in the feed with its photos, so more people see your work.",
+    "sharedToFeed": "Shared to the feed",
+    "errorShareContact": "Remove phone numbers or social handles from the title or description first."
   }
 }
