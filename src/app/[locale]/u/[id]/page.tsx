@@ -20,6 +20,7 @@ import ReportButton from "@/components/matches/report-button";
 import { ReviewList } from "@/components/matches/reviews-panel";
 import WorkSection from "@/components/work/work-section";
 import HeadlineEditor from "@/components/work/headline-editor";
+import BackButton from "@/components/back-button";
 
 // generateMetadata and the page both need it; cache() makes it one load.
 const getPage = cache(async (id: string) => {
@@ -81,7 +82,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
 
   return (
     <AppShell active={active}>
-      <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8 flex flex-col gap-5">
+      <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-3 sm:gap-5">
+        <BackButton fallback="/feed" className="self-start" />
         <ProfileHeader data={data} locale={locale} />
         <ProfileBody data={data} locale={locale} />
       </div>
