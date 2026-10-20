@@ -162,8 +162,11 @@ export default async function AppShell({
             <PullToRefresh />
 
             <nav className="app-chrome-bottom sm:hidden fixed bottom-0 inset-x-0 z-30 flex items-center border-t border-border bg-background/90 backdrop-blur pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))]">
+              {/* Tabs switch places rather than stacking up, so back never
+                  walks you through the tabs you tapped. */}
               <Link
                 href="/feed"
+                replace
                 className={`${TAB} ${active === "feed" ? "font-semibold text-primary" : "text-muted"}`}
               >
                 <HomeIcon className="h-[22px] w-[22px]" />
@@ -179,6 +182,7 @@ export default async function AppShell({
               <NotificationsTabItem active={active === "notifications"} className={TAB} />
               <Link
                 href="/profile"
+                replace
                 className={`${TAB} ${active === "profile" ? "font-semibold text-primary" : "text-muted"}`}
               >
                 <ProfileIcon className="h-[22px] w-[22px]" />
