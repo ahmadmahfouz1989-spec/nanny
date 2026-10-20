@@ -1,3 +1,6 @@
+"use client";
+
+import { useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import BrandMark from "./brand-mark";
@@ -5,19 +8,27 @@ import LocaleSwitcher from "./locale-switcher";
 import ThemeSwitcher from "./theme-switcher";
 import ReadingIllustration from "./illustrations/reading-illustration";
 import { ui } from "@/lib/ui";
+import { isNativeApp } from "@/lib/native-app";
+
+const noSubscription = () => () => {};
 
 export default function AuthCard({ children }: { children: React.ReactNode }) {
   const t = useTranslations("Nav");
+  // In the app there's no marketing home page to go back to (it sends you
+  // straight here), so the link only shows in a browser.
+  const inApp = useSyncExternalStore(noSubscription, isNativeApp, () => false);
 
   return (
-    <main className="relative flex-1 flex items-center justify-center px-6 py-16">
-      <div className="absolute top-6 start-6">
-        <Link href="/" className={ui.link + " text-sm"}>
-          {t("backToHome")}
-        </Link>
-      </div>
+    <main className="relative flex-1 flex items-center justify-center px-6 pb-16 pt-[calc(4rem+env(safe-area-inset-top))]">
+      {!inApp && (
+        <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] start-6">
+          <Link href="/" className={ui.link + " text-sm"}>
+            {t("backToHome")}
+          </Link>
+        </div>
+      )}
 
-      <div className="absolute top-6 end-6 flex items-center gap-3">
+      <div className="absolute top-[calc(1.5rem+env(safe-area-inset-top))] end-6 flex items-center gap-3">
         <ThemeSwitcher />
         <LocaleSwitcher />
       </div>

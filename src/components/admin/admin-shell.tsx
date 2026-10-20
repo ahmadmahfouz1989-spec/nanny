@@ -115,7 +115,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
         </aside>
 
         <div className="flex-1 min-w-0 flex flex-col">
-          <header className="sm:hidden sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur">
+          <header className="sm:hidden sticky top-0 z-30 border-b border-border bg-background/90 backdrop-blur pt-[env(safe-area-inset-top)]">
             <div className="flex items-center justify-between px-4 py-3">
               <div className="flex items-center gap-2">
                 <BrandMark />
