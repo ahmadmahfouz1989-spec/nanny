@@ -75,7 +75,7 @@ function Avatar({ me, size }: { me: ShellMe | null; size: number }) {
 }
 
 /**
- * The phone's top bar: your photo (opens the menu), the logo, and Saved.
+ * The phone's top bar: your photo (opens the menu) and the logo.
  * Everything that isn't a place you go every day -- your services, theme,
  * language, signing out -- lives in the menu instead of crowding the bar.
  * On the tab screens, swiping toward it opens it too.
@@ -128,13 +128,6 @@ export function MobileHeader({ me, services }: { me: ShellMe | null; services: S
           </button>
         )}
         <BrandMark />
-        <Link
-          href="/saved"
-          aria-label={t("saved")}
-          className="justify-self-end inline-flex h-9 w-9 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink"
-        >
-          <BookmarkIcon className="h-5 w-5" />
-        </Link>
       </header>
 
       <div
@@ -162,10 +155,6 @@ export function MobileHeader({ me, services }: { me: ShellMe | null; services: S
         </Link>
 
         <nav className="flex-1 overflow-y-auto px-2 py-3 flex flex-col gap-0.5">
-          <Link href="/profile" onClick={close} className={row}>
-            <ProfileIcon className="h-[22px] w-[22px] text-muted" />
-            {t("profile")}
-          </Link>
           <Link href="/saved" onClick={close} className={row}>
             <BookmarkIcon className="h-[22px] w-[22px] text-muted" />
             {t("saved")}

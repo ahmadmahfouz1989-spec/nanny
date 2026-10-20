@@ -9,7 +9,7 @@ import { haptic, isNativeApp } from "@/lib/native-app";
  */
 // Mirrored in the iPhone app (AppViewController.tabRoot), which hands the
 // screen edge to this swipe on these screens.
-const TAB_ROOTS = [/^\/feed$/, /^\/notifications$/, /^\/profile$/, /^\/messages$/, /^\/dashboard$/, /^\/categories\/[^/]+\/dashboard$/];
+const TAB_ROOTS = [/^\/feed$/, /^\/notifications$/, /^\/messages$/, /^\/dashboard$/, /^\/categories\/[^/]+\/dashboard$/];
 
 export function isTabRoot(pathname: string) {
   return TAB_ROOTS.some((re) => re.test(pathname));
