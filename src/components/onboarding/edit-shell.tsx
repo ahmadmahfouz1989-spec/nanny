@@ -57,7 +57,7 @@ export default function EditShell({
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>
-      <header className="flex items-center justify-between gap-3 px-4 py-6 sm:px-10">
+      <header className="flex items-center justify-between gap-3 px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-10">
         <div className="flex min-w-0 items-center gap-4 sm:gap-5">
           <BrandMark compact />
           {onBack && (

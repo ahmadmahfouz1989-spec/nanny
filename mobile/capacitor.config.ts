@@ -7,6 +7,9 @@ const config: CapacitorConfig = {
   appId: "com.ouiknow.app",
   appName: "ouiKnow",
   webDir: "www",
+  // Lets the site tell the app from a browser (src/lib/native-app-server.ts):
+  // the app opens on sign-in instead of the marketing page.
+  appendUserAgent: "ouiKnowApp",
   server: {
     url: "https://oui-know.com",
     // Pages on these hosts stay inside the app; any other link (WhatsApp,

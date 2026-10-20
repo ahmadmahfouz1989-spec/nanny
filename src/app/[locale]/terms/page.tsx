@@ -12,7 +12,7 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
   const doc = TERMS[locale === "ar" ? "ar" : "en"];
 
   return (
-    <main className="oui-in mx-auto w-full max-w-2xl px-6 py-12">
+    <main className="oui-in mx-auto w-full max-w-2xl px-6 pb-12 pt-[calc(3rem+env(safe-area-inset-top))]">
       <div className="mb-8">
         <BrandMark />
       </div>

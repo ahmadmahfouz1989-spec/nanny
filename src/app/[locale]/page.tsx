@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import Image from "next/image";
-import { Link } from "@/i18n/navigation";
+import { Link, redirect } from "@/i18n/navigation";
+import { isNativeAppRequest } from "@/lib/native-app-server";
 import { createClient } from "@/lib/supabase/server";
 import BrandMark from "@/components/brand-mark";
 import LocaleSwitcher from "@/components/locale-switcher";
@@ -20,6 +21,17 @@ const SUPPORT_INSTAGRAM =
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
+
+  // The app opens straight on sign-in (or your dashboard), like an app --
+  // the marketing page is for browsers.
+  if (await isNativeAppRequest()) {
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    redirect({ href: user ? "/dashboard" : "/login", locale });
+  }
+
   const t = await getTranslations("Home");
   const tNav = await getTranslations("Nav");
   const tPreview = await getTranslations("Preview");
@@ -60,7 +72,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/70 px-4 py-4 backdrop-blur-md sm:px-10">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/70 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-md sm:px-10">
         <BrandMark compact />
         <nav className="flex items-center gap-1.5 sm:gap-3">
           <ThemeSwitcher />

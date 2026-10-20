@@ -146,7 +146,7 @@ export default function CategoryOnboardingClient({
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 sm:px-10 py-6">
+      <header className="flex items-center justify-between px-6 sm:px-10 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))]">
         <div className="flex items-center gap-5">
           <BrandMark />
           <Link href="/categories" className={ui.link + " text-sm"}>
