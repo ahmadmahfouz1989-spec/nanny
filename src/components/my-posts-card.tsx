@@ -26,8 +26,15 @@ function formatRelative(iso: string, locale: string, justNow: string) {
   return rtf.format(-Math.round(hr / 24), "day");
 }
 
-/** A user's own post history, with a real delete — not just "close" — on /profile. */
-export default function MyPostsCard() {
+/**
+ * A user's own post history, with a real delete — not just "close" — on
+ * /profile; with `kind`, only those (My Requests shows "Looking for").
+ */
+export default function MyPostsCard({
+  kind,
+  title,
+  empty,
+}: { kind?: MyPost["kind"]; title?: string; empty?: string } = {}) {
   const t = useTranslations("Dashboard");
   const tFeed = useTranslations("Feed");
   const locale = useLocale();
@@ -37,12 +44,12 @@ export default function MyPostsCard() {
   useEffect(() => {
     let active = true;
     getJson("/api/posts?mine=1").then((body) => {
-      if (active && body) setPosts(body.posts ?? []);
+      if (active && body) setPosts(((body.posts ?? []) as MyPost[]).filter((p) => !kind || p.kind === kind));
     });
     return () => {
       active = false;
     };
-  }, []);
+  }, [kind]);
 
   async function deletePost(id: string) {
     setDeleting(id);
@@ -53,10 +60,10 @@ export default function MyPostsCard() {
 
   return (
     <div className={ui.card + " overflow-hidden mb-5"}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted px-6 pt-6">{t("yourPosts")}</p>
+      {title !== "" && <p className="text-xs font-medium uppercase tracking-wide text-muted px-6 pt-6">{title ?? t("yourPosts")}</p>}
 
       {posts === null && <p className="text-sm text-muted p-6">{tFeed("loading")}</p>}
-      {posts && posts.length === 0 && <p className="text-sm text-muted p-6">{t("noPosts")}</p>}
+      {posts && posts.length === 0 && <p className="text-sm text-muted p-6">{empty ?? t("noPosts")}</p>}
 
       <div className="divide-y divide-border">
         {posts?.map((post) => (

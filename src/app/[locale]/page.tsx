@@ -14,8 +14,8 @@ import PreviewProfileCard from "@/components/preview-profile-card";
 import CategoryGrid from "@/components/category-grid";
 import { getCategories } from "@/lib/categories";
 import { ui } from "@/lib/ui";
+import { SUPPORT_WHATSAPP } from "@/lib/support";
 
-const SUPPORT_WHATSAPP = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || "96176775996";
 const SUPPORT_INSTAGRAM =
   process.env.NEXT_PUBLIC_SUPPORT_INSTAGRAM || "https://www.instagram.com/ouiknowww?stkn=MTNseHg4ZHNicm1taw==";
 
@@ -29,7 +29,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     const {
       data: { user },
     } = await supabase.auth.getUser();
-    redirect({ href: user ? "/dashboard" : "/login", locale });
+    redirect({ href: user ? "/feed" : "/login", locale });
   }
 
   const t = await getTranslations("Home");

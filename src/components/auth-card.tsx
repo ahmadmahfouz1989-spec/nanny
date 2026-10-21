@@ -38,7 +38,8 @@ export default function AuthCard({ children }: { children: React.ReactNode }) {
           <BrandMark />
           <ReadingIllustration className="w-28" />
         </div>
-        <div className="oui-in rounded-2xl border border-border bg-surface shadow-md p-8">
+        {/* A full screen on the phone, like an app's sign-in; a card on a computer. */}
+        <div className="oui-in sm:rounded-2xl sm:border sm:border-border sm:bg-surface sm:shadow-md sm:p-8">
           {children}
         </div>
       </div>

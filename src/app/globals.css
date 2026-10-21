@@ -27,6 +27,7 @@ button:not(:disabled),
   --accent-soft: #fcf1d4;
   --sky: #a9cbf2;
   --sky-soft: #e6f0fb;
+  --sky-ink: #3b6ea5;
   --berry: #c23b8f;
   --berry-soft: #f6dfee;
   --success: #2a7a4f;
@@ -56,6 +57,7 @@ button:not(:disabled),
   --color-accent-soft: var(--accent-soft);
   --color-sky: var(--sky);
   --color-sky-soft: var(--sky-soft);
+  --color-sky-ink: var(--sky-ink);
   --color-berry: var(--berry);
   --color-berry-soft: var(--berry-soft);
   --color-success: var(--success);
@@ -106,6 +108,8 @@ button:not(:disabled),
     --accent-soft: #3a3115;
     --sky: #3e5c7a;
     --sky-soft: #1c2b38;
+  --sky-ink: #9cc2ec;
+    --sky-ink: #9cc2ec;
     --berry: #e066b8;
     --berry-soft: #3d2233;
     --success: #5cb989;

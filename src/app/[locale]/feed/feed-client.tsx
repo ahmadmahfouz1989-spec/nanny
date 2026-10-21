@@ -15,11 +15,19 @@ import PostReplies from "./post-replies";
 import { getJson, request } from "@/lib/request";
 import { haptic } from "@/lib/native-app";
 
+const FEED_POSTS_ID = "feed-posts";
+
 export default function FeedClient({
   targetPostId = null,
   targetReplyId = null,
   adminMode = false,
+  intro = null,
+  compose = false,
 }: {
+  // Home's top part (search, services...), shown above the posts.
+  intro?: React.ReactNode;
+  // From "Post a Request" (/feed?compose=1): straight into the new-post box.
+  compose?: boolean;
   // /admin/feed: read-only apart from deleting any post or reply --
   // no composer, likes, replies or reports.
   adminMode?: boolean;
@@ -29,6 +37,7 @@ export default function FeedClient({
   targetReplyId?: string | null;
 }) {
   const t = useTranslations("Feed");
+  const tDiscover = useTranslations("Discover");
 
   const [posts, setPosts] = useState<Post[] | null>(null);
   // The first page failed to arrive (offline, dropped connection).
@@ -146,8 +155,25 @@ export default function FeedClient({
   function showIncoming() {
     setPosts((prev) => [...incoming, ...(prev ?? []).filter((p) => !incoming.some((n) => n.id === p.id))]);
     setIncoming([]);
-    document.getElementById(APP_MAIN_ID)?.scrollTo({ top: 0, behavior: "smooth" });
+    scrollToPosts();
   }
+
+  // The posts start below Home's top part, not at the top of the page.
+  function scrollToPosts(behavior: ScrollBehavior = "smooth") {
+    if (intro) document.getElementById(FEED_POSTS_ID)?.scrollIntoView({ behavior, block: "start" });
+    else document.getElementById(APP_MAIN_ID)?.scrollTo({ top: 0, behavior });
+  }
+
+  function openComposer(behavior: ScrollBehavior = "smooth") {
+    scrollToPosts(behavior);
+    document.getElementById(POST_COMPOSER_INPUT_ID)?.focus({ preventScroll: true });
+  }
+
+  useEffect(() => {
+    if (compose && !adminMode) openComposer("auto");
+    // Once, on arriving from "Post a Request".
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useOnAppRefresh(() => {
     if (adminMode) return;
@@ -344,14 +370,21 @@ export default function FeedClient({
     // In adminMode the admin page supplies the frame and header instead.
     <div className={adminMode ? "" : "max-w-4xl mx-auto px-4 py-8"}>
       <div className={`${adminMode ? "" : "max-w-2xl"} flex flex-col gap-6 ${posts === null && !adminMode ? "min-h-screen" : ""}`}>
-        {!adminMode && (
-          <div>
-            <h1 className="font-display text-2xl font-semibold">{t("title")}</h1>
-            <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
-          </div>
-        )}
+        {intro}
+        {!adminMode &&
+          (intro ? (
+            <div>
+              <h2 className="font-display text-xl font-bold">{tDiscover("latestPosts")}</h2>
+              <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
+            </div>
+          ) : (
+            <div>
+              <h1 className="font-display text-2xl font-semibold">{t("title")}</h1>
+              <p className="text-sm text-muted mt-1">{t("subtitle")}</p>
+            </div>
+          ))}
 
-        <div className={ui.card + ` overflow-hidden ${posts === null ? "flex flex-col flex-1" : ""}`}>
+        <div id={FEED_POSTS_ID} className={ui.card + ` scroll-mt-4 overflow-hidden ${posts === null ? "flex flex-col flex-1" : ""}`}>
         {/* Composer — avatar + borderless input, X-style. Admins moderate
             the feed rather than post to it (/admin/feed). */}
         {!adminMode && (
@@ -437,8 +470,7 @@ export default function FeedClient({
         <button
           type="button"
           onClick={() => {
-            document.getElementById(APP_MAIN_ID)?.scrollTo({ top: 0, behavior: "smooth" });
-            document.getElementById(POST_COMPOSER_INPUT_ID)?.focus({ preventScroll: true });
+            openComposer();
           }}
           aria-label={t("newPost")}
           className="sm:hidden fixed end-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom))] inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition active:scale-95"

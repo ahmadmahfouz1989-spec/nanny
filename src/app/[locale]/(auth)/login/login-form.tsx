@@ -76,7 +76,7 @@ export default function LoginForm() {
       return;
     }
 
-    router.push(explicitNext ?? "/dashboard");
+    router.push(explicitNext ?? "/feed");
     router.refresh();
   }
 

@@ -8,8 +8,6 @@ import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import MyRatings from "@/components/matches/my-ratings";
 import MyPostsCard from "@/components/my-posts-card";
-import DeleteAccountCard from "@/components/delete-account-card";
-import PushNotificationsCard from "@/components/push-notifications-card";
 import ProfileTabs, { type ProfileTabDef } from "@/components/profile-tabs";
 import { ui } from "@/lib/ui";
 
@@ -20,7 +18,6 @@ export default async function ProfilePage({
 }) {
   const { locale } = await params;
   const t = await getTranslations("Dashboard");
-  const tNav = await getTranslations("Nav");
   const supabase = await createClient();
   const {
     data: { user },
@@ -149,22 +146,10 @@ export default async function ProfilePage({
           <span className={ui.link + " text-sm shrink-0"}>{t("manageFeatured")}</span>
         </Link>
 
-        <Link href="/saved" className={`${ui.cardHover} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 sm:hidden`}>
-          <p className="text-sm font-medium">{tNav("saved")}</p>
-          <span aria-hidden className="text-muted rtl:scale-x-[-1]">→</span>
-        </Link>
-
         <MyRatings />
-
-        <PushNotificationsCard />
 
         <MyPostsCard />
 
-        {profile?.email ? (
-          <DeleteAccountCard identifier={profile.email} kind="email" />
-        ) : profile?.phone ? (
-          <DeleteAccountCard identifier={`+${profile.phone}`} kind="phone" />
-        ) : null}
       </div>
     </AppShell>
   );

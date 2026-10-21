@@ -26,8 +26,10 @@ export default function CategoryDashboardTabs({
   profiles,
   targetMatchId = null,
   targetRole = null,
+  initialGovernorateId = "",
 }: {
   categorySlug: string;
+  initialGovernorateId?: string;
   profiles: ProfileSummary[];
   // From a match notification: the match to land on, and which of this
   // account's two profiles it belongs to (resolved server-side).
@@ -90,6 +92,7 @@ export default function CategoryDashboardTabs({
           categorySlug={categorySlug}
           role={active.role}
           targetMatchId={active.role === targetRole ? targetMatchId : null}
+          initialGovernorateId={initialGovernorateId}
         />
       </>
     );
