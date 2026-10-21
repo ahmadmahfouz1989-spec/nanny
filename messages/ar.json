@@ -27,7 +27,9 @@
     "yourServices": "خدماتك",
     "allServices": "كل الخدمات",
     "theme": "الوضع الداكن",
-    "language": "اللغة"
+    "language": "اللغة",
+    "tagline": "كل الخدمات في مكان واحد",
+    "closeMenu": "إغلاق القائمة"
   },
   "Install": {
     "title": "احصل على تطبيق ouiKnow",
@@ -1000,5 +1002,67 @@
     "shareToFeedHint": "ينشر هذا العمل مع صوره في المنشورات ليراه عدد أكبر من الناس.",
     "sharedToFeed": "تمت المشاركة في المنشورات",
     "errorShareContact": "احذف أرقام الهاتف أو حسابات التواصل من العنوان أو الوصف أولًا."
+  },
+  "Menu": {
+    "myProfile": "ملفي الشخصي",
+    "myProfileHint": "ملفك الشخصي وحسابك",
+    "findService": "ابحث عن خدمة",
+    "findServiceHint": "تصفّح الخدمات والأشخاص",
+    "myServices": "خدماتي",
+    "myServicesHint": "إعلاناتك، أو أضف خدمة",
+    "addService": "أضف خدمة",
+    "myRequests": "طلباتي",
+    "myRequestsHint": "ما طلبته والردود عليه",
+    "saved": "المحفوظات",
+    "savedHint": "الأشخاص الذين حفظتهم",
+    "settings": "الإعدادات والمساعدة",
+    "settingsHint": "الإشعارات، اللغة، المساعدة",
+    "postRequest": "انشر طلبًا",
+    "postRequestHint": "تحتاج خدمة؟ أخبرنا عمّا تبحث عنه!",
+    "contactWhatsapp": "تواصل معنا عبر واتساب",
+    "darkMode": "الوضع الداكن",
+    "language": "اللغة",
+    "logout": "تسجيل الخروج",
+    "verified": "موثّق",
+    "changePhoto": "تغيير الصورة"
+  },
+  "Requests": {
+    "title": "طلباتي",
+    "subtitle": "ما نشرته أنك تبحث عنه، والردود التي وصلتك.",
+    "empty": "لم تنشر أي طلب بعد."
+  },
+  "Settings": {
+    "title": "الإعدادات والمساعدة",
+    "appearance": "المظهر واللغة",
+    "help": "المساعدة",
+    "helpBody": "سؤال أو مشكلة أو فكرة؟ راسلنا، وسيجيبك شخص حقيقي.",
+    "terms": "شروط الخدمة",
+    "account": "الحساب"
+  },
+  "Discover": {
+    "search": "ابحث عن خدمة…",
+    "searchLabel": "ابحث عن خدمة",
+    "noResults": "لا توجد خدمة تطابق «{query}» بعد.",
+    "heroTitle": "من شمال لبنان إلى جنوبه",
+    "heroScript": "كل الخدمات في مكان واحد",
+    "heroNote": "جارك، قريب منك",
+    "browse": "تصفّح الفئات",
+    "viewAll": "عرض الكل",
+    "more": "خدمات أخرى",
+    "comingSoon": "قريبًا",
+    "trustVerified": "شارات توثيق الهاتف والبريد",
+    "trustReport": "بلّغ عن أي شيء ونحن نراجعه",
+    "trustFree": "مجاني 100%",
+    "trustPrivate": "رقمك يبقى خاصًا",
+    "trustPrivateNote": "تتحدثون داخل التطبيق",
+    "seekerTitle": "تبحث عن خدمة؟",
+    "seekerBody": "اعثر على الشخص المناسب لاحتياجاتك.",
+    "seekerCta": "ابحث عن خدمة",
+    "providerTitle": "تقدّم خدمة؟",
+    "providerBody": "اعرض خدماتك واحصل على عملاء أكثر.",
+    "providerCta": "أنشئ ملفك",
+    "latestPosts": "أحدث المنشورات",
+    "allLebanon": "كل لبنان",
+    "regionLabel": "منطقتك"
   }
 }

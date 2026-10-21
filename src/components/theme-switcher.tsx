@@ -25,7 +25,8 @@ function getServerSnapshot(): "light" | "dark" {
   return "light";
 }
 
-export default function ThemeSwitcher({ className = "" }: { className?: string }) {
+/** The current theme and a toggle, for any control that switches it. */
+export function useTheme() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useLayoutEffect(() => {
@@ -46,6 +47,12 @@ export default function ThemeSwitcher({ className = "" }: { className?: string }
     }
     window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   }
+
+  return { theme, toggle };
+}
+
+export default function ThemeSwitcher({ className = "" }: { className?: string }) {
+  const { theme, toggle } = useTheme();
 
   return (
     <button

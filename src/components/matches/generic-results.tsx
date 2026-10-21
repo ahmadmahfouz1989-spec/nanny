@@ -18,8 +18,11 @@ export default function GenericResults({
   categorySlug,
   role,
   targetMatchId = null,
+  initialGovernorateId = "",
 }: {
   categorySlug: string;
+  // The area picked at the top of Home (see lib/region), as the starting filter.
+  initialGovernorateId?: string;
   // From a match notification (?match=...) -- see useLiveMatches.
   targetMatchId?: string | null;
   // Only needed when the account holds both a seeker and a provider
@@ -46,7 +49,7 @@ export default function GenericResults({
     },
   });
   const [error, setError] = useState<string | null>(null);
-  const [governorateId, setGovernorateId] = useState("");
+  const [governorateId, setGovernorateId] = useState(initialGovernorateId);
   const [day, setDay] = useState("");
   const [minYearsExperience, setMinYearsExperience] = useState("");
   // What's typed, and what's actually searched: the list only refetches

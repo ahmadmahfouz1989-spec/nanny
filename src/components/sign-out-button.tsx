@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { disablePush } from "@/lib/push-client";
 import { ui } from "@/lib/ui";
 
-export default function SignOutButton() {
+export default function SignOutButton({ className, children }: { className?: string; children?: React.ReactNode } = {}) {
   const t = useTranslations("Nav");
   const router = useRouter();
 
@@ -21,8 +21,8 @@ export default function SignOutButton() {
   }
 
   return (
-    <button onClick={handleSignOut} className={ui.buttonGhost + " whitespace-nowrap"}>
-      {t("logout")}
+    <button type="button" onClick={handleSignOut} className={className ?? ui.buttonGhost + " whitespace-nowrap"}>
+      {children ?? t("logout")}
     </button>
   );
 }

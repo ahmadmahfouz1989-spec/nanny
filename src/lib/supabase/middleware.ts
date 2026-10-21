@@ -2,8 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { routing } from "@/i18n/routing";
 import type { Database } from "./database.types";
+import { APP_USER_AGENT_MARKER } from "@/lib/app-user-agent";
 
-const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/saved", "/settings", "/featured", "/admin"];
+const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/saved", "/settings", "/requests", "/notifications", "/featured", "/admin"];
 
 // An admin account has no marketplace profiles -- the user-facing app
 // (categories, matches, messages, saved, ...) has nothing for it and only
@@ -50,6 +51,12 @@ export async function updateSession(request: NextRequest, response: NextResponse
 
   const { locale, rest } = splitLocale(request.nextUrl.pathname);
   const isProtected = PROTECTED_PREFIXES.some((p) => rest.startsWith(p));
+
+  // The app opens like an app: straight on sign-in, or Home -- never the
+  // marketing page, and decided here so nothing else flashes first.
+  if (rest === "/" && (request.headers.get("user-agent") ?? "").includes(APP_USER_AGENT_MARKER)) {
+    return NextResponse.redirect(new URL(`/${locale}/${user ? "feed" : "login"}`, request.url));
+  }
 
   if (isProtected && !user) {
     const redirectUrl = new URL(`/${locale}/login`, request.url);

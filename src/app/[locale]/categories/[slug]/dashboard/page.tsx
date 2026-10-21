@@ -1,3 +1,4 @@
+import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
 import { redirect, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +8,7 @@ import CategoryDashboardTabs from "@/components/category-dashboard-tabs";
 import { ui } from "@/lib/ui";
 import { isCategorySlug } from "@/lib/category-slugs";
 import RememberCategory from "@/components/remember-category";
+import { REGION_COOKIE } from "@/lib/region";
 
 const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
   success: "bg-success-soft",
@@ -50,6 +52,7 @@ export default async function CategoryDashboardPage({
   // /api/generic-profile/claim) -- treat it the same as no profile at all,
   // not as something actually submitted and awaiting review.
   const myProfiles = (profiles ?? []).filter((p) => p.status !== "draft");
+  const region = (await cookies()).get(REGION_COOKIE)?.value ?? "";
 
   // Nothing real submitted yet (no row at all, or only an abandoned draft)
   // -- straight to the role picker rather than a "no profile yet, click
@@ -87,6 +90,7 @@ export default async function CategoryDashboardPage({
           profiles={myProfiles.map((p) => ({ role: p.role as "seeker" | "provider", moderationStatus: p.moderation_status }))}
           targetMatchId={targetMatchId}
           targetRole={targetRole}
+          initialGovernorateId={region}
         />
       </AppShell>
     );
@@ -102,6 +106,7 @@ export default async function CategoryDashboardPage({
           categorySlug={slug}
           role={myProfile.role as "seeker" | "provider"}
           targetMatchId={targetMatchId}
+          initialGovernorateId={region}
         />
       </AppShell>
     );

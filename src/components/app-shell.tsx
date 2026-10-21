@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import BrandMark from "@/components/brand-mark";
@@ -12,6 +12,7 @@ import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon } from "@/compo
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { APP_MAIN_ID, HideOnScroll, MatchesTabItem, MobileHeader, NotificationsTabItem } from "@/components/shell/mobile-chrome";
 import CategoryIcon from "@/components/category-icon";
+import { ClipboardIcon, GearIcon } from "@/components/home-icons";
 import PullToRefresh from "@/components/shell/pull-to-refresh";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
@@ -20,6 +21,7 @@ import PushSync from "@/components/push-sync";
 import PushPrompt from "@/components/push-prompt";
 import type { CategorySlug } from "@/lib/category-slugs";
 import { LAST_CATEGORY_COOKIE } from "@/lib/last-category";
+import { REGION_COOKIE } from "@/lib/region";
 
 type ActiveKey = "categories" | CategorySlug | "feed" | "saved" | "messages" | "notifications" | "profile";
 
@@ -37,11 +39,11 @@ const CATEGORY_NAV = [
 /**
  * The sidebar lists every category you have a profile in (drafts don't
  * count), plus the one you're currently in, so your dashboards are always
- * one click away. On a phone the frame works like X's app: five fixed
- * tabs (Home, Matches -- the current category, else the last one you
- * were in, else your first --
- * Messages, Notifications, Profile), a top bar with your photo opening a
- * menu for everything else, and both bars sliding away as you scroll.
+ * one click away. On a phone the frame works like X's app: four tabs
+ * (Home, Matches -- the current category, else the last one you were in,
+ * else your first -- Messages, Notifications), a top bar with your photo
+ * opening a menu for everything else, and both bars sliding away as you
+ * scroll.
  */
 export default async function AppShell({
   active,
@@ -51,18 +53,21 @@ export default async function AppShell({
   children: React.ReactNode;
 }) {
   const t = await getTranslations("Nav");
+  const tm = await getTranslations("Menu");
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   const { data: profiles } = user
-    ? await supabase.from("generic_profiles").select("status, full_name, profile_photo_url, categories(slug)").eq("user_id", user.id).neq("status", "draft")
+    ? await supabase.from("generic_profiles").select("id, status, full_name, profile_photo_url, categories(slug), locations(name_en, name_ar)").eq("user_id", user.id).neq("status", "draft")
     : { data: null };
   const mySlugs = new Set((profiles ?? []).map((p) => p.categories?.slug));
   const sidebarCategories = CATEGORY_NAV.filter((c) => c.slug === active || mySlugs.has(c.slug));
   // The phone has one tab for your services: the one you're in, else the
   // one you were last in, else your first.
-  const lastSlug = (await cookies()).get(LAST_CATEGORY_COOKIE)?.value;
+  const cookieStore = await cookies();
+  const lastSlug = cookieStore.get(LAST_CATEGORY_COOKIE)?.value;
+  const region = cookieStore.get(REGION_COOKIE)?.value ?? "";
   const tabCategory =
     sidebarCategories.find((c) => c.slug === active) ??
     sidebarCategories.find((c) => c.slug === lastSlug) ??
@@ -73,7 +78,20 @@ export default async function AppShell({
   const myCategories = CATEGORY_NAV.filter((c) => mySlugs.has(c.slug));
   const services = myCategories.map((c) => ({ slug: c.slug, icon: c.icon, label: t(c.slug) }));
   const photoProfile = (profiles ?? []).find((p) => p.profile_photo_url) ?? profiles?.[0];
-  const me = user ? { name: photoProfile?.full_name ?? null, photoUrl: photoProfile?.profile_photo_url ?? null } : null;
+  const { data: account } = user
+    ? await supabase.from("users").select("email_verified_at, phone_verified_at").eq("id", user.id).maybeSingle()
+    : { data: null };
+  const place = photoProfile?.locations;
+  const locale = await getLocale();
+  const me = user
+    ? {
+        name: photoProfile?.full_name ?? null,
+        photoUrl: photoProfile?.profile_photo_url ?? null,
+        profileId: photoProfile?.id ?? null,
+        place: place ? (locale === "ar" ? place.name_ar : place.name_en) : null,
+        verified: !!(account?.email_verified_at || account?.phone_verified_at),
+      }
+    : null;
 
   return (
     <ToastProvider>
@@ -146,6 +164,20 @@ export default async function AppShell({
                   <ProfileIcon className="h-[22px] w-[22px] shrink-0" />
                   <span>{t("profile")}</span>
                 </Link>
+                <Link
+                  href="/requests"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+                >
+                  <ClipboardIcon className="h-[22px] w-[22px] shrink-0" />
+                  <span>{tm("myRequests")}</span>
+                </Link>
+                <Link
+                  href="/settings"
+                  className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+                >
+                  <GearIcon className="h-[22px] w-[22px] shrink-0" />
+                  <span>{tm("settings")}</span>
+                </Link>
               </nav>
 
               <div className="mt-auto flex flex-col gap-3 px-3 pt-4">
@@ -157,7 +189,7 @@ export default async function AppShell({
               </div>
             </aside>
 
-            <MobileHeader me={me} services={services} />
+            <MobileHeader me={me} services={services} region={region} />
             <HideOnScroll />
             <PullToRefresh />
 

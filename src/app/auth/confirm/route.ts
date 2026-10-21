@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   const type = searchParams.get("type") as EmailOtpType | null;
   const locale = await currentLocale();
 
-  const fallbackNext = type === "recovery" ? "/reset-password" : "/dashboard";
+  const fallbackNext = type === "recovery" ? "/reset-password" : "/feed";
   const next = safeNext(searchParams.get("next"), fallbackNext);
 
   if (tokenHash && type) {

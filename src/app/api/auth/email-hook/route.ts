@@ -50,7 +50,7 @@ export async function POST(request: Request) {
   // code exchange. /auth/confirm calls verifyOtp(), which both confirms the
   // token and logs the user in — so clicking the link works even when it's
   // opened on a different device from the one that signed up.
-  const dest = email_action_type === "recovery" ? "/reset-password" : "/dashboard";
+  const dest = email_action_type === "recovery" ? "/reset-password" : "/feed";
   const verifyUrl = `${origin}/auth/confirm?token_hash=${token_hash}&type=${email_action_type}&next=${encodeURIComponent(dest)}`;
 
   // Never log token_hash or the full verifyUrl -- either one is a live,
