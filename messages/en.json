@@ -1038,7 +1038,8 @@
   "Requests": {
     "title": "My Requests",
     "subtitle": "What you posted you're looking for, and the replies you got.",
-    "empty": "You haven't asked for anything yet."
+    "empty": "Nothing posted yet. What you post here also shows on Home, so people can reply.",
+    "placeholder": "What do you need? e.g. A math tutor for my son in Hazmieh, twice a week"
   },
   "Settings": {
     "title": "Settings & Help",

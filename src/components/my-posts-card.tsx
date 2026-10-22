@@ -29,17 +29,45 @@ function formatRelative(iso: string, locale: string, justNow: string) {
 /**
  * A user's own post history, with a real delete — not just "close" — on
  * /profile; with `kind`, only those (My Requests shows "Looking for").
+ * `placeholder` adds a box on top for writing a new one of that kind
+ * right here (My Requests), not only from the feed.
  */
 export default function MyPostsCard({
   kind,
   title,
   empty,
-}: { kind?: MyPost["kind"]; title?: string; empty?: string } = {}) {
+  placeholder,
+}: { kind?: MyPost["kind"]; title?: string; empty?: string; placeholder?: string } = {}) {
   const t = useTranslations("Dashboard");
   const tFeed = useTranslations("Feed");
   const locale = useLocale();
   const [posts, setPosts] = useState<MyPost[] | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+  const [posting, setPosting] = useState(false);
+  const [postError, setPostError] = useState<string | null>(null);
+
+  async function publish() {
+    const caption = draft.trim();
+    if (!caption || !kind || posting) return;
+    setPosting(true);
+    setPostError(null);
+    const res = await request("/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ caption, kind }),
+    });
+    setPosting(false);
+    const body = await res?.json().catch(() => null);
+    if (!res?.ok || !body?.post) {
+      // The server explains a refusal it can name (contact details in
+      // the text); anything else gets the generic message.
+      setPostError(typeof body?.error === "string" ? body.error : tFeed("postError"));
+      return;
+    }
+    setDraft("");
+    setPosts((prev) => [{ ...body.post, status: "open" }, ...(prev ?? [])]);
+  }
 
   useEffect(() => {
     let active = true;
@@ -61,6 +89,25 @@ export default function MyPostsCard({
   return (
     <div className={ui.card + " overflow-hidden mb-5"}>
       {title !== "" && <p className="text-xs font-medium uppercase tracking-wide text-muted px-6 pt-6">{title ?? t("yourPosts")}</p>}
+
+      {placeholder && kind && (
+        <div className="flex flex-col gap-2 border-b border-border p-4">
+          <textarea
+            dir="auto"
+            rows={3}
+            maxLength={500}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            placeholder={placeholder}
+            aria-label={placeholder}
+            className={ui.input + " resize-none text-[15px]"}
+          />
+          {postError && <p className="text-sm text-danger">{postError}</p>}
+          <button type="button" onClick={publish} disabled={!draft.trim() || posting} className={ui.buttonPrimary + " self-end"}>
+            {posting ? tFeed("posting") : tFeed("post")}
+          </button>
+        </div>
+      )}
 
       {posts === null && <p className="text-sm text-muted p-6">{tFeed("loading")}</p>}
       {posts && posts.length === 0 && <p className="text-sm text-muted p-6">{empty ?? t("noPosts")}</p>}
