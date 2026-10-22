@@ -32,6 +32,13 @@ const PATHS: Record<string, React.ReactNode> = {
       strokeLinejoin="round"
     />
   ),
+  scooter: (
+    <>
+      <circle cx="6" cy="17" r="2.5" />
+      <circle cx="18" cy="17" r="2.5" />
+      <path d="M8.5 17h6l2-6h-3M16.5 11l-1.5-4h-2M3.5 15V9.5h6V14" strokeLinecap="round" strokeLinejoin="round" />
+    </>
+  ),
   paw: (
     <>
       <circle cx="7.5" cy="10" r="1.6" />

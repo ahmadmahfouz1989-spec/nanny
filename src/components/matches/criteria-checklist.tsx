@@ -10,6 +10,7 @@ import type { CriterionResult } from "@/lib/matching/generic-engine";
 // these, and unknown keys are simply skipped, so one shared component/order/
 // label map works for all of them instead of one per category.
 const ORDER = [
+  "service",
   "trade",
   "location",
   "availability",
@@ -23,9 +24,11 @@ const ORDER = [
   "childAgeExperience",
   "experience",
   "transportation",
+  "requirements",
 ] as const;
 
 const LABEL_KEY: Record<(typeof ORDER)[number], string> = {
+  service: "criteriaService",
   trade: "criteriaTrade",
   location: "criteriaLocation",
   availability: "criteriaAvailability",
@@ -39,6 +42,7 @@ const LABEL_KEY: Record<(typeof ORDER)[number], string> = {
   childAgeExperience: "criteriaChildAgeExperience",
   experience: "criteriaExperience",
   transportation: "criteriaTransportation",
+  requirements: "criteriaRequirements",
 };
 
 export default function CriteriaChecklist({ breakdown }: { breakdown: Partial<Record<string, CriterionResult>> }) {

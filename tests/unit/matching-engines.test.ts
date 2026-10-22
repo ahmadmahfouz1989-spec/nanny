@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  computeErrandsMatchScore,
+  dayOfWeek,
+  type ErrandProviderMatchInput,
+  type ErrandSeekerMatchInput,
+} from "@/lib/matching/errands-engine";
+import {
   computeMatchScore,
   nannyInputFromProfile,
   parentInputFromProfile,
@@ -197,5 +203,54 @@ describe("maintenance rubric", () => {
     expect(r.breakdown.experience.raw).toBe(0.4);
     expect(r.breakdown.trade.raw).toBe(0.5);
     expect(r.score).toBe(71);
+  });
+});
+
+describe("errands rubric", () => {
+  const seeker: ErrandSeekerMatchInput = {
+    governorateId: "beirut",
+    service: "delivery",
+    timing: "scheduled",
+    scheduledDay: "sat",
+    expectedWaitHours: null,
+    budgetUsd: null,
+  };
+  const provider: ErrandProviderMatchInput = {
+    governorateId: "mount",
+    serviceAreaIds: ["beirut"],
+    services: ["delivery", "shopping"],
+    availabilityDays: ["sat"],
+    takesUrgentJobs: false,
+    maxWaitHours: null,
+    canPayForPurchases: false,
+    hasDrivingLicense: false,
+    hasInsurance: false,
+  };
+
+  it("scores a full match at 100 and a missing service at 0", () => {
+    expect(computeErrandsMatchScore(seeker, provider).score).toBe(100);
+    expect(computeErrandsMatchScore({ ...seeker, service: "moto_taxi" }, provider).score).toBe(0);
+  });
+
+  it("needs someone who takes right-now jobs for an asap request", () => {
+    const asap = { ...seeker, timing: "asap" as const, scheduledDay: null };
+    expect(computeErrandsMatchScore(asap, provider).breakdown.availability.raw).toBe(0);
+    expect(computeErrandsMatchScore(asap, { ...provider, takesUrgentJobs: true }).breakdown.availability.raw).toBe(1);
+  });
+
+  it("checks what the service asks of the provider", () => {
+    const queue = { ...seeker, service: "queue" as const, expectedWaitHours: 3 };
+    const waiter = { ...provider, services: ["queue"] };
+    expect(computeErrandsMatchScore(queue, { ...waiter, maxWaitHours: 2 }).breakdown.requirements.raw).toBe(0);
+    expect(computeErrandsMatchScore(queue, { ...waiter, maxWaitHours: 4 }).breakdown.requirements.raw).toBe(1);
+    const ride = { ...seeker, service: "moto_taxi" as const };
+    const rider = { ...provider, services: ["moto_taxi"], hasDrivingLicense: true };
+    expect(computeErrandsMatchScore(ride, rider).breakdown.requirements.raw).toBe(0.5);
+    expect(computeErrandsMatchScore(ride, { ...rider, hasInsurance: true }).breakdown.requirements.raw).toBe(1);
+  });
+
+  it("reads the day of a booked time as written", () => {
+    expect(dayOfWeek("2026-10-24T23:30")).toBe("sat");
+    expect(dayOfWeek(undefined)).toBe(null);
   });
 });

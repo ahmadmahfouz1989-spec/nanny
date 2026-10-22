@@ -26,7 +26,8 @@ export default function EditShell({
   title: string;
   error?: string | null;
   onCancel: () => void;
-  onSave: () => void;
+  /** Left out on a screen with nothing to save yet (choosing what the form is for). */
+  onSave?: () => void;
   onBack?: () => void;
   backLabel?: string;
   submitting?: boolean;
@@ -76,7 +77,7 @@ export default function EditShell({
         <div className="w-full max-w-lg">
           <div className={ui.card + " p-8"}>
             <h1 className="font-display text-2xl font-semibold">{title}</h1>
-            <p className="mt-1 mb-6 text-xs text-muted">{tw("requiredNote")}</p>
+            {onSave ? <p className="mt-1 mb-6 text-xs text-muted">{tw("requiredNote")}</p> : <div className="mb-4" />}
 
             <div className="oui-form-sections flex flex-col gap-8">{children}</div>
 
@@ -88,9 +89,11 @@ export default function EditShell({
               <button type="button" onClick={onCancel} className={ui.buttonGhost + " px-0!"}>
                 {tw("cancel")}
               </button>
-              <button type="button" onClick={onSave} disabled={submitting} className={ui.buttonPrimary}>
-                {submitting ? tw("saving") : tw("saveChanges")}
-              </button>
+              {onSave && (
+                <button type="button" onClick={onSave} disabled={submitting} className={ui.buttonPrimary}>
+                  {submitting ? tw("saving") : tw("saveChanges")}
+                </button>
+              )}
             </div>
           </div>
         </div>

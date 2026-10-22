@@ -29,7 +29,8 @@
     "theme": "Dark mode",
     "language": "Language",
     "tagline": "All services in one place",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "errands": "Delivery & Errands"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -45,7 +46,7 @@
     "explore": "Explore",
     "moreComingSoon": "New categories are added regularly",
     "landingTitle": "One place for every kind of help",
-    "landingSubtitle": "Nanny, nursing, tutoring and home maintenance are all live — pick one to get started."
+    "landingSubtitle": "Nanny, nursing, tutoring, home maintenance and delivery & errands are all live — pick one to get started."
   },
   "Notifications": {
     "title": "Notifications",
@@ -120,7 +121,7 @@
     "subhead": "A marketplace connecting people who need a service with people who provide it, across Lebanon.",
     "bullet1": "Every category has a transparent match score",
     "bullet2": "Message anyone directly — your phone number stays private",
-    "bullet3": "Nannies, nursing, tutoring and home maintenance are all live now",
+    "bullet3": "Nannies, nursing, tutoring, home maintenance and delivery & errands are all live now",
     "bullet2Short": "Your number stays private",
     "ctaGetStarted": "Get started",
     "howItWorksTitle": "How it works",
@@ -404,6 +405,12 @@
       "roleSeekerDescription": "Describe the job and get matched with plumbers, electricians, painters, tilers and carpenters near you.",
       "roleProviderTitle": "I'm a tradesperson looking for work",
       "roleProviderDescription": "Create a profile so customers near you can find and hire you."
+    },
+    "errands": {
+      "roleSeekerTitle": "I need something delivered or done",
+      "roleSeekerDescription": "Deliveries, paperwork, waiting in a queue, shopping or a moto taxi ride — get matched with someone near you.",
+      "roleProviderTitle": "I run deliveries and errands",
+      "roleProviderDescription": "Create a profile so people near you can hire you for deliveries, paperwork, queues, shopping or moto taxi rides."
     }
   },
   "NursingProviderOnboarding": {
@@ -631,7 +638,9 @@
     "starter3": "Hi! Could you tell me a bit more about your experience?",
     "typing": "typing…",
     "loadError": "Couldn't load — check your connection and try again.",
-    "viewProfile": "View profile"
+    "viewProfile": "View profile",
+    "criteriaService": "Service",
+    "criteriaRequirements": "Fits the job"
   },
   "Featured": {
     "title": "Get Featured",
@@ -1064,5 +1073,149 @@
     "latestPosts": "Latest posts",
     "allLebanon": "All Lebanon",
     "regionLabel": "Your area"
+  },
+  "ErrandServices": {
+    "delivery": "Delivery & Pickup",
+    "paperwork": "Paperwork & Transactions",
+    "queue": "Queue & Waiting",
+    "shopping": "Shopping & Errands",
+    "moto_taxi": "Moto Taxi",
+    "deliverySeeker": "Something picked up and dropped off",
+    "paperworkSeeker": "Someone to follow up your transaction for you",
+    "queueSeeker": "Someone to wait in line for you",
+    "shoppingSeeker": "From the supermarket, pharmacy or any shop",
+    "moto_taxiSeeker": "A quick, safe ride anywhere",
+    "deliveryProvider": "Pick up an item and drop it at another address",
+    "paperworkProvider": "Take papers to offices and follow up transactions",
+    "queueProvider": "Wait in line in someone's place",
+    "shoppingProvider": "Buy and bring groceries, medicine and more",
+    "moto_taxiProvider": "Take a passenger from one point to another"
+  },
+  "Vehicles": {
+    "motorcycle": "Motorcycle",
+    "car": "Car",
+    "bicycle": "Bicycle",
+    "on_foot": "On foot"
+  },
+  "ErrandPricing": {
+    "per_task": "Per task",
+    "per_hour": "Per hour",
+    "per_distance": "By distance"
+  },
+  "ErrandTiming": {
+    "asap": "As soon as possible",
+    "scheduled": "At a set time"
+  },
+  "ErrandsProviderOnboarding": {
+    "createTitle": "Create your profile",
+    "editTitle": "Edit your profile",
+    "namePlaceholder": "Your name",
+    "contactPhonePlaceholder": "Phone number (optional)",
+    "nationality": "Nationality",
+    "services": "Services you offer (pick all that apply)",
+    "vehicle": "How you get around",
+    "motoTaxiNeedsMotorcycle": "Moto taxi needs a motorcycle.",
+    "paperworkTypes": "Kinds of transactions you handle",
+    "paperworkTypesPlaceholder": "e.g. Municipality papers, NSSF, car registration",
+    "maxWaitHours": "Longest you'll wait in a queue (hours)",
+    "motoTaxiTitle": "For moto taxi passengers",
+    "hasDrivingLicense": "I have a valid motorcycle license",
+    "hasInsurance": "My motorcycle is insured",
+    "hasPassengerHelmet": "I carry a helmet for the passenger",
+    "extras": "Also",
+    "canDoMultipleStops": "I can do several stops in one trip",
+    "canPayForPurchases": "I can pay for the shopping and get paid back",
+    "serviceAreas": "Other governorates you work in",
+    "serviceAreasHint": "Your own governorate is already included.",
+    "availableDays": "Available days",
+    "takesUrgentJobs": "I take same-day, right-now jobs",
+    "pricing": "How you charge",
+    "priceNote": "Your prices",
+    "priceNotePlaceholder": "e.g. From $3 inside Beirut",
+    "shortIntro": "About you",
+    "shortIntroPlaceholder": "e.g. 4 years delivering around Beirut, I know every street",
+    "section1Title": "You and your area",
+    "section2Title": "What you do",
+    "section3Title": "Where and when you work",
+    "section4Title": "Prices and about you"
+  },
+  "ErrandsSeekerOnboarding": {
+    "pickTitle": "What service do you need?",
+    "pickSubtitle": "Pick one — you'll only be asked what that service needs.",
+    "changeService": "Change",
+    "createTitle": "Create your request",
+    "editTitle": "Edit your request",
+    "namePlaceholder": "Your name",
+    "contactPhonePlaceholder": "Phone number (optional)",
+    "institution": "Office or institution",
+    "institutionPlaceholder": "e.g. Baabda Municipality",
+    "storeName": "Shop or kind of shop",
+    "storeNamePlaceholder": "e.g. Any pharmacy nearby",
+    "budgetUsd": "Budget for the shopping (USD)",
+    "placePlaceholder": "Area or landmark",
+    "placeHint": "Just the area or a landmark — share the exact address in chat once you've matched.",
+    "expectedWaitHours": "Expected wait (hours)",
+    "passengers": "Passengers",
+    "timing": "When?",
+    "scheduledAt": "Date and time",
+    "deadline": "Deadline",
+    "notes": "Anything else?",
+    "notesPlaceholder": "e.g. Fragile, please call when you arrive",
+    "section1Title": "The details",
+    "section2Title": "When",
+    "section3Title": "You and your area",
+    "delivery": {
+      "what": "What are you sending?",
+      "whatPlaceholder": "e.g. Documents, a small package, keys",
+      "pickup": "Pickup location",
+      "dropoff": "Drop-off location"
+    },
+    "paperwork": {
+      "what": "Which transaction?",
+      "whatPlaceholder": "e.g. Renew a residence permit; papers are ready"
+    },
+    "queue": {
+      "what": "What's the queue for?",
+      "whatPlaceholder": "e.g. Bread at the bakery, a bank appointment",
+      "pickup": "Where is the queue?"
+    },
+    "shopping": {
+      "what": "What do you need bought?",
+      "whatPlaceholder": "e.g. 2 bread, milk, panadol",
+      "dropoff": "Where to bring it"
+    },
+    "moto_taxi": {
+      "what": "About the ride",
+      "whatPlaceholder": "e.g. One person with a small bag",
+      "pickup": "Pickup point",
+      "dropoff": "Destination"
+    }
+  },
+  "ErrandFields": {
+    "errandServices": "Services",
+    "errandService": "Service",
+    "vehicle": "Gets around by",
+    "pricing": "Pricing",
+    "maxWaitHours": "Waits in a queue up to",
+    "paperworkTypes": "Transactions",
+    "extras": "Also",
+    "canDoMultipleStops": "Several stops",
+    "canPayForPurchases": "Pays for shopping up front",
+    "hasDrivingLicense": "Licensed",
+    "hasInsurance": "Insured",
+    "hasPassengerHelmet": "Passenger helmet",
+    "institution": "Office",
+    "storeName": "Shop",
+    "budgetUsd": "Budget",
+    "pickupPlace": "Pickup",
+    "queuePlace": "Queue at",
+    "dropoffPlace": "Drop-off",
+    "destination": "Destination",
+    "expectedWaitHours": "Expected wait",
+    "passengers": "Passengers",
+    "timing": "When",
+    "deadline": "Deadline",
+    "notes": "Notes",
+    "hours": "{count, plural, one {# hour} other {# hours}}"
   }
 }
