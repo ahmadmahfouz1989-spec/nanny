@@ -1049,7 +1049,7 @@
     "account": "Account"
   },
   "Discover": {
-    "search": "Search for a service…",
+    "search": "Search people, services or posts…",
     "searchLabel": "Search for a service",
     "noResults": "No service matches “{query}” yet.",
     "heroTitle": "From North Lebanon to South Lebanon",
@@ -1072,7 +1072,9 @@
     "providerCta": "Create your profile",
     "latestPosts": "Latest posts",
     "allLebanon": "All Lebanon",
-    "regionLabel": "Your area"
+    "regionLabel": "Your area",
+    "searchPeople": "Search people and posts for “{query}”",
+    "serviceLabel": "Service:"
   },
   "ErrandServices": {
     "delivery": "Delivery & Pickup",
@@ -1217,5 +1219,23 @@
     "deadline": "Deadline",
     "notes": "Notes",
     "hours": "{count, plural, one {# hour} other {# hours}}"
+  },
+  "Search": {
+    "placeholder": "Search people, services or posts…",
+    "hint": "Try \"math teacher\", \"plumber\", \"nurse Jounieh\" or \"delivery\".",
+    "inRegion": "In {region}",
+    "allLebanon": "All of Lebanon",
+    "searchAll": "Search all of Lebanon",
+    "backToRegion": "Back to my area",
+    "noResults": "Nothing found for “{query}”",
+    "noResultsRegion": "Nobody in this area matches yet. Try all of Lebanon, or post a request so people can find you.",
+    "noResultsBody": "Try other words, or post a request so people can find you.",
+    "postRequest": "Post a request",
+    "browse": "Browse services",
+    "offering": "Offering",
+    "seeking": "Looking for help",
+    "posts": "Posts",
+    "postLookingFor": "Looking for",
+    "postOffering": "Offering"
   }
 }

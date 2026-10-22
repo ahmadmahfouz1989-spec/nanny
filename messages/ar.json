@@ -1049,7 +1049,7 @@
     "account": "الحساب"
   },
   "Discover": {
-    "search": "ابحث عن خدمة…",
+    "search": "ابحث عن أشخاص أو خدمات أو منشورات…",
     "searchLabel": "ابحث عن خدمة",
     "noResults": "لا توجد خدمة تطابق «{query}» بعد.",
     "heroTitle": "من شمال لبنان إلى جنوبه",
@@ -1072,7 +1072,9 @@
     "providerCta": "أنشئ ملفك",
     "latestPosts": "أحدث المنشورات",
     "allLebanon": "كل لبنان",
-    "regionLabel": "منطقتك"
+    "regionLabel": "منطقتك",
+    "searchPeople": "ابحث عن أشخاص ومنشورات لـ «{query}»",
+    "serviceLabel": "خدمة:"
   },
   "ErrandServices": {
     "delivery": "توصيل واستلام أغراض",
@@ -1217,5 +1219,23 @@
     "deadline": "آخر مهلة",
     "notes": "ملاحظات",
     "hours": "{count, plural, one {ساعة} two {ساعتين} few {# ساعات} many {# ساعة} other {# ساعة}}"
+  },
+  "Search": {
+    "placeholder": "ابحث عن أشخاص أو خدمات أو منشورات…",
+    "hint": "جرّب «أستاذ رياضيات»، «سبّاك»، «ممرضة جونية» أو «توصيل».",
+    "inRegion": "في {region}",
+    "allLebanon": "كل لبنان",
+    "searchAll": "ابحث بكل لبنان",
+    "backToRegion": "رجوع لمنطقتي",
+    "noResults": "ما في نتائج لـ «{query}»",
+    "noResultsRegion": "ما في حدا بهالمنطقة لهلّق. جرّب كل لبنان، أو انشر طلب تا يلاقوك.",
+    "noResultsBody": "جرّب كلمات تانية، أو انشر طلب تا يلاقوك.",
+    "postRequest": "انشر طلب",
+    "browse": "تصفّح الخدمات",
+    "offering": "بيقدّموا خدمات",
+    "seeking": "بدّن مساعدة",
+    "posts": "منشورات",
+    "postLookingFor": "بيدوّر على",
+    "postOffering": "بيقدّم"
   }
 }
