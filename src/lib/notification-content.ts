@@ -67,10 +67,43 @@ export function notificationHref(n: NotificationLike): string {
   }
 }
 
-export function notificationLabel(n: NotificationLike, t: Translate): string {
+// Notifications about one service say which ("Your Nanny profile was
+// approved") -- an account can be in several, and a bare "your profile"
+// leaves them guessing which one.
+const PER_CATEGORY = new Set(["new_match", "profile_approved", "profile_rejected"]);
+
+/**
+ * `categoryName` turns a category slug into its name (the Nav labels);
+ * without it, or for an unknown slug, the label leaves the service out.
+ */
+export function notificationLabel(n: NotificationLike, t: Translate, categoryName?: (slug: string) => string | null): string {
+  const slug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
+  const category = slug && categoryName ? categoryName(slug) : null;
+  if (category && PER_CATEGORY.has(n.type)) return t(`${n.type}_in`, { category });
   if (n.type === "rating_received") {
     const score = typeof n.payload?.score === "number" ? (n.payload.score as number) : null;
     return score ? t("rating_received", { score }) : t("rating_received_generic");
   }
   return KNOWN_TYPES.has(n.type) ? t(n.type) : t("generic");
+}
+
+// What tapping the notification does, said under it so it reads as
+// something to tap and not only news.
+const ACTIONS: Record<string, string> = {
+  interest_accepted: "actionMatch",
+  interest_received: "actionMatch",
+  new_match: "actionMatch",
+  profile_approved: "actionMatches",
+  profile_rejected: "actionFix",
+  rating_received: "actionRating",
+  post_reply: "actionPost",
+  post_like: "actionPost",
+  work_rejected: "actionWork",
+  verification_updated: "actionProfile",
+  profile_pending_review: "actionReview",
+};
+
+export function notificationAction(n: NotificationLike, t: Translate): string | null {
+  const key = ACTIONS[n.type];
+  return key ? t(key) : null;
 }

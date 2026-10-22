@@ -27,8 +27,13 @@ export default function CategoryDashboardTabs({
   targetMatchId = null,
   targetRole = null,
   initialGovernorateId = "",
+  categoryName,
+  header,
 }: {
   categorySlug: string;
+  categoryName?: string;
+  // Shown above everything (the service switcher).
+  header?: React.ReactNode;
   initialGovernorateId?: string;
   profiles: ProfileSummary[];
   // From a match notification: the match to land on, and which of this
@@ -80,7 +85,10 @@ export default function CategoryDashboardTabs({
   if (active.moderationStatus === "approved") {
     return (
       <>
-        <div className="max-w-2xl w-full mx-auto px-6 pt-8">{tabBar}</div>
+        <div className="max-w-2xl w-full mx-auto px-6 pt-8">
+          {header}
+          {tabBar}
+        </div>
         {/* Keyed by role: GenericResults owns its own filter state
             (governorate/day/minYearsExperience), and switching tabs must
             reset all of it, not carry it into the other role's search --
@@ -93,6 +101,7 @@ export default function CategoryDashboardTabs({
           role={active.role}
           targetMatchId={active.role === targetRole ? targetMatchId : null}
           initialGovernorateId={initialGovernorateId}
+          categoryName={categoryName}
         />
       </>
     );
@@ -100,6 +109,7 @@ export default function CategoryDashboardTabs({
 
   return (
     <div className="max-w-lg w-full mx-auto px-6 py-8">
+      {header}
       {tabBar}
       <div className={ui.card + " overflow-hidden"}>
         <div

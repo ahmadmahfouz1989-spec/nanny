@@ -68,7 +68,18 @@
     "report_resolved": "تمت معالجة بلاغ قدّمته",
     "post_reply": "قام أحدهم بالرد على منشورك",
     "post_like": "أعجب أحدهم بمنشورك",
-    "work_rejected": "تم حذف أحد أعمالك"
+    "work_rejected": "تم حذف أحد أعمالك",
+    "profile_approved_in": "تمّت الموافقة على ملفك في {category}",
+    "profile_rejected_in": "ملفك في {category} بحاجة لتعديلات",
+    "new_match_in": "تطابق جديد في {category}",
+    "actionMatch": "شوف التطابق",
+    "actionMatches": "شوف تطابقاتك",
+    "actionFix": "عدّل ملفك",
+    "actionRating": "شوف التقييم",
+    "actionPost": "افتح المنشور",
+    "actionWork": "شوف أعمالك",
+    "actionProfile": "افتح ملفك",
+    "actionReview": "راجعه"
   },
   "Push": {
     "title": "الإشعارات الفورية",
@@ -112,7 +123,12 @@
     "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا.",
     "newPost": "منشور جديد",
     "newPostsPill": "{count, plural, one {منشور جديد} two {منشوران جديدان} few {# منشورات جديدة} many {# منشورًا جديدًا} other {# منشور جديد}}",
-    "workPhotosLabel": "الأعمال: {title}"
+    "workPhotosLabel": "الأعمال: {title}",
+    "composeNeed": "بدّي مساعدة",
+    "composeOffer": "بقدّم مساعدة",
+    "placeholderNeed": "شو بدّك؟ مثلاً: أستاذ رياضيات بالحازمية، مرتين بالجمعة",
+    "placeholderOffer": "شو بتقدّم؟ مثلاً: مجالسة أطفال بالليل بجونية",
+    "postingAs": "عم تنشر باسم"
   },
   "Home": {
     "badge": "متاح الآن في جميع أنحاء لبنان",
@@ -202,8 +218,8 @@
     "notFeaturedLabel": "غير مميّز — اظهر أولًا في لوحات الآخرين",
     "manageFeatured": "إدارة",
     "role": "الدور",
-    "roleSeeker": "باحث عن الخدمة",
-    "roleProvider": "مقدّم الخدمة",
+    "roleSeeker": "بدّي مساعدة",
+    "roleProvider": "بقدّم مساعدة",
     "email": "البريد الإلكتروني",
     "phone": "الهاتف",
     "verified": "موثّق",
@@ -219,7 +235,7 @@
     "noPosts": "لم تنشر أي شيء بعد.",
     "postClosed": "مُغلق",
     "deletePost": "حذف",
-    "noProfileTitle": "لا يوجد ملف شخصي بعد",
+    "noProfileTitle": "ما عندك ملف بعد",
     "noProfileGeneric": "أنشئ ملفك الشخصي لتبدأ تصفح التطابقات في هذه الفئة.",
     "editProfileLink": "عدّل ملفك الشخصي",
     "createProfile": "إنشاء الملف الشخصي",
@@ -236,10 +252,19 @@
     "addPhotoAction": "أضف صورة",
     "editAndResubmit": "عدّل وأعد الإرسال",
     "browseFeed": "تصفّح المنشورات",
-    "whatsappNumber": "رقم واتساب"
+    "whatsappNumber": "رقم واتساب",
+    "yourServices": "خدماتك",
+    "addService": "أضف",
+    "titleIn": "{category}: ملفك",
+    "noProfileBody": "الملف هو اللي بيخلّيك تتطابق مع الناس. اعمل واحد بأي خدمة — بياخد كم دقيقة.",
+    "noProfileNeed": "بدّي مساعدة",
+    "noProfileNeedBody": "خبّرنا شو بدّك ومنطابقك مع ناس قريبين منك.",
+    "noProfileOffer": "بقدّم مساعدة",
+    "noProfileOfferBody": "فرجي شو بتعمل تا الناس القريبين منك يلاقوك.",
+    "noProfileSettings": "الحساب واللغة والإشعارات موجودين بالإعدادات"
   },
   "Wizard": {
-    "changeRole": "اختر دورًا مختلفًا",
+    "changeRole": "→ غيّر اختياري",
     "cancel": "إلغاء",
     "saveChanges": "حفظ التغييرات",
     "saving": "جارٍ الحفظ…",
@@ -640,7 +665,9 @@
     "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا.",
     "viewProfile": "عرض الملف الشخصي",
     "criteriaService": "الخدمة",
-    "criteriaRequirements": "مناسب للمهمة"
+    "criteriaRequirements": "مناسب للمهمة",
+    "titleMatchesIn": "تطابقات {category}",
+    "filters": "فلاتر"
   },
   "Featured": {
     "title": "كن مميّزًا",
@@ -665,7 +692,7 @@
   "Inbox": {
     "navLabel": "الرسائل",
     "title": "الرسائل",
-    "empty": "لا توجد محادثات بعد. اضغط «مراسلة» على أي تطابق لبدء محادثة.",
+    "empty": "ما في محادثات بعد. المحادثات بتبلش من تطابقاتك: افتح وحدة واضغط «مراسلة».",
     "noMessagesYet": "لا توجد رسائل بعد",
     "selectConversation": "اختر محادثة لبدء الدردشة.",
     "menu": "المزيد من الخيارات",
@@ -673,7 +700,8 @@
     "search": "بحث",
     "noResults": "لا توجد محادثات مطابقة لـ \"{query}\"",
     "loading": "جارٍ تحميل المحادثات…",
-    "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا."
+    "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا.",
+    "emptyAction": "روح على تطابقاتي"
   },
   "Report": {
     "action": "إبلاغ",
@@ -1013,8 +1041,8 @@
     "errorShareContact": "احذف أرقام الهاتف أو حسابات التواصل من العنوان أو الوصف أولًا."
   },
   "Menu": {
-    "myProfile": "ملفي الشخصي",
-    "myProfileHint": "ملفك الشخصي وحسابك",
+    "myProfile": "عدّل ملفك",
+    "myProfileHint": "الصورة والتفاصيل والحساب",
     "findService": "ابحث عن خدمة",
     "findServiceHint": "تصفّح الخدمات والأشخاص",
     "myServices": "خدماتي",
@@ -1033,7 +1061,9 @@
     "language": "اللغة",
     "logout": "تسجيل الخروج",
     "verified": "موثّق",
-    "changePhoto": "تغيير الصورة"
+    "changePhoto": "تغيير الصورة",
+    "viewPublic": "شوف ملفك متل ما بيشوفه الناس",
+    "createProfile": "اعمل ملفك"
   },
   "Requests": {
     "title": "طلباتي",
@@ -1065,17 +1095,20 @@
     "trustFree": "مجاني 100%",
     "trustPrivate": "رقمك يبقى خاصًا",
     "trustPrivateNote": "تتحدثون داخل التطبيق",
-    "seekerTitle": "تبحث عن خدمة؟",
+    "seekerTitle": "بحاجة لمساعدة بشي؟",
     "seekerBody": "اعثر على الشخص المناسب لاحتياجاتك.",
     "seekerCta": "ابحث عن خدمة",
-    "providerTitle": "تقدّم خدمة؟",
-    "providerBody": "اعرض خدماتك واحصل على عملاء أكثر.",
+    "providerTitle": "قدّم خدماتك",
+    "providerBody": "فرجي شو بتعمل وجيب زباين قريبين منك.",
     "providerCta": "أنشئ ملفك",
     "latestPosts": "أحدث المنشورات",
     "allLebanon": "كل لبنان",
     "regionLabel": "منطقتك",
     "searchPeople": "ابحث عن أشخاص ومنشورات لـ «{query}»",
-    "serviceLabel": "خدمة:"
+    "serviceLabel": "خدمة:",
+    "providerTitleHave": "إنت عم تقدّم مساعدة",
+    "providerBodyHave": "شوف مين عم يدوّر على اللي بتعمله.",
+    "providerCtaHave": "تطابقاتي"
   },
   "ErrandServices": {
     "delivery": "توصيل واستلام أغراض",

@@ -2,6 +2,7 @@ import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { asAttributes } from "@/lib/attributes";
 import { isCategorySlug } from "@/lib/category-slugs";
+import AppShell from "@/components/app-shell";
 import CategoryOnboardingClient from "./category-onboarding-client";
 
 export default async function CategoryOnboardingPage({
@@ -59,7 +60,10 @@ export default async function CategoryOnboardingPage({
   const initialRole =
     role === "seeker" && seekerProfile ? "seeker" : role === "provider" && providerProfile ? "provider" : null;
 
+  // Inside the app's usual frame (top bar with back, tabs), not a
+  // separate-looking screen of its own.
   return (
+    <AppShell active={isCategorySlug(slug) ? slug : "categories"}>
     <CategoryOnboardingClient
       categorySlug={slug}
       categoryName={locale === "ar" ? category!.name_ar : category!.name_en}
@@ -73,5 +77,6 @@ export default async function CategoryOnboardingPage({
       // form's blank field as a real update, wiping it out account-wide.
       accountContactPhone={accountContactPhone}
     />
+    </AppShell>
   );
 }

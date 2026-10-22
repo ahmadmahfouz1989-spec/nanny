@@ -19,8 +19,14 @@ export default function GenericResults({
   role,
   targetMatchId = null,
   initialGovernorateId = "",
+  categoryName,
+  header,
 }: {
   categorySlug: string;
+  // Names the service in the title ("Nanny matches").
+  categoryName?: string;
+  // Shown above the title (the service switcher).
+  header?: React.ReactNode;
   // The area picked at the top of Home (see lib/region), as the starting filter.
   initialGovernorateId?: string;
   // From a match notification (?match=...) -- see useLiveMatches.
@@ -157,7 +163,8 @@ export default function GenericResults({
 
   return (
     <div className={`max-w-2xl w-full mx-auto px-6 py-8 ${!results && !error ? "min-h-screen flex flex-col" : ""}`}>
-      <h1 className="font-display text-2xl font-bold mb-1">{t("titleMatches")}</h1>
+      {header}
+      <h1 className="font-display text-2xl font-bold mb-1">{categoryName ? t("titleMatchesIn", { category: categoryName }) : t("titleMatches")}</h1>
       <p className="text-sm text-muted mb-4">{t("resultsSubtitle")}</p>
 
       <MatchFilters

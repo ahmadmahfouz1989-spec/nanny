@@ -298,9 +298,11 @@ export function MobileHeader({
               <CameraIcon className="h-3.5 w-3.5" />
             </span>
           </Link>
-          <Link href={me?.profileId ? `/u/${me.profileId}` : "/profile"} onClick={close} className="flex min-w-0 flex-1 items-center gap-2">
+          <Link href={me?.profileId ? `/u/${me.profileId}` : "/categories"} onClick={close} className="flex min-w-0 flex-1 items-center gap-2">
             <span className="min-w-0 flex-1">
               <span className="block truncate font-display text-lg font-bold text-ink">{me?.name ?? t("profile")}</span>
+              {/* Says where this goes: the edit page is the row below. */}
+              <span className="block text-xs font-medium text-primary">{me?.profileId ? tm("viewPublic") : tm("createProfile")}</span>
               {me?.place && (
                 <span className="mt-0.5 flex items-center gap-1 text-xs text-muted">
                   <PinIcon className="h-3.5 w-3.5" />

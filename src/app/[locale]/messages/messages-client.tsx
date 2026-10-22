@@ -10,6 +10,7 @@ import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ConnectIllustration from "@/components/illustrations/connect-illustration";
 import { SearchIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
+import { Link } from "@/i18n/navigation";
 import { RowListSkeleton } from "@/components/skeletons";
 import { getJson } from "@/lib/request";
 
@@ -152,6 +153,10 @@ export default function MessagesClient() {
             <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
               <ConnectIllustration className="h-24 w-auto" />
               <p className="text-sm text-muted">{t("empty")}</p>
+              {/* /dashboard picks your Matches, or the services if you have none. */}
+              <Link href="/dashboard" className={ui.buttonPrimary}>
+                {t("emptyAction")}
+              </Link>
             </div>
           )}
           {conversations && conversations.length > 0 && filteredConversations?.length === 0 && (
