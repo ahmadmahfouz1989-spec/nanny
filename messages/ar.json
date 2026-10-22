@@ -29,7 +29,8 @@
     "theme": "الوضع الداكن",
     "language": "اللغة",
     "tagline": "كل الخدمات في مكان واحد",
-    "closeMenu": "إغلاق القائمة"
+    "closeMenu": "إغلاق القائمة",
+    "errands": "توصيل ومشاوير"
   },
   "Install": {
     "title": "احصل على تطبيق ouiKnow",
@@ -45,7 +46,7 @@
     "explore": "استكشف",
     "moreComingSoon": "نضيف فئات جديدة باستمرار",
     "landingTitle": "مكان واحد لكل أنواع المساعدة",
-    "landingSubtitle": "المربيات والتمريض والدروس الخصوصية وصيانة المنزل متاحة الآن — اختر فئة للبدء."
+    "landingSubtitle": "المربيات والتمريض والدروس الخصوصية وصيانة المنزل والتوصيل والمشاوير متاحة الآن — اختر فئة للبدء."
   },
   "Notifications": {
     "title": "الإشعارات",
@@ -120,7 +121,7 @@
     "subhead": "سوق يربط من يحتاج إلى خدمة بمن يقدّمها، في جميع أنحاء لبنان.",
     "bullet1": "لكل فئة نسبة تطابق واضحة",
     "bullet2": "راسل أي شخص مباشرة — رقم هاتفك يبقى خاصًا",
-    "bullet3": "المربيات والتمريض والدروس الخصوصية وصيانة المنزل متاحة الآن",
+    "bullet3": "المربيات والتمريض والدروس الخصوصية وصيانة المنزل والتوصيل والمشاوير متاحة الآن",
     "bullet2Short": "رقمك يبقى خاصًا",
     "ctaGetStarted": "ابدأ الآن",
     "howItWorksTitle": "كيف يعمل الموقع",
@@ -404,6 +405,12 @@
       "roleSeekerDescription": "صف العمل المطلوب وتواصل مع سبّاكين وكهربجية ودهّانين وبلّاطين ونجّارين بالقرب منك.",
       "roleProviderTitle": "أنا صاحب مهنة وأبحث عن عمل",
       "roleProviderDescription": "أنشئ ملفًا شخصيًا ليتمكن الزبائن بالقرب منك من إيجادك وتوظيفك."
+    },
+    "errands": {
+      "roleSeekerTitle": "بدّي حدا يوصّل أو يخلّص شي",
+      "roleSeekerDescription": "توصيل، معاملات، انتظار بالدور، مشتريات أو مشوار بالموتو — منلاقيلك حدا قريب منك.",
+      "roleProviderTitle": "أنا بوصّل وبعمل مشاوير",
+      "roleProviderDescription": "اعمل بروفايل تا الناس اللي قريبين منك يطلبوك للتوصيل، المعاملات، الدور، المشتريات أو مشاوير الموتو."
     }
   },
   "NursingProviderOnboarding": {
@@ -631,7 +638,9 @@
     "starter3": "مرحباً! هل يمكنك إخباري المزيد عن خبرتك؟",
     "typing": "يكتب…",
     "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا.",
-    "viewProfile": "عرض الملف الشخصي"
+    "viewProfile": "عرض الملف الشخصي",
+    "criteriaService": "الخدمة",
+    "criteriaRequirements": "مناسب للمهمة"
   },
   "Featured": {
     "title": "كن مميّزًا",
@@ -1064,5 +1073,149 @@
     "latestPosts": "أحدث المنشورات",
     "allLebanon": "كل لبنان",
     "regionLabel": "منطقتك"
+  },
+  "ErrandServices": {
+    "delivery": "توصيل واستلام أغراض",
+    "paperwork": "تخليص معاملات وأوراق",
+    "queue": "انتظار بالدور",
+    "shopping": "جلب أغراض ومشاوير",
+    "moto_taxi": "توصيل أشخاص بالموتو",
+    "deliverySeeker": "من محل لمحل، من شخص لشخص",
+    "paperworkSeeker": "معاملاتك إلها حل، ونحن منتابعها عنك",
+    "queueSeeker": "خلّينا ننطر عنك ووفّر وقتك",
+    "shoppingSeeker": "من السوبرماركت للصيدلية ولأي محل",
+    "moto_taxiSeeker": "مشوار سريع وآمن لأي مكان",
+    "deliveryProvider": "يستلم غرض من عنوان ويوصّله لعنوان تاني",
+    "paperworkProvider": "يستلم الأوراق ويتابع المعاملات بالمكاتب",
+    "queueProvider": "ينطر بالدور بدل الزبون",
+    "shoppingProvider": "يشتري أغراض وأدوية ويجيبها",
+    "moto_taxiProvider": "يوصّل راكب من نقطة لنقطة"
+  },
+  "Vehicles": {
+    "motorcycle": "موتو",
+    "car": "سيارة",
+    "bicycle": "بيسكليت",
+    "on_foot": "مشي"
+  },
+  "ErrandPricing": {
+    "per_task": "على المهمة",
+    "per_hour": "بالساعة",
+    "per_distance": "حسب المسافة"
+  },
+  "ErrandTiming": {
+    "asap": "بأسرع وقت",
+    "scheduled": "بوقت محدّد"
+  },
+  "ErrandsProviderOnboarding": {
+    "createTitle": "اعمل بروفايلك",
+    "editTitle": "عدّل بروفايلك",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "nationality": "الجنسية",
+    "services": "الخدمات اللي بتقدّمها (اختار كل اللي بينطبق)",
+    "vehicle": "وسيلة التنقّل",
+    "motoTaxiNeedsMotorcycle": "التوصيل بالموتو بدّو موتو.",
+    "paperworkTypes": "أنواع المعاملات اللي بتتابعها",
+    "paperworkTypesPlaceholder": "مثلاً: أوراق بلدية، ضمان، تسجيل سيارة",
+    "maxWaitHours": "أطول مدة بتنطر فيها بالدور (بالساعات)",
+    "motoTaxiTitle": "لركّاب الموتو",
+    "hasDrivingLicense": "معي رخصة سواقة موتو سارية",
+    "hasInsurance": "الموتو مأمّن",
+    "hasPassengerHelmet": "معي خوذة للراكب",
+    "extras": "كمان",
+    "canDoMultipleStops": "بقدر وقّف بأكتر من محطة بنفس المشوار",
+    "canPayForPurchases": "بقدر إدفع حق الأغراض وبرجع بقبضهم",
+    "serviceAreas": "محافظات تانية بتشتغل فيها",
+    "serviceAreasHint": "محافظتك محسوبة من قبل.",
+    "availableDays": "الأيام المتاحة",
+    "takesUrgentJobs": "بقبل مهمات بنفس اليوم وفوراً",
+    "pricing": "كيف بتحاسب",
+    "priceNote": "أسعارك",
+    "priceNotePlaceholder": "مثلاً: من ٣$ داخل بيروت",
+    "shortIntro": "عنك",
+    "shortIntroPlaceholder": "مثلاً: ٤ سنين عم وصّل ببيروت، بعرف كل الشوارع",
+    "section1Title": "إنت ومنطقتك",
+    "section2Title": "شو بتعمل",
+    "section3Title": "وين وإيمتى بتشتغل",
+    "section4Title": "الأسعار وعنك"
+  },
+  "ErrandsSeekerOnboarding": {
+    "pickTitle": "شو الخدمة اللي بحاجة إلها؟",
+    "pickSubtitle": "اختار وحدة — منسألك بس اللي بتحتاجه هالخدمة.",
+    "changeService": "غيّر",
+    "createTitle": "اعمل طلبك",
+    "editTitle": "عدّل طلبك",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "institution": "المكتب أو المؤسسة",
+    "institutionPlaceholder": "مثلاً: بلدية بعبدا",
+    "storeName": "المحل أو نوع المحل",
+    "storeNamePlaceholder": "مثلاً: أي صيدلية قريبة",
+    "budgetUsd": "ميزانية المشتريات (بالدولار)",
+    "placePlaceholder": "المنطقة أو علامة مميّزة",
+    "placeHint": "بس المنطقة أو علامة مميّزة — العنوان الكامل بتبعتو بالمحادثة بعد ما تتطابقوا.",
+    "expectedWaitHours": "مدة الانتظار المتوقّعة (بالساعات)",
+    "passengers": "عدد الركّاب",
+    "timing": "إيمتى؟",
+    "scheduledAt": "التاريخ والوقت",
+    "deadline": "آخر مهلة",
+    "notes": "شي تاني؟",
+    "notesPlaceholder": "مثلاً: قابل للكسر، دقّلي لمّا توصل",
+    "section1Title": "التفاصيل",
+    "section2Title": "الوقت",
+    "section3Title": "إنت ومنطقتك",
+    "delivery": {
+      "what": "شو بدّك تبعت؟",
+      "whatPlaceholder": "مثلاً: أوراق، غرض صغير، مفاتيح",
+      "pickup": "مكان الاستلام",
+      "dropoff": "مكان التوصيل"
+    },
+    "paperwork": {
+      "what": "شو المعاملة؟",
+      "whatPlaceholder": "مثلاً: تجديد إقامة، الأوراق جاهزة"
+    },
+    "queue": {
+      "what": "لشو الدور؟",
+      "whatPlaceholder": "مثلاً: خبز عالفرن، موعد بالبنك",
+      "pickup": "وين الدور؟"
+    },
+    "shopping": {
+      "what": "شو بدّك نجيبلك؟",
+      "whatPlaceholder": "مثلاً: ربطتين خبز، حليب، بنادول",
+      "dropoff": "وين نجيبهم"
+    },
+    "moto_taxi": {
+      "what": "عن المشوار",
+      "whatPlaceholder": "مثلاً: شخص واحد مع شنطة صغيرة",
+      "pickup": "نقطة الانطلاق",
+      "dropoff": "الوجهة"
+    }
+  },
+  "ErrandFields": {
+    "errandServices": "الخدمات",
+    "errandService": "الخدمة",
+    "vehicle": "وسيلة التنقّل",
+    "pricing": "التسعير",
+    "maxWaitHours": "بينطر بالدور لحدّ",
+    "paperworkTypes": "المعاملات",
+    "extras": "كمان",
+    "canDoMultipleStops": "أكتر من محطة",
+    "canPayForPurchases": "بيدفع حق المشتريات مقدّماً",
+    "hasDrivingLicense": "معه رخصة",
+    "hasInsurance": "مأمّن",
+    "hasPassengerHelmet": "خوذة للراكب",
+    "institution": "المكتب",
+    "storeName": "المحل",
+    "budgetUsd": "الميزانية",
+    "pickupPlace": "الاستلام",
+    "queuePlace": "مكان الدور",
+    "dropoffPlace": "التوصيل",
+    "destination": "الوجهة",
+    "expectedWaitHours": "الانتظار المتوقّع",
+    "passengers": "الركّاب",
+    "timing": "إيمتى",
+    "deadline": "آخر مهلة",
+    "notes": "ملاحظات",
+    "hours": "{count, plural, one {ساعة} two {ساعتين} few {# ساعات} many {# ساعة} other {# ساعة}}"
   }
 }

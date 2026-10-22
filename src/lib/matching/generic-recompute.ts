@@ -20,6 +20,8 @@ import {
   type MaintenanceSeekerMatchInput,
   type Urgency,
 } from "./maintenance-engine";
+import { computeErrandsMatchScore, dayOfWeek, type ErrandProviderMatchInput, type ErrandSeekerMatchInput } from "./errands-engine";
+import type { ErrandService } from "@/lib/validation/errands";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
@@ -113,6 +115,33 @@ function maintenanceProviderInput(profile: GenericProfileRow): MaintenanceProvid
   };
 }
 
+function errandSeekerInput(profile: GenericProfileRow): ErrandSeekerMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    service: (a.errandService as ErrandService) ?? null,
+    timing: a.timing === "scheduled" ? "scheduled" : "asap",
+    scheduledDay: a.timing === "scheduled" ? dayOfWeek(a.scheduledAt as string | undefined) : null,
+    expectedWaitHours: typeof a.expectedWaitHours === "number" ? a.expectedWaitHours : null,
+    budgetUsd: typeof a.budgetUsd === "number" ? a.budgetUsd : null,
+  };
+}
+
+function errandProviderInput(profile: GenericProfileRow): ErrandProviderMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    serviceAreaIds: (a.serviceAreaIds as string[]) ?? [],
+    services: (a.errandServices as string[]) ?? [],
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    takesUrgentJobs: !!a.takesUrgentJobs,
+    maxWaitHours: typeof a.maxWaitHours === "number" ? a.maxWaitHours : null,
+    canPayForPurchases: !!a.canPayForPurchases,
+    hasDrivingLicense: !!a.hasDrivingLicense,
+    hasInsurance: !!a.hasInsurance,
+  };
+}
+
 function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
   if (categorySlug === "nanny") {
     return computeNannyMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
@@ -122,6 +151,9 @@ function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: Gen
   }
   if (categorySlug === "maintenance") {
     return computeMaintenanceMatchScore(maintenanceSeekerInput(seeker), maintenanceProviderInput(provider));
+  }
+  if (categorySlug === "errands") {
+    return computeErrandsMatchScore(errandSeekerInput(seeker), errandProviderInput(provider));
   }
   if (categorySlug === "nursing") {
     return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));

@@ -14,6 +14,8 @@ import TutoringProviderForm from "./tutoring-provider-form";
 import TutoringSeekerForm from "./tutoring-seeker-form";
 import MaintenanceProviderForm from "./maintenance-provider-form";
 import MaintenanceSeekerForm from "./maintenance-seeker-form";
+import ErrandsProviderForm from "./errands-provider-form";
+import ErrandsSeekerForm from "./errands-seeker-form";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 
@@ -25,6 +27,7 @@ const FORMS: Record<string, { provider: typeof NursingProviderForm; seeker: type
   nursing: { provider: NursingProviderForm, seeker: NursingSeekerForm },
   tutoring: { provider: TutoringProviderForm, seeker: TutoringSeekerForm },
   maintenance: { provider: MaintenanceProviderForm, seeker: MaintenanceSeekerForm },
+  errands: { provider: ErrandsProviderForm, seeker: ErrandsSeekerForm },
 };
 
 type ExistingProfile = {

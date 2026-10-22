@@ -3,6 +3,7 @@ import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { nursingProviderSchema, nursingSeekerSchema } from "@/lib/validation/nursing";
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
+import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
 const base = { fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra", nationality: "lebanese", languageIds: [] };
@@ -75,6 +76,38 @@ describe("profile validation", () => {
     expect(requestResult.success, JSON.stringify(requestResult.error?.issues)).toBe(true);
     expect(maintenanceSeekerSchema.safeParse({ ...request, jobDescription: "fix" }).success).toBe(false);
     expect(maintenanceSeekerSchema.safeParse({ ...request, urgency: "someday" }).success).toBe(false);
+  });
+
+  it("validates delivery & errands profiles per service", () => {
+    const rider = {
+      ...base, errandServices: ["delivery", "queue"], availability, takesUrgentJobs: true,
+      vehicle: "motorcycle", pricing: "per_task", maxWaitHours: 2,
+    };
+    const riderResult = errandProviderSchema.safeParse(rider);
+    expect(riderResult.success, JSON.stringify(riderResult.error?.issues)).toBe(true);
+    // Delivery needs a way to get around; queues need a longest wait.
+    expect(errandProviderSchema.safeParse({ ...rider, vehicle: undefined }).success).toBe(false);
+    expect(errandProviderSchema.safeParse({ ...rider, maxWaitHours: undefined }).success).toBe(false);
+    // Paperwork alone can be done on foot without saying so.
+    expect(errandProviderSchema.safeParse({ ...rider, errandServices: ["paperwork"], vehicle: undefined }).success).toBe(true);
+    // Moto taxi: a licensed rider on a motorcycle.
+    const taxi = { ...rider, errandServices: ["moto_taxi"] };
+    expect(errandProviderSchema.safeParse(taxi).success).toBe(false);
+    expect(errandProviderSchema.safeParse({ ...taxi, hasDrivingLicense: true }).success).toBe(true);
+    expect(errandProviderSchema.safeParse({ ...taxi, hasDrivingLicense: true, vehicle: "car" }).success).toBe(false);
+
+    const request = {
+      fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra",
+      errandService: "delivery", jobDescription: "A set of keys", pickupPlace: "Hamra", dropoffPlace: "Achrafieh", timing: "asap",
+    };
+    const requestResult = errandSeekerSchema.safeParse(request);
+    expect(requestResult.success, JSON.stringify(requestResult.error?.issues)).toBe(true);
+    expect(errandSeekerSchema.safeParse({ ...request, dropoffPlace: undefined }).success).toBe(false);
+    expect(errandSeekerSchema.safeParse({ ...request, timing: "scheduled" }).success).toBe(false);
+    expect(errandSeekerSchema.safeParse({ ...request, timing: "scheduled", scheduledAt: "2026-11-02T09:30" }).success).toBe(true);
+    expect(errandSeekerSchema.safeParse({ ...request, errandService: "paperwork" }).success).toBe(false);
+    expect(errandSeekerSchema.safeParse({ ...request, errandService: "paperwork", institution: "Baabda Municipality" }).success).toBe(true);
+    expect(errandSeekerSchema.safeParse({ ...request, errandService: "moto_taxi", passengers: 3 }).success).toBe(false);
   });
 
   it("rejects a missing governorate with a readable message", () => {

@@ -277,3 +277,55 @@ export function WhatsAppIcon({ className = "" }: IconProps) {
     </svg>
   );
 }
+
+/** Delivery & Errands: a delivery scooter with a box on the back. */
+export function ScooterIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="6" cy="17" r="2.5" />
+      <circle cx="18" cy="17" r="2.5" />
+      <path d="M8.5 17h6l2-6h-3M16.5 11l-1.5-4h-2" />
+      <path d="M3.5 15V9.5h6V14" />
+    </Svg>
+  );
+}
+
+export function BoxIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z" />
+      <path d="m4 7.5 8 4.5 8-4.5M12 12v9M8 5.2l8 4.6" />
+    </Svg>
+  );
+}
+
+export function ClockIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M12 7.5V12l3 2" />
+    </Svg>
+  );
+}
+
+export function BagIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M5.5 8h13l-1 12h-11l-1-12Z" />
+      <path d="M9 10V7a3 3 0 0 1 6 0v3" />
+    </Svg>
+  );
+}
+
+/** Moto taxi: a rider on a motorcycle. */
+export function MotoIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="5.5" cy="17" r="2.8" />
+      <circle cx="18.5" cy="17" r="2.8" />
+      <path d="M5.5 17 9 11h5l2.5 6M14 11l2-3.5h2.5" />
+      <circle cx="11" cy="5.5" r="1.6" />
+      <path d="M11 7.5 10 11" />
+    </Svg>
+  );
+}
