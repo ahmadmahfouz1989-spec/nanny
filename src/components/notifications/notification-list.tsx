@@ -2,7 +2,9 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import { HeartIcon } from "@/components/nav-icons";
-import { notificationLabel } from "@/lib/notification-content";
+import { notificationAction, notificationLabel } from "@/lib/notification-content";
+import { isCategorySlug } from "@/lib/category-slugs";
+import { ChevronIcon } from "@/components/home-icons";
 import { RowListSkeleton } from "@/components/skeletons";
 import { useNotifications, type Notification } from "./notifications-provider";
 
@@ -39,6 +41,8 @@ export function NotificationActions() {
 /** The notification rows, used by the sidebar dropdown and the Notifications page. */
 export default function NotificationList({ onOpen }: { onOpen?: (n: Notification) => void }) {
   const t = useTranslations("Notifications");
+  const tNav = useTranslations("Nav");
+  const categoryName = (slug: string) => (isCategorySlug(slug) ? tNav(slug) : null);
   const locale = useLocale();
   const { items, open } = useNotifications();
 
@@ -59,6 +63,7 @@ export default function NotificationList({ onOpen }: { onOpen?: (n: Notification
     <>
       {items.map((n) => {
         const notes = typeof n.payload?.notes === "string" && n.payload.notes.trim() ? n.payload.notes : null;
+        const action = notificationAction(n, t);
         return (
           <button
             key={n.id}
@@ -67,13 +72,19 @@ export default function NotificationList({ onOpen }: { onOpen?: (n: Notification
               onOpen?.(n);
               open(n);
             }}
-            className={`flex w-full flex-col gap-0.5 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background ${
+            className={`flex w-full items-center gap-3 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background ${
               n.read_at ? "" : "bg-primary-soft/30"
             }`}
           >
-            <span className="text-sm text-ink">{notificationLabel(n, t)}</span>
-            {notes && <span className="text-xs text-muted line-clamp-2">{notes}</span>}
-            <span className="text-[11px] text-muted">{formatRelative(n.created_at, locale, t("justNow"))}</span>
+            <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+              <span className="text-sm text-ink">{notificationLabel(n, t, categoryName)}</span>
+              {notes && <span className="text-xs text-muted line-clamp-2">{notes}</span>}
+              <span className="text-[11px] text-muted">
+                {formatRelative(n.created_at, locale, t("justNow"))}
+                {action && <span className="font-semibold text-primary"> · {action}</span>}
+              </span>
+            </span>
+            <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
           </button>
         );
       })}

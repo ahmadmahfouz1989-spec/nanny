@@ -1,42 +1,10 @@
+import { BabyIcon, BookOpenIcon, NurseIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
+
 const PATHS: Record<string, React.ReactNode> = {
-  heart: (
-    <path
-      d="M12 20.5C12 20.5 3.5 15 3.5 8.9 3.5 5.9 5.8 4 8.3 4c1.7 0 3.1.9 3.7 2.3C12.6 4.9 14 4 15.7 4c2.5 0 4.8 1.9 4.8 4.9 0 6.1-8.5 11.6-8.5 11.6Z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
   spray: (
     <>
       <path d="M9 8h5l2 3v9H7v-9l2-3Z" strokeLinecap="round" strokeLinejoin="round" />
       <path d="M11 8V4h2M16 5h2M16 8h3M17 11h2" strokeLinecap="round" />
-    </>
-  ),
-  book: (
-    <>
-      <path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H19v13H6.5A1.5 1.5 0 0 0 5 18.5V5.5Z" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M5 18.5A1.5 1.5 0 0 0 6.5 20H19" strokeLinecap="round" />
-    </>
-  ),
-  hand: (
-    <path
-      d="M8 11V6a1.5 1.5 0 0 1 3 0v4m0 0V4.5a1.5 1.5 0 0 1 3 0V10m0 0V6.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L6 15c-.8-1.2.9-2.7 2-1.6L8 14"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-  wrench: (
-    <path
-      d="M14.5 6a3.5 3.5 0 0 0-4.6 4.3L4 16.2 6.8 19l5.9-5.9A3.5 3.5 0 0 0 17 8.5L14.8 10 13 8.2 14.5 6Z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
-  ),
-  scooter: (
-    <>
-      <circle cx="6" cy="17" r="2.5" />
-      <circle cx="18" cy="17" r="2.5" />
-      <path d="M8.5 17h6l2-6h-3M16.5 11l-1.5-4h-2M3.5 15V9.5h6V14" strokeLinecap="round" strokeLinejoin="round" />
     </>
   ),
   paw: (
@@ -52,7 +20,20 @@ const PATHS: Record<string, React.ReactNode> = {
   ),
 };
 
+// The live categories draw the same icons Home's category cards do, so a
+// service looks the same in the menu, on Matches and on the categories
+// page. The paths above are for the rest (coming-soon categories).
+const SAME_AS_HOME: Record<string, (p: { className?: string }) => React.ReactNode> = {
+  heart: BabyIcon,
+  hand: NurseIcon,
+  book: BookOpenIcon,
+  wrench: WrenchIcon,
+  scooter: ScooterIcon,
+};
+
 export default function CategoryIcon({ name, className = "" }: { name: string; className?: string }) {
+  const Home = SAME_AS_HOME[name];
+  if (Home) return <Home className={className} />;
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.7}>
       {PATHS[name] ?? PATHS.sparkle}

@@ -3,6 +3,7 @@ import webpush from "web-push";
 import { createTranslator, type AbstractIntlMessages } from "next-intl";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notificationHref, notificationLabel } from "@/lib/notification-content";
+import { isCategorySlug } from "@/lib/category-slugs";
 import { apnsEnabled, fcmEnabled, sendApns, sendFcm } from "@/lib/native-push";
 import type { Json } from "@/lib/supabase/database.types";
 import en from "../../messages/en.json";
@@ -134,7 +135,7 @@ export function sendPushAfterResponse(userIds: string[], build: (locale: Locale)
 }
 
 /** Untyped-key translator, the same shape the bell gets from useTranslations. */
-export function pushTranslator(locale: Locale, namespace: "Notifications" | "Push") {
+export function pushTranslator(locale: Locale, namespace: "Notifications" | "Push" | "Nav") {
   const t = createTranslator({ locale, messages: MESSAGES[locale] as AbstractIntlMessages, namespace });
   return t as unknown as (key: string, values?: Record<string, string | number>) => string;
 }
@@ -166,7 +167,7 @@ export async function notify(rows: NotificationRow | NotificationRow[]) {
   for (const row of list) {
     sendPushAfterResponse([row.user_id], (locale) => ({
       title: "ouiKnow",
-      body: notificationLabel(row, pushTranslator(locale, "Notifications")),
+      body: notificationLabel(row, pushTranslator(locale, "Notifications"), (slug) => (isCategorySlug(slug) ? pushTranslator(locale, "Nav")(slug) : null)),
       url: `/${locale}${notificationHref(row)}`,
       tag: `${row.type}-${String(row.payload.generic_match_id ?? row.payload.post_id ?? "")}`,
     }));

@@ -46,11 +46,30 @@ export default async function ProfilePage({
   // (categories/[slug]/dashboard, the admin queue).
   const genericProfiles = (genericRows ?? []).filter((p) => p.status !== "draft");
 
-  // "Profile" is a global nav tab, not scoped to a category -- only bounce
-  // out to the hub when there's truly nothing to show yet.
+  // No profile anywhere yet: say so and offer the two ways in, rather
+  // than silently landing on the services page.
   if (genericProfiles.length === 0) {
-    redirect({ href: "/categories", locale });
-    return;
+    return (
+      <AppShell active="profile">
+        <div className="mx-auto w-full max-w-lg px-4 py-8 sm:px-6">
+          <h1 className="font-display text-2xl font-bold">{t("noProfileTitle")}</h1>
+          <p className="mt-1 mb-6 text-sm text-muted">{t("noProfileBody")}</p>
+          <div className="flex flex-col gap-3">
+            <Link href="/categories" className={ui.cardHover + " p-5"}>
+              <p className="font-display font-semibold">{t("noProfileNeed")}</p>
+              <p className="mt-1 text-sm text-muted">{t("noProfileNeedBody")}</p>
+            </Link>
+            <Link href="/categories" className={ui.cardHover + " p-5"}>
+              <p className="font-display font-semibold">{t("noProfileOffer")}</p>
+              <p className="mt-1 text-sm text-muted">{t("noProfileOfferBody")}</p>
+            </Link>
+          </div>
+          <Link href="/settings" className={ui.link + " mt-6 inline-block text-sm"}>
+            {t("noProfileSettings")}
+          </Link>
+        </div>
+      </AppShell>
+    );
   }
 
   // Strength and views per profile -- the full checklist is on /u/[id].

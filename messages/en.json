@@ -68,7 +68,18 @@
     "report_resolved": "A report you filed was resolved",
     "post_reply": "Someone replied to your post",
     "post_like": "Someone liked your post",
-    "work_rejected": "One of your work projects was removed"
+    "work_rejected": "One of your work projects was removed",
+    "profile_approved_in": "Your {category} profile was approved",
+    "profile_rejected_in": "Your {category} profile needs changes",
+    "new_match_in": "New {category} match",
+    "actionMatch": "See the match",
+    "actionMatches": "See your matches",
+    "actionFix": "Edit your profile",
+    "actionRating": "See your rating",
+    "actionPost": "Open the post",
+    "actionWork": "See your work",
+    "actionProfile": "Open your profile",
+    "actionReview": "Review it"
   },
   "Push": {
     "title": "Push notifications",
@@ -112,7 +123,12 @@
     "loadError": "Couldn't load — check your connection and try again.",
     "newPost": "New post",
     "newPostsPill": "{count, plural, one {# new post} other {# new posts}}",
-    "workPhotosLabel": "Work: {title}"
+    "workPhotosLabel": "Work: {title}",
+    "composeNeed": "I need help",
+    "composeOffer": "I'm offering help",
+    "placeholderNeed": "What do you need? e.g. A math tutor in Hazmieh, twice a week",
+    "placeholderOffer": "What do you offer? e.g. Babysitting evenings in Jounieh",
+    "postingAs": "Posting as"
   },
   "Home": {
     "badge": "Now live across Lebanon",
@@ -202,8 +218,8 @@
     "notFeaturedLabel": "Not featured — get seen first on other dashboards",
     "manageFeatured": "Manage",
     "role": "Role",
-    "roleSeeker": "Seeker",
-    "roleProvider": "Provider",
+    "roleSeeker": "Looking for help",
+    "roleProvider": "Offering help",
     "email": "Email",
     "phone": "Phone",
     "verified": "Verified",
@@ -219,7 +235,7 @@
     "noPosts": "You haven't posted anything yet.",
     "postClosed": "Closed",
     "deletePost": "Delete",
-    "noProfileTitle": "No profile yet",
+    "noProfileTitle": "You don't have a profile yet",
     "noProfileGeneric": "Create your profile to start browsing matches in this category.",
     "editProfileLink": "Edit your profile",
     "createProfile": "Create profile",
@@ -236,10 +252,19 @@
     "addPhotoAction": "Add a photo",
     "editAndResubmit": "Edit and resubmit",
     "browseFeed": "Browse the feed",
-    "whatsappNumber": "WhatsApp number"
+    "whatsappNumber": "WhatsApp number",
+    "yourServices": "Your services",
+    "addService": "Add",
+    "titleIn": "{category}: your profile",
+    "noProfileBody": "A profile is how you get matched. Make one in any service — it takes a few minutes.",
+    "noProfileNeed": "I need help",
+    "noProfileNeedBody": "Describe what you need and get matched with people near you.",
+    "noProfileOffer": "I offer help",
+    "noProfileOfferBody": "Show what you do so people near you can find you.",
+    "noProfileSettings": "Account, language and notifications are in Settings"
   },
   "Wizard": {
-    "changeRole": "Choose a different role",
+    "changeRole": "← Change my choice",
     "cancel": "Cancel",
     "saveChanges": "Save changes",
     "saving": "Saving…",
@@ -640,7 +665,9 @@
     "loadError": "Couldn't load — check your connection and try again.",
     "viewProfile": "View profile",
     "criteriaService": "Service",
-    "criteriaRequirements": "Fits the job"
+    "criteriaRequirements": "Fits the job",
+    "titleMatchesIn": "{category} matches",
+    "filters": "Filters"
   },
   "Featured": {
     "title": "Get Featured",
@@ -665,7 +692,7 @@
   "Inbox": {
     "navLabel": "Messages",
     "title": "Messages",
-    "empty": "No conversations yet. Tap Message on any of your matches to start one.",
+    "empty": "No conversations yet. Messages start from your matches: open one and tap Message.",
     "noMessagesYet": "No messages yet",
     "selectConversation": "Select a conversation to start chatting.",
     "menu": "More options",
@@ -673,7 +700,8 @@
     "search": "Search",
     "noResults": "No conversations match \"{query}\"",
     "loading": "Loading conversations…",
-    "loadError": "Couldn't load — check your connection and try again."
+    "loadError": "Couldn't load — check your connection and try again.",
+    "emptyAction": "Go to my matches"
   },
   "Report": {
     "action": "Report",
@@ -709,7 +737,7 @@
     "reviewsEmpty": "No written reviews yet.",
     "reviewsError": "Couldn't load reviews. Please try again.",
     "raterGenericSeeker": "— a {category} client they matched with",
-    "raterGenericProvider": "— a {category} provider they matched with",
+    "raterGenericProvider": "— someone offering {category} they matched with",
     "myRatingsTitle": "Ratings you've received",
     "myRatingsEmpty": "No one has rated you yet. Ratings appear here after a match.",
     "loadError": "Couldn't load — check your connection and try again."
@@ -1013,8 +1041,8 @@
     "errorShareContact": "Remove phone numbers or social handles from the title or description first."
   },
   "Menu": {
-    "myProfile": "My Profile",
-    "myProfileHint": "Your profile and account",
+    "myProfile": "Edit profile",
+    "myProfileHint": "Photo, details and account",
     "findService": "Find a Service",
     "findServiceHint": "Browse services and people",
     "myServices": "My Services",
@@ -1033,7 +1061,9 @@
     "language": "Language",
     "logout": "Log out",
     "verified": "Verified",
-    "changePhoto": "Change photo"
+    "changePhoto": "Change photo",
+    "viewPublic": "See your public profile",
+    "createProfile": "Create your profile"
   },
   "Requests": {
     "title": "My Requests",
@@ -1065,17 +1095,20 @@
     "trustFree": "100% free to use",
     "trustPrivate": "Your number stays private",
     "trustPrivateNote": "You chat in the app",
-    "seekerTitle": "Are you a seeker?",
+    "seekerTitle": "Need help with something?",
     "seekerBody": "Find the right person for your needs.",
     "seekerCta": "Find a service",
-    "providerTitle": "Are you a provider?",
-    "providerBody": "Offer your services and get more clients.",
+    "providerTitle": "Offer your services",
+    "providerBody": "Show what you do and get clients near you.",
     "providerCta": "Create your profile",
     "latestPosts": "Latest posts",
     "allLebanon": "All Lebanon",
     "regionLabel": "Your area",
     "searchPeople": "Search people and posts for “{query}”",
-    "serviceLabel": "Service:"
+    "serviceLabel": "Service:",
+    "providerTitleHave": "You're offering help",
+    "providerBodyHave": "See who's looking for what you do.",
+    "providerCtaHave": "My matches"
   },
   "ErrandServices": {
     "delivery": "Delivery & Pickup",

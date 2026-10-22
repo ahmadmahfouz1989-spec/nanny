@@ -9,6 +9,7 @@ import { ui } from "@/lib/ui";
 import { isCategorySlug } from "@/lib/category-slugs";
 import RememberCategory from "@/components/remember-category";
 import { REGION_COOKIE } from "@/lib/region";
+import ServiceSwitcher from "@/components/service-switcher";
 
 const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
   success: "bg-success-soft",
@@ -36,7 +37,7 @@ export default async function CategoryDashboardPage({
     redirect({ href: "/login", locale });
   }
 
-  const { data: category } = await supabase.from("categories").select("id, status").eq("slug", slug).maybeSingle();
+  const { data: category } = await supabase.from("categories").select("id, status, name_en, name_ar").eq("slug", slug).maybeSingle();
   if (!category || category.status !== "live" || !isCategorySlug(slug)) {
     redirect({ href: "/categories", locale });
     return;
@@ -53,6 +54,8 @@ export default async function CategoryDashboardPage({
   // not as something actually submitted and awaiting review.
   const myProfiles = (profiles ?? []).filter((p) => p.status !== "draft");
   const region = (await cookies()).get(REGION_COOKIE)?.value ?? "";
+  const categoryName = locale === "ar" ? category.name_ar : category.name_en;
+  const switcher = <ServiceSwitcher current={slug} />;
 
   // Nothing real submitted yet (no row at all, or only an abandoned draft)
   // -- straight to the role picker rather than a "no profile yet, click
@@ -91,6 +94,8 @@ export default async function CategoryDashboardPage({
           targetMatchId={targetMatchId}
           targetRole={targetRole}
           initialGovernorateId={region}
+          categoryName={categoryName}
+          header={switcher}
         />
       </AppShell>
     );
@@ -107,6 +112,8 @@ export default async function CategoryDashboardPage({
           role={myProfile.role as "seeker" | "provider"}
           targetMatchId={targetMatchId}
           initialGovernorateId={region}
+          categoryName={categoryName}
+          header={switcher}
         />
       </AppShell>
     );
@@ -142,9 +149,10 @@ export default async function CategoryDashboardPage({
 
   return (
     <AppShell active={slug}>
-        <RememberCategory slug={slug} />
+      <RememberCategory slug={slug} />
       <div className="max-w-lg w-full mx-auto px-6 py-8">
-        <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
+        {switcher}
+        <h1 className="font-display text-2xl font-bold mb-6">{t("titleIn", { category: categoryName })}</h1>
 
         <div className={ui.card + " overflow-hidden"}>
           <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>

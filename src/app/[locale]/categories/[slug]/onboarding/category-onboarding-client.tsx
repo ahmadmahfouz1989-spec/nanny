@@ -2,10 +2,6 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import BrandMark from "@/components/brand-mark";
-import LocaleSwitcher from "@/components/locale-switcher";
-import ThemeSwitcher from "@/components/theme-switcher";
-import { Link } from "@/i18n/navigation";
 import NannyProviderForm from "./nanny-provider-form";
 import NannySeekerForm from "./nanny-seeker-form";
 import NursingProviderForm from "./nursing-provider-form";
@@ -149,19 +145,7 @@ export default function CategoryOnboardingClient({
 
   return (
     <>
-      <header className="flex items-center justify-between px-6 sm:px-10 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))]">
-        <div className="flex items-center gap-5">
-          <BrandMark />
-          <Link href="/categories" className={ui.link + " text-sm"}>
-            {t("backToCategories")}
-          </Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <ThemeSwitcher />
-          <LocaleSwitcher />
-        </div>
-      </header>
-      <main className="flex-1 flex items-start justify-center px-6 pb-16">
+      <div className="flex items-start justify-center px-4 py-6 sm:px-6 sm:py-8">
         <div className="w-full max-w-lg">
           <div className={ui.card + " p-8"}>
             <h1 className="font-display text-2xl font-semibold mb-2">{t("roleTitle", { category: categoryName })}</h1>
@@ -190,7 +174,7 @@ export default function CategoryOnboardingClient({
             {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger mt-4">{error}</p>}
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

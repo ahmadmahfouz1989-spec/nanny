@@ -2,6 +2,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { categoryName, categoryTagline, getCategories } from "@/lib/categories";
 import { normalizeServiceText } from "@/lib/service-text";
+import { createClient } from "@/lib/supabase/server";
 import en from "../../../messages/en.json";
 import ar from "../../../messages/ar.json";
 import {
@@ -90,6 +91,20 @@ export default async function Discover() {
   const t = await getTranslations("Discover");
   const locale = await getLocale();
   const live = (await getCategories()).filter((c) => c.status === "live" && c.href);
+  // Someone already offering a service is past "create your profile":
+  // that card leads to their matches instead.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { count: offering } = user
+    ? await supabase
+        .from("generic_profiles")
+        .select("id", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .eq("role", "provider")
+        .neq("status", "draft")
+    : { count: 0 };
 
   const searchable: SearchableService[] = live.map((c) => ({
     slug: c.slug,
@@ -190,10 +205,10 @@ export default async function Discover() {
           <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-soft text-secondary">
             <ProviderIcon className="h-5 w-5" />
           </span>
-          <p className="font-display text-sm font-bold text-ink">{t("providerTitle")}</p>
-          <p className="flex-1 text-xs text-muted">{t("providerBody")}</p>
-          <Link href="/categories" className="inline-flex items-center justify-center gap-1 self-start rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-white">
-            {t("providerCta")}
+          <p className="font-display text-sm font-bold text-ink">{offering ? t("providerTitleHave") : t("providerTitle")}</p>
+          <p className="flex-1 text-xs text-muted">{offering ? t("providerBodyHave") : t("providerBody")}</p>
+          <Link href={offering ? "/dashboard" : "/categories"} className="inline-flex items-center justify-center gap-1 self-start rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-white">
+            {offering ? t("providerCtaHave") : t("providerCta")}
             <ChevronIcon className="h-3.5 w-3.5" />
           </Link>
         </div>

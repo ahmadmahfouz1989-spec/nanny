@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import BrandMark from "@/components/brand-mark";
-import LocaleSwitcher from "@/components/locale-switcher";
-import ThemeSwitcher from "@/components/theme-switcher";
 import { ui } from "@/lib/ui";
+import { APP_MAIN_ID } from "@/components/shell/mobile-chrome";
 
 /**
  * The profile form layout for every category, both creating and editing:
@@ -37,15 +35,20 @@ export default function EditShell({
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    // Inside the app frame the page scrolls in <main>, not the window.
+    const scroller = document.getElementById(APP_MAIN_ID);
     function onScroll() {
-      const scrollable = document.documentElement.scrollHeight - window.innerHeight;
-      setProgress(scrollable > 0 ? Math.min(1, window.scrollY / scrollable) : 1);
+      const el = scroller ?? document.documentElement;
+      const scrollable = el.scrollHeight - el.clientHeight;
+      const top = scroller ? scroller.scrollTop : window.scrollY;
+      setProgress(scrollable > 0 ? Math.min(1, top / scrollable) : 1);
     }
     onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
+    const target: HTMLElement | Window = scroller ?? window;
+    target.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onScroll);
     return () => {
-      window.removeEventListener("scroll", onScroll);
+      target.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", onScroll);
     };
   }, []);
@@ -58,24 +61,16 @@ export default function EditShell({
           style={{ transform: `scaleX(${progress})` }}
         />
       </div>
-      <header className="flex items-center justify-between gap-3 px-4 pb-6 pt-[calc(1.5rem+env(safe-area-inset-top))] sm:px-10">
-        <div className="flex min-w-0 items-center gap-4 sm:gap-5">
-          <BrandMark compact />
+      <div className="flex items-start justify-center px-4 py-6 pb-16 sm:px-6 sm:py-8">
+        <div className="w-full max-w-lg">
+          {/* The app's top bar has the back arrow; this goes back one step
+              inside the form instead (to choosing seeker or provider). */}
           {onBack && (
-            <button type="button" onClick={onBack} className={ui.link + " whitespace-nowrap text-sm"}>
+            <button type="button" onClick={onBack} className={ui.link + " mb-3 text-sm"}>
               {backLabel}
             </button>
           )}
-        </div>
-        <div className="flex shrink-0 items-center gap-3 sm:gap-4">
-          <ThemeSwitcher />
-          <LocaleSwitcher />
-        </div>
-      </header>
-
-      <main className="flex-1 flex items-start justify-center px-6 pb-16">
-        <div className="w-full max-w-lg">
-          <div className={ui.card + " p-8"}>
+          <div className={ui.card + " p-6 sm:p-8"}>
             <h1 className="font-display text-2xl font-semibold">{title}</h1>
             {onSave ? <p className="mt-1 mb-6 text-xs text-muted">{tw("requiredNote")}</p> : <div className="mb-4" />}
 
@@ -97,7 +92,7 @@ export default function EditShell({
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }
