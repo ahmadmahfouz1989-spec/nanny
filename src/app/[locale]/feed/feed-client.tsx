@@ -14,6 +14,7 @@ import { useOnAppRefresh } from "@/components/shell/pull-to-refresh";
 import PostReplies from "./post-replies";
 import { getJson, request } from "@/lib/request";
 import { haptic } from "@/lib/native-app";
+import { usePathname, useRouter } from "@/i18n/navigation";
 
 const FEED_POSTS_ID = "feed-posts";
 
@@ -167,13 +168,24 @@ export default function FeedClient({
   function openComposer(behavior: ScrollBehavior = "smooth") {
     scrollToPosts(behavior);
     document.getElementById(POST_COMPOSER_INPUT_ID)?.focus({ preventScroll: true });
+    // The phone may not raise the keyboard for a focus it didn't see a tap
+    // for, so the box also lights up briefly to show where to write.
+    const box = document.getElementById(FEED_POSTS_ID);
+    box?.classList.add("ring-[3px]", "ring-primary/40");
+    window.setTimeout(() => box?.classList.remove("ring-[3px]", "ring-primary/40"), 1400);
   }
 
+  // "Post a Request" links to /feed?compose=1 -- also while already on
+  // Home, where the page doesn't remount. The flag is taken off the
+  // address afterwards so the next tap is a change again.
+  const router = useRouter();
+  const pathname = usePathname();
   useEffect(() => {
-    if (compose && !adminMode) openComposer("auto");
-    // Once, on arriving from "Post a Request".
+    if (!compose || adminMode) return;
+    openComposer(posts === null ? "auto" : "smooth");
+    router.replace(pathname, { scroll: false });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [compose]);
 
   useOnAppRefresh(() => {
     if (adminMode) return;
@@ -384,7 +396,10 @@ export default function FeedClient({
             </div>
           ))}
 
-        <div id={FEED_POSTS_ID} className={ui.card + ` scroll-mt-4 overflow-hidden ${posts === null ? "flex flex-col flex-1" : ""}`}>
+        <div
+          id={FEED_POSTS_ID}
+          className={ui.card + ` scroll-mt-4 overflow-hidden transition-shadow duration-500 ${posts === null ? "flex flex-col flex-1" : ""}`}
+        >
         {/* Composer — avatar + borderless input, X-style. Admins moderate
             the feed rather than post to it (/admin/feed). */}
         {!adminMode && (
