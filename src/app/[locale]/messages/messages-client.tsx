@@ -21,6 +21,7 @@ type Conversation = {
   matchId: string;
   categorySlug: string;
   counterpart: { id: string; name: string; photoUrl: string | null };
+  about: string | null;
   lastMessage: { body: string; createdAt: string } | null;
   unreadCount: number;
 };
@@ -123,6 +124,17 @@ export default function MessagesClient() {
   );
 
   const selectedConversation = conversations?.find((c) => c.matchId === selected) ?? null;
+
+  // An open chat takes the whole phone screen: its own header (with back)
+  // replaces the app's top bar and tabs -- see html[data-chat] in globals.css.
+  const chatOpen = !!selected;
+  useEffect(() => {
+    if (!chatOpen) return;
+    document.documentElement.dataset.chat = "open";
+    return () => {
+      delete document.documentElement.dataset.chat;
+    };
+  }, [chatOpen]);
   const selectedIndex = conversations?.findIndex((c) => c.matchId === selected) ?? -1;
 
   return (
@@ -223,6 +235,9 @@ export default function MessagesClient() {
               photoUrl={selectedConversation.counterpart.photoUrl}
               tone={TONES[selectedIndex % TONES.length]}
               profileId={selectedConversation.counterpart.id}
+              subtitle={[tNav.has(selectedConversation.categorySlug) ? tNav(selectedConversation.categorySlug) : "", selectedConversation.about]
+                .filter(Boolean)
+                .join(" · ")}
               onBack={() => setSelected(null)}
               onBlocked={() => removeConversation(selectedConversation.matchId)}
             />

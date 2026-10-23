@@ -333,6 +333,19 @@ html[data-chrome="hidden"] .app-chrome-bottom {
   transform: translateY(100%);
 }
 
+/* An open conversation on a phone gets the whole screen: the chat's own
+   header and back arrow stand in for the app's bars (messages-client.tsx). */
+@media (max-width: 639px) {
+  html[data-chat="open"] .app-chrome-top,
+  html[data-chat="open"] .app-chrome-bottom {
+    display: none;
+  }
+  html[data-chat="open"] #app-main {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
 /* Sticky bars inside pages (a profile's section tabs) sit just under the
    phone's top bar, and move up to the top when that bar slides away.
    Sticky offsets count from inside <main>'s top padding -- which is the

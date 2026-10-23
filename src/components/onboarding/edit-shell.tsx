@@ -19,8 +19,11 @@ export default function EditShell({
   onBack,
   backLabel,
   submitting,
+  saveLabel,
   children,
 }: {
+  /** The button's words for something new ("Send my request"); edits keep "Save changes". */
+  saveLabel?: string;
   title: string;
   error?: string | null;
   onCancel: () => void;
@@ -86,7 +89,7 @@ export default function EditShell({
               </button>
               {onSave && (
                 <button type="button" onClick={onSave} disabled={submitting} className={ui.buttonPrimary}>
-                  {submitting ? tw("saving") : tw("saveChanges")}
+                  {submitting ? tw("saving") : (saveLabel ?? tw("saveChanges"))}
                 </button>
               )}
             </div>

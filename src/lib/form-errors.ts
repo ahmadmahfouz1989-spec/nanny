@@ -13,6 +13,9 @@ function isBlank(input: unknown) {
 }
 
 function messageKey(issue: z.ZodError["issues"][number]): string {
+  // A cross-field rule (superRefine) knows what's wrong better than any
+  // generic hint, and names its own Wizard message.
+  if (issue.code === "custom" && typeof issue.params?.key === "string") return issue.params.key;
   switch (issue.code) {
     case "too_small":
       if (issue.origin === "array") return "errorPickOne";

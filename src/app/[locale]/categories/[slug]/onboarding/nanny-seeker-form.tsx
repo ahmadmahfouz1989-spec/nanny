@@ -418,6 +418,7 @@ export default function NannySeekerForm({
   return (
     <EditShell
       title={isEdit ? t("editTitle") : t("createTitle")}
+      saveLabel={isEdit ? undefined : tw("submitRequest")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={handleCancel}
       onSave={handleSave}

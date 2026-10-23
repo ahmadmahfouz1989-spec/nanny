@@ -9,6 +9,7 @@ import { useOnAppRefresh } from "@/components/shell/pull-to-refresh";
 import MatchCard, { type Match } from "./match-card";
 import MatchFilters from "./match-filters";
 import { ui } from "@/lib/ui";
+import { Link } from "@/i18n/navigation";
 
 const PAGE_SIZE = 20;
 
@@ -186,7 +187,26 @@ export default function GenericResults({
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>
           <CreateProfileIllustration className="w-full h-32" />
-          <p className="text-sm text-muted p-6">{hasFilters ? t("emptyFiltered") : t("empty")}</p>
+          <div className="flex flex-col gap-4 p-6">
+            <p className="text-sm text-muted">{hasFilters ? t("emptyFiltered") : t(myRole === "provider" ? "emptyProvider" : "emptySeeker")}</p>
+            {/* Something to do now, not just "check back soon". */}
+            <div className="flex flex-wrap gap-2">
+              {hasFilters ? (
+                <button type="button" onClick={clearFilters} className={ui.buttonPrimary}>
+                  {t("clearFilters")}
+                </button>
+              ) : (
+                <>
+                  <Link href="/feed?compose=1" className={ui.buttonPrimary}>
+                    {t(myRole === "provider" ? "emptyPostOffer" : "emptyPostNeed")}
+                  </Link>
+                  <Link href={`/categories/${categorySlug}/onboarding${myRole ? `?role=${myRole}` : ""}`} className={ui.buttonSecondary}>
+                    {t(myRole === "provider" ? "emptyWiden" : "emptyEdit")}
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
         </div>
       )}
 

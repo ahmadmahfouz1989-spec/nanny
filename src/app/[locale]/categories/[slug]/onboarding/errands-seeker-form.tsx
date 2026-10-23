@@ -6,7 +6,6 @@ import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
-import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import ErrandServiceIcon from "@/components/errand-service-icon";
 import { ChevronIcon } from "@/components/home-icons";
@@ -121,7 +120,6 @@ export default function ErrandsSeekerForm({
   // submitted anything yet.
   const isRealEdit = isEdit && initialProfile!.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
-  const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the
@@ -145,7 +143,9 @@ export default function ErrandsSeekerForm({
     fullName: form.fullName,
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
-    locationDetail: form.locationDetail,
+    // The places below already say where; the area shown on the request
+    // is the first of them, not a second "neighbourhood" question.
+    locationDetail: (form.dropoffPlace || form.pickupPlace || form.institution || form.locationDetail).trim().slice(0, 120),
     errandService: service ?? undefined,
     jobDescription: form.jobDescription,
     pickupPlace: asks("pickupPlace") ? text(form.pickupPlace) : undefined,
@@ -176,7 +176,8 @@ export default function ErrandsSeekerForm({
     const res = await request("/api/generic-profile", {
       method: isEdit ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, profilePhotoUrl: photoUrl ?? undefined }),
+      // No photo on a request: an errand is judged by what it asks for.
+      body: JSON.stringify(payload),
     });
     setSubmitting(false);
 
@@ -230,6 +231,7 @@ export default function ErrandsSeekerForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
+      saveLabel={isRealEdit ? undefined : tw("submitRequest")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
@@ -271,6 +273,15 @@ export default function ErrandsSeekerForm({
         {asks("pickupPlace") && placeInput("pickupPlace", t(`${service}.pickup`))}
         {asks("dropoffPlace") && placeInput("dropoffPlace", t(`${service}.dropoff`))}
         {(asks("pickupPlace") || asks("dropoffPlace")) && <p className="-mt-1 text-xs text-muted">{t("placeHint")}</p>}
+        <FieldLabel field="locationId" errors={fieldErrors}>{t("governorate")}</FieldLabel>
+        <LocationPicker
+          governorateId={form.locationId}
+          detail={form.locationDetail}
+          onGovernorate={(id) => update("locationId", id)}
+          onDetail={(v) => update("locationDetail", v)}
+          errors={fieldErrors}
+          showDetail={false}
+        />
         {asks("expectedWaitHours") && (
           <>
             <FieldLabel field="expectedWaitHours" errors={fieldErrors} optional>{t("expectedWaitHours")}</FieldLabel>
@@ -322,16 +333,6 @@ export default function ErrandsSeekerForm({
         <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
-        {initialProfile && (
-          <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
-        )}
-        <LocationPicker
-          governorateId={form.locationId}
-          detail={form.locationDetail}
-          onGovernorate={(id) => update("locationId", id)}
-          onDetail={(v) => update("locationDetail", v)}
-          errors={fieldErrors}
-        />
         <FieldLabel field="notes" errors={fieldErrors} optional>{t("notes")}</FieldLabel>
         <textarea className={ui.input} rows={2} maxLength={500} placeholder={t("notesPlaceholder")} value={form.notes} onChange={(e) => update("notes", e.target.value)} />
       </div>

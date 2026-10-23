@@ -120,6 +120,9 @@ export default async function CategoryDashboardPage({
   }
 
   const rejected = myProfile.moderation_status === "rejected";
+  // A customer has a request waiting, not a profile; and the photo nudge is
+  // for providers, whose photo is what customers judge them by.
+  const isRequest = myProfile.role === "seeker";
   const moderationTone = rejected ? "danger" : "warning";
   const editHref = `/categories/${slug}/onboarding?role=${myProfile.role}`;
 
@@ -152,11 +155,11 @@ export default async function CategoryDashboardPage({
       <RememberCategory slug={slug} />
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         {switcher}
-        <h1 className="font-display text-2xl font-bold mb-6">{t("titleIn", { category: categoryName })}</h1>
+        <h1 className="font-display text-2xl font-bold mb-6">{t(isRequest ? "titleInRequest" : "titleIn", { category: categoryName })}</h1>
 
         <div className={ui.card + " overflow-hidden"}>
           <div className={`flex items-center justify-between px-6 py-4 ${MODERATION_BAND[moderationTone]}`}>
-            <p className="font-display text-lg font-bold">{t("yourProfile")}</p>
+            <p className="font-display text-lg font-bold">{t(isRequest ? "yourRequest" : "yourProfile")}</p>
             <span className={ui.badge(moderationTone)}>{rejected ? t("statusRejected") : t("statusPending")}</span>
           </div>
           <div className="flex flex-col gap-5 p-6">
@@ -181,7 +184,7 @@ export default async function CategoryDashboardPage({
               ))}
             </ol>
 
-            <p className="text-sm text-ink/80">{rejected ? t("descriptionRejected") : t("descriptionPendingNext")}</p>
+            <p className="text-sm text-ink/80">{rejected ? t("descriptionRejected") : t(isRequest ? "descriptionPendingRequest" : "descriptionPendingNext")}</p>
 
             {rejectionNote && (
               <div className="rounded-xl bg-danger-soft px-4 py-3 text-sm">
@@ -190,7 +193,7 @@ export default async function CategoryDashboardPage({
               </div>
             )}
 
-            {!rejected && !myProfile.profile_photo_url && (
+            {!rejected && !isRequest && !myProfile.profile_photo_url && (
               <div className="rounded-xl bg-primary-soft/50 px-4 py-3 text-sm">
                 <p className="font-semibold">{t("addPhotoTitle")}</p>
                 <p className="mt-0.5 text-ink/80">{t("addPhotoBody")}</p>
@@ -199,7 +202,7 @@ export default async function CategoryDashboardPage({
 
             <div className="flex flex-wrap gap-3">
               <Link href={editHref} className={ui.buttonPrimary}>
-                {rejected ? t("editAndResubmit") : !myProfile.profile_photo_url ? t("addPhotoAction") : t("editProfile")}
+                {rejected ? t("editAndResubmit") : !isRequest && !myProfile.profile_photo_url ? t("addPhotoAction") : isRequest ? t("editRequest") : t("editProfile")}
               </Link>
               {!rejected && (
                 <Link href="/feed" className={ui.buttonSecondary}>
