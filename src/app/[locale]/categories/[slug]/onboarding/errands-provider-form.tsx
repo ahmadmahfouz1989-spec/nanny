@@ -10,6 +10,7 @@ import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import ErrandServiceIcon from "@/components/errand-service-icon";
+import IdDocumentField from "@/components/onboarding/id-document-field";
 import { useGovernorates, governorateName } from "@/components/onboarding/use-governorates";
 import { DAYS } from "@/lib/validation/profile";
 import { ERRAND_SERVICES, PRICING, VEHICLES, errandProviderSchema, type ErrandService } from "@/lib/validation/errands";
@@ -136,6 +137,8 @@ export default function ErrandsProviderForm({
   const isRealEdit = isEdit && initialProfile!.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
+  // Required: an ID or licence photo, uploaded on its own (see IdDocumentField).
+  const [idStatus, setIdStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the
@@ -201,7 +204,7 @@ export default function ErrandsProviderForm({
     setError(null);
 
     const parsed = errandProviderSchema.safeParse(payload);
-    if (!parsed.success) {
+    if (!parsed.success || !idStatus) {
       setShowErrors(true);
       scrollToFirstError();
       return;
@@ -235,7 +238,7 @@ export default function ErrandsProviderForm({
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
       saveLabel={isRealEdit ? undefined : tw("submitProfile")}
-      error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
+      error={error ?? (Object.keys(fieldErrors).length > 0 || (showErrors && !idStatus) ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}
       onBack={onBack}
@@ -252,6 +255,7 @@ export default function ErrandsProviderForm({
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
+        {initialProfile && <IdDocumentField profileId={initialProfile.id} onStatus={setIdStatus} error={showErrors} />}
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}

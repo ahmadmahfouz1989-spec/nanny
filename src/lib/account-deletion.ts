@@ -4,7 +4,8 @@ type Admin = ReturnType<typeof createAdminClient>;
 
 // Every bucket a user uploads into with their own session, all keyed by a
 // leading `${userId}/` folder (see the storage policies in the migrations).
-const USER_BUCKETS = ["nanny-photos", "parent-photos", "generic-photos", "voice-notes"] as const;
+// id-documents is written by the server, but keyed the same way.
+const USER_BUCKETS = ["nanny-photos", "parent-photos", "generic-photos", "voice-notes", "id-documents"] as const;
 const LIST_PAGE_SIZE = 1000;
 
 // Supabase refuses to delete an auth user who still owns Storage objects,

@@ -230,6 +230,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"id_documents": {
+                  Row: {
+                    "path": string,"profile_id": string,"reviewed_at": string | null,"status": string,"uploaded_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "path": string,"profile_id": string,"reviewed_at"?: string | null,"status"?: string,"uploaded_at"?: string
+                  }
+                  Update: {
+                    "path"?: string,"profile_id"?: string,"reviewed_at"?: string | null,"status"?: string,"uploaded_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "id_documents_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: true
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"languages": {
                   Row: {
                     "code": string,"id": string,"name_ar": string,"name_en": string,"name_fr": string

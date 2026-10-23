@@ -109,13 +109,22 @@ export async function DELETE(request: Request) {
   }
 
   const db = createAdminClient();
-  await db
+  const { data: removed } = await db
     .from("generic_profiles")
     .delete()
     .eq("user_id", user.id)
     .eq("category_id", category.id)
     .eq("role", role)
-    .eq("status", "draft");
+    .eq("status", "draft")
+    .select("id");
+  // An ID photo uploaded before changing their mind: its row went with
+  // the draft, its file is removed here (only ever under their own folder).
+  if (removed?.length) {
+    const { data: files } = await db.storage.from("id-documents").list(user.id);
+    const prefixes = removed.map((r) => `${r.id}-`);
+    const stale = (files ?? []).filter((f) => prefixes.some((p) => f.name.startsWith(p))).map((f) => `${user.id}/${f.name}`);
+    if (stale.length) await db.storage.from("id-documents").remove(stale).catch(() => {});
+  }
 
   return NextResponse.json({ status: "ok" });
 }
