@@ -1,37 +1,21 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { categoryName, categoryTagline, getCategories } from "@/lib/categories";
+import { categoryName, getCategories } from "@/lib/categories";
 import { normalizeServiceText } from "@/lib/service-text";
 import { createClient } from "@/lib/supabase/server";
 import en from "../../../messages/en.json";
 import ar from "../../../messages/ar.json";
 import {
-  BabyIcon,
-  BookOpenIcon,
   ChevronIcon,
-  DotsIcon,
   FlagReportIcon,
   FreeIcon,
   LockIcon,
-  NurseIcon,
   PersonIcon,
   ProviderIcon,
-  ScooterIcon,
   ShieldCheckIcon,
-  WrenchIcon,
 } from "@/components/home-icons";
 import ServiceSearch, { type SearchableService } from "./service-search";
-
-// How each service looks on Home, and the labels search also matches
-// ("math" finds Tutoring, "plumber" Home maintenance, "moto taxi" Delivery
-// & Errands).
-const LOOK: Record<string, { Icon: (p: { className?: string }) => React.ReactNode; card: string; circle: string; words?: string }> = {
-  nanny: { Icon: BabyIcon, card: "bg-primary-soft/60", circle: "bg-primary-soft text-primary" },
-  nursing: { Icon: NurseIcon, card: "bg-secondary-soft/60", circle: "bg-secondary-soft text-secondary", words: "CareSpecialties" },
-  tutoring: { Icon: BookOpenIcon, card: "bg-berry-soft/60", circle: "bg-berry-soft text-berry", words: "Subjects" },
-  maintenance: { Icon: WrenchIcon, card: "bg-accent-soft/70", circle: "bg-accent-soft text-accent-hover", words: "Trades" },
-  errands: { Icon: ScooterIcon, card: "bg-success-soft/60", circle: "bg-success-soft text-success", words: "ErrandServices" },
-};
+import CategoryTiles, { LOOK } from "@/components/category-tiles";
 
 function labels(namespace: string | undefined): string {
   if (!namespace) return "";
@@ -150,33 +134,7 @@ export default async function Discover() {
             <ChevronIcon className="h-4 w-4" />
           </Link>
         </div>
-        <div className="grid grid-cols-3 gap-2.5">
-          {live.map((c) => {
-            const look = LOOK[c.slug] ?? { Icon: DotsIcon, card: "bg-sky-soft/70", circle: "bg-sky-soft text-sky-ink" };
-            return (
-              <Link key={c.id} href={c.href!} className={`flex flex-col gap-2 rounded-2xl p-3 transition active:scale-[0.98] ${look.card}`}>
-                <span className={`flex h-11 w-11 items-center justify-center rounded-full ${look.circle}`}>
-                  <look.Icon className="h-6 w-6" />
-                </span>
-                <span className="font-display text-sm font-bold leading-tight text-ink">{categoryName(c, locale)}</span>
-                <span className="flex items-end justify-between gap-1">
-                  <span className="line-clamp-2 text-[11px] leading-snug text-muted">{categoryTagline(c, locale)}</span>
-                  <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
-                </span>
-              </Link>
-            );
-          })}
-          <Link href="/categories" className="flex flex-col gap-2 rounded-2xl bg-sky-soft/70 p-3 transition active:scale-[0.98]">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-sky-soft text-sky-ink">
-              <DotsIcon className="h-6 w-6" />
-            </span>
-            <span className="font-display text-sm font-bold leading-tight text-ink">{t("more")}</span>
-            <span className="flex items-end justify-between gap-1">
-              <span className="text-[11px] leading-snug text-muted">{t("comingSoon")}</span>
-              <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
-            </span>
-          </Link>
-        </div>
+        <CategoryTiles categories={live} locale={locale} more={{ title: t("more"), note: t("comingSoon") }} />
       </section>
 
       <ul className="grid grid-cols-4 divide-x divide-border rounded-2xl border border-border bg-secondary-soft/40 py-3 rtl:divide-x-reverse">
