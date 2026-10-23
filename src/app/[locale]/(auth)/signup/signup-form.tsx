@@ -6,6 +6,8 @@ import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
 import WhatsAppAuth from "@/components/whatsapp-auth";
+import EmailCodeForm from "@/components/email-code-form";
+import { useRouter } from "@/i18n/navigation";
 import { trackMetaEvent } from "@/components/meta-pixel";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
@@ -17,6 +19,7 @@ import { request } from "@/lib/request";
 export default function SignupForm() {
   const t = useTranslations("Signup");
   const tAuth = useTranslations("Auth");
+  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -56,32 +59,20 @@ export default function SignupForm() {
     }
 
     trackMetaEvent("CompleteRegistration");
+    const body = await res.json().catch(() => ({}));
+    if (body?.signedIn) {
+      // No confirmation step (local development): straight to the start.
+      router.replace("/welcome");
+      router.refresh();
+      return;
+    }
     setSubmitted(true);
   }
 
   if (submitted) {
     return (
       <AuthCard>
-        <div className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-secondary-soft text-secondary">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M4 6h16v12H4V6Zm0 0 8 7 8-7"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h1 className="font-display text-2xl font-semibold mb-2">{tAuth("checkEmailTitle")}</h1>
-          <p className="text-muted text-sm">
-            {tAuth.rich("checkEmailBody", {
-              email,
-              mark: (chunks) => <span className="text-ink">{chunks}</span>,
-            })}
-          </p>
-        </div>
+        <EmailCodeForm email={email} />
       </AuthCard>
     );
   }

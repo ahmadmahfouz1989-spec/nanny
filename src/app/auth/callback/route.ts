@@ -22,9 +22,9 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const origin = getPublicOrigin(request);
   const code = searchParams.get("code");
-  // Signup no longer chooses a category up front, so a confirmation link
-  // with no explicit `next` (e.g. a bare /signup with no category hint)
-  // lands on the hub to choose one, not a specific category's dashboard.
+  // With no explicit `next`, a sign-in lands on the welcome question
+  // ("what brings you here?"), which sends anyone who already has a
+  // profile on to Home.
   // Google sign-in carries its destination in a cookie instead (see
   // GoogleAuthButton). Either way it must be a same-origin path.
   const cookieStore = await cookies();
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   const next =
     safeReturnPath(searchParams.get("next")) ??
     safeReturnPath(cookieNext ? decodeURIComponent(cookieNext) : null) ??
-    "/categories";
+    "/welcome";
   const locale = await currentLocale();
 
   if (code) {

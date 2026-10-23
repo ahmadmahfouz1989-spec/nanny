@@ -1,19 +1,10 @@
 import { Link } from "@/i18n/navigation";
 import { categoryName, categoryTagline, type Category } from "@/lib/categories";
 import CategoryIcon from "@/components/category-icon";
-import { BabyIcon, BookOpenIcon, ChevronIcon, DotsIcon, NurseIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
+import { ChevronIcon, DotsIcon } from "@/components/home-icons";
+import { LOOK, type Look } from "@/components/category-look";
 
-// How each service looks wherever services are listed (Home, the services
-// page), and the label set search also matches ("math" finds Tutoring).
-type Look = { Icon: (p: { className?: string }) => React.ReactNode; card: string; circle: string; words?: string };
-
-export const LOOK: Record<string, Look> = {
-  nanny: { Icon: BabyIcon, card: "bg-primary-soft/60", circle: "bg-primary-soft text-primary" },
-  nursing: { Icon: NurseIcon, card: "bg-secondary-soft/60", circle: "bg-secondary-soft text-secondary", words: "CareSpecialties" },
-  tutoring: { Icon: BookOpenIcon, card: "bg-berry-soft/60", circle: "bg-berry-soft text-berry", words: "Subjects" },
-  maintenance: { Icon: WrenchIcon, card: "bg-accent-soft/70", circle: "bg-accent-soft text-accent-hover", words: "Trades" },
-  errands: { Icon: ScooterIcon, card: "bg-success-soft/60", circle: "bg-success-soft text-success", words: "ErrandServices" },
-};
+export { LOOK };
 
 const OTHER: Look = { Icon: DotsIcon, card: "bg-sky-soft/70", circle: "bg-sky-soft text-sky-ink" };
 

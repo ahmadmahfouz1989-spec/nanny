@@ -109,7 +109,7 @@ function WhatsAppAuthPanel({ mode, next = null }: { mode: "login" | "signup"; ne
       return;
     }
 
-    router.push(next ?? (verified?.newAccount ? "/categories" : "/feed"));
+    router.push(next ?? (verified?.newAccount ? "/welcome" : "/feed"));
     router.refresh();
   }
 

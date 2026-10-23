@@ -163,7 +163,17 @@
     "checkInboxTitle": "تحقق من بريدك",
     "checkInboxBody": "إذا كان هناك حساب مرتبط بـ <mark>{identifier}</mark>، فستصلك تعليمات الاسترداد قريبًا.",
     "continueWithGoogle": "المتابعة باستخدام Google",
-    "orDivider": "أو"
+    "orDivider": "أو",
+    "codeTitle": "اكتب الرمز",
+    "codeBody": "بعتنالك رمز من ٦ أرقام على <mark>{email}</mark>. اكتبه هون تا تكمّل التسجيل.",
+    "codeLabel": "رمز من ٦ أرقام",
+    "codeContinue": "كمّل",
+    "codeChecking": "عم نتحقّق…",
+    "codeWrong": "الرمز ما زبط. شوف آخر إيميل، أو اطلب رمز جديد.",
+    "codeResend": "ابعتلي رمز جديد",
+    "codeResendIn": "فيك تطلب رمز جديد بعد {seconds} ثانية",
+    "codeResent": "رمز جديد بالطريق.",
+    "codeOrLink": "عم تقرا الإيميل على جهاز تاني؟ الزر اللي فيه بيزبط كمان."
   },
   "Signup": {
     "title": "أنشئ حسابك",
@@ -293,7 +303,8 @@
     "errorMaxWait": "اكتب قدّيش ساعة بتنطر.",
     "errorPlace": "اكتب المنطقة أو علامة مميّزة.",
     "errorInstitution": "اكتب المكتب أو المؤسسة.",
-    "errorWhen": "اختار التاريخ والوقت."
+    "errorWhen": "اختار التاريخ والوقت.",
+    "loading": "عم يحمّل…"
   },
   "Location": {
     "governorate": "المحافظة",
@@ -1291,5 +1302,18 @@
     "posts": "منشورات",
     "postLookingFor": "بيدوّر على",
     "postOffering": "بيقدّم"
+  },
+  "Welcome": {
+    "title": "شو جابك على ouiKnow؟",
+    "subtitle": "اختار وحدة لتبلّش — فيك تعمل التنتين بعدين.",
+    "need": "بدّي مساعدة",
+    "needBody": "مربية، ممرضة، أستاذ، تصليح، توصيل…",
+    "offer": "بقدّم مساعدة",
+    "offerBody": "خلّي الناس القريبين منك يلاقوك إذا بدّن اللي بتعمله.",
+    "skip": "بس بدّي اتفرّج هلّق",
+    "back": "→ رجوع",
+    "whichNeed": "شو بدّك؟",
+    "whichOffer": "شو بتقدّم؟",
+    "whichBody": "اختار خدمة. منسألك بس اللي بتحتاجه."
   }
 }
