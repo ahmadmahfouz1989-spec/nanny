@@ -15,6 +15,8 @@ const hookSecret = (process.env.SUPABASE_AUTH_HOOK_SECRET ?? "").replace("v1,whs
 interface HookPayload {
   user: { email: string };
   email_data: {
+    /** The 6-digit code (same one-time token as token_hash, typed instead of clicked). */
+    token?: string;
     token_hash: string;
     redirect_to: string;
     email_action_type: string;
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   const { user, email_data } = parsed;
-  const { token_hash, email_action_type } = email_data;
+  const { token, token_hash, email_action_type } = email_data;
 
   // email_data.redirect_to (unused below) reflects whatever redirectTo the original
   // resetPasswordForEmail()/signUp() call sent — which, before the
@@ -50,10 +52,11 @@ export async function POST(request: Request) {
   // code exchange. /auth/confirm calls verifyOtp(), which both confirms the
   // token and logs the user in — so clicking the link works even when it's
   // opened on a different device from the one that signed up.
-  const dest = email_action_type === "recovery" ? "/reset-password" : "/feed";
+  // A confirmed sign-up starts at the welcome question.
+  const dest = email_action_type === "recovery" ? "/reset-password" : "/welcome";
   const verifyUrl = `${origin}/auth/confirm?token_hash=${token_hash}&type=${email_action_type}&next=${encodeURIComponent(dest)}`;
 
-  // Never log token_hash or the full verifyUrl -- either one is a live,
+  // Never log the code, token_hash or the full verifyUrl -- either one is a live,
   // unexpired credential (signup confirmation or password recovery) that
   // verifyOtp() accepts on its own, so anyone with log access could use it
   // to complete the flow as that user.
@@ -69,7 +72,7 @@ export async function POST(request: Request) {
 
   const { subject, html } =
     email_action_type === "signup"
-      ? signupConfirmationEmail(lang, verifyUrl)
+      ? signupConfirmationEmail(lang, verifyUrl, token)
       : email_action_type === "recovery"
         ? passwordRecoveryEmail(lang, verifyUrl)
         : genericAuthEmail(lang, email_action_type, verifyUrl);

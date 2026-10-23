@@ -59,6 +59,10 @@ export default async function CategoryOnboardingPage({
   // profile actually exists; otherwise falls through to that same default.
   const initialRole =
     role === "seeker" && seekerProfile ? "seeker" : role === "provider" && providerProfile ? "provider" : null;
+  // From the welcome question ("I need help" / "I offer help"): no profile
+  // for that side yet, so start it straight away instead of asking again.
+  const startRole =
+    (role === "seeker" && !seekerProfile) || (role === "provider" && !providerProfile) ? (role as "seeker" | "provider") : null;
 
   // Inside the app's usual frame (top bar with back, tabs), not a
   // separate-looking screen of its own.
@@ -70,6 +74,7 @@ export default async function CategoryOnboardingPage({
       seekerProfile={seekerProfile ? withContact(seekerProfile, "seeker") : null}
       providerProfile={providerProfile ? withContact(providerProfile, "provider") : null}
       initialRole={initialRole}
+      startRole={startRole}
       // The account's shared contact_phone, independent of whether a
       // profile already exists in *this* category -- without this,
       // claiming a role in a brand-new category has no way to know the

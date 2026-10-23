@@ -4,7 +4,7 @@ import { routing } from "@/i18n/routing";
 import type { Database } from "./database.types";
 import { APP_USER_AGENT_MARKER } from "@/lib/app-user-agent";
 
-const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/saved", "/settings", "/requests", "/search", "/notifications", "/featured", "/admin"];
+const PROTECTED_PREFIXES = ["/categories", "/dashboard", "/onboarding", "/matches", "/feed", "/messages", "/profile", "/saved", "/settings", "/requests", "/search", "/welcome", "/notifications", "/featured", "/admin"];
 
 // An admin account has no marketplace profiles -- the user-facing app
 // (categories, matches, messages, saved, ...) has nothing for it and only

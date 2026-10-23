@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
 import WhatsAppAuth from "@/components/whatsapp-auth";
+import EmailCodeForm from "@/components/email-code-form";
 import { ui } from "@/lib/ui";
 import { safeReturnPath } from "@/lib/return-path";
 import { request } from "@/lib/request";
@@ -43,6 +44,8 @@ export default function LoginForm() {
   const [showResend, setShowResend] = useState(linkErrorType === "signup");
   const [resendState, setResendState] = useState<"idle" | "sending" | "sent" | "error">("idle");
   const [submitting, setSubmitting] = useState(false);
+  // Signed up but never confirmed: finish with the emailed code, here.
+  const [codeFor, setCodeFor] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -58,8 +61,14 @@ export default function LoginForm() {
     if (error) {
       setSubmitting(false);
       const unconfirmed = error.code === "email_not_confirmed" || /not confirmed/i.test(error.message ?? "");
-      setError(unconfirmed ? t("emailNotConfirmed") : t("invalidCredentials"));
-      setShowResend(unconfirmed);
+      if (unconfirmed) {
+        // A fresh code, in case the first email is lost or expired; if
+        // it's too soon to send another, the first one still works.
+        void supabase.auth.resend({ type: "signup", email });
+        setCodeFor(email);
+        return;
+      }
+      setError(t("invalidCredentials"));
       return;
     }
 
@@ -86,6 +95,14 @@ export default function LoginForm() {
     const supabase = createClient();
     const { error } = await supabase.auth.resend({ type: "signup", email });
     setResendState(error ? "error" : "sent");
+  }
+
+  if (codeFor) {
+    return (
+      <AuthCard>
+        <EmailCodeForm email={codeFor} next={explicitNext ?? "/welcome"} />
+      </AuthCard>
+    );
   }
 
   return (

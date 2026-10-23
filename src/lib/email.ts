@@ -237,13 +237,23 @@ export function postReplyEmail(lang: Lang, fromName: string, snippet: string, po
 
 // Sent via Supabase's Send Email auth hook (src/app/api/auth/email-hook),
 // which fully replaces Supabase's own email delivery for these flows.
-export function signupConfirmationEmail(lang: Lang, confirmUrl: string) {
+export function signupConfirmationEmail(lang: Lang, confirmUrl: string, code?: string) {
+  // The code is what the app asks for (typing it keeps sign-up inside the
+  // app, where a link would open the browser); the link still works,
+  // e.g. when the email is read on a computer.
+  const safeCode = code && /^\d{4,10}$/.test(code) ? code : null;
+  const codeEn = safeCode
+    ? `<p>Your code is:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${safeCode}</p><p>Type it in the ouiKnow app to finish signing up. Or confirm with the button below.</p>`
+    : "";
+  const codeAr = safeCode
+    ? `<p>رمزك هو:</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${safeCode}</p><p>اكتبه بتطبيق ouiKnow تا تكمّل التسجيل. أو أكّد بالزر تحت.</p>`
+    : "";
   return {
-    subject: pick(lang, "Confirm your email", "أكّد بريدك الإلكتروني"),
+    subject: safeCode ? pick(lang, `${safeCode} is your ouiKnow code`, `${safeCode} هو رمزك على ouiKnow`) : pick(lang, "Confirm your email", "أكّد بريدك الإلكتروني"),
     html: pick(
       lang,
-      `<p>Welcome to ouiKnow — click below to confirm your email and activate your account.</p><p><a href="${confirmUrl}">Confirm email</a></p><p>If you didn't create this account, you can ignore this email.</p>`,
-      `<p>مرحبًا بك في ouiKnow — اضغط أدناه لتأكيد بريدك الإلكتروني وتفعيل حسابك.</p><p><a href="${confirmUrl}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تُنشئ هذا الحساب، يمكنك تجاهل هذا البريد.</p>`,
+      `<p>Welcome to ouiKnow.</p>${codeEn}<p><a href="${confirmUrl}">Confirm email</a></p><p>If you didn't create this account, you can ignore this email.</p>`,
+      `<p>مرحبًا بك في ouiKnow.</p>${codeAr}<p><a href="${confirmUrl}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تُنشئ هذا الحساب، يمكنك تجاهل هذا البريد.</p>`,
     ),
   };
 }

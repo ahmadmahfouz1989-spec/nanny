@@ -54,5 +54,7 @@ export async function POST(request: Request) {
     await notifyAdminsOfNewSignup(email!);
   }
 
-  return NextResponse.json({ user: data.user }, { status: 201 });
+  // With email confirmation off (local development) Supabase signs the
+  // new account straight in; otherwise the form asks for the emailed code.
+  return NextResponse.json({ user: data.user, signedIn: !!data.session }, { status: 201 });
 }

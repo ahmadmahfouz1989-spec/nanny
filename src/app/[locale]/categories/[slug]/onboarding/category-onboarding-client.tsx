@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import NannyProviderForm from "./nanny-provider-form";
 import NannySeekerForm from "./nanny-seeker-form";
@@ -44,7 +44,11 @@ export default function CategoryOnboardingClient({
   providerProfile,
   accountContactPhone,
   initialRole,
+  startRole = null,
 }: {
+  // Already answered elsewhere (the welcome question): claim this side on
+  // arrival rather than showing the "looking or offering?" choice.
+  startRole?: "seeker" | "provider" | null;
   categorySlug: string;
   categoryName: string;
   seekerProfile: ExistingProfile;
@@ -132,6 +136,14 @@ export default function CategoryOnboardingClient({
     setChosenRole(null);
   }
 
+  useEffect(() => {
+    // After the first render, as a callback, so the claim's state updates
+    // aren't made from the effect body itself.
+    if (startRole) void Promise.resolve().then(() => chooseRole(startRole));
+    // Once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const forms = FORMS[categorySlug];
 
   if (chosenRole === "provider" && forms) {
@@ -141,6 +153,11 @@ export default function CategoryOnboardingClient({
   if (chosenRole === "seeker" && forms) {
     const SeekerForm = forms.seeker;
     return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={() => changeRole("seeker")} />;
+  }
+
+  // Starting a side straight away: no flash of the choice it replaces.
+  if (startRole && !error) {
+    return <p className="p-8 text-center text-sm text-muted">{tw("loading")}</p>;
   }
 
   return (

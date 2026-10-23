@@ -163,7 +163,17 @@
     "checkInboxTitle": "Check your inbox",
     "checkInboxBody": "If an account exists for <mark>{identifier}</mark>, recovery instructions are on their way.",
     "continueWithGoogle": "Continue with Google",
-    "orDivider": "or"
+    "orDivider": "or",
+    "codeTitle": "Enter your code",
+    "codeBody": "We emailed a 6-digit code to <mark>{email}</mark>. Type it here to finish signing up.",
+    "codeLabel": "6-digit code",
+    "codeContinue": "Continue",
+    "codeChecking": "Checking…",
+    "codeWrong": "That code didn't work. Check the latest email, or send a new code.",
+    "codeResend": "Send a new code",
+    "codeResendIn": "You can ask for a new code in {seconds}s",
+    "codeResent": "A new code is on its way.",
+    "codeOrLink": "Reading the email on another device? The button in it works too."
   },
   "Signup": {
     "title": "Create your account",
@@ -293,7 +303,8 @@
     "errorMaxWait": "Enter how many hours you'll wait.",
     "errorPlace": "Enter the area or a landmark.",
     "errorInstitution": "Enter the office or institution.",
-    "errorWhen": "Pick a date and time."
+    "errorWhen": "Pick a date and time.",
+    "loading": "Loading…"
   },
   "Location": {
     "governorate": "Governorate",
@@ -1291,5 +1302,18 @@
     "posts": "Posts",
     "postLookingFor": "Looking for",
     "postOffering": "Offering"
+  },
+  "Welcome": {
+    "title": "What brings you to ouiKnow?",
+    "subtitle": "Pick one to start — you can do both later.",
+    "need": "I need help",
+    "needBody": "A nanny, a nurse, a tutor, a repair, a delivery…",
+    "offer": "I offer help",
+    "offerBody": "Get found by people near you who need what you do.",
+    "skip": "Just look around for now",
+    "back": "← Back",
+    "whichNeed": "What do you need?",
+    "whichOffer": "What do you offer?",
+    "whichBody": "Pick a service. You'll be asked only what it needs."
   }
 }
