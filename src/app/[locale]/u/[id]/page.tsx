@@ -325,6 +325,7 @@ async function ProfileBody({ data, locale }: { data: ProfilePageData; locale: st
         <ul className="flex flex-col gap-2 text-sm">
           {data.trust.phoneVerified && <TrustRow text={t("phoneVerified")} />}
           {data.trust.emailVerified && <TrustRow text={t("emailVerified")} />}
+          {data.trust.idChecked && <TrustRow text={t("idChecked")} />}
           {data.activity.replySpeed && data.activity.replySpeed !== "days" && (
             <TrustRow text={t(`replySpeed_${data.activity.replySpeed}`)} icon="clock" />
           )}

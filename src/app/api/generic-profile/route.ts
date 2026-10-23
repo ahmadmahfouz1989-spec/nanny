@@ -118,6 +118,22 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
 
   const db = createAdminClient();
 
+  // Delivery & errands providers carry people's things, money and
+  // passengers: an ID photo is required before the profile can go to
+  // review (the form uploads it first; this is the backstop).
+  if (categorySlug === "errands" && role === "provider") {
+    const { data: own } = await db
+      .from("generic_profiles")
+      .select("id, id_documents(status)")
+      .eq("user_id", user.id)
+      .eq("category_id", category.id)
+      .eq("role", role)
+      .maybeSingle();
+    if (!own?.id_documents) {
+      return NextResponse.json({ error: { fieldErrors: { idDocument: ["Upload a photo of your ID"] } } }, { status: 400 });
+    }
+  }
+
   // Read before the write: the current photo decides whether a submitted
   // profilePhotoUrl is a change, and a replaced photo's old file is removed
   // once the new one is saved. The row usually exists even on "create"

@@ -1015,7 +1015,8 @@
     "replySpeed_hour": "Usually replies within an hour",
     "replySpeed_hours": "Usually replies within a few hours",
     "replySpeed_day": "Usually replies within a day",
-    "talkedWith": "Talked with {count} people on ouiKnow"
+    "talkedWith": "Talked with {count} people on ouiKnow",
+    "idChecked": "ID checked by the ouiKnow team"
   },
   "Work": {
     "title": "Work",
@@ -1315,5 +1316,21 @@
     "whichNeed": "What do you need?",
     "whichOffer": "What do you offer?",
     "whichBody": "Pick a service. You'll be asked only what it needs."
+  },
+  "IdDocument": {
+    "title": "Photo of your ID or driving licence",
+    "why": "Required for delivery and errands. Only the ouiKnow team sees it — never customers. Once checked, your profile shows “ID checked”.",
+    "upload": "Upload photo",
+    "replace": "Replace photo",
+    "uploading": "Uploading…",
+    "pending": "Uploaded — checked when your profile is reviewed.",
+    "approved": "✓ Checked",
+    "rejected": "Not accepted — please upload a clearer photo.",
+    "required": "Upload a photo of your ID or driving licence.",
+    "failed": "Couldn't upload — please try again.",
+    "tooLarge": "That file is too big (10MB at most).",
+    "badge": "ID checked",
+    "adminView": "View ID document",
+    "adminMissing": "No ID uploaded — required for delivery providers."
   }
 }

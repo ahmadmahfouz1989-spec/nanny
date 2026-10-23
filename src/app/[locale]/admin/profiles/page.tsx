@@ -8,6 +8,7 @@ import { labelOr } from "@/lib/i18n-fallback";
 import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 import { ERRAND_KEYS, useErrandRows } from "@/components/errand-details";
 import AdminPageHeader from "@/components/admin/admin-page-header";
+import IdDocumentLink from "@/components/admin/id-document-link";
 import { getJson, request } from "@/lib/request";
 
 type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
@@ -300,6 +301,7 @@ export default function AdminProfilesPage() {
                   </p>
                 )}
                 {area && <p className="text-sm text-muted mb-3">{area}</p>}
+                {profile.categories?.slug === "errands" && profile.role === "provider" && <IdDocumentLink profileId={profile.id} />}
 
                 <button
                   type="button"

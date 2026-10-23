@@ -75,6 +75,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
       const row = updated;
 
+      // A rejected delivery provider's ID isn't accepted either; a new
+      // upload goes back to review.
+      await db.from("id_documents").update({ status: "rejected", reviewed_at: new Date().toISOString() }).eq("profile_id", id);
+
       await notify({
         user_id: row.user_id,
         type: "profile_rejected",
@@ -87,6 +91,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     // Work photo files don't go with the cascade -- note them first.
     const { data: work } = await db.from("work_projects").select("id, user_id").eq("profile_id", id);
     const workPaths = work?.length ? await workPhotoPaths(db, work.map((w) => w.id), work[0].user_id) : [];
+    // Nor does the ID document's file (its row goes with the profile).
+    const { data: idDoc } = await db.from("id_documents").select("path").eq("profile_id", id).maybeSingle();
 
     const { data: deleted, error } = await db.from("generic_profiles").delete().eq("id", id).select("id, user_id, full_name, categories(slug), profile_photo_url").single();
 
@@ -97,6 +103,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const row = deleted;
 
     if (workPaths.length) await db.storage.from(WORK_BUCKET).remove(workPaths).catch(() => {});
+    if (idDoc?.path) await db.storage.from("id-documents").remove([idDoc.path]).catch(() => {});
 
     if (row.profile_photo_url) {
       // Only ever delete a path under this profile's own owner folder, in
@@ -122,6 +129,10 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 
   const row = updated;
+
+  // Approving a delivery provider is approving the ID they uploaded with it
+  // -- that's what the reviewer looked at. Shows as "ID checked".
+  await db.from("id_documents").update({ status: "approved", reviewed_at: new Date().toISOString() }).eq("profile_id", id);
 
   await notify({
     user_id: row.user_id,
