@@ -8,6 +8,8 @@ import { request } from "@/lib/request";
 import { ui } from "@/lib/ui";
 
 const RESEND_WAIT_S = 30;
+// Must match Supabase's "Email OTP length" (Auth settings); 6 unless set.
+const CODE_LENGTH = Number(process.env.NEXT_PUBLIC_EMAIL_OTP_LENGTH) || 6;
 
 /**
  * "Enter the 6-digit code we emailed you" -- finishing an email sign-up
@@ -32,7 +34,7 @@ export default function EmailCodeForm({ email, next = "/welcome" }: { email: str
   }, [wait]);
 
   async function verify(value: string) {
-    if (checking || value.length !== 6) return;
+    if (checking || value.length !== CODE_LENGTH) return;
     setChecking(true);
     setError(null);
     const res = await request("/api/auth/verify-code", {
@@ -73,7 +75,7 @@ export default function EmailCodeForm({ email, next = "/welcome" }: { email: str
       </div>
       <h1 className="font-display text-2xl font-semibold mb-2">{t("codeTitle")}</h1>
       <p className="text-muted text-sm mb-5">
-        {t.rich("codeBody", { email, mark: (chunks) => <span className="text-ink">{chunks}</span> })}
+        {t.rich("codeBody", { email, digits: CODE_LENGTH, mark: (chunks) => <span className="text-ink">{chunks}</span> })}
       </p>
       <form
         onSubmit={(e) => {
@@ -88,21 +90,21 @@ export default function EmailCodeForm({ email, next = "/welcome" }: { email: str
           inputMode="numeric"
           autoComplete="one-time-code"
           pattern="[0-9]*"
-          maxLength={6}
-          aria-label={t("codeLabel")}
-          placeholder="••••••"
+          maxLength={CODE_LENGTH}
+          aria-label={t("codeLabel", { digits: CODE_LENGTH })}
+          placeholder={"•".repeat(CODE_LENGTH)}
           value={code}
           onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, "").slice(0, 6);
+            const digits = e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH);
             setCode(digits);
             // Six digits typed (or pasted, or filled in from the email by
             // the phone) is the whole job -- no button press needed.
-            if (digits.length === 6) void verify(digits);
+            if (digits.length === CODE_LENGTH) void verify(digits);
           }}
           className={ui.input + " text-center font-display text-2xl tracking-[0.5em] py-3!"}
         />
         {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
-        <button type="submit" disabled={checking || code.length !== 6} className={ui.buttonPrimary + " w-full"}>
+        <button type="submit" disabled={checking || code.length !== CODE_LENGTH} className={ui.buttonPrimary + " w-full"}>
           {checking ? t("codeChecking") : t("codeContinue")}
         </button>
       </form>
