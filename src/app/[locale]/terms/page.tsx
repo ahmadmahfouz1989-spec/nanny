@@ -37,7 +37,10 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
         </a>
       </p>
 
-      <div className="mt-12 border-t border-border pt-6">
+      <div className="mt-12 flex gap-6 border-t border-border pt-6">
+        <Link href="/privacy" className="text-sm text-primary hover:underline">
+          {tNav("privacy")}
+        </Link>
         <Link href="/" className="text-sm text-primary hover:underline">
           {tNav("backToHome")}
         </Link>

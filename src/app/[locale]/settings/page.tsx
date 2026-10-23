@@ -49,6 +49,11 @@ export default async function SettingsPage() {
             <span className="flex-1">{t("terms")}</span>
             <ChevronIcon className="h-5 w-5 text-muted" />
           </Link>
+          <Link href="/privacy" className={row}>
+            <DocumentIcon className="h-[22px] w-[22px] text-muted" />
+            <span className="flex-1">{t("privacy")}</span>
+            <ChevronIcon className="h-5 w-5 text-muted" />
+          </Link>
         </div>
 
         <p className={label}>{t("account")}</p>
