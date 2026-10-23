@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
 import GoogleAuthButton from "@/components/google-auth-button";
-import WhatsAppAuth from "@/components/whatsapp-auth";
+import WhatsAppAuth, { WHATSAPP_AUTH_ENABLED } from "@/components/whatsapp-auth";
 import EmailCodeForm from "@/components/email-code-form";
 import { useRouter } from "@/i18n/navigation";
 import { trackMetaEvent } from "@/components/meta-pixel";
@@ -16,7 +16,7 @@ import { request } from "@/lib/request";
 // src/lib/validation/auth.ts. Every account lands on /categories after
 // confirming (see the default in src/app/auth/callback/route.ts) and
 // picks a category, then a role within it, from there.
-export default function SignupForm() {
+export default function SignupForm({ showGoogle = true }: { showGoogle?: boolean }) {
   const t = useTranslations("Signup");
   const tAuth = useTranslations("Auth");
   const router = useRouter();
@@ -82,14 +82,16 @@ export default function SignupForm() {
       <h1 className="font-display text-2xl font-semibold mb-1">{t("title")}</h1>
       <p className="text-muted text-sm mb-6">{t("subheadCategory")}</p>
 
-      <GoogleAuthButton />
+      {showGoogle && <GoogleAuthButton />}
       <WhatsAppAuth mode="signup" />
 
-      <div className="flex items-center gap-3 my-5">
-        <div className="h-px flex-1 bg-border" />
-        <span className="text-xs text-muted">{tAuth("orDivider")}</span>
-        <div className="h-px flex-1 bg-border" />
-      </div>
+      {(showGoogle || WHATSAPP_AUTH_ENABLED) && (
+        <div className="flex items-center gap-3 my-5">
+          <div className="h-px flex-1 bg-border" />
+          <span className="text-xs text-muted">{tAuth("orDivider")}</span>
+          <div className="h-px flex-1 bg-border" />
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
