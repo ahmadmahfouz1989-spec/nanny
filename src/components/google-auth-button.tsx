@@ -49,6 +49,10 @@ export default function GoogleAuthButton({ next = null }: { next?: string | null
       ? `${RETURN_PATH_COOKIE}=${encodeURIComponent(next)}; path=/; max-age=600; samesite=lax`
       : `${RETURN_PATH_COOKIE}=; path=/; max-age=0; samesite=lax`;
     const supabase = createClient();
+    // Always show Google's account picker: without it, Google silently
+    // reuses the last account signed in on this device, so after logging
+    // out there's no way to pick a different one.
+    const queryParams = { prompt: "select_account" };
 
     // Google refuses sign-in inside an app's web view: the iOS/Android apps
     // open it in the system browser, which comes back through ouiknow://
@@ -56,7 +60,7 @@ export default function GoogleAuthButton({ next = null }: { next?: string | null
     if (isNativeApp()) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: NATIVE_AUTH_CALLBACK, skipBrowserRedirect: true },
+        options: { redirectTo: NATIVE_AUTH_CALLBACK, skipBrowserRedirect: true, queryParams },
       });
       setLoading(false);
       if (error || !data.url) setError(t("genericError"));
@@ -66,7 +70,7 @@ export default function GoogleAuthButton({ next = null }: { next?: string | null
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: `${window.location.origin}/auth/callback`, queryParams },
     });
 
     // On success this navigates away to Google -- there's nothing further
