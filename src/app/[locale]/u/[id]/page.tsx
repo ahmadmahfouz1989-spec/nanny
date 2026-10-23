@@ -225,9 +225,16 @@ async function ProfileTabs({ data, locale }: { data: ProfilePageData; locale: st
         const role = tab.role === "seeker" ? tSaved("roleSeeking") : tSaved("roleOffering");
         const current = tab.id === data.profile.id;
         return (
+          // Switching between your own profiles swaps this page in place:
+          // no new back step per tap (back returns to where you came from),
+          // and the few of them are loaded ahead so the switch is instant
+          // rather than a full loading screen.
           <Link
             key={tab.id}
             href={`/u/${tab.id}`}
+            replace
+            scroll={false}
+            prefetch
             aria-current={current ? "page" : undefined}
             className={ui.pill(current) + " shrink-0 whitespace-nowrap"}
           >
