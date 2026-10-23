@@ -4,10 +4,12 @@
 // an urgent job needs someone who takes urgent jobs rather than someone
 // free on particular days.
 
+import { placeScore } from "./place";
 export type Urgency = "urgent" | "this_week" | "flexible";
 
 export interface MaintenanceSeekerMatchInput {
   governorateId: string | null;
+  districtId?: string | null;
   tradesNeeded: string[];
   urgency: Urgency;
   neededDays: string[];
@@ -16,6 +18,8 @@ export interface MaintenanceSeekerMatchInput {
 export interface MaintenanceProviderMatchInput {
   governorateId: string | null;
   serviceAreaIds: string[];
+  districtId?: string | null;
+  coverDistrictIds?: string[];
   trades: string[];
   availabilityDays: string[];
   takesUrgentJobs: boolean;
@@ -52,9 +56,8 @@ function tradeScore(seeker: MaintenanceSeekerMatchInput, provider: MaintenancePr
 }
 
 function locationScore(seeker: MaintenanceSeekerMatchInput, provider: MaintenanceProviderMatchInput): number {
-  if (!seeker.governorateId) return 0;
-  if (seeker.governorateId === provider.governorateId) return 1;
-  return provider.serviceAreaIds.includes(seeker.governorateId) ? 1 : 0;
+  // The shared rule (./place.ts): district first, governorate for older profiles.
+  return placeScore(seeker, provider);
 }
 
 function availabilityScore(seeker: MaintenanceSeekerMatchInput, provider: MaintenanceProviderMatchInput): number {

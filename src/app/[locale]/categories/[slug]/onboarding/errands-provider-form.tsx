@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
+import DistrictCoverage from "@/components/onboarding/district-coverage";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import ErrandServiceIcon from "@/components/errand-service-icon";
 import IdDocumentField from "@/components/onboarding/id-document-field";
-import { useGovernorates, governorateName } from "@/components/onboarding/use-governorates";
 import { DAYS } from "@/lib/validation/profile";
 import { ERRAND_SERVICES, PRICING, VEHICLES, errandProviderSchema, type ErrandService } from "@/lib/validation/errands";
 import { ui } from "@/lib/ui";
@@ -26,6 +26,9 @@ type FormState = {
   contactPhone: string;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
+  coverDistrictIds: string[];
   nationality: string;
   errandServices: ErrandService[];
   serviceAreaIds: string[];
@@ -51,6 +54,9 @@ const initialState: FormState = {
   contactPhone: "",
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
+  coverDistrictIds: [],
   nationality: "",
   errandServices: [],
   serviceAreaIds: [],
@@ -91,6 +97,9 @@ function stateFromExisting(p: ExistingProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
+    coverDistrictIds: (a.coverDistrictIds as string[]) ?? [],
     nationality: (a.nationality as string) ?? "",
     errandServices: (a.errandServices as ErrandService[]) ?? [],
     serviceAreaIds: (a.serviceAreaIds as string[]) ?? [],
@@ -127,8 +136,6 @@ export default function ErrandsProviderForm({
   const tService = useTranslations("ErrandServices");
   const tVehicle = useTranslations("Vehicles");
   const tPricing = useTranslations("ErrandPricing");
-  const locale = useLocale();
-  const governorates = useGovernorates();
   const router = useRouter();
   const isEdit = !!initialProfile;
   // A claimed-but-unfilled draft still needs PATCH (a row already exists),
@@ -180,6 +187,10 @@ export default function ErrandsProviderForm({
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
+    // Your own district counts already.
+    coverDistrictIds: form.coverDistrictIds.filter((id) => id !== form.districtId),
     nationality: form.nationality,
     errandServices: form.errandServices,
     // The home governorate is matched on its own -- don't store it twice.
@@ -259,9 +270,18 @@ export default function ErrandsProviderForm({
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
+          districtId={form.districtId}
+          areaId={form.areaId}
+          onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
           errors={fieldErrors}
+        />
+        <DistrictCoverage
+          value={form.coverDistrictIds}
+          onChange={(ids) => setForm((f) => ({ ...f, coverDistrictIds: ids }))}
+          homeDistrictId={form.districtId}
+          homeGovernorateId={form.locationId}
         />
         <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
         <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
@@ -340,17 +360,7 @@ export default function ErrandsProviderForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section3Title")}</SectionHeading>
-        <FieldLabel field="serviceAreaIds" errors={fieldErrors} optional>{t("serviceAreas")}</FieldLabel>
-        <p className="text-xs text-muted -mt-1">{t("serviceAreasHint")}</p>
-        <div className="flex flex-wrap gap-2">
-          {governorates
-            .filter((g) => g.id !== form.locationId)
-            .map((g) => (
-              <button type="button" key={g.id} onClick={() => toggle("serviceAreaIds", g.id)} className={ui.pill(form.serviceAreaIds.includes(g.id))}>
-                {governorateName(g, locale)}
-              </button>
-            ))}
-        </div>
+        {/* Where else they work is the district list under their location. */}
 
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">

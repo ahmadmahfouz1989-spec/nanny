@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { placeScore } from "@/lib/matching/place";
 import {
   computeErrandsMatchScore,
   dayOfWeek,
@@ -252,5 +253,22 @@ describe("errands rubric", () => {
   it("reads the day of a booked time as written", () => {
     expect(dayOfWeek("2026-10-24T23:30")).toBe("sat");
     expect(dayOfWeek(undefined)).toBe(null);
+  });
+});
+
+describe("place rule", () => {
+  const seeker = { governorateId: "mount", districtId: "baabda" };
+  it("is a full match in the provider's own or covered district", () => {
+    expect(placeScore(seeker, { governorateId: "mount", districtId: "baabda" })).toBe(1);
+    expect(placeScore(seeker, { governorateId: "beirut", districtId: "beirut", coverDistrictIds: ["baabda"] })).toBe(1);
+  });
+  it("is nearby (half) elsewhere in the same governorate, and no match outside it", () => {
+    expect(placeScore(seeker, { governorateId: "mount", districtId: "metn" })).toBe(0.5);
+    expect(placeScore(seeker, { governorateId: "south", districtId: "saida" })).toBe(0);
+  });
+  it("falls back to the governorate when a profile has no district yet", () => {
+    expect(placeScore({ governorateId: "mount" }, { governorateId: "mount", districtId: "metn" })).toBe(1);
+    expect(placeScore(seeker, { governorateId: "beirut", serviceAreaIds: ["mount"] })).toBe(1);
+    expect(placeScore({ governorateId: null }, { governorateId: "mount" })).toBe(0);
   });
 });

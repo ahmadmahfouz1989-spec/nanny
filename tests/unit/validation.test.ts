@@ -6,7 +6,8 @@ import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/valida
 import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
-const base = { fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra", nationality: "lebanese", languageIds: [] };
+const DISTRICT = "22222222-2222-4222-8222-222222222222";
+const base = { fullName: "Test Person", locationId: LOCATION, districtId: DISTRICT, locationDetail: "Hamra", nationality: "lebanese", languageIds: [] };
 const availability = { days: ["mon"], startTime: "08:00", endTime: "16:00" };
 
 describe("profile validation", () => {
@@ -69,7 +70,7 @@ describe("profile validation", () => {
     expect(maintenanceProviderSchema.safeParse({ ...worker, trades: ["astronaut"] }).success).toBe(false);
 
     const request = {
-      fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra",
+      fullName: "Test Person", locationId: LOCATION, districtId: DISTRICT, locationDetail: "Hamra",
       tradesNeeded: ["electrician"], jobDescription: "Two sockets in the kitchen stopped working", urgency: "urgent",
     };
     const requestResult = maintenanceSeekerSchema.safeParse(request);
@@ -97,7 +98,7 @@ describe("profile validation", () => {
     expect(errandProviderSchema.safeParse({ ...taxi, hasDrivingLicense: true, vehicle: "car" }).success).toBe(false);
 
     const request = {
-      fullName: "Test Person", locationId: LOCATION, locationDetail: "Hamra",
+      fullName: "Test Person", locationId: LOCATION, districtId: DISTRICT, locationDetail: "Hamra",
       errandService: "delivery", jobDescription: "A set of keys", pickupPlace: "Hamra", dropoffPlace: "Achrafieh", timing: "asap",
     };
     const requestResult = errandSeekerSchema.safeParse(request);
@@ -108,6 +109,13 @@ describe("profile validation", () => {
     expect(errandSeekerSchema.safeParse({ ...request, errandService: "paperwork" }).success).toBe(false);
     expect(errandSeekerSchema.safeParse({ ...request, errandService: "paperwork", institution: "Baabda Municipality" }).success).toBe(true);
     expect(errandSeekerSchema.safeParse({ ...request, errandService: "moto_taxi", passengers: 3 }).success).toBe(false);
+  });
+
+  it("needs a district, the area being optional", () => {
+    const parent = { ...base, numChildren: 1, childrenAgeRanges: ["toddler"], scheduleType: "either", liveArrangement: "live_out", desiredStartDate: "2026-11-01", transportationRequired: false };
+    expect(nannySeekerSchema.safeParse({ ...parent, districtId: undefined }).success).toBe(false);
+    expect(nannySeekerSchema.safeParse({ ...parent, areaId: null }).success).toBe(true);
+    expect(nannySeekerSchema.safeParse({ ...parent, areaId: LOCATION }).success).toBe(true);
   });
 
   it("rejects a missing governorate with a readable message", () => {

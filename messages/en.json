@@ -308,9 +308,15 @@
   },
   "Location": {
     "governorate": "Governorate",
-    "district": "District",
+    "district": "District (qada)",
     "area": "Area",
-    "detailPlaceholder": "Neighbourhood, street or building"
+    "detailPlaceholder": "Neighbourhood, street or building",
+    "searchPlaceholder": "Type your area, e.g. Hamra",
+    "districtOf": "District · {place}",
+    "noMatch": "No match — choose from the lists below instead.",
+    "areaOptional": "Area (optional)",
+    "coverTitle": "Other districts you also work in",
+    "coverHint": "Your own district already counts. Customers in the districts you tick see you in their matches."
   },
   "AgeGroups": {
     "newborn": "Newborn (0–3mo)",
@@ -633,7 +639,7 @@
     "featuredSection": "Featured",
     "allMatchesSection": "All matches",
     "featuredBadge": "Featured",
-    "criteriaLocation": "Governorate",
+    "criteriaLocation": "Area",
     "criteriaAvailability": "Availability",
     "criteriaEmploymentType": "Schedule",
     "criteriaLiveArrangement": "Live arrangement",

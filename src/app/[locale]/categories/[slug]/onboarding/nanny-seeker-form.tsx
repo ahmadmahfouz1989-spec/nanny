@@ -24,6 +24,8 @@ type FormState = {
   profilePhotoUrl: string | null;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
   nationality: string;
   numChildren: number;
   childrenAgeRanges: string[];
@@ -43,6 +45,8 @@ const initialState: FormState = {
   profilePhotoUrl: null,
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
   nationality: "",
   numChildren: 1,
   childrenAgeRanges: [],
@@ -76,6 +80,8 @@ function stateFromExisting(p: ExistingProfile): FormState {
     profilePhotoUrl: p.profile_photo_url ?? null,
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
     nationality: (a.nationality as string) ?? "",
     numChildren: (a.numChildren as number) ?? initialState.numChildren,
     childrenAgeRanges: (a.childrenAgeRanges as string[]) ?? [],
@@ -174,6 +180,8 @@ export default function NannySeekerForm({
     profilePhotoUrl: form.profilePhotoUrl || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
     nationality: form.nationality,
     numChildren: form.numChildren,
     childrenAgeRanges: form.childrenAgeRanges,
@@ -284,6 +292,9 @@ export default function NannySeekerForm({
           <LocationPicker
             governorateId={form.locationId}
             detail={form.locationDetail}
+            districtId={form.districtId}
+            areaId={form.areaId}
+            onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
             onGovernorate={(id) => update("locationId", id)}
             onDetail={(v) => update("locationDetail", v)}
             errors={fieldErrors}

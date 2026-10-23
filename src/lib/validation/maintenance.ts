@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
 // Same split as tutoring.ts: generic_profiles only has top-level
@@ -24,6 +25,8 @@ export const maintenanceProviderSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+  ...areaFields,
+  ...coverageFields,
   nationality,
   trades: z.array(z.enum(TRADES)).min(1, "Pick at least one trade"),
   // Other governorates the provider also works in, besides their own.
@@ -45,6 +48,7 @@ export const maintenanceSeekerSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+  ...areaFields,
   tradesNeeded: z.array(z.enum(TRADES)).min(1, "Pick at least one trade"),
   jobDescription: z.string().trim().min(10, "Describe the job in a few words").max(1000, "That's too long"),
   urgency: z.enum(URGENCIES, "Select how soon you need it"),

@@ -5,11 +5,13 @@
 // -- so this is its own small engine rather than forcing tutoring through
 // generic-engine's CareSeekerMatchInput/CareProviderMatchInput shape.
 
+import { placeScore, type Place } from "./place";
+
 export type TutoringFormat = "online" | "in_person" | "either";
 
-export interface LocationRef {
-  governorateId: string | null;
-}
+// Governorate, and since districts came in, the district and the other
+// districts a provider covers -- see ./place.ts.
+export type LocationRef = Place;
 
 export interface TutoringSeekerMatchInput {
   location: LocationRef;
@@ -54,7 +56,7 @@ export interface TutoringMatchResult {
 }
 
 function locationScore(a: LocationRef, b: LocationRef): number {
-  return a.governorateId && a.governorateId === b.governorateId ? 1 : 0;
+  return placeScore(a, b);
 }
 
 function availabilityScore(seeker: TutoringSeekerMatchInput, provider: TutoringProviderMatchInput): number {

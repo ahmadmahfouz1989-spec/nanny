@@ -7,12 +7,14 @@
 // care-specialty overlap criterion, which is the actual matching signal for
 // nursing (e.g. "post_surgical" seeker vs "post_surgical" provider).
 
+import { placeScore, type Place } from "./place";
+
 export type ScheduleType = "full_time" | "part_time" | "either";
 export type LiveArrangement = "live_in" | "live_out" | "either";
 
-export interface LocationRef {
-  governorateId: string | null;
-}
+// Governorate, and since districts came in, the district and the other
+// districts a provider covers -- see ./place.ts.
+export type LocationRef = Place;
 
 export interface CareSeekerMatchInput {
   location: LocationRef;
@@ -58,7 +60,7 @@ export interface CareMatchResult {
 }
 
 function locationScore(a: LocationRef, b: LocationRef): number {
-  return a.governorateId && a.governorateId === b.governorateId ? 1 : 0;
+  return placeScore(a, b);
 }
 
 function availabilityScore(seeker: CareSeekerMatchInput, provider: CareProviderMatchInput): number {

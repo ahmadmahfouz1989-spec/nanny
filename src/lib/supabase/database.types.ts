@@ -266,14 +266,14 @@ isOneToOne: true
                   ]
                 },"locations": {
                   Row: {
-                    "id": string,"level": string,"name_ar": string,"name_en": string,"name_fr": string,"parent_location_id": string | null,"sort_order": number
+                    "code": string | null,"id": string,"lat": number | null,"level": string,"lon": number | null,"name_ar": string,"name_en": string,"name_fr": string,"parent_location_id": string | null,"search_text": string | null,"sort_order": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: string,"level": string,"name_ar": string,"name_en": string,"name_fr": string,"parent_location_id"?: string | null,"sort_order"?: number
+                    "code"?: string | null,"id"?: string,"lat"?: number | null,"level": string,"lon"?: number | null,"name_ar": string,"name_en": string,"name_fr": string,"parent_location_id"?: string | null,"search_text"?: string | null,"sort_order"?: number
                   }
                   Update: {
-                    "id"?: string,"level"?: string,"name_ar"?: string,"name_en"?: string,"name_fr"?: string,"parent_location_id"?: string | null,"sort_order"?: number
+                    "code"?: string | null,"id"?: string,"lat"?: number | null,"level"?: string,"lon"?: number | null,"name_ar"?: string,"name_en"?: string,"name_fr"?: string,"parent_location_id"?: string | null,"search_text"?: string | null,"sort_order"?: number
                   }
                   Relationships: [
                     {

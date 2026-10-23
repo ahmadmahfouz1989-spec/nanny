@@ -110,7 +110,24 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   // fullName/locationId are real generic_profiles columns; contactPhone is
   // shared per-account state on users; everything else lives in
   // attributes jsonb.
-  const { fullName, contactPhone, locationId, ...rest } = p;
+  const { fullName, contactPhone, locationId: submittedLocationId, ...rest } = p;
+  // The district decides the governorate (and the area must be in that
+  // district), so a mismatched pair from a stale form can't be saved.
+  let locationId = submittedLocationId;
+  const districtId = (rest as { districtId?: string }).districtId;
+  const areaId = (rest as { areaId?: string | null }).areaId;
+  if (districtId) {
+    const { data: places } = await supabase
+      .from("locations")
+      .select("id, level, parent_location_id")
+      .in("id", [districtId, ...(areaId ? [areaId] : [])]);
+    const district = places?.find((l) => l.id === districtId && l.level === "district");
+    const area = areaId ? places?.find((l) => l.id === areaId) : null;
+    if (!district?.parent_location_id || (areaId && (area?.level !== "area" || area.parent_location_id !== districtId))) {
+      return NextResponse.json({ error: { fieldErrors: { districtId: ["Choose your district"] } } }, { status: 400 });
+    }
+    locationId = district.parent_location_id;
+  }
   const attributes: { [key: string]: Json | undefined } = { ...rest };
   if (categorySlug === "nursing" && role === "provider" && mode === "create") {
     attributes.licenseVerificationStatus = DEFAULT_LICENSE_VERIFICATION_STATUS;

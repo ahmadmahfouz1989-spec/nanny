@@ -8,6 +8,7 @@ import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
+import DistrictCoverage from "@/components/onboarding/district-coverage";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
@@ -21,6 +22,9 @@ type FormState = {
   contactPhone: string;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
+  coverDistrictIds: string[];
   nationality: string;
   subjects: string[];
   gradeLevels: string[];
@@ -39,6 +43,9 @@ const initialState: FormState = {
   contactPhone: "",
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
+  coverDistrictIds: [],
   nationality: "",
   subjects: [],
   gradeLevels: [],
@@ -72,6 +79,9 @@ function stateFromExisting(p: ExistingProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
+    coverDistrictIds: (a.coverDistrictIds as string[]) ?? [],
     nationality: (a.nationality as string) ?? "",
     subjects: (a.subjects as string[]) ?? [],
     gradeLevels: (a.gradeLevels as string[]) ?? [],
@@ -133,6 +143,10 @@ export default function TutoringProviderForm({
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
+    // Your own district counts already.
+    coverDistrictIds: form.coverDistrictIds.filter((id) => id !== form.districtId),
     nationality: form.nationality,
     subjects: form.subjects,
     gradeLevels: form.gradeLevels,
@@ -196,9 +210,18 @@ export default function TutoringProviderForm({
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
+          districtId={form.districtId}
+          areaId={form.areaId}
+          onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
           errors={fieldErrors}
+        />
+        <DistrictCoverage
+          value={form.coverDistrictIds}
+          onChange={(ids) => setForm((f) => ({ ...f, coverDistrictIds: ids }))}
+          homeDistrictId={form.districtId}
+          homeGovernorateId={form.locationId}
         />
         <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
         <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />

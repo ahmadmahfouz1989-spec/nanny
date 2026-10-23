@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
 // Same split as nursing.ts: generic_profiles only has top-level
@@ -38,6 +39,8 @@ export const tutoringProviderSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+  ...areaFields,
+  ...coverageFields,
   nationality,
   subjects: z.array(z.enum(SUBJECTS)).min(1, "Pick at least one subject"),
   gradeLevels: z.array(z.enum(GRADE_LEVELS)).min(1, "Pick at least one grade level"),
@@ -60,6 +63,7 @@ export const tutoringSeekerSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+  ...areaFields,
   nationality,
   subjectsNeeded: z.array(z.enum(SUBJECTS)).min(1, "Pick at least one subject"),
   gradeLevel: z.enum(GRADE_LEVELS, "Select a grade level"),

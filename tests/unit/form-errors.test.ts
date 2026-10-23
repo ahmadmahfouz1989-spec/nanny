@@ -41,6 +41,7 @@ describe("fieldErrorsFor", () => {
     const provider = {
       fullName: "Layla",
       locationId: "6f1c2a7e-8a7b-4c1e-9d3f-2b5a4c6d7e8f",
+      districtId: "7a2d3b8f-9b8c-4d2f-8e4a-3c6b5d7e8f9a",
       locationDetail: "Achrafieh",
       nationality: "lebanese",
       workRadiusKm: 10,

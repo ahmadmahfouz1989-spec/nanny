@@ -21,6 +21,8 @@ type FormState = {
   contactPhone: string;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
   tradesNeeded: string[];
   jobDescription: string;
   urgency: Urgency;
@@ -33,6 +35,8 @@ const initialState: FormState = {
   contactPhone: "",
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
   tradesNeeded: [],
   jobDescription: "",
   urgency: "this_week",
@@ -59,6 +63,8 @@ function stateFromExisting(p: ExistingProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
     tradesNeeded: (a.tradesNeeded as string[]) ?? [],
     jobDescription: (a.jobDescription as string) ?? "",
     urgency: (a.urgency as Urgency) ?? "this_week",
@@ -116,6 +122,8 @@ export default function MaintenanceSeekerForm({
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
     tradesNeeded: form.tradesNeeded,
     jobDescription: form.jobDescription,
     urgency: form.urgency,
@@ -175,6 +183,9 @@ export default function MaintenanceSeekerForm({
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
+          districtId={form.districtId}
+          areaId={form.areaId}
+          onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
           errors={fieldErrors}

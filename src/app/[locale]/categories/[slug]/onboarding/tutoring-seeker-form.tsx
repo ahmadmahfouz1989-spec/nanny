@@ -21,6 +21,8 @@ type FormState = {
   contactPhone: string;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
   nationality: string;
   subjectsNeeded: string[];
   gradeLevel: string;
@@ -37,6 +39,8 @@ const initialState: FormState = {
   contactPhone: "",
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
   nationality: "",
   subjectsNeeded: [],
   gradeLevel: "",
@@ -67,6 +71,8 @@ function stateFromExisting(p: ExistingProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
     nationality: (a.nationality as string) ?? "",
     subjectsNeeded: (a.subjectsNeeded as string[]) ?? [],
     gradeLevel: (a.gradeLevel as string) ?? "",
@@ -126,6 +132,8 @@ export default function TutoringSeekerForm({
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
     nationality: form.nationality,
     subjectsNeeded: form.subjectsNeeded,
     gradeLevel: form.gradeLevel,
@@ -189,6 +197,9 @@ export default function TutoringSeekerForm({
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
+          districtId={form.districtId}
+          areaId={form.areaId}
+          onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
           errors={fieldErrors}
