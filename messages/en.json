@@ -30,7 +30,8 @@
     "language": "Language",
     "tagline": "All services in one place",
     "closeMenu": "Close menu",
-    "errands": "Delivery & Errands"
+    "errands": "Delivery & Errands",
+    "privacy": "Privacy policy"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -1115,7 +1116,8 @@
     "help": "Help",
     "helpBody": "A question, a problem, or an idea? Write to us, a person answers.",
     "terms": "Terms of Service",
-    "account": "Account"
+    "account": "Account",
+    "privacy": "Privacy policy"
   },
   "Discover": {
     "search": "Search people, services or posts…",
