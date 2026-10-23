@@ -261,7 +261,11 @@
     "noProfileNeedBody": "خبّرنا شو بدّك ومنطابقك مع ناس قريبين منك.",
     "noProfileOffer": "بقدّم مساعدة",
     "noProfileOfferBody": "فرجي شو بتعمل تا الناس القريبين منك يلاقوك.",
-    "noProfileSettings": "الحساب واللغة والإشعارات موجودين بالإعدادات"
+    "noProfileSettings": "الحساب واللغة والإشعارات موجودين بالإعدادات",
+    "titleInRequest": "{category}: طلبك",
+    "yourRequest": "طلبك",
+    "descriptionPendingRequest": "منراجع كل طلب قبل ما يشوفه الناس. رح يوصلك إشعار لمّا ينشر — وتطابقاتك بتطلع هون بعدها.",
+    "editRequest": "عدّل الطلب"
   },
   "Wizard": {
     "changeRole": "→ غيّر اختياري",
@@ -280,7 +284,16 @@
     "errorNumber": "أدخل رقمًا صحيحًا.",
     "errorTooLong": "النص طويل جدًا.",
     "errorCheck": "يرجى التحقق من هذا الحقل.",
-    "phoneHint": "يراه فريق ouiKnow فقط — لا يظهر لأي مستخدم آخر. لا يُستخدم لتسجيل الدخول."
+    "phoneHint": "يراه فريق ouiKnow فقط — لا يظهر لأي مستخدم آخر. لا يُستخدم لتسجيل الدخول.",
+    "submitRequest": "ابعت طلبي",
+    "submitProfile": "اعمل ملفي",
+    "errorVehicle": "اختار كيف بتتنقّل.",
+    "errorMotoVehicle": "التوصيل بالموتو بدّو موتو.",
+    "errorMotoLicense": "التوصيل بالموتو بدّو رخصة موتو سارية.",
+    "errorMaxWait": "اكتب قدّيش ساعة بتنطر.",
+    "errorPlace": "اكتب المنطقة أو علامة مميّزة.",
+    "errorInstitution": "اكتب المكتب أو المؤسسة.",
+    "errorWhen": "اختار التاريخ والوقت."
   },
   "Location": {
     "governorate": "المحافظة",
@@ -667,7 +680,13 @@
     "criteriaService": "الخدمة",
     "criteriaRequirements": "مناسب للمهمة",
     "titleMatchesIn": "تطابقات {category}",
-    "filters": "فلاتر"
+    "filters": "فلاتر",
+    "emptySeeker": "ما في حدا مطابق لطلبك بعد. في ناس جداد كل يوم — بالوقت الحالي، انشره عالصفحة الرئيسية تا يردّوا عليك اللي بيقدّموا هالخدمة.",
+    "emptyProvider": "ما في طلبات مطابقة إلك بعد. إذا بتغطّي مناطق أو أيام أكتر بتجيك تطابقات أكتر، ومنشور عالصفحة الرئيسية بيخلّي الزباين يلاقوك.",
+    "emptyPostNeed": "انشره عالصفحة الرئيسية",
+    "emptyPostOffer": "انشر شو بتقدّم",
+    "emptyEdit": "عدّل طلبي",
+    "emptyWiden": "زيد مناطق أو أيام"
   },
   "Featured": {
     "title": "كن مميّزًا",
@@ -1199,7 +1218,7 @@
     "notesPlaceholder": "مثلاً: قابل للكسر، دقّلي لمّا توصل",
     "section1Title": "التفاصيل",
     "section2Title": "الوقت",
-    "section3Title": "إنت ومنطقتك",
+    "section3Title": "عنك",
     "delivery": {
       "what": "شو بدّك تبعت؟",
       "whatPlaceholder": "مثلاً: أوراق، غرض صغير، مفاتيح",
@@ -1225,7 +1244,8 @@
       "whatPlaceholder": "مثلاً: شخص واحد مع شنطة صغيرة",
       "pickup": "نقطة الانطلاق",
       "dropoff": "الوجهة"
-    }
+    },
+    "governorate": "بأي محافظة؟"
   },
   "ErrandFields": {
     "errandServices": "الخدمات",

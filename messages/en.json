@@ -261,7 +261,11 @@
     "noProfileNeedBody": "Describe what you need and get matched with people near you.",
     "noProfileOffer": "I offer help",
     "noProfileOfferBody": "Show what you do so people near you can find you.",
-    "noProfileSettings": "Account, language and notifications are in Settings"
+    "noProfileSettings": "Account, language and notifications are in Settings",
+    "titleInRequest": "{category}: your request",
+    "yourRequest": "Your request",
+    "descriptionPendingRequest": "We check every request before people see it. You'll get a notification when it's live — your matches will then appear here.",
+    "editRequest": "Edit request"
   },
   "Wizard": {
     "changeRole": "← Change my choice",
@@ -280,7 +284,16 @@
     "errorNumber": "Enter a valid number.",
     "errorTooLong": "That's too long.",
     "errorCheck": "Please check this.",
-    "phoneHint": "Only visible to ouiKnow admins — never shown to other users. Not used for login."
+    "phoneHint": "Only visible to ouiKnow admins — never shown to other users. Not used for login.",
+    "submitRequest": "Send my request",
+    "submitProfile": "Create my profile",
+    "errorVehicle": "Choose how you get around.",
+    "errorMotoVehicle": "Moto taxi needs a motorcycle.",
+    "errorMotoLicense": "Moto taxi needs a valid motorcycle license.",
+    "errorMaxWait": "Enter how many hours you'll wait.",
+    "errorPlace": "Enter the area or a landmark.",
+    "errorInstitution": "Enter the office or institution.",
+    "errorWhen": "Pick a date and time."
   },
   "Location": {
     "governorate": "Governorate",
@@ -667,7 +680,13 @@
     "criteriaService": "Service",
     "criteriaRequirements": "Fits the job",
     "titleMatchesIn": "{category} matches",
-    "filters": "Filters"
+    "filters": "Filters",
+    "emptySeeker": "Nobody matches your request yet. New people join every day — meanwhile, post it on Home so people offering this can reply.",
+    "emptyProvider": "No requests match you yet. Covering more areas or days brings more matches, and a post on Home lets customers find you.",
+    "emptyPostNeed": "Post it on Home",
+    "emptyPostOffer": "Post what you offer",
+    "emptyEdit": "Edit my request",
+    "emptyWiden": "Add areas or days"
   },
   "Featured": {
     "title": "Get Featured",
@@ -1199,7 +1218,7 @@
     "notesPlaceholder": "e.g. Fragile, please call when you arrive",
     "section1Title": "The details",
     "section2Title": "When",
-    "section3Title": "You and your area",
+    "section3Title": "About you",
     "delivery": {
       "what": "What are you sending?",
       "whatPlaceholder": "e.g. Documents, a small package, keys",
@@ -1225,7 +1244,8 @@
       "whatPlaceholder": "e.g. One person with a small bag",
       "pickup": "Pickup point",
       "dropoff": "Destination"
-    }
+    },
+    "governorate": "Which governorate is this in?"
   },
   "ErrandFields": {
     "errandServices": "Services",

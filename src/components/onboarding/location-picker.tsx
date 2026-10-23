@@ -33,9 +33,12 @@ export default function LocationPicker({
   onGovernorate,
   onDetail,
   errors = {},
+  showDetail = true,
 }: {
   governorateId: string | null;
   detail: string;
+  /** Off where the form already asks for the exact area another way. */
+  showDetail?: boolean;
   onGovernorate: (id: string | null) => void;
   onDetail: (value: string) => void;
   errors?: FieldErrors;
@@ -69,6 +72,7 @@ export default function LocationPicker({
       </select>
       <FieldError field="locationId" errors={errors} />
 
+      {showDetail && (
       <input
         type="text"
         className={`${ui.input} ${errors.locationDetail ? "border-danger!" : ""}`}
@@ -79,7 +83,8 @@ export default function LocationPicker({
         onChange={(e) => onDetail(e.target.value)}
         maxLength={120}
       />
-      <FieldError field="locationDetail" errors={errors} />
+      )}
+      {showDetail && <FieldError field="locationDetail" errors={errors} />}
     </div>
   );
 }

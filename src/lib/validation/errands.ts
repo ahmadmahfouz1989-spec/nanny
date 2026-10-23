@@ -68,16 +68,16 @@ export const errandProviderSchema = z
   .superRefine((p, ctx) => {
     const services = Array.isArray(p.errandServices) ? p.errandServices : [];
     if (!p.vehicle && services.some((s) => NEEDS_VEHICLE.includes(s))) {
-      ctx.addIssue({ code: "custom", path: ["vehicle"], message: "Choose how you get around" });
+      ctx.addIssue({ code: "custom", path: ["vehicle"], message: "Choose how you get around", params: { key: "errorVehicle" } });
     }
     if (services.includes("moto_taxi") && p.vehicle !== "motorcycle") {
-      ctx.addIssue({ code: "custom", path: ["vehicle"], message: "Moto taxi needs a motorcycle" });
+      ctx.addIssue({ code: "custom", path: ["vehicle"], message: "Moto taxi needs a motorcycle", params: { key: "errorMotoVehicle" } });
     }
     if (services.includes("moto_taxi") && !p.hasDrivingLicense) {
-      ctx.addIssue({ code: "custom", path: ["hasDrivingLicense"], message: "Moto taxi needs a driving license" });
+      ctx.addIssue({ code: "custom", path: ["hasDrivingLicense"], message: "Moto taxi needs a driving license", params: { key: "errorMotoLicense" } });
     }
     if (services.includes("queue") && p.maxWaitHours === undefined) {
-      ctx.addIssue({ code: "custom", path: ["maxWaitHours"], message: "Enter how long you can wait" });
+      ctx.addIssue({ code: "custom", path: ["maxWaitHours"], message: "Enter how long you can wait", params: { key: "errorMaxWait" } });
     }
   }, ALWAYS);
 
@@ -112,7 +112,7 @@ export const errandSeekerSchema = z
   })
   .superRefine((s, ctx) => {
     const need = (field: "pickupPlace" | "dropoffPlace" | "institution", message: string) => {
-      if (!s[field]) ctx.addIssue({ code: "custom", path: [field], message });
+      if (!s[field]) ctx.addIssue({ code: "custom", path: [field], message, params: { key: field === "institution" ? "errorInstitution" : "errorPlace" } });
     };
     if (s.errandService === "delivery" || s.errandService === "moto_taxi") {
       need("pickupPlace", "Enter the pickup area");
@@ -122,7 +122,7 @@ export const errandSeekerSchema = z
     if (s.errandService === "queue") need("pickupPlace", "Enter where the queue is");
     if (s.errandService === "paperwork") need("institution", "Enter the office or institution");
     if (s.timing === "scheduled" && !s.scheduledAt) {
-      ctx.addIssue({ code: "custom", path: ["scheduledAt"], message: "Pick a date and time" });
+      ctx.addIssue({ code: "custom", path: ["scheduledAt"], message: "Pick a date and time", params: { key: "errorWhen" } });
     }
   }, ALWAYS);
 

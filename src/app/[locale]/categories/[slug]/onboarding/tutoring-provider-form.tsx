@@ -175,6 +175,7 @@ export default function TutoringProviderForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
+      saveLabel={isRealEdit ? undefined : tw("submitProfile")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}

@@ -154,6 +154,7 @@ export default function MaintenanceSeekerForm({
   return (
     <EditShell
       title={isRealEdit ? t("editTitle") : t("createTitle")}
+      saveLabel={isRealEdit ? undefined : tw("submitRequest")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
       onSave={handleSave}

@@ -5,11 +5,24 @@ export type InboxConversation = {
   /** The match's category (e.g. "nanny", "nursing"). */
   categorySlug: string;
   counterpart: { id: string; name: string; photoUrl: string | null };
+  /** What the request in this conversation is ("2 bread, milk and panadol"), whichever side asked. */
+  about: string | null;
   lastMessage: { body: string; createdAt: string } | null;
   unreadCount: number;
 };
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
+
+// A request's own words, for the line under a conversation's name. Only
+// text the seeker wrote for others to read (never medical notes).
+function requestText(attributes: unknown): string | null {
+  const a = (attributes ?? {}) as Record<string, unknown>;
+  for (const key of ["jobDescription", "familyDescription", "additionalNotes"]) {
+    const v = a[key];
+    if (typeof v === "string" && v.trim()) return v.trim().slice(0, 120);
+  }
+  return null;
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -59,7 +72,7 @@ export async function allConversations(
 ): Promise<InboxConversation[]> {
   const { data: myProfiles } = await supabase
     .from("generic_profiles")
-    .select("id, role, categories(slug)")
+    .select("id, role, attributes, categories(slug)")
     .eq("user_id", userId);
 
   if (!myProfiles || myProfiles.length === 0) {
@@ -103,20 +116,24 @@ export async function allConversations(
   const otherIds = [...new Set(matches.map((m) => m.otherProfileId))];
   const { data: otherProfiles } = await supabase
     .from("generic_profiles")
-    .select("id, full_name, profile_photo_url")
+    .select("id, full_name, profile_photo_url, attributes")
     .in("id", otherIds);
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
   const matchIds = matches.map((m) => m.match.id);
   const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(supabase, matchIds, userId);
 
+  const myById = new Map(myProfiles.map((p) => [p.id, p]));
   const conversations = matches.map(({ match, myProfileId, otherProfileId }) => {
     const other = otherById.get(otherProfileId);
+    // The request lives on the seeker's profile, which may be either side.
+    const seeker = match.seeker_profile_id === myProfileId ? myById.get(myProfileId) : other;
 
     return {
       matchId: match.id,
       categorySlug: categorySlugById.get(myProfileId) ?? "",
       counterpart: { id: other?.id ?? "", name: other?.full_name ?? "", photoUrl: other?.profile_photo_url ?? null },
+      about: requestText(seeker?.attributes),
       lastMessage: lastMessageByMatch.get(match.id) ?? null,
       unreadCount: unreadCountByMatch.get(match.id) ?? 0,
     };

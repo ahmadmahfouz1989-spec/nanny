@@ -18,9 +18,12 @@ export default function ConversationHeader({
   photoUrl,
   tone,
   profileId,
+  subtitle,
   onBack,
   onBlocked,
 }: {
+  /** What the conversation is about: the service and the request. */
+  subtitle?: string;
   matchId: string;
   name: string;
   photoUrl: string | null;
@@ -77,7 +80,14 @@ export default function ConversationHeader({
           ) : (
             <AvatarIllustration tone={tone} className="h-10 w-10 rounded-full shrink-0" />
           )}
-          <span className="font-display font-semibold min-w-0 truncate hover:underline">{name}</span>
+          <span className="flex min-w-0 flex-col">
+            <span className="font-display font-semibold truncate hover:underline">{name}</span>
+            {subtitle && (
+              <span dir="auto" className="truncate text-xs text-muted">
+                {subtitle}
+              </span>
+            )}
+          </span>
         </Link>
         <button
           type="button"

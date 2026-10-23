@@ -459,6 +459,7 @@ export default function NannyProviderForm({
   return (
     <EditShell
       title={isEdit ? t("editTitle") : t("createTitle")}
+      saveLabel={isEdit ? undefined : tw("submitProfile")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
       onCancel={handleCancel}
       onSave={handleSave}
