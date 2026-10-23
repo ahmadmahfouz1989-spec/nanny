@@ -30,7 +30,8 @@ function WhatsAppIcon({ className = "" }: { className?: string }) {
  */
 // Off until WhatsApp delivery is set up end to end (Meta + the Supabase Send
 // SMS hook + the WHATSAPP_* settings) -- otherwise the button would only fail.
-const ENABLED = process.env.NEXT_PUBLIC_WHATSAPP_AUTH === "on";
+export const WHATSAPP_AUTH_ENABLED = process.env.NEXT_PUBLIC_WHATSAPP_AUTH === "on";
+const ENABLED = WHATSAPP_AUTH_ENABLED;
 
 export default function WhatsAppAuth(props: { mode: "login" | "signup"; next?: string | null }) {
   return ENABLED ? <WhatsAppAuthPanel {...props} /> : null;

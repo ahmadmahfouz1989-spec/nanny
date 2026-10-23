@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { META_SIGNUP_COOKIE } from "@/lib/meta-signup";
+import { isNativeApp } from "@/lib/native-app";
+import { APP_USER_AGENT_MARKER } from "@/lib/app-user-agent";
 
 // Meta (Facebook) Pixel, for measuring ads. Not a secret -- it's in every
 // visitor's page source anyway. Override with NEXT_PUBLIC_META_PIXEL_ID.
@@ -43,8 +45,16 @@ function isTracked(pathname: string) {
 
 /** Sends a standard Meta event (e.g. "CompleteRegistration"). Safe to call anywhere; a no-op when the pixel is off. */
 export function trackMetaEvent(name: string, params?: Record<string, unknown>) {
-  if (ENABLED && typeof window !== "undefined") window.fbq?.("track", name, params);
+  if (ENABLED && typeof window !== "undefined" && !inApp()) window.fbq?.("track", name, params);
 }
+
+// Inside the iOS/Android app there's no Pixel at all: tracking there would
+// need Apple's "Allow tracking?" prompt (App Tracking Transparency), and the
+// website is where ads send people anyway.
+function inApp() {
+  return isNativeApp() || navigator.userAgent.includes(APP_USER_AGENT_MARKER);
+}
+const noopSubscribe = () => () => {};
 
 // A Google sign-up finishes on the server (/auth/callback), which leaves
 // this cookie for the first page afterwards to report.
@@ -56,9 +66,12 @@ function takeSignupMarker(): boolean {
 
 export default function MetaPixel() {
   const pathname = usePathname();
+  // Treated as "in the app" until known on the phone, so the server never
+  // renders the script and the app never loads it.
+  const app = useSyncExternalStore(noopSubscribe, inApp, () => true);
 
   useEffect(() => {
-    if (!ENABLED || !isTracked(pathname)) return;
+    if (!ENABLED || app || !isTracked(pathname)) return;
     // The base code runs after hydration, so on the very first page fbq may
     // not exist yet -- wait for it briefly rather than miss that visit.
     let tries = 0;
@@ -70,9 +83,9 @@ export default function MetaPixel() {
       }
     }, 100);
     return () => clearInterval(timer);
-  }, [pathname]);
+  }, [pathname, app]);
 
-  if (!ENABLED) return null;
+  if (!ENABLED || app) return null;
   return (
     <Script id="meta-pixel" strategy="afterInteractive">
       {BASE_CODE}
