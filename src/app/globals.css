@@ -363,3 +363,15 @@ html[data-chrome="hidden"] .app-chrome-bottom {
     padding-top: calc(0.5rem + env(safe-area-inset-top));
   }
 }
+
+/* iOS zooms into any text box under 16px when it's tapped, and on these
+   fit-to-screen pages the zoom then can't be undone. Phone text boxes are
+   16px; the few deliberately larger ones (the sign-up code) keep theirs.
+   Unlayered, so it wins over the text-sm utility on ui.input. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([class*="text-xl"]):not([class*="text-2xl"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
