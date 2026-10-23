@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/lib/supabase/database.types";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { withPlaceNames } from "@/lib/place-names";
 import {
   profileActivity,
   profileStrength,
@@ -90,8 +91,10 @@ export async function loadProfilePage(
   viewerId: string,
   profileId: string,
 ): Promise<ProfilePageData | null> {
-  const { data: row } = await supabase.from("generic_profiles").select(FIELDS).eq("id", profileId).maybeSingle();
-  if (!row) return null;
+  const { data: found } = await supabase.from("generic_profiles").select(FIELDS).eq("id", profileId).maybeSingle();
+  if (!found) return null;
+  // Its area and district names, where it has them, in place of the governorate.
+  const [row] = await withPlaceNames([found]);
 
   const { user_id: ownerId, category_id: categoryId, ...visible } = row;
   const isOwn = ownerId === viewerId;

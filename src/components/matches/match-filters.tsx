@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import GovernorateSelect from "./governorate-select";
+import PlaceSelect from "@/components/place-select";
 import { SearchIcon } from "@/components/nav-icons";
 import { DAYS } from "@/lib/validation/profile";
 import { ui } from "@/lib/ui";
@@ -90,11 +90,7 @@ export default function MatchFilters({
       </div>
       {open && (
         <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-border bg-surface-sunken/50 p-3">
-          <GovernorateSelect
-            value={governorateId}
-            onChange={onGovernorate}
-            placeholder={t("filterAllAreas")}
-          />
+          <PlaceSelect value={governorateId} onChange={onGovernorate} placeholder={t("filterAllAreas")} className={ui.select + " w-auto"} />
           <select
             className={ui.select + " w-auto"}
             value={day}

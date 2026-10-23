@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { withPlaceNames } from "@/lib/place-names";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -71,9 +72,17 @@ export async function GET(request: Request) {
   const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
   const pageSize = Math.min(50, Math.max(1, Number(searchParams.get("pageSize") ?? 20)));
 
+  // The area filter is a governorate or one of its districts (PlaceSelect).
+  const placeId = searchParams.get("governorateId") || null;
+  const { data: place } = placeId
+    ? await supabase.from("locations").select("level").eq("id", placeId).maybeSingle()
+    : { data: null };
+  const isDistrict = place?.level === "district";
+
   const { data: rows, error } = await supabase.rpc("list_profile_matches", {
     p_profile_id: myProfile.id,
-    p_governorate_id: searchParams.get("governorateId") || undefined,
+    p_governorate_id: placeId && !isDistrict ? placeId : undefined,
+    p_district_id: isDistrict ? placeId! : undefined,
     p_day: searchParams.get("day") || undefined,
     p_min_years: minYears > 0 ? minYears : undefined,
     p_words: words.length ? words : undefined,
@@ -93,7 +102,7 @@ export async function GET(request: Request) {
   // Details for just this page.
   const matchIds = pageRows.map((r) => r.match_id);
   const otherIds = pageRows.map((r) => r.other_profile_id);
-  const [{ data: matches }, { data: otherProfiles }] = await Promise.all([
+  const [{ data: matches }, { data: otherProfilesRaw }] = await Promise.all([
     supabase
       .from("generic_matches")
       .select("id, score, score_breakdown, status, interest_expires_at, seeker_profile_id, provider_profile_id")
@@ -103,6 +112,9 @@ export async function GET(request: Request) {
       .select("id, full_name, profile_photo_url, location_id, attributes, locations(name_en, name_ar, name_fr)")
       .in("id", otherIds),
   ]);
+
+  // Where each one is, as precisely as they said (area, district).
+  const otherProfiles = await withPlaceNames(otherProfilesRaw ?? []);
 
   // Languages are stored as bare ids in attributes -- resolve them once for
   // the page so cards can show names.

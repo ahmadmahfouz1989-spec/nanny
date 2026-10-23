@@ -3,6 +3,7 @@ import { getCategories } from "@/lib/categories";
 import { normalizeForSearch, searchWords } from "@/lib/profile-search";
 import { fillMissingSearchText } from "@/lib/search-text";
 import { POST_FEED_COLUMNS, resolvePostAuthors } from "@/lib/posts";
+import { withPlaceNames } from "@/lib/place-names";
 
 /** Results per section; a full section shows its count as "20+". */
 export const SEARCH_LIMIT = 20;
@@ -51,8 +52,8 @@ function about(a: Record<string, unknown>): string | null {
  * every word typed. A profile also matches on its category's own name and
  * description, so "nurse" finds nurses whose profile never says the word,
  * and "plumber Jounieh" finds plumbers who mention Jounieh. `region`
- * narrows profiles to a governorate -- where they live or, for services
- * that travel, one they also cover. Never the viewer's own profiles.
+ * narrows profiles to a governorate or a district -- where they live or
+ * one they also cover. Never the viewer's own profiles.
  * Runs as the viewer, so the usual visibility rules apply (approved,
  * active, not suspended).
  */
@@ -61,6 +62,12 @@ export async function search(query: string, region: string | null, userId: strin
   if (words.length === 0) return { offering: [], seeking: [], posts: [] };
 
   const supabase = await createClient();
+  // The region is a governorate or a district (Home's area picker).
+  const { data: regionRow } = region
+    ? await supabase.from("locations").select("level, parent_location_id").eq("id", region).maybeSingle()
+    : { data: null };
+  const regionLevel = regionRow?.level ?? null;
+  const regionParent = regionRow?.parent_location_id ?? null;
   const categories = (await getCategories()).filter((c) => c.status === "live");
   // Profiles saved before search_text existed would otherwise never match.
   await Promise.all(categories.map((c) => fillMissingSearchText(c.id)));
@@ -72,7 +79,7 @@ export async function search(query: string, region: string | null, userId: strin
   const people = (role: "seeker" | "provider") => {
     let q = supabase
       .from("generic_profiles")
-      .select("id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar)")
+      .select("id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
       .eq("role", role)
       .eq("status", "active")
       .eq("moderation_status", "approved")
@@ -84,18 +91,27 @@ export async function search(query: string, region: string | null, userId: strin
         inCategories.length ? `search_text.ilike.*${w}*,category_id.in.(${inCategories.join(",")})` : `search_text.ilike.*${w}*`,
       );
     }
-    if (region) q = q.or(`location_id.eq.${region},attributes->serviceAreaIds.cs.["${region}"]`);
+    if (region && regionLevel === "district") {
+      // In the district, covering it, or (saved before districts) in its governorate.
+      q = q.or(
+        `attributes->>districtId.eq.${region},attributes->coverDistrictIds.cs.["${region}"]` +
+          (regionParent ? `,and(attributes->>districtId.is.null,location_id.eq.${regionParent})` : ""),
+      );
+    } else if (region) {
+      q = q.or(`location_id.eq.${region},attributes->serviceAreaIds.cs.["${region}"]`);
+    }
     return q.order("created_at", { ascending: false }).limit(SEARCH_LIMIT);
   };
 
   let postQuery = supabase.from("posts").select(POST_FEED_COLUMNS).eq("status", "open");
   for (const w of words) postQuery = postQuery.ilike("caption", `%${w}%`);
 
-  const [{ data: providers }, { data: seekers }, { data: posts }] = await Promise.all([
+  const [{ data: providersRaw }, { data: seekersRaw }, { data: posts }] = await Promise.all([
     people("provider"),
     people("seeker"),
     postQuery.order("created_at", { ascending: false }).limit(SEARCH_LIMIT),
   ]);
+  const [providers, seekers] = await Promise.all([withPlaceNames(providersRaw ?? []), withPlaceNames(seekersRaw ?? [])]);
 
   const byId = new Map(categories.map((c) => [c.id, c]));
   const toPerson = (p: NonNullable<typeof providers>[number]): PersonResult => {

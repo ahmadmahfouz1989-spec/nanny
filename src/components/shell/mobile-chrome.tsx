@@ -26,6 +26,7 @@ import {
   WhatsAppIcon,
 } from "@/components/home-icons";
 import { rememberRegion } from "@/lib/region";
+import PlaceSelect, { placeName, usePlaceTree } from "@/components/place-select";
 import { SUPPORT_WHATSAPP } from "@/lib/support";
 import { useNotifications } from "@/components/notifications/notifications-provider";
 import { BackArrow, useGoBack } from "@/components/back-button";
@@ -138,46 +139,32 @@ const MENU_ROW = "flex w-full items-center gap-3 rounded-2xl px-2 py-2 text-star
 const SETTING_ROW = "flex w-full items-center gap-3 py-3 text-[15px] text-ink";
 
 /**
- * The area picker at the top of Home. Matches starts on the area you pick
- * (see lib/region); the native picker opens over the label.
+ * The area picker at the top of Home: a governorate or a district.
+ * Matches and Search start on the area you pick (see lib/region).
  */
 function RegionPicker({ initial }: { initial: string }) {
   const t = useTranslations("Discover");
   const locale = useLocale();
-  const [options, setOptions] = useState<{ id: string; name_en: string; name_ar: string }[]>([]);
+  const tree = usePlaceTree();
   const [value, setValue] = useState(initial);
-
-  useEffect(() => {
-    fetch("/api/locations?level=governorate")
-      .then((res) => res.json())
-      .then((body) => setOptions(body.locations ?? []))
-      .catch(() => {});
-  }, []);
-
-  const current = options.find((o) => o.id === value);
-  const label = current ? (locale === "ar" ? current.name_ar : current.name_en) : t("allLebanon");
+  const label = (value && placeName(tree, value, locale)) || t("allLebanon");
 
   return (
     <label className="relative inline-flex min-w-0 items-center gap-0.5 rounded-full py-1.5 text-[13px] font-semibold text-ink">
       <PinIcon className="h-4 w-4 shrink-0" />
       <span className="truncate">{label}</span>
       <ChevronDownIcon className="h-4 w-4 shrink-0 text-muted" />
-      <select
-        aria-label={t("regionLabel")}
+      {/* A governorate or one of its districts; the native picker opens over the label. */}
+      <PlaceSelect
         value={value}
-        onChange={(e) => {
-          setValue(e.target.value);
-          rememberRegion(e.target.value);
+        onChange={(v) => {
+          setValue(v);
+          rememberRegion(v);
         }}
+        placeholder={t("allLebanon")}
+        ariaLabel={t("regionLabel")}
         className="absolute inset-0 opacity-0"
-      >
-        <option value="">{t("allLebanon")}</option>
-        {options.map((o) => (
-          <option key={o.id} value={o.id}>
-            {locale === "ar" ? o.name_ar : o.name_en}
-          </option>
-        ))}
-      </select>
+      />
     </label>
   );
 }
