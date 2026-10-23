@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   let query = db
     .from("generic_profiles")
     .select(
-      "id, user_id, full_name, profile_photo_url, role, attributes, status, moderation_status, created_at, updated_at, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar), users(email, contact_phone, status)",
+      "id, user_id, full_name, profile_photo_url, role, attributes, status, moderation_status, created_at, updated_at, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar), users!generic_profiles_user_id_fkey(email, contact_phone, status)",
     )
     .eq("moderation_status", moderationStatus)
     // Excludes the placeholder row created the instant a role is picked
