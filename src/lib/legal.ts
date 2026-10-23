@@ -5,6 +5,8 @@ type LegalDoc = {
   updated: string;
   intro: string;
   sections: LegalSection[];
+  /** Attribution for data the app uses (the areas list is CC BY 4.0). */
+  credits: { text: string; link: string; linkText: string };
 };
 
 export const TERMS: Record<"en" | "ar", LegalDoc> = {
@@ -12,6 +14,11 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
     title: "Terms of Service",
     updated: "Last updated: October 2026",
     intro: "By creating an account you agree to the following terms.",
+    credits: {
+      text: "Lebanon's districts and areas come from Open Admin Data's “Lebanon Administrative Divisions” (CC BY 4.0), with some everyday place names added by ouiKnow:",
+      link: "https://github.com/open-admin-data/lebanon-administrative-divisions",
+      linkText: "open-admin-data/lebanon-administrative-divisions",
+    },
     sections: [
       {
         heading: "1. Nature of the Platform as a Technical Intermediary",
@@ -43,6 +50,11 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
     title: "شروط الخدمة",
     updated: "آخر تحديث: تشرين الأول ٢٠٢٦",
     intro: "بإنشائك حسابًا فإنك توافق على الشروط التالية.",
+    credits: {
+      text: "مصدر أقضية ومناطق لبنان: «Lebanon Administrative Divisions» من Open Admin Data (رخصة CC BY 4.0)، مع أسماء أماكن شائعة أضافتها ouiKnow:",
+      link: "https://github.com/open-admin-data/lebanon-administrative-divisions",
+      linkText: "open-admin-data/lebanon-administrative-divisions",
+    },
     sections: [
       {
         heading: "١. طبيعة المنصة كوسيط تقني",

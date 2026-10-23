@@ -310,7 +310,13 @@
     "governorate": "المحافظة",
     "district": "القضاء",
     "area": "المنطقة",
-    "detailPlaceholder": "الحي أو الشارع أو المبنى"
+    "detailPlaceholder": "الحي أو الشارع أو المبنى",
+    "searchPlaceholder": "اكتب منطقتك، مثلاً الحمرا",
+    "districtOf": "قضاء · {place}",
+    "noMatch": "ما لقينا — اختار من القوائم تحت.",
+    "areaOptional": "المنطقة (اختياري)",
+    "coverTitle": "أقضية تانية بتشتغل فيها",
+    "coverHint": "قضاؤك محسوب من قبل. الزباين بالأقضية اللي بتختارها بيشوفوك بتطابقاتن."
   },
   "AgeGroups": {
     "newborn": "حديث الولادة (٠–٣ أشهر)",
@@ -633,7 +639,7 @@
     "featuredSection": "مميّز",
     "allMatchesSection": "كل التطابقات",
     "featuredBadge": "مميّز",
-    "criteriaLocation": "المحافظة",
+    "criteriaLocation": "المنطقة",
     "criteriaAvailability": "التوفر",
     "criteriaEmploymentType": "الجدول الزمني",
     "criteriaLiveArrangement": "الإقامة",

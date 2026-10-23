@@ -21,6 +21,8 @@ type FormState = {
   contactPhone: string;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
   errandService: ErrandService | null;
   jobDescription: string;
   pickupPlace: string;
@@ -41,6 +43,8 @@ const initialState: FormState = {
   contactPhone: "",
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
   errandService: null,
   jobDescription: "",
   pickupPlace: "",
@@ -78,6 +82,8 @@ function stateFromExisting(p: ExistingProfile): FormState {
     contactPhone: p.contact_phone ?? "",
     locationId: p.location_id,
     locationDetail: str(a.locationDetail),
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
     errandService: (a.errandService as ErrandService) ?? null,
     jobDescription: str(a.jobDescription),
     pickupPlace: str(a.pickupPlace),
@@ -146,6 +152,8 @@ export default function ErrandsSeekerForm({
     // The places below already say where; the area shown on the request
     // is the first of them, not a second "neighbourhood" question.
     locationDetail: (form.dropoffPlace || form.pickupPlace || form.institution || form.locationDetail).trim().slice(0, 120),
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
     errandService: service ?? undefined,
     jobDescription: form.jobDescription,
     pickupPlace: asks("pickupPlace") ? text(form.pickupPlace) : undefined,
@@ -277,6 +285,9 @@ export default function ErrandsSeekerForm({
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
+          districtId={form.districtId}
+          areaId={form.areaId}
+          onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
           onGovernorate={(id) => update("locationId", id)}
           onDetail={(v) => update("locationDetail", v)}
           errors={fieldErrors}

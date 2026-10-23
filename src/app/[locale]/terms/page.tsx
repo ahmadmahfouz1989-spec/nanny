@@ -30,6 +30,13 @@ export default async function TermsPage({ params }: { params: Promise<{ locale: 
         ))}
       </div>
 
+      <p className="mt-10 text-xs text-muted">
+        {doc.credits.text}{" "}
+        <a href={doc.credits.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline" dir="ltr">
+          {doc.credits.linkText}
+        </a>
+      </p>
+
       <div className="mt-12 border-t border-border pt-6">
         <Link href="/" className="text-sm text-primary hover:underline">
           {tNav("backToHome")}

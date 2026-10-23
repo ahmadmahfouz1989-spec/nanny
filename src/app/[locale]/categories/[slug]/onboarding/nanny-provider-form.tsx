@@ -8,6 +8,7 @@ import EditShell from "@/components/onboarding/edit-shell";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
+import DistrictCoverage from "@/components/onboarding/district-coverage";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
@@ -24,6 +25,9 @@ type FormState = {
   profilePhotoUrl: string | null;
   locationId: string | null;
   locationDetail: string;
+  districtId: string | null;
+  areaId: string | null;
+  coverDistrictIds: string[];
   nationality: string;
   workRadiusKm: string;
   employmentType: "full_time" | "part_time" | "either";
@@ -46,6 +50,9 @@ const initialState: FormState = {
   profilePhotoUrl: null,
   locationId: null,
   locationDetail: "",
+  districtId: null,
+  areaId: null,
+  coverDistrictIds: [],
   nationality: "",
   workRadiusKm: "10",
   employmentType: "full_time",
@@ -84,6 +91,9 @@ function stateFromExisting(p: ExistingProfile): FormState {
     profilePhotoUrl: p.profile_photo_url ?? null,
     locationId: p.location_id,
     locationDetail: (a.locationDetail as string) ?? "",
+    districtId: (a.districtId as string) ?? null,
+    areaId: (a.areaId as string) ?? null,
+    coverDistrictIds: (a.coverDistrictIds as string[]) ?? [],
     nationality: (a.nationality as string) ?? "",
     workRadiusKm: a.workRadiusKm !== undefined ? String(a.workRadiusKm) : initialState.workRadiusKm,
     employmentType: (a.employmentType as FormState["employmentType"]) ?? initialState.employmentType,
@@ -174,6 +184,10 @@ export default function NannyProviderForm({
     profilePhotoUrl: form.profilePhotoUrl || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
+    districtId: form.districtId ?? undefined,
+    areaId: form.areaId,
+    // Your own district counts already.
+    coverDistrictIds: form.coverDistrictIds.filter((id) => id !== form.districtId),
     nationality: form.nationality,
     workRadiusKm: Number(form.workRadiusKm),
     employmentType: form.employmentType,
@@ -293,9 +307,24 @@ export default function NannyProviderForm({
           <LocationPicker
             governorateId={form.locationId}
             detail={form.locationDetail}
+            districtId={form.districtId}
+            areaId={form.areaId}
+            onArea={(districtId, areaId) => setForm((f) => ({ ...f, districtId, areaId }))}
             onGovernorate={(id) => update("locationId", id)}
             onDetail={(v) => update("locationDetail", v)}
             errors={fieldErrors}
+          />
+
+          <DistrictCoverage
+
+            value={form.coverDistrictIds}
+
+            onChange={(ids) => setForm((f) => ({ ...f, coverDistrictIds: ids }))}
+
+            homeDistrictId={form.districtId}
+
+            homeGovernorateId={form.locationId}
+
           />
           <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
           <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />

@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { placeOf } from "./place";
 import { toJson, type JsonObject } from "@/lib/attributes";
 import {
   computeCareMatchScore,
@@ -35,7 +36,6 @@ type GenericProfileRow = {
   moderation_status: string;
 };
 
-const govRef = (locationId: string | null) => ({ governorateId: locationId });
 
 // Each category with a genuinely different rubric gets its own
 // input-builder pair + scoring function, rather than forcing every
@@ -44,7 +44,7 @@ const govRef = (locationId: string | null) => ({ governorateId: locationId });
 function nursingSeekerInput(profile: GenericProfileRow): CareSeekerMatchInput {
   const a = profile.attributes;
   return {
-    location: govRef(profile.location_id),
+    location: placeOf(profile),
     neededDays: (a.neededDays as string[]) ?? [],
     scheduleType: a.scheduleType as ScheduleType,
     liveArrangement: a.liveArrangement as LiveArrangement,
@@ -57,7 +57,7 @@ function nursingSeekerInput(profile: GenericProfileRow): CareSeekerMatchInput {
 function nursingProviderInput(profile: GenericProfileRow): CareProviderMatchInput {
   const a = profile.attributes;
   return {
-    location: govRef(profile.location_id),
+    location: placeOf(profile),
     employmentType: a.employmentType as ScheduleType,
     liveArrangementPref: a.liveArrangementPref as LiveArrangement,
     availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
@@ -70,7 +70,7 @@ function nursingProviderInput(profile: GenericProfileRow): CareProviderMatchInpu
 function tutoringSeekerInput(profile: GenericProfileRow): TutoringSeekerMatchInput {
   const a = profile.attributes;
   return {
-    location: govRef(profile.location_id),
+    location: placeOf(profile),
     neededDays: (a.neededDays as string[]) ?? [],
     format: a.format as TutoringFormat,
     transportationRequired: !!a.transportationRequired,
@@ -83,7 +83,7 @@ function tutoringSeekerInput(profile: GenericProfileRow): TutoringSeekerMatchInp
 function tutoringProviderInput(profile: GenericProfileRow): TutoringProviderMatchInput {
   const a = profile.attributes;
   return {
-    location: govRef(profile.location_id),
+    location: placeOf(profile),
     availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
     format: a.format as TutoringFormat,
     hasTransportation: !!a.hasTransportation,
@@ -97,6 +97,7 @@ function maintenanceSeekerInput(profile: GenericProfileRow): MaintenanceSeekerMa
   const a = profile.attributes;
   return {
     governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
     tradesNeeded: (a.tradesNeeded as string[]) ?? [],
     urgency: (a.urgency as Urgency) ?? "flexible",
     neededDays: (a.neededDays as string[]) ?? [],
@@ -107,6 +108,8 @@ function maintenanceProviderInput(profile: GenericProfileRow): MaintenanceProvid
   const a = profile.attributes;
   return {
     governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    coverDistrictIds: placeOf(profile).coverDistrictIds,
     serviceAreaIds: (a.serviceAreaIds as string[]) ?? [],
     trades: (a.trades as string[]) ?? [],
     availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
@@ -119,6 +122,7 @@ function errandSeekerInput(profile: GenericProfileRow): ErrandSeekerMatchInput {
   const a = profile.attributes;
   return {
     governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
     service: (a.errandService as ErrandService) ?? null,
     timing: a.timing === "scheduled" ? "scheduled" : "asap",
     scheduledDay: a.timing === "scheduled" ? dayOfWeek(a.scheduledAt as string | undefined) : null,
@@ -131,6 +135,8 @@ function errandProviderInput(profile: GenericProfileRow): ErrandProviderMatchInp
   const a = profile.attributes;
   return {
     governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    coverDistrictIds: placeOf(profile).coverDistrictIds,
     serviceAreaIds: (a.serviceAreaIds as string[]) ?? [],
     services: (a.errandServices as string[]) ?? [],
     availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],

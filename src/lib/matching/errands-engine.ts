@@ -6,10 +6,12 @@
 // standing in a queue long enough, paying for the shopping, a licensed
 // rider for a moto taxi.
 
+import { placeScore } from "./place";
 import type { ErrandService } from "@/lib/validation/errands";
 
 export interface ErrandSeekerMatchInput {
   governorateId: string | null;
+  districtId?: string | null;
   service: ErrandService | null;
   timing: "asap" | "scheduled";
   /** Day of the week the errand is booked for (mon..sun), if scheduled. */
@@ -21,6 +23,8 @@ export interface ErrandSeekerMatchInput {
 export interface ErrandProviderMatchInput {
   governorateId: string | null;
   serviceAreaIds: string[];
+  districtId?: string | null;
+  coverDistrictIds?: string[];
   services: string[];
   availabilityDays: string[];
   takesUrgentJobs: boolean;
@@ -60,9 +64,8 @@ export function dayOfWeek(dateTime: string | undefined | null): string | null {
 }
 
 function locationScore(seeker: ErrandSeekerMatchInput, provider: ErrandProviderMatchInput): number {
-  if (!seeker.governorateId) return 0;
-  if (seeker.governorateId === provider.governorateId) return 1;
-  return provider.serviceAreaIds.includes(seeker.governorateId) ? 1 : 0;
+  // The shared rule (./place.ts): district first, governorate for older profiles.
+  return placeScore(seeker, provider);
 }
 
 function availabilityScore(seeker: ErrandSeekerMatchInput, provider: ErrandProviderMatchInput): number {

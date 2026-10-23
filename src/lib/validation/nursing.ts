@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
 // generic_profiles only has top-level `full_name` / `location_id` /
@@ -36,6 +37,8 @@ export const nursingProviderSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+  ...areaFields,
+  ...coverageFields,
   nationality,
   workRadiusKm: z.number().int().min(1, "Enter a work radius").max(50, "50 km max"),
   employmentType: z.enum(["full_time", "part_time", "either"]),
@@ -63,6 +66,7 @@ export const nursingSeekerSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+  ...areaFields,
   nationality,
   scheduleType: z.enum(["full_time", "part_time", "either"]),
   neededDays: z.array(z.enum(DAYS)).default([]),

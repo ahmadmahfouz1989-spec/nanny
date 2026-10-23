@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
 // Same split as maintenance.ts: everything but the name and governorate
@@ -41,6 +42,8 @@ export const errandProviderSchema = z
     contactPhone,
     locationId,
     locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+    ...areaFields,
+    ...coverageFields,
     nationality,
     errandServices: z.array(z.enum(ERRAND_SERVICES)).min(1, "Pick at least one service"),
     // Other governorates the provider also works in, besides their own.
@@ -89,6 +92,7 @@ export const errandSeekerSchema = z
     contactPhone,
     locationId,
     locationDetail: z.string().trim().min(2, "Enter your area").max(120, "That's too long"),
+    ...areaFields,
     errandService: z.enum(ERRAND_SERVICES, "Choose a service"),
     jobDescription: z.string().trim().min(3, "Tell them a few words about it").max(1000, "That's too long"),
     // Areas or landmarks only -- the exact address is shared in chat.

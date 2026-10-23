@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { areaFields, coverageFields } from "@/lib/validation/area";
 import { AGE_GROUPS, DAYS, nationality } from "@/lib/validation/profile";
 
 // Nanny's seeker (parent) and provider (nanny) profiles, stored like every
@@ -20,6 +21,7 @@ export const nannySeekerSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2).max(120),
+  ...areaFields,
   nationality,
   numChildren: z.number().int().min(1).max(10),
   childrenAgeRanges: z.array(z.enum(AGE_GROUPS)).min(1),
@@ -43,6 +45,8 @@ export const nannyProviderSchema = z.object({
   contactPhone,
   locationId,
   locationDetail: z.string().trim().min(2).max(120),
+  ...areaFields,
+  ...coverageFields,
   nationality,
   workRadiusKm: z.number().int().min(1).max(50),
   employmentType: z.enum(["full_time", "part_time", "either"]),

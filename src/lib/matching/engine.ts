@@ -1,15 +1,15 @@
 // Weighted-rules matching engine (spec: docs/product-spec.md §4). Pure
 // functions, no I/O — callers resolve profile/location/language data first.
 
+import { placeOf, placeScore, type Place } from "./place";
+
 export type ScheduleType = "full_time" | "part_time" | "either";
 export type LiveArrangement = "live_in" | "live_out" | "either";
 export type AgeGroup = "newborn" | "infant" | "toddler" | "preschool" | "school_age" | "teen";
 
-export interface LocationRef {
-  // Profiles now record only a governorate; the specific location is
-  // free text and not scored.
-  governorateId: string | null;
-}
+// Governorate, and since districts came in, the district and the other
+// districts a provider covers -- see ./place.ts.
+export type LocationRef = Place;
 
 export interface ParentMatchInput {
   location: LocationRef;
@@ -41,7 +41,7 @@ export interface NannyCategoryProfile {
 export function parentInputFromProfile(profile: NannyCategoryProfile): ParentMatchInput {
   const a = profile.attributes;
   return {
-    location: { governorateId: profile.location_id },
+    location: placeOf(profile),
     neededDays: (a.neededDays as string[]) ?? [],
     scheduleType: a.scheduleType as ScheduleType,
     liveArrangement: a.liveArrangement as LiveArrangement,
@@ -55,7 +55,7 @@ export function parentInputFromProfile(profile: NannyCategoryProfile): ParentMat
 export function nannyInputFromProfile(profile: NannyCategoryProfile): NannyMatchInput {
   const a = profile.attributes;
   return {
-    location: { governorateId: profile.location_id },
+    location: placeOf(profile),
     employmentType: a.employmentType as ScheduleType,
     liveArrangementPref: a.liveArrangementPref as LiveArrangement,
     availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
@@ -96,7 +96,7 @@ export interface MatchResult {
 }
 
 function locationScore(a: LocationRef, b: LocationRef): number {
-  return a.governorateId && a.governorateId === b.governorateId ? 1 : 0;
+  return placeScore(a, b);
 }
 
 // Day-overlap: what fraction of the parent's needed weekdays the nanny is
