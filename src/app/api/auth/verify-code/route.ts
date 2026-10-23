@@ -6,7 +6,8 @@ import { logLoginEvent } from "@/lib/login-log";
 
 const bodySchema = z.object({
   email: z.string().email(),
-  code: z.string().regex(/^\d{6}$/),
+  // 6 by default; whatever Supabase's "Email OTP length" is set to.
+  code: z.string().regex(/^\d{6,10}$/),
 });
 
 /**
