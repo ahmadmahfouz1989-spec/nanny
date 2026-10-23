@@ -316,7 +316,8 @@
     "noMatch": "No match — choose from the lists below instead.",
     "areaOptional": "Area (optional)",
     "coverTitle": "Other districts you also work in",
-    "coverHint": "Your own district already counts. Customers in the districts you tick see you in their matches."
+    "coverHint": "Your own district already counts. Customers in the districts you tick see you in their matches.",
+    "allOf": "All of {place}"
   },
   "AgeGroups": {
     "newborn": "Newborn (0–3mo)",

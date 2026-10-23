@@ -1,7 +1,8 @@
 /**
- * The area of Lebanon you picked at the top of Home (a governorate id), in
- * a cookie: Matches then shows people from there unless you change its own
- * area filter. Empty means all of Lebanon.
+ * The area of Lebanon you picked at the top of Home (a governorate or
+ * district id), in a cookie: Matches and Search then show people from
+ * there unless you change their own area filter. Empty means all of
+ * Lebanon.
  */
 export const REGION_COOKIE = "region";
 

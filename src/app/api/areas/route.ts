@@ -11,12 +11,33 @@ const COLUMNS = "id, level, name_en, name_ar, search_text, parent_location_id";
  *   ?governorate=<id>   → that governorate's districts
  *   ?district=<id>      → that district's areas
  *   ?id=<id>            → one district or area, to show a saved choice
+ *   ?tree=1             → every governorate with its districts, for the
+ *                         area filters (Home, Matches, Search)
  * Each comes with its parent and governorate, so picking an area also
  * fills in the district and governorate. Public data; no sign-in needed.
  */
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const supabase = await createClient();
+
+  if (searchParams.get("tree")) {
+    const { data } = await supabase
+      .from("locations")
+      .select("id, level, name_en, name_ar, parent_location_id, sort_order")
+      .in("level", ["governorate", "district"])
+      .not("code", "is", null)
+      .order("sort_order");
+    const govs = (data ?? []).filter((l) => l.level === "governorate");
+    const tree = govs.map((g) => ({
+      id: g.id,
+      name_en: g.name_en,
+      name_ar: g.name_ar,
+      districts: (data ?? [])
+        .filter((d) => d.level === "district" && d.parent_location_id === g.id)
+        .map((d) => ({ id: d.id, name_en: d.name_en, name_ar: d.name_ar })),
+    }));
+    return NextResponse.json({ tree }, { headers: { "Cache-Control": "public, max-age=3600" } });
+  }
 
   let rows: { id: string; level: string; name_en: string; name_ar: string; search_text: string | null; parent_location_id: string | null }[] = [];
   const q = normalizeAreaText(searchParams.get("q") ?? "").slice(0, 60);
