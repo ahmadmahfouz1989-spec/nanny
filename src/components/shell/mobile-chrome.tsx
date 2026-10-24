@@ -40,16 +40,18 @@ export type ShellMe = {
   profileId: string | null;
   /** Your area, in this language. */
   place: string | null;
-  verified: boolean;
+  /** What has actually been checked -- each shown as its own badge, so
+   * "email confirmed" is never read as "identity checked". */
+  checks: { email: boolean; phone: boolean; id: boolean };
 };
 
 /** The id of AppShell's scrolling <main>, which the bars watch. */
 export const APP_MAIN_ID = "app-main";
 
 /**
- * Like X, the phone's top and bottom bars slide away while you scroll down
- * through content and come back as soon as you scroll up (or reach the
- * top). Sets html[data-chrome], which globals.css turns into the slide.
+ * The phone's top bar slides away while you scroll down through content
+ * and comes back as soon as you scroll up (or reach the top); the tab bar
+ * stays. Sets html[data-chrome], which globals.css turns into the slide.
  */
 export function HideOnScroll() {
   useEffect(() => {
@@ -296,10 +298,16 @@ export function MobileHeader({
                   <span className="truncate">{me.place}</span>
                 </span>
               )}
-              {me?.verified && (
-                <span className="mt-1 inline-flex items-center gap-1 rounded-full bg-secondary-soft px-2 py-0.5 text-xs font-medium text-secondary">
-                  <ShieldCheckIcon className="h-3.5 w-3.5" />
-                  {tm("verified")}
+              {me && (me.checks.email || me.checks.phone || me.checks.id) && (
+                <span className="mt-1 flex flex-wrap gap-1">
+                  {(["id", "phone", "email"] as const)
+                    .filter((k) => me.checks[k])
+                    .map((k) => (
+                      <span key={k} className="inline-flex items-center gap-1 rounded-full bg-secondary-soft px-2 py-0.5 text-xs font-medium text-secondary">
+                        <ShieldCheckIcon className="h-3.5 w-3.5" />
+                        {tm(`check_${k}`)}
+                      </span>
+                    ))}
                 </span>
               )}
             </span>

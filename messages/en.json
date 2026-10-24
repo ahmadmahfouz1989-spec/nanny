@@ -174,7 +174,12 @@
     "codeResend": "Send a new code",
     "codeResendIn": "You can ask for a new code in {seconds}s",
     "codeResent": "A new code is on its way.",
-    "codeOrLink": "Reading the email on another device? The button in it works too."
+    "codeOrLink": "Reading the email on another device? The button in it works too.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "showPassword": "Show",
+    "hidePassword": "Hide",
+    "passwordRules": "At least 8 characters, with a letter and a number."
   },
   "Signup": {
     "title": "Create your account",
@@ -705,7 +710,8 @@
     "emptyPostNeed": "Post it on Home",
     "emptyPostOffer": "Post what you offer",
     "emptyEdit": "Edit my request",
-    "emptyWiden": "Add areas or days"
+    "emptyWiden": "Add areas or days",
+    "retry": "Try again"
   },
   "Featured": {
     "title": "Get Featured",
@@ -1099,10 +1105,12 @@
     "darkMode": "Dark mode",
     "language": "Language",
     "logout": "Log out",
-    "verified": "Verified",
     "changePhoto": "Change photo",
     "viewPublic": "See your public profile",
-    "createProfile": "Create your profile"
+    "createProfile": "Create your profile",
+    "check_email": "Email confirmed",
+    "check_phone": "Phone confirmed",
+    "check_id": "ID checked"
   },
   "Requests": {
     "title": "My Requests",

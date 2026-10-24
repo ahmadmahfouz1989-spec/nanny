@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import AuthCard from "@/components/auth-card";
+import { EmailField, PasswordField } from "@/components/auth-fields";
 import GoogleAuthButton from "@/components/google-auth-button";
 import WhatsAppAuth, { WHATSAPP_AUTH_ENABLED } from "@/components/whatsapp-auth";
 import EmailCodeForm from "@/components/email-code-form";
@@ -94,23 +95,9 @@ export default function SignupForm({ showGoogle = true }: { showGoogle?: boolean
       )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="email"
-          required
-          placeholder={tAuth("emailPlaceholder")}
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className={ui.input}
-        />
+        <EmailField value={email} onChange={setEmail} />
 
-        <input
-          type="password"
-          required
-          placeholder={tAuth("passwordPlaceholder")}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={ui.input}
-        />
+        <PasswordField value={password} onChange={setPassword} isNew />
 
         <label className="flex items-start gap-2 text-xs text-muted">
           <input

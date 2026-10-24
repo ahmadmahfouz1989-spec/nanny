@@ -43,8 +43,8 @@ const CATEGORY_NAV = [
  * one click away. On a phone the frame works like X's app: four tabs
  * (Home, Matches -- the current category, else the last one you were in,
  * else your first -- Messages, Notifications), a top bar with your photo
- * opening a menu for everything else, and both bars sliding away as you
- * scroll.
+ * opening a menu for everything else, and the top bar sliding away as you
+ * scroll (the tabs stay).
  */
 export default async function AppShell({
   active,
@@ -82,6 +82,11 @@ export default async function AppShell({
   const { data: account } = user
     ? await supabase.from("users").select("email_verified_at, phone_verified_at").eq("id", user.id).maybeSingle()
     : { data: null };
+  // An ID an admin approved, on any of your profiles (RLS: only your own rows).
+  const { count: idCount } = user && profiles?.length
+    ? await supabase.from("id_documents").select("profile_id", { count: "exact", head: true }).eq("status", "approved").in("profile_id", profiles.map((p) => p.id))
+    : { count: 0 };
+  const idChecked = !!idCount;
   const place = photoProfile?.locations;
   const locale = await getLocale();
   const me = user
@@ -90,7 +95,11 @@ export default async function AppShell({
         photoUrl: photoProfile?.profile_photo_url ?? null,
         profileId: photoProfile?.id ?? null,
         place: place ? (locale === "ar" ? place.name_ar : place.name_en) : null,
-        verified: !!(account?.email_verified_at || account?.phone_verified_at),
+        checks: {
+          email: !!account?.email_verified_at,
+          phone: !!account?.phone_verified_at,
+          id: idChecked,
+        },
       }
     : null;
 
