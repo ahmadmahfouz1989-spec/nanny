@@ -56,3 +56,20 @@ export function scrollToFirstError() {
     document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 }
+
+const requiredBySchema = new WeakMap<z.ZodType, string[]>();
+
+/**
+ * How many of a form's required answers are filled in ("5 of 9"): the
+ * top-level fields an empty form is missing, against the ones still
+ * missing now. What the progress bar shows, instead of how far you scrolled.
+ */
+export function requiredProgress(schema: z.ZodType, data: unknown): { done: number; total: number } {
+  let required = requiredBySchema.get(schema);
+  if (!required) {
+    required = Object.keys(fieldErrorsFor(schema, {}));
+    requiredBySchema.set(schema, required);
+  }
+  const missing = fieldErrorsFor(schema, data);
+  return { done: required.filter((k) => !missing[k]).length, total: required.length };
+}

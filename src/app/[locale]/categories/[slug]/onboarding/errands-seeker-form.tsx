@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import { useFormDraft } from "@/components/onboarding/use-form-draft";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -11,7 +12,7 @@ import ErrandServiceIcon from "@/components/errand-service-icon";
 import { ChevronIcon } from "@/components/home-icons";
 import { ERRAND_SERVICES, SEEKER_FIELDS, TIMINGS, errandSeekerSchema, type ErrandService } from "@/lib/validation/errands";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type Timing = (typeof TIMINGS)[number];
@@ -126,6 +127,8 @@ export default function ErrandsSeekerForm({
   // submitted anything yet.
   const isRealEdit = isEdit && initialProfile!.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
+  // Answers kept on the phone until saved or cancelled (see useFormDraft).
+  const draft = useFormDraft(`form-draft:${categorySlug}:seeker:${initialProfile?.id ?? "new"}`, form, setForm);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the
@@ -169,6 +172,7 @@ export default function ErrandsSeekerForm({
     notes: text(form.notes),
   };
   const fieldErrors = showErrors ? fieldErrorsFor(errandSeekerSchema, payload) : {};
+  const progress = requiredProgress(errandSeekerSchema, payload);
 
   async function handleSave() {
     setError(null);
@@ -194,6 +198,7 @@ export default function ErrandsSeekerForm({
       return;
     }
 
+    draft.clear();
     router.push(`/categories/${categorySlug}/dashboard`);
     router.refresh();
   }
@@ -202,8 +207,13 @@ export default function ErrandsSeekerForm({
   if (!service) {
     return (
       <EditShell
+        progress={progress}
+        restored={draft.restored}
         title={t("pickTitle")}
-        onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
+        onCancel={() => {
+        draft.clear();
+        router.push(`/categories/${categorySlug}/dashboard`);
+      }}
         onBack={onBack}
         backLabel={tw("changeRole")}
       >
@@ -238,10 +248,15 @@ export default function ErrandsSeekerForm({
 
   return (
     <EditShell
+      progress={progress}
+      restored={draft.restored}
       title={isRealEdit ? t("editTitle") : t("createTitle")}
       saveLabel={isRealEdit ? undefined : tw("submitRequest")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
-      onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
+      onCancel={() => {
+        draft.clear();
+        router.push(`/categories/${categorySlug}/dashboard`);
+      }}
       onSave={handleSave}
       onBack={onBack}
       backLabel={tw("changeRole")}

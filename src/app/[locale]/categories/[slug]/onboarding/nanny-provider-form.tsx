@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import Image from "next/image";
 import EditShell from "@/components/onboarding/edit-shell";
+import { useFormDraft } from "@/components/onboarding/use-form-draft";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -14,7 +15,7 @@ import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannyProviderSchema } from "@/lib/validation/nanny";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_care_specialist"] as const;
@@ -134,6 +135,8 @@ export default function NannyProviderForm({
   // "create" to the user.
   const isEdit = !!initialProfile && initialProfile.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
+  // Answers kept on the phone until saved or cancelled (see useFormDraft).
+  const draft = useFormDraft(`form-draft:${categorySlug}:provider:${initialProfile?.id ?? "new"}`, form, setForm);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the
@@ -205,6 +208,7 @@ export default function NannyProviderForm({
     })),
   };
   const fieldErrors = showErrors ? fieldErrorsFor(nannyProviderSchema, payload) : {};
+  const progress = requiredProgress(nannyProviderSchema, payload);
 
   async function handleSave() {
     setError(null);
@@ -232,11 +236,13 @@ export default function NannyProviderForm({
       return;
     }
 
+    draft.clear();
     router.push(`/categories/${categorySlug}/dashboard`);
     router.refresh();
   }
 
   function handleCancel() {
+    draft.clear();
     router.push(`/categories/${categorySlug}/dashboard`);
   }
 
@@ -487,6 +493,8 @@ export default function NannyProviderForm({
 
   return (
     <EditShell
+      progress={progress}
+      restored={draft.restored}
       title={isEdit ? t("editTitle") : t("createTitle")}
       saveLabel={isEdit ? undefined : tw("submitProfile")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}

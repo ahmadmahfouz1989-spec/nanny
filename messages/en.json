@@ -310,7 +310,9 @@
     "errorPlace": "Enter the area or a landmark.",
     "errorInstitution": "Enter the office or institution.",
     "errorWhen": "Pick a date and time.",
-    "loading": "Loading…"
+    "loading": "Loading…",
+    "progress": "{done} of {total} required answers",
+    "restored": "We kept what you'd filled in last time."
   },
   "Location": {
     "governorate": "Governorate",
