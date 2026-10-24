@@ -20,8 +20,14 @@ export default function EditShell({
   backLabel,
   submitting,
   saveLabel,
+  progress,
+  restored = false,
   children,
 }: {
+  /** Required answers filled in, for the bar and the "5 of 9" line. */
+  progress?: { done: number; total: number };
+  /** The answers came back from a draft kept on the phone. */
+  restored?: boolean;
   /** The button's words for something new ("Send my request"); edits keep "Save changes". */
   saveLabel?: string;
   title: string;
@@ -35,7 +41,7 @@ export default function EditShell({
   children: React.ReactNode;
 }) {
   const tw = useTranslations("Wizard");
-  const [progress, setProgress] = useState(0);
+  const [scrolled, setScrolled] = useState(0);
 
   useEffect(() => {
     // Inside the app frame the page scrolls in <main>, not the window.
@@ -44,7 +50,7 @@ export default function EditShell({
       const el = scroller ?? document.documentElement;
       const scrollable = el.scrollHeight - el.clientHeight;
       const top = scroller ? scroller.scrollTop : window.scrollY;
-      setProgress(scrollable > 0 ? Math.min(1, top / scrollable) : 1);
+      setScrolled(scrollable > 0 ? Math.min(1, top / scrollable) : 1);
     }
     onScroll();
     const target: HTMLElement | Window = scroller ?? window;
@@ -61,7 +67,7 @@ export default function EditShell({
       <div aria-hidden className="fixed inset-x-0 top-0 z-50 h-1 bg-transparent">
         <div
           className="h-full origin-left bg-primary transition-transform duration-150 rtl:origin-right"
-          style={{ transform: `scaleX(${progress})` }}
+          style={{ transform: `scaleX(${progress && progress.total ? progress.done / progress.total : scrolled})` }}
         />
       </div>
       <div className="flex items-start justify-center px-4 py-6 pb-16 sm:px-6 sm:py-8">
@@ -75,7 +81,17 @@ export default function EditShell({
           )}
           <div className={ui.card + " p-6 sm:p-8"}>
             <h1 className="font-display text-2xl font-semibold">{title}</h1>
-            {onSave ? <p className="mt-1 mb-6 text-xs text-muted">{tw("requiredNote")}</p> : <div className="mb-4" />}
+            {onSave ? <p className="mt-1 text-xs text-muted">{tw("requiredNote")}</p> : <div className="mb-4" />}
+            {onSave && progress && progress.total > 0 && (
+              <div className="mt-3 flex items-center gap-3" aria-live="polite">
+                <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-sunken">
+                  <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
+                </div>
+                <span className="shrink-0 text-xs font-medium text-muted">{tw("progress", { done: progress.done, total: progress.total })}</span>
+              </div>
+            )}
+            {restored && <p className="mt-3 rounded-lg bg-secondary-soft px-3 py-2 text-sm text-secondary">{tw("restored")}</p>}
+            {onSave && <div className="mb-6" />}
 
             <div className="oui-form-sections flex flex-col gap-8">{children}</div>
 

@@ -310,7 +310,9 @@
     "errorPlace": "اكتب المنطقة أو علامة مميّزة.",
     "errorInstitution": "اكتب المكتب أو المؤسسة.",
     "errorWhen": "اختار التاريخ والوقت.",
-    "loading": "عم يحمّل…"
+    "loading": "عم يحمّل…",
+    "progress": "{done} من {total} من الأجوبة المطلوبة",
+    "restored": "حفظنا اللي كنت عبّيته المرّة الماضية."
   },
   "Location": {
     "governorate": "المحافظة",

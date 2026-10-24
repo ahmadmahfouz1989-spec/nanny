@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import { useFormDraft } from "@/components/onboarding/use-form-draft";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import GenericPhotoField from "@/components/onboarding/generic-photo-field";
@@ -11,7 +12,7 @@ import LocationPicker from "@/components/onboarding/location-picker";
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, URGENCIES, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { ui } from "@/lib/ui";
-import { fieldErrorsFor, scrollToFirstError } from "@/lib/form-errors";
+import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type Urgency = (typeof URGENCIES)[number];
@@ -94,6 +95,8 @@ export default function MaintenanceSeekerForm({
   // submitted anything yet.
   const isRealEdit = isEdit && initialProfile!.status !== "draft";
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
+  // Answers kept on the phone until saved or cancelled (see useFormDraft).
+  const draft = useFormDraft(`form-draft:${categorySlug}:seeker:${initialProfile?.id ?? "new"}`, form, setForm);
   const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -131,6 +134,7 @@ export default function MaintenanceSeekerForm({
     desiredStartDate: urgent ? undefined : form.desiredStartDate || undefined,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(maintenanceSeekerSchema, payload) : {};
+  const progress = requiredProgress(maintenanceSeekerSchema, payload);
 
   async function handleSave() {
     setError(null);
@@ -155,16 +159,22 @@ export default function MaintenanceSeekerForm({
       return;
     }
 
+    draft.clear();
     router.push(`/categories/${categorySlug}/dashboard`);
     router.refresh();
   }
 
   return (
     <EditShell
+      progress={progress}
+      restored={draft.restored}
       title={isRealEdit ? t("editTitle") : t("createTitle")}
       saveLabel={isRealEdit ? undefined : tw("submitRequest")}
       error={error ?? (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : null)}
-      onCancel={() => router.push(`/categories/${categorySlug}/dashboard`)}
+      onCancel={() => {
+        draft.clear();
+        router.push(`/categories/${categorySlug}/dashboard`);
+      }}
       onSave={handleSave}
       onBack={onBack}
       backLabel={tw("changeRole")}
