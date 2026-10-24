@@ -164,6 +164,7 @@
     "checkInboxTitle": "Check your inbox",
     "checkInboxBody": "If an account exists for <mark>{identifier}</mark>, recovery instructions are on their way.",
     "continueWithGoogle": "Continue with Google",
+    "continueWithApple": "Continue with Apple",
     "orDivider": "or",
     "codeTitle": "Enter your code",
     "codeBody": "We emailed a {digits}-digit code to <mark>{email}</mark>. Type it here to finish signing up.",

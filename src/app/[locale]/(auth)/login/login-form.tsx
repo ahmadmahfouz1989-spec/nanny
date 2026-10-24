@@ -8,13 +8,14 @@ import { createClient } from "@/lib/supabase/client";
 import AuthCard from "@/components/auth-card";
 import { EmailField, PasswordField } from "@/components/auth-fields";
 import GoogleAuthButton from "@/components/google-auth-button";
-import WhatsAppAuth, { WHATSAPP_AUTH_ENABLED } from "@/components/whatsapp-auth";
+import AppleAuthButton from "@/components/apple-auth-button";
+import WhatsAppAuth from "@/components/whatsapp-auth";
 import EmailCodeForm from "@/components/email-code-form";
 import { ui } from "@/lib/ui";
 import { safeReturnPath } from "@/lib/return-path";
 import { request } from "@/lib/request";
 
-export default function LoginForm({ showGoogle = true }: { showGoogle?: boolean }) {
+export default function LoginForm() {
   const t = useTranslations("Login");
   const tAuth = useTranslations("Auth");
   const router = useRouter();
@@ -111,16 +112,17 @@ export default function LoginForm({ showGoogle = true }: { showGoogle?: boolean 
       <h1 className="font-display text-2xl font-semibold mb-1">{t("title")}</h1>
       <p className="text-muted text-sm mb-6">{t("subhead")}</p>
 
-      {showGoogle && <GoogleAuthButton next={explicitNext} />}
+      <div className="flex flex-col gap-2">
+        <AppleAuthButton next={explicitNext} />
+        <GoogleAuthButton next={explicitNext} />
+      </div>
       <WhatsAppAuth mode="login" next={explicitNext} />
 
-      {(showGoogle || WHATSAPP_AUTH_ENABLED) && (
-        <div className="flex items-center gap-3 my-5">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs text-muted">{tAuth("orDivider")}</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-      )}
+      <div className="flex items-center gap-3 my-5">
+        <div className="h-px flex-1 bg-border" />
+        <span className="text-xs text-muted">{tAuth("orDivider")}</span>
+        <div className="h-px flex-1 bg-border" />
+      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <EmailField value={email} onChange={setEmail} />

@@ -10,6 +10,7 @@
     "testflight": "bash scripts/testflight.sh"
   },
   "dependencies": {
+    "@capacitor-community/apple-sign-in": "7.1.0",
     "@capacitor/android": "8.5.2",
     "@capacitor/app": "8.1.1",
     "@capacitor/browser": "8.0.4",

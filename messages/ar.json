@@ -164,6 +164,7 @@
     "checkInboxTitle": "تحقق من بريدك",
     "checkInboxBody": "إذا كان هناك حساب مرتبط بـ <mark>{identifier}</mark>، فستصلك تعليمات الاسترداد قريبًا.",
     "continueWithGoogle": "المتابعة باستخدام Google",
+    "continueWithApple": "المتابعة باستخدام Apple",
     "orDivider": "أو",
     "codeTitle": "اكتب الرمز",
     "codeBody": "بعتنالك رمز من {digits} أرقام على <mark>{email}</mark>. اكتبه هون تا تكمّل التسجيل.",

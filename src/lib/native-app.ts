@@ -28,10 +28,22 @@ type HapticsPlugin = {
   notification(o: { type: "SUCCESS" | "WARNING" | "ERROR" }): Promise<void>;
 };
 
+type AppleSignInPlugin = {
+  authorize(o: { clientId: string; redirectURI: string; scopes?: string; nonce?: string }): Promise<{
+    response: { identityToken: string; email: string | null };
+  }>;
+};
+
 type CapacitorGlobal = {
   isNativePlatform(): boolean;
   getPlatform(): "ios" | "android" | "web";
-  Plugins: { PushNotifications?: PushPlugin; App?: AppPlugin; Browser?: BrowserPlugin; Haptics?: HapticsPlugin };
+  Plugins: {
+    PushNotifications?: PushPlugin;
+    App?: AppPlugin;
+    Browser?: BrowserPlugin;
+    Haptics?: HapticsPlugin;
+    SignInWithApple?: AppleSignInPlugin;
+  };
 };
 
 function capacitor(): CapacitorGlobal | null {
@@ -50,6 +62,37 @@ export const NATIVE_AUTH_CALLBACK = "ouiknow://auth/callback";
 /** Opens a URL (e.g. Google sign-in, which refuses embedded web views) in the in-app system browser. */
 export async function openInSystemBrowser(url: string) {
   await capacitor()?.Plugins.Browser?.open({ url });
+}
+
+// -- Sign in with Apple ------------------------------------------------------
+
+/** The iPhone app has native Sign in with Apple (builds from before the plugin don't). */
+export function hasNativeAppleSignIn() {
+  const cap = capacitor();
+  return cap?.getPlatform() === "ios" && !!cap.Plugins.SignInWithApple;
+}
+
+/**
+ * Apple's sign-in sheet. Resolves to the identity token, or null when the
+ * person closes the sheet. `hashedNonce` is the SHA-256 of the nonce later
+ * handed to Supabase, which checks the two match.
+ */
+export async function nativeAppleSignIn(hashedNonce: string): Promise<string | null> {
+  const plugin = capacitor()?.Plugins.SignInWithApple;
+  if (!plugin) return null;
+  try {
+    const { response } = await plugin.authorize({
+      clientId: "com.ouiknow.app",
+      redirectURI: "",
+      scopes: "email",
+      nonce: hashedNonce,
+    });
+    return response.identityToken || null;
+  } catch (e) {
+    // Error 1001 is the person cancelling; anything else is a real failure.
+    if (String(e).includes("1001")) return null;
+    throw e;
+  }
 }
 
 // -- haptics ----------------------------------------------------------------
