@@ -13,6 +13,10 @@ What the shell adds over the website:
   dialog appears on its own at first launch; no tap or home-screen step.
 - **Google sign-in** opens in the system browser, because Google blocks
   embedded web views, and comes back through `ouiknow://auth/callback`.
+- **Sign in with Apple** (iPhone only), Apple's native sheet, through
+  `@capacitor-community/apple-sign-in`. Apple requires it in an app that
+  offers Google sign-in. The page sends Apple's token to `/auth/apple`,
+  which signs in with Supabase (`signInWithIdToken`).
 - A notification tap opens its page, and an offline screen (`www/index.html`)
   shows when the site can't be reached.
 
@@ -36,6 +40,12 @@ npm run assets        # regenerate icons/splash from assets/*.png
 Authentication → URL Configuration → Redirect URLs: add
 `ouiknow://auth/callback`. Without it, Google sign-in in the apps lands on
 the website instead of returning to the app.
+
+Authentication → Sign In / Providers → **Apple**: turn it on and put
+`com.ouiknow.app` in **Client IDs**. That's all native sign-in needs; the
+OAuth secret fields are only for Sign in with Apple on a website, which
+we don't offer. Until it's on, the Apple button shows a "Something went
+wrong" error.
 
 ### iOS
 
@@ -74,6 +84,10 @@ on the Mac running it:
   key is also kept in `~/.appstoreconnect/signing/dist-key.pem`).
 - The **ouiKnow App Store** provisioning profile, installed in
   `~/Library/Developer/Xcode/UserData/Provisioning Profiles/`.
+
+The App ID has the **Sign in with Apple** capability (added 2026-10-24, which
+is why the profile was regenerated that day). Adding another capability
+means regenerating the profile again.
 
 Release builds use `App/App.Release.entitlements` (`aps-environment`
 production); Debug uses `App/App.entitlements` (development).
