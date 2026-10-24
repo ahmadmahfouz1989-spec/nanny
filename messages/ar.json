@@ -174,7 +174,12 @@
     "codeResend": "ابعتلي رمز جديد",
     "codeResendIn": "فيك تطلب رمز جديد بعد {seconds} ثانية",
     "codeResent": "رمز جديد بالطريق.",
-    "codeOrLink": "عم تقرا الإيميل على جهاز تاني؟ الزر اللي فيه بيزبط كمان."
+    "codeOrLink": "عم تقرا الإيميل على جهاز تاني؟ الزر اللي فيه بيزبط كمان.",
+    "emailLabel": "البريد الإلكتروني",
+    "passwordLabel": "كلمة المرور",
+    "showPassword": "إظهار",
+    "hidePassword": "إخفاء",
+    "passwordRules": "٨ أحرف على الأقل، فيها حرف ورقم."
   },
   "Signup": {
     "title": "أنشئ حسابك",
@@ -705,7 +710,8 @@
     "emptyPostNeed": "انشره عالصفحة الرئيسية",
     "emptyPostOffer": "انشر شو بتقدّم",
     "emptyEdit": "عدّل طلبي",
-    "emptyWiden": "زيد مناطق أو أيام"
+    "emptyWiden": "زيد مناطق أو أيام",
+    "retry": "جرّب مرّة تانية"
   },
   "Featured": {
     "title": "كن مميّزًا",
@@ -1099,10 +1105,12 @@
     "darkMode": "الوضع الداكن",
     "language": "اللغة",
     "logout": "تسجيل الخروج",
-    "verified": "موثّق",
     "changePhoto": "تغيير الصورة",
     "viewPublic": "شوف ملفك متل ما بيشوفه الناس",
-    "createProfile": "اعمل ملفك"
+    "createProfile": "اعمل ملفك",
+    "check_email": "الإيميل مؤكّد",
+    "check_phone": "الهاتف مؤكّد",
+    "check_id": "الهوية متحقّق منها"
   },
   "Requests": {
     "title": "طلباتي",

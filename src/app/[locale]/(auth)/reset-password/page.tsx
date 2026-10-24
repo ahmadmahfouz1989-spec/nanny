@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import AuthCard from "@/components/auth-card";
+import { PasswordField } from "@/components/auth-fields";
 import { ui } from "@/lib/ui";
 
 export default function ResetPasswordPage() {
@@ -37,15 +38,7 @@ export default function ResetPasswordPage() {
       <p className="text-muted text-sm mb-6">{t("subhead")}</p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        <input
-          type="password"
-          required
-          minLength={8}
-          placeholder={t("newPasswordPlaceholder")}
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className={ui.input}
-        />
+        <PasswordField value={password} onChange={setPassword} isNew />
 
         {error && (
           <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>

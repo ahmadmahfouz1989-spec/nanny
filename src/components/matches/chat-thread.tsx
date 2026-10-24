@@ -13,6 +13,23 @@ import { useVoiceRecorder, type RecordedVoiceNote } from "./use-voice-recorder";
 import { getJson } from "@/lib/request";
 import { haptic } from "@/lib/native-app";
 
+// An unsent message, per conversation, on this phone only. Best-effort:
+// private browsing or a full storage just means no draft is kept.
+const draftKey = (matchId: string) => `chat-draft:${matchId}`;
+function readDraft(matchId: string) {
+  try {
+    return window.localStorage.getItem(draftKey(matchId)) ?? "";
+  } catch {
+    return "";
+  }
+}
+function saveDraft(matchId: string, value: string) {
+  try {
+    if (value.trim()) window.localStorage.setItem(draftKey(matchId), value);
+    else window.localStorage.removeItem(draftKey(matchId));
+  } catch {}
+}
+
 type Message = ChatMessageData;
 
 // Realtime delivers new messages as they land; this slower refresh is only
@@ -62,6 +79,12 @@ export default function ChatThread({
   // read older history back down.
   const isNearBottomRef = useRef(true);
   const [draft, setDraft] = useState("");
+  // What you'd typed here before leaving comes back (after mount: it lives
+  // on the phone, not in the page the server sends).
+  useEffect(() => {
+    const saved = readDraft(matchId);
+    if (saved) void Promise.resolve().then(() => setDraft((d) => d || saved));
+  }, [matchId]);
   const [sending, setSending] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   // The realtime handler is bound once per thread, so it reads the viewer's
@@ -253,6 +276,7 @@ export default function ChatThread({
 
   function handleDraftChange(value: string) {
     setDraft(value);
+    saveDraft(matchId, value);
     const now = currentTime();
     if (!value.trim() || now - lastTypingSentRef.current < TYPING_SEND_EVERY_MS) return;
     lastTypingSentRef.current = now;
@@ -281,6 +305,7 @@ export default function ChatThread({
     setSending(true);
     setSendError(null);
     setDraft("");
+    saveDraft(matchId, "");
     try {
       const res = await fetch(threadUrl, {
         method: "POST",
@@ -312,6 +337,7 @@ export default function ChatThread({
   // failed text back if the user hasn't started typing something new.
   function restoreDraft(failedBody: string) {
     setDraft((current) => (current === "" ? failedBody : current));
+    if (!readDraft(matchId)) saveDraft(matchId, failedBody);
   }
 
   async function uploadRecording({ blob, extension, seconds }: RecordedVoiceNote) {

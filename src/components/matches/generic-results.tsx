@@ -82,19 +82,29 @@ export default function GenericResults({
   const [refreshKey, setRefreshKey] = useState(0);
   useOnAppRefresh(() => setRefreshKey((k) => k + 1));
 
+  // Which filter set the list on screen belongs to: bumped on every change,
+  // so an answer for an older one (a slow request, or a "load more" that
+  // was already on its way) is dropped instead of showing the wrong people.
+  const generation = useRef(0);
+
   useEffect(() => {
+    const gen = ++generation.current;
     fetch(`/api/generic-matches?${listParams()}`)
       .then(async (res) => {
         const body = await res.json();
+        if (gen !== generation.current) return;
         if (!res.ok) {
           setError(t("errorNoProfile"));
           return;
         }
+        setError(null);
         setMyRole(body.myRole);
         setResults(body.results);
         setTotal(body.total);
       })
-      .catch(() => setError(t("loadError")));
+      .catch(() => {
+        if (gen === generation.current) setError(t("loadError"));
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [categorySlug, role, t, governorateId, day, minYearsExperience, search, refreshKey]);
 
@@ -107,10 +117,11 @@ export default function GenericResults({
     setLoadingMore(true);
     const params = listParams();
     params.set("page", String(Math.floor(results.length / PAGE_SIZE) + 1));
+    const gen = generation.current;
     fetch(`/api/generic-matches?${params}`)
       .then(async (res) => {
         const body = await res.json();
-        if (!res.ok) return;
+        if (!res.ok || gen !== generation.current) return;
         // A notification's target may already be pinned at the top (see
         // useLiveMatches) -- don't list it twice when its page arrives.
         setResults((prev) => {
@@ -183,7 +194,14 @@ export default function GenericResults({
       />
 
       {!results && !error && <CardListSkeleton label={t("loading")} />}
-      {error && <p className="text-sm text-muted">{error}</p>}
+      {error && (
+        <div className="flex flex-col items-start gap-3">
+          <p className="text-sm text-muted">{error}</p>
+          <button type="button" onClick={() => setRefreshKey((k) => k + 1)} className={ui.buttonSecondary}>
+            {t("retry")}
+          </button>
+        </div>
+      )}
       {results && results.length === 0 && (
         <div className={ui.card + " overflow-hidden"}>
           <CreateProfileIllustration className="w-full h-32" />

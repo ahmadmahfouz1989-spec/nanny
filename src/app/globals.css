@@ -320,17 +320,14 @@ button:not(:disabled),
   }
 }
 
-/* Phone top and bottom bars slide away while scrolling down through a page
-   and come back on scrolling up -- see HideOnScroll in mobile-chrome.tsx. */
-.app-chrome-top,
-.app-chrome-bottom {
+/* The phone's top bar slides away while scrolling down through a page and
+   comes back on scrolling up -- see HideOnScroll in mobile-chrome.tsx. The
+   tab bar stays put: it's how people get around, so it's always there. */
+.app-chrome-top {
   transition: transform 220ms ease;
 }
 html[data-chrome="hidden"] .app-chrome-top {
   transform: translateY(-100%);
-}
-html[data-chrome="hidden"] .app-chrome-bottom {
-  transform: translateY(100%);
 }
 
 /* An open conversation on a phone gets the whole screen: the chat's own
