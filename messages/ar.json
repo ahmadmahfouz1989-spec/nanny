@@ -713,7 +713,8 @@
     "emptyPostOffer": "انشر شو بتقدّم",
     "emptyEdit": "عدّل طلبي",
     "emptyWiden": "زيد مناطق أو أيام",
-    "retry": "جرّب مرّة تانية"
+    "retry": "جرّب مرّة تانية",
+    "whyMatch": "ليش هالتطابق"
   },
   "Featured": {
     "title": "كن مميّزًا",
