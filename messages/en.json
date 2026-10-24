@@ -713,7 +713,8 @@
     "emptyPostOffer": "Post what you offer",
     "emptyEdit": "Edit my request",
     "emptyWiden": "Add areas or days",
-    "retry": "Try again"
+    "retry": "Try again",
+    "whyMatch": "Why this match"
   },
   "Featured": {
     "title": "Get Featured",
