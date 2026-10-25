@@ -5,6 +5,7 @@ import { LAST_CATEGORY_COOKIE } from "@/lib/last-category";
 import { profileStrength, profileViewCounts } from "@/lib/profile-growth";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { isNativeAppRequest } from "@/lib/native-app-server";
 import AppShell from "@/components/app-shell";
 import MyRatings from "@/components/matches/my-ratings";
 import MyPostsCard from "@/components/my-posts-card";
@@ -34,6 +35,8 @@ export default async function ProfilePage({
     .single();
 
   const isFeatured = !!profile?.featured_until && new Date(profile.featured_until) > new Date();
+  // Featured is bought on the website only (see /featured); the apps leave out the link.
+  const inApp = await isNativeAppRequest();
 
   const { data: genericRows } = await supabase
     .from("generic_profiles")
@@ -148,22 +151,24 @@ export default async function ProfilePage({
           </dl>
         </div>
 
-        <Link
-          href="/featured"
-          className={`${ui.cardHover} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 ${
-            isFeatured ? "bg-success-soft" : ""
-          }`}
-        >
-          <div className="text-sm">
-            <p className="font-medium">{t("featuredLabel")}</p>
-            <p className="text-muted text-xs">
-              {isFeatured
-                ? t("featuredUntilLabel", { date: new Date(profile!.featured_until!).toLocaleDateString() })
-                : t("notFeaturedLabel")}
-            </p>
-          </div>
-          <span className={ui.link + " text-sm shrink-0"}>{t("manageFeatured")}</span>
-        </Link>
+        {!inApp && (
+          <Link
+            href="/featured"
+            className={`${ui.cardHover} p-4 mb-5 flex items-center justify-between gap-3 hover:border-primary/40 ${
+              isFeatured ? "bg-success-soft" : ""
+            }`}
+          >
+            <div className="text-sm">
+              <p className="font-medium">{t("featuredLabel")}</p>
+              <p className="text-muted text-xs">
+                {isFeatured
+                  ? t("featuredUntilLabel", { date: new Date(profile!.featured_until!).toLocaleDateString() })
+                  : t("notFeaturedLabel")}
+              </p>
+            </div>
+            <span className={ui.link + " text-sm shrink-0"}>{t("manageFeatured")}</span>
+          </Link>
+        )}
 
         <MyRatings />
 
