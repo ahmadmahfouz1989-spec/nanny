@@ -14,11 +14,19 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
   const token = typeof body?.token === "string" ? body.token : null;
   const nonce = typeof body?.nonce === "string" ? body.nonce : null;
+  if (typeof body?.clientError === "string") {
+    // The native sheet failed before there was a token (see AppleAuthButton).
+    console.error("[auth/apple] native sign-in failed:", body.clientError.slice(0, 300));
+    return NextResponse.json({ ok: true });
+  }
   if (!token || !nonce) return NextResponse.json({ error: "bad_request" }, { status: 400 });
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithIdToken({ provider: "apple", token, nonce });
-  if (error || !data.user) return NextResponse.json({ error: "auth_failed" }, { status: 401 });
+  if (error || !data.user) {
+    console.error("[auth/apple] signInWithIdToken failed:", error?.code, error?.message);
+    return NextResponse.json({ error: "auth_failed" }, { status: 401 });
+  }
 
   // Apple only hands out verified addresses (including its private relay
   // ones). email_verified_at is service_role only -- see /auth/callback.

@@ -45,7 +45,15 @@ export default function AppleAuthButton({ next = null }: { next?: string | null 
     setError(null);
     try {
       const nonce = randomNonce();
-      const token = await nativeAppleSignIn(await sha256Hex(nonce));
+      const token = await nativeAppleSignIn(await sha256Hex(nonce)).catch((e) => {
+        // Logged on the server, so a failing sheet can be told from a refused token.
+        fetch("/auth/apple", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ clientError: String(e) }),
+        }).catch(() => {});
+        throw e;
+      });
       if (!token) {
         setLoading(false);
         return;
