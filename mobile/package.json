@@ -7,7 +7,8 @@
     "ios": "cap open ios",
     "android": "cap open android",
     "assets": "npx @capacitor/assets@3.0.5 generate --ios --android --iconBackgroundColor '#fdfaf1' --splashBackgroundColor '#fdfaf1' --iconBackgroundColorDark '#fdfaf1' --splashBackgroundColorDark '#fdfaf1'",
-    "testflight": "bash scripts/testflight.sh"
+    "testflight": "bash scripts/testflight.sh",
+    "playbundle": "bash scripts/play-bundle.sh"
   },
   "dependencies": {
     "@capacitor-community/apple-sign-in": "7.1.0",
