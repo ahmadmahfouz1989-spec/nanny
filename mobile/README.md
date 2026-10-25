@@ -111,6 +111,21 @@ keep working after expiry; only new uploads need the renewed ones.
    Signed Bundle (`.aab`) in Android Studio → upload to internal testing,
    then production.
 
+## Privacy manifest
+
+`ios/App/App/PrivacyInfo.xcprivacy` declares no tracking (the Meta Pixel
+never loads in the app) and the data the service collects, all linked to
+the account and used only to run it: email, phone, name, photos (profile,
+work, ID documents), voice notes, other user content (profiles, posts,
+messages), user ID, device ID (push token), coarse location (the area you
+pick, and a sign-in's approximate place from its IP) and health (optional
+nursing notes). Keep it in step with `/privacy` (`src/lib/legal.ts`) and
+the App Privacy answers in App Store Connect.
+
+**No XML comments in it.** Apple's upload check rejected build
+202610250012 with ITMS-91056 (invalid privacy manifest) while the file had
+`<!-- -->` comments, though every key and value was valid.
+
 ## Store review notes
 
 Apple rejects apps that are "just a website" (guideline 4.2). Mention in
