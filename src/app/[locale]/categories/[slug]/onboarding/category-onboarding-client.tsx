@@ -12,7 +12,7 @@ import MaintenanceProviderForm from "./maintenance-provider-form";
 import MaintenanceSeekerForm from "./maintenance-seeker-form";
 import ErrandsProviderForm from "./errands-provider-form";
 import ErrandsSeekerForm from "./errands-seeker-form";
-import { ui } from "@/lib/ui";
+import { ChevronIcon, PersonIcon, ProviderIcon } from "@/components/home-icons";
 import { request } from "@/lib/request";
 
 // Each category's form pair is registered here -- also needs a schema
@@ -162,34 +162,50 @@ export default function CategoryOnboardingClient({
 
   return (
     <>
-      <div className="flex items-start justify-center px-4 py-6 sm:px-6 sm:py-8">
+      <div className="flex items-start justify-center px-4 py-8 sm:px-6 sm:py-12">
         <div className="w-full max-w-lg">
-          <div className={ui.card + " p-8"}>
-            <h1 className="font-display text-2xl font-semibold mb-2">{t("roleTitle", { category: categoryName })}</h1>
-            <p className="text-sm text-muted mb-6">{t("roleSubtitle")}</p>
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => chooseRole("seeker")}
-                disabled={claiming !== null}
-                className={ui.cardHover + " p-5 text-start"}
-              >
-                {/* Per-category key, e.g. "nursing.roleSeekerTitle" -- see the nested entries in CategoryOnboarding */}
-                <p className="font-display font-semibold mb-1">{t(`${categorySlug}.roleSeekerTitle`)}</p>
-                <p className="text-sm text-muted">{t(`${categorySlug}.roleSeekerDescription`)}</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => chooseRole("provider")}
-                disabled={claiming !== null}
-                className={ui.cardHover + " p-5 text-start"}
-              >
-                <p className="font-display font-semibold mb-1">{t(`${categorySlug}.roleProviderTitle`)}</p>
-                <p className="text-sm text-muted">{t(`${categorySlug}.roleProviderDescription`)}</p>
-              </button>
-            </div>
-            {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger mt-4">{error}</p>}
+          <h1 className="font-display text-3xl font-bold tracking-tight text-balance">{t("roleTitle", { category: categoryName })}</h1>
+          <p className="mt-2 text-muted">{t("roleSubtitle")}</p>
+          {/* Same colors and icons as Home's "Need help" / "Offer your services" cards. */}
+          <div className="mt-7 flex flex-col gap-3">
+            {(["seeker", "provider"] as const).map((role) => {
+              const seeker = role === "seeker";
+              const Icon = seeker ? PersonIcon : ProviderIcon;
+              const key = seeker ? "Seeker" : "Provider";
+              return (
+                <button
+                  key={role}
+                  type="button"
+                  onClick={() => chooseRole(role)}
+                  disabled={claiming !== null}
+                  className={`group flex items-center gap-4 rounded-2xl border p-5 text-start transition active:scale-[0.98] disabled:opacity-60 ${
+                    seeker
+                      ? "border-primary/15 bg-primary-soft/50 hover:border-primary/40"
+                      : "border-secondary/15 bg-secondary-soft/50 hover:border-secondary/40"
+                  }`}
+                >
+                  <span
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full ${
+                      seeker ? "bg-primary-soft text-primary" : "bg-secondary-soft text-secondary"
+                    }`}
+                  >
+                    <Icon className="h-6 w-6" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    {/* Per-category key, e.g. "nursing.roleSeekerTitle" -- see the nested entries in CategoryOnboarding */}
+                    <span className="block font-display font-bold text-ink">{t(`${categorySlug}.role${key}Title`)}</span>
+                    <span className="mt-1 block text-sm text-muted">{t(`${categorySlug}.role${key}Description`)}</span>
+                  </span>
+                  <ChevronIcon
+                    className={`h-5 w-5 shrink-0 transition group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 ${
+                      seeker ? "text-primary" : "text-secondary"
+                    }`}
+                  />
+                </button>
+              );
+            })}
           </div>
+          {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger mt-4">{error}</p>}
         </div>
       </div>
     </>
