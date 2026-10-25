@@ -2,7 +2,6 @@
 
 import { useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { ui } from "@/lib/ui";
 import { hasNativeAppleSignIn, nativeAppleSignIn } from "@/lib/native-app";
 
 function AppleIcon({ className = "" }: { className?: string }) {
@@ -71,7 +70,9 @@ export default function AppleAuthButton({ next = null }: { next?: string | null 
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className={ui.buttonSecondary + " w-full gap-2 border-black bg-black text-white hover:border-black hover:bg-black/85"}
+        // Apple's black button. Not built on ui.buttonSecondary: its
+        // bg-surface/text-ink win over bg-black/text-white in the CSS.
+        className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-black px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-black/85 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none"
       >
         <AppleIcon className="h-4 w-4" />
         {t("continueWithApple")}
