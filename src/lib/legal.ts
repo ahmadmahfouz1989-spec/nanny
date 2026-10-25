@@ -120,7 +120,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "5. Who processes it for us",
-        body: "Supabase (database, sign-in and file storage), Railway (hosting), Resend (emails), Apple and Google (push notifications), ipapi.co (approximate location of a sign-in), and, on the website, Meta (the Pixel). They handle data only to provide their service to ouiKnow.",
+        body: "Supabase (database, sign-in and file storage), Railway (hosting), Resend (emails), Apple and Google (sign-in and push notifications), ipapi.co (approximate location of a sign-in), and, on the website, Meta (the Pixel). They handle data only to provide their service to ouiKnow.",
       },
       {
         heading: "6. Keeping and deleting it",
@@ -156,7 +156,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "٥. من يعالجها لصالحنا",
-        body: "Supabase (قاعدة البيانات وتسجيل الدخول وتخزين الملفات) وRailway (الاستضافة) وResend (البريد الإلكتروني) وApple وGoogle (الإشعارات) وipapi.co (الموقع التقريبي لتسجيل الدخول)، وعلى الموقع فقط Meta (أداة Pixel). تعالج هذه الجهات البيانات فقط لتقديم خدمتها لـ ouiKnow.",
+        body: "Supabase (قاعدة البيانات وتسجيل الدخول وتخزين الملفات) وRailway (الاستضافة) وResend (البريد الإلكتروني) وApple وGoogle (تسجيل الدخول والإشعارات) وipapi.co (الموقع التقريبي لتسجيل الدخول)، وعلى الموقع فقط Meta (أداة Pixel). تعالج هذه الجهات البيانات فقط لتقديم خدمتها لـ ouiKnow.",
       },
       {
         heading: "٦. الاحتفاظ والحذف",
