@@ -100,16 +100,36 @@ keep working after expiry; only new uploads need the renewed ones.
 
 ### Android
 
-1. Install Android Studio, then `npm run android` once so it downloads the SDK.
-2. Firebase console → new project → add an Android app with package
+Built from the command line (no Android Studio needed): JDK 21
+(`brew install openjdk@21`) and Google's command-line SDK
+(`brew install --cask android-commandlinetools`, then
+`sdkmanager "platform-tools" "platforms;android-36" "build-tools;36.0.0"`
+with `--sdk_root=/opt/homebrew/share/android-commandlinetools`).
+
+1. Firebase console → project **ouiKnow** → Android app with package
    `com.ouiknow.app` → download `google-services.json` into
-   `mobile/android/app/` (it's picked up automatically; push doesn't work
-   without it).
-3. Firebase → Project settings → Service accounts → Generate new private
+   `mobile/android/app/` (picked up automatically; push doesn't work
+   without it, and the bundle script refuses to build).
+2. Firebase → Project settings → Service accounts → Generate new private
    key → put the whole JSON into the Railway env var `FCM_SERVICE_ACCOUNT`.
-4. Google Play Console ($25 once) → create the app → Build → Generate
-   Signed Bundle (`.aab`) in Android Studio → upload to internal testing,
-   then production.
+
+#### Google Play uploads
+
+```sh
+cd mobile
+npm run playbundle
+```
+
+Builds `android/app/build/outputs/bundle/release/app-release.aab`, signed
+with the upload key (versionCode = UTC year, day of year and hour). It
+needs `~/.ouiknow-android/keystore.properties` (storeFile, storePassword,
+keyAlias, keyPassword) and the `upload.jks` it points to; back that folder
+up. Google re-signs the app with its own key (Play App Signing), so a lost
+upload key can be reset through Play Console support.
+
+The Play developer account is a personal one: Google only allows a
+production release after a closed test with at least 12 testers opted in
+for 14 days in a row.
 
 ## Privacy manifest
 

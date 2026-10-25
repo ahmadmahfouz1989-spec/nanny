@@ -1,5 +1,11 @@
 apply plugin: 'com.android.application'
 
+// Release signing: the upload key lives outside the repo, in
+// ~/.ouiknow-android/ (see mobile/README.md, "Google Play uploads").
+def signingProps = new Properties()
+def signingFile = new File(System.getProperty("user.home"), ".ouiknow-android/keystore.properties")
+if (signingFile.exists()) signingFile.withInputStream { signingProps.load(it) }
+
 android {
     namespace = "com.ouiknow.app"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,7 +13,7 @@ android {
         applicationId "com.ouiknow.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
+        versionCode((project.findProperty("ouiknowVersionCode") ?: "1") as Integer)
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
@@ -16,8 +22,19 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (signingProps["storeFile"]) {
+                storeFile file(signingProps["storeFile"])
+                storePassword signingProps["storePassword"]
+                keyAlias signingProps["keyAlias"]
+                keyPassword signingProps["keyPassword"]
+            }
+        }
+    }
     buildTypes {
         release {
+            signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
