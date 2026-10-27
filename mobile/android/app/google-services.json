@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1001177988934",
+    "project_id": "ouiknow-59f4f",
+    "storage_bucket": "ouiknow-59f4f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1001177988934:android:6dff1b70070436e73f2f47",
+        "android_client_info": {
+          "package_name": "com.ouiknow.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCxBtZCdiShkrKHicLrePdCWlKNnL8BYTU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

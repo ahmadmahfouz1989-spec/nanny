@@ -10,7 +10,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-export JAVA_HOME="${JAVA_HOME:-$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home}"
+# Always JDK 21: a JAVA_HOME from the shell may point at an older Java the
+# Android build refuses.
+export JAVA_HOME="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
 export ANDROID_HOME="${ANDROID_HOME:-/opt/homebrew/share/android-commandlinetools}"
 [ -f "$HOME/.ouiknow-android/keystore.properties" ] || { echo "missing ~/.ouiknow-android/keystore.properties"; exit 1; }
 [ -f android/app/google-services.json ] || { echo "missing android/app/google-services.json (push won't work)"; exit 1; }
