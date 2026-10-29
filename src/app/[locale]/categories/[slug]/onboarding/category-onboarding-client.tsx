@@ -145,14 +145,17 @@ export default function CategoryOnboardingClient({
   }, []);
 
   const forms = FORMS[categorySlug];
+  // Going back to the choice is for someone still deciding; on a request or
+  // profile already submitted it reads like switching sides, which it isn't.
+  const submitted = (p: ExistingProfile | null) => !!p && p.status !== "draft";
 
   if (chosenRole === "provider" && forms) {
     const ProviderForm = forms.provider;
-    return <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={() => changeRole("provider")} />;
+    return <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={submitted(provider) ? undefined : () => changeRole("provider")} />;
   }
   if (chosenRole === "seeker" && forms) {
     const SeekerForm = forms.seeker;
-    return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={() => changeRole("seeker")} />;
+    return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={submitted(seeker) ? undefined : () => changeRole("seeker")} />;
   }
 
   // Starting a side straight away: no flash of the choice it replaces.

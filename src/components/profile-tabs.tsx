@@ -4,6 +4,7 @@ import { useState } from "react";
 import ProfileHeaderCard from "@/components/profile-header-card";
 import { ui } from "@/lib/ui";
 import { rememberCategory } from "@/lib/last-category";
+import type { StrengthItem } from "@/lib/profile-growth";
 
 export type ProfileTabDef = {
   key: string;
@@ -16,7 +17,7 @@ export type ProfileTabDef = {
   roleLabel: string;
   fullName: string | null;
   moderationStatus: string;
-  growth?: { percent: number; views30: number };
+  growth?: { percent: number; next: StrengthItem | null; views30: number };
 };
 
 

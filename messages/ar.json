@@ -597,7 +597,7 @@
     "section3Title": "التوقيت"
   },
   "ParentOnboarding": {
-    "editTitle": "تعديل ملفك الشخصي",
+    "editTitle": "عدّل طلبك",
     "step1Title": "بياناتك ومنطقتك",
     "step2Title": "أطفالك",
     "step3Title": "الجدول الزمني",
@@ -1034,7 +1034,8 @@
     "replySpeed_hours": "يرد عادةً خلال ساعات قليلة",
     "replySpeed_day": "يرد عادةً خلال يوم",
     "talkedWith": "{count, plural, few {تحدث مع # أشخاص على ouiKnow} many {تحدث مع # شخصًا على ouiKnow} other {تحدث مع # شخص على ouiKnow}}",
-    "idChecked": "الهوية متحقّق منها من فريق ouiKnow"
+    "idChecked": "الهوية متحقّق منها من فريق ouiKnow",
+    "strengthNext": "الخطوة التالية: {tip}"
   },
   "Work": {
     "title": "الأعمال",
@@ -1090,20 +1091,20 @@
     "errorShareContact": "احذف أرقام الهاتف أو حسابات التواصل من العنوان أو الوصف أولًا."
   },
   "Menu": {
-    "myProfile": "عدّل ملفك",
-    "myProfileHint": "الصورة والتفاصيل والحساب",
+    "myProfile": "ملفي",
+    "myProfileHint": "صورتك، وما تحتاجه أو تقدّمه",
     "findService": "ابحث عن خدمة",
     "findServiceHint": "تصفّح الخدمات والأشخاص",
     "myServices": "خدماتي",
-    "myServicesHint": "إعلاناتك، أو أضف خدمة",
+    "myServicesHint": "انتقل إلى خدمة، أو أضف واحدة",
     "addService": "أضف خدمة",
-    "myRequests": "طلباتي",
-    "myRequestsHint": "ما طلبته والردود عليه",
+    "myRequests": "منشوراتي",
+    "myRequestsHint": "ما نشرته على الصفحة الرئيسية والردود",
     "saved": "المحفوظات",
     "savedHint": "الأشخاص الذين حفظتهم",
     "settings": "الإعدادات والمساعدة",
     "settingsHint": "الإشعارات، اللغة، المساعدة",
-    "postRequest": "انشر طلبًا",
+    "postRequest": "انشر على الصفحة الرئيسية",
     "postRequestHint": "تحتاج خدمة؟ أخبرنا عمّا تبحث عنه!",
     "contactWhatsapp": "تواصل معنا عبر واتساب",
     "darkMode": "الوضع الداكن",
@@ -1114,11 +1115,13 @@
     "createProfile": "اعمل ملفك",
     "check_email": "الإيميل مؤكّد",
     "check_phone": "الهاتف مؤكّد",
-    "check_id": "الهوية متحقّق منها"
+    "check_id": "الهوية متحقّق منها",
+    "roleSeeker": "طلبك",
+    "roleProvider": "ملفك"
   },
   "Requests": {
-    "title": "طلباتي",
-    "subtitle": "ما نشرته أنك تبحث عنه، والردود التي وصلتك.",
+    "title": "منشوراتي",
+    "subtitle": "منشورات سريعة على الصفحة الرئيسية تطلب فيها شيئاً، والردود عليها. طلباتك في كل خدمة موجودة في «خدماتي».",
     "empty": "ما نشرت شي بعد. اللي بتنشره هون بيطلع كمان عالصفحة الرئيسية تا الناس يردّوا عليك.",
     "placeholder": "شو بدّك؟ مثلاً: أستاذ رياضيات لابني بالحازمية، مرتين بالجمعة"
   },

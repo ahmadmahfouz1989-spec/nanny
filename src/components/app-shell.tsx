@@ -60,7 +60,7 @@ export default async function AppShell({
     data: { user },
   } = await supabase.auth.getUser();
   const { data: profiles } = user
-    ? await supabase.from("generic_profiles").select("id, status, full_name, profile_photo_url, categories(slug), locations(name_en, name_ar)").eq("user_id", user.id).neq("status", "draft")
+    ? await supabase.from("generic_profiles").select("id, role, status, full_name, profile_photo_url, categories(slug), locations(name_en, name_ar)").eq("user_id", user.id).neq("status", "draft")
     : { data: null };
   const mySlugs = new Set((profiles ?? []).map((p) => p.categories?.slug));
   const sidebarCategories = CATEGORY_NAV.filter((c) => c.slug === active || mySlugs.has(c.slug));
@@ -77,7 +77,13 @@ export default async function AppShell({
   // any category's dashboard.
   const matchesActive = active === "categories" || CATEGORY_NAV.some((c) => c.slug === active);
   const myCategories = CATEGORY_NAV.filter((c) => mySlugs.has(c.slug));
-  const services = myCategories.map((c) => ({ slug: c.slug, icon: c.icon, label: t(c.slug) }));
+  // "Nanny · your request": a family's need and a provider's profile are
+  // both called profiles in the data, but not to the people using them.
+  const services = myCategories.map((c) => {
+    const roles = new Set((profiles ?? []).filter((p) => p.categories?.slug === c.slug).map((p) => p.role));
+    const mine = [roles.has("seeker") && tm("roleSeeker"), roles.has("provider") && tm("roleProvider")].filter(Boolean);
+    return { slug: c.slug, icon: c.icon, label: [t(c.slug), mine.join(" + ")].filter(Boolean).join(" · ") };
+  });
   const photoProfile = (profiles ?? []).find((p) => p.profile_photo_url) ?? profiles?.[0];
   const { data: account } = user
     ? await supabase.from("users").select("email_verified_at, phone_verified_at").eq("id", user.id).maybeSingle()
