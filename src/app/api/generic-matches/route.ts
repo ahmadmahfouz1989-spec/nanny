@@ -59,9 +59,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Create your profile before browsing matches" }, { status: 404 });
   }
 
-  // Profiles saved before search_text existed get it now (once).
-  await fillMissingSearchText(category.id);
-
   // Filters, search, order (Featured first, then best match) and paging all
   // happen in the database -- see list_profile_matches. matchId is a
   // notification's target card, returned on its own even when the
@@ -74,9 +71,12 @@ export async function GET(request: Request) {
 
   // The area filter is a governorate or one of its districts (PlaceSelect).
   const placeId = searchParams.get("governorateId") || null;
-  const { data: place } = placeId
-    ? await supabase.from("locations").select("level").eq("id", placeId).maybeSingle()
-    : { data: null };
+  // Profiles saved before search_text existed get it now (once), alongside
+  // the area lookup rather than after it.
+  const [{ data: place }] = await Promise.all([
+    placeId ? supabase.from("locations").select("level").eq("id", placeId).maybeSingle() : Promise.resolve({ data: null }),
+    fillMissingSearchText(category.id),
+  ]);
   const isDistrict = place?.level === "district";
 
   const { data: rows, error } = await supabase.rpc("list_profile_matches", {
@@ -99,10 +99,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ myRole: myProfile.role, results: [], total });
   }
 
-  // Details for just this page.
+  // Details for just this page, fetched together.
   const matchIds = pageRows.map((r) => r.match_id);
   const otherIds = pageRows.map((r) => r.other_profile_id);
-  const [{ data: matches }, { data: otherProfilesRaw }] = await Promise.all([
+  // Each counterpart's aggregate rating needs their user_id -- that mapping
+  // stays server-side (user_id is never part of the response).
+  const admin = createAdminClient();
+  const [{ data: matches }, { data: otherProfilesRaw }, { data: owners }, savedIds] = await Promise.all([
     supabase
       .from("generic_matches")
       .select("id, score, score_breakdown, status, interest_expires_at, seeker_profile_id, provider_profile_id")
@@ -111,26 +114,30 @@ export async function GET(request: Request) {
       .from("generic_profiles")
       .select("id, full_name, profile_photo_url, location_id, attributes, locations(name_en, name_ar, name_fr)")
       .in("id", otherIds),
+    admin.from("generic_profiles").select("id, user_id").in("id", otherIds),
+    savedProfileIds(supabase, user.id, otherIds),
   ]);
-
-  // Where each one is, as precisely as they said (area, district).
-  const otherProfiles = await withPlaceNames(otherProfilesRaw ?? []);
 
   // Languages are stored as bare ids in attributes -- resolve them once for
   // the page so cards can show names.
   type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
   const languageIds = [
     ...new Set(
-      (otherProfiles ?? []).flatMap((p) => {
+      (otherProfilesRaw ?? []).flatMap((p) => {
         const ids = asAttributes(p.attributes).languageIds;
         return Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
       }),
     ),
   ];
-  const { data: languageRows } =
+  // Where each one is, as precisely as they said (area, district), their
+  // languages and ratings: none depends on another.
+  const [otherProfiles, { data: languageRows }, aggregates] = await Promise.all([
+    withPlaceNames(otherProfilesRaw ?? []),
     languageIds.length > 0
-      ? await supabase.from("languages").select("id, name_en, name_ar, name_fr").in("id", languageIds)
-      : { data: [] as Language[] };
+      ? supabase.from("languages").select("id, name_en, name_ar, name_fr").in("id", languageIds)
+      : Promise.resolve({ data: [] as Language[] }),
+    ratingAggregatesByUser((owners ?? []).map((o) => o.user_id)),
+  ]);
   const languageById = new Map((languageRows ?? []).map((l) => [l.id, l]));
 
   const otherById = new Map(
@@ -143,15 +150,9 @@ export async function GET(request: Request) {
   );
   const matchById = new Map((matches ?? []).map((m) => [m.id, m]));
 
-  // Each counterpart's aggregate rating -- the profile→user_id mapping stays
-  // server-side (user_id is never part of the response).
-  const admin = createAdminClient();
-  const { data: owners } = await admin.from("generic_profiles").select("id, user_id").in("id", otherIds);
-  const aggregates = await ratingAggregatesByUser((owners ?? []).map((o) => o.user_id));
   const ratingByProfileId = new Map(
     (owners ?? []).map((o) => [o.id, aggregates.get(o.user_id) ?? { average: null, count: 0 }]),
   );
-  const savedIds = await savedProfileIds(supabase, user.id, otherIds);
 
   const results = pageRows.flatMap((r) => {
     const match = matchById.get(r.match_id);

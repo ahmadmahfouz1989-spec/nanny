@@ -13,6 +13,7 @@ import { ui } from "@/lib/ui";
 import { Link } from "@/i18n/navigation";
 import { RowListSkeleton } from "@/components/skeletons";
 import { getJson } from "@/lib/request";
+import { announceUnreadChanged } from "@/lib/unread-events";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 const INBOX_POLL_MS = 6000;
@@ -53,6 +54,7 @@ export default function MessagesClient() {
   // (set up once) always reads the current selection instead of whatever
   // it was when the interval was created.
   const selectedRef = useRef(selected);
+  const unreadTotal = useRef<number | null>(null);
   useEffect(() => {
     selectedRef.current = selected;
   }, [selected]);
@@ -78,9 +80,15 @@ export default function MessagesClient() {
           // this poll picking it up server-side -- don't let a poll that
           // lands in that window flash the badge back on for the
           // conversation the user is already looking at.
-          setConversations(
-            fresh.map((c) => (c.matchId === selectedRef.current ? { ...c, unreadCount: 0 } : c)),
-          );
+          const shown = fresh.map((c) => (c.matchId === selectedRef.current ? { ...c, unreadCount: 0 } : c));
+          setConversations(shown);
+          // The tab badge polls on its own clock; when this list sees a
+          // different count, have it catch up so the two never disagree.
+          const total = shown.reduce((sum, c) => sum + c.unreadCount, 0);
+          if (total !== unreadTotal.current) {
+            unreadTotal.current = total;
+            announceUnreadChanged();
+          }
         });
     }
 

@@ -597,7 +597,7 @@
     "section3Title": "When"
   },
   "ParentOnboarding": {
-    "editTitle": "Edit your profile",
+    "editTitle": "Edit your request",
     "step1Title": "You and your area",
     "step2Title": "Your children",
     "step3Title": "Schedule",
@@ -1034,7 +1034,8 @@
     "replySpeed_hours": "Usually replies within a few hours",
     "replySpeed_day": "Usually replies within a day",
     "talkedWith": "Talked with {count} people on ouiKnow",
-    "idChecked": "ID checked by the ouiKnow team"
+    "idChecked": "ID checked by the ouiKnow team",
+    "strengthNext": "Next: {tip}"
   },
   "Work": {
     "title": "Work",
@@ -1090,20 +1091,20 @@
     "errorShareContact": "Remove phone numbers or social handles from the title or description first."
   },
   "Menu": {
-    "myProfile": "Edit profile",
-    "myProfileHint": "Photo, details and account",
+    "myProfile": "My profile",
+    "myProfileHint": "Your photo, and what you need or offer",
     "findService": "Find a Service",
     "findServiceHint": "Browse services and people",
     "myServices": "My Services",
-    "myServicesHint": "Your listings, or add a service",
+    "myServicesHint": "Go to a service, or add one",
     "addService": "Add a service",
-    "myRequests": "My Requests",
-    "myRequestsHint": "What you asked for, and the replies",
+    "myRequests": "My posts",
+    "myRequestsHint": "What you posted on Home, and the replies",
     "saved": "Saved",
     "savedHint": "People you saved",
     "settings": "Settings & Help",
     "settingsHint": "Notifications, language, help",
-    "postRequest": "Post a Request",
+    "postRequest": "Post on Home",
     "postRequestHint": "Need a service? Tell us what you're looking for!",
     "contactWhatsapp": "Contact us on WhatsApp",
     "darkMode": "Dark mode",
@@ -1114,11 +1115,13 @@
     "createProfile": "Create your profile",
     "check_email": "Email confirmed",
     "check_phone": "Phone confirmed",
-    "check_id": "ID checked"
+    "check_id": "ID checked",
+    "roleSeeker": "your request",
+    "roleProvider": "your profile"
   },
   "Requests": {
-    "title": "My Requests",
-    "subtitle": "What you posted you're looking for, and the replies you got.",
+    "title": "My posts",
+    "subtitle": "Quick posts on Home asking for something, and the replies. Your requests in each service are under My services.",
     "empty": "Nothing posted yet. What you post here also shows on Home, so people can reply.",
     "placeholder": "What do you need? e.g. A math tutor for my son in Hazmieh, twice a week"
   },

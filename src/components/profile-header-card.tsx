@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
+import type { StrengthItem } from "@/lib/profile-growth";
 
 const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
   approved: "success",
@@ -36,7 +37,8 @@ export default function ProfileHeaderCard({
   roleLabel: string;
   fullName: string | null;
   moderationStatus: string;
-  growth?: { percent: number; views30: number };
+  /** next: the first thing still missing, said under the bar. */
+  growth?: { percent: number; next: StrengthItem | null; views30: number };
 }) {
   const t = useTranslations("Dashboard");
   const tProfile = useTranslations("ProfilePage");
@@ -134,7 +136,7 @@ export default function ProfileHeaderCard({
         {/* ?role= so an account with both roles in this category edits
             this one, not whichever the onboarding page defaults to. */}
         <Link href={`/categories/${slug}/onboarding?role=${role}`} className={ui.buttonSecondary}>
-          {t("editProfile")}
+          {role === "seeker" ? t("editRequest") : t("editProfile")}
         </Link>
       </div>
       {growth && (
@@ -146,6 +148,11 @@ export default function ProfileHeaderCard({
           <span className="h-1.5 overflow-hidden rounded-full bg-background">
             <span className="block h-full rounded-full bg-primary" style={{ width: `${growth.percent}%` }} />
           </span>
+          {growth.next && (
+            <span className="text-xs font-medium text-primary">
+              {tProfile("strengthNext", { tip: tProfile(`strengthAdd_${growth.next}`) })}
+            </span>
+          )}
           <span className="text-xs text-muted">{tProfile("views30", { count: growth.views30 })}</span>
         </Link>
       )}

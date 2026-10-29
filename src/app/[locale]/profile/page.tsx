@@ -102,16 +102,16 @@ export default async function ProfilePage({
         roleLabel,
         fullName: p.full_name,
         moderationStatus: p.moderation_status,
-        growth: {
-          percent: profileStrength({
+        growth: (() => {
+          const strength = profileStrength({
             role: p.role as "seeker" | "provider",
             photoUrl: p.profile_photo_url,
             headline: p.headline,
             attributes: (p.attributes ?? {}) as Record<string, unknown>,
             hasWork: withWork.has(p.id),
-          }).percent,
-          views30: views.get(p.id) ?? 0,
-        },
+          });
+          return { percent: strength.percent, next: strength.missing[0] ?? null, views30: views.get(p.id) ?? 0 };
+        })(),
       };
     }),
   ];
