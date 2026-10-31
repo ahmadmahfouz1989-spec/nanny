@@ -1,5 +1,6 @@
 import { NextResponse, after } from "next/server";
 import { z } from "zod";
+import type { User } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,6 +22,7 @@ import {
   VOICE_NOTE_PLACEHOLDER_BODY,
 } from "@/lib/voice-notes";
 import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 /**
  * Route handlers for everything a party can do on one match, in any
@@ -29,7 +31,7 @@ import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
 
 type Ctx = { params: Promise<{ id: string }> };
 type Handler = (request: Request, ctx: Ctx) => Promise<NextResponse>;
-type Authed = { request: Request; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; access: MatchAccess };
+type Authed = { request: Request; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; user: User; access: MatchAccess };
 
 const MESSAGE_PAGE_SIZE = 200;
 const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at";
@@ -66,11 +68,25 @@ function withAccess(fn: (ctx: Authed) => Promise<NextResponse>): Handler {
       return NextResponse.json({ error: "Match not found" }, { status: 404 });
     }
 
-    return fn({ request, supabase, userId: user.id, access });
+    return fn({ request, supabase, userId: user.id, user, access });
   };
 }
 
 // ---------------------------------------------------------------- messages
+
+/** Someone's first message to a person is them getting in touch -- "Contact" for Meta. */
+async function reportFirstMessage(supabase: Authed["supabase"], user: User, access: MatchAccess) {
+  const { count } = await supabase
+    .from("generic_messages")
+    .select("id", { count: "exact", head: true })
+    .eq("match_id", access.id)
+    .eq("sender_id", user.id);
+  if (count !== 1) return;
+  await reportMetaEvent("Contact", {
+    user: { id: user.id, email: user.email, phone: user.phone },
+    params: { content_category: access.categorySlug, content_type: access.side },
+  });
+}
 
 export const messagesGet: Handler = withAccess(async ({ request, supabase, access }) => {
   // Fetched newest-first and reversed, rather than oldest-first with no
@@ -120,7 +136,7 @@ export const messagesGet: Handler = withAccess(async ({ request, supabase, acces
 
 const messageBodySchema = z.object({ body: z.string().trim().min(1).max(2000) });
 
-export const messagesPost: Handler = withAccess(async ({ request, supabase, userId, access }) => {
+export const messagesPost: Handler = withAccess(async ({ request, supabase, userId, user, access }) => {
   if (isBlocked(access.status)) {
     return NextResponse.json({ error: CONVERSATION_CLOSED, code: "conversation_blocked" }, { status: 403 });
   }
@@ -143,11 +159,12 @@ export const messagesPost: Handler = withAccess(async ({ request, supabase, user
   const snippet = parsed.data.body.length > 140 ? `${parsed.data.body.slice(0, 140)}…` : parsed.data.body;
   await emailRecipientOnFirstUnread(request, access, snippet);
   pushNewMessage(access, snippet);
+  await reportFirstMessage(supabase, user, access);
 
   return NextResponse.json({ message: data }, { status: 201 });
 });
 
-export const messagesAudioPost: Handler = withAccess(async ({ request, supabase, userId, access }) => {
+export const messagesAudioPost: Handler = withAccess(async ({ request, supabase, userId, user, access }) => {
   if (isBlocked(access.status)) {
     return NextResponse.json({ error: CONVERSATION_CLOSED, code: "conversation_blocked" }, { status: 403 });
   }
@@ -209,6 +226,7 @@ export const messagesAudioPost: Handler = withAccess(async ({ request, supabase,
 
   await emailRecipientOnFirstUnread(request, access, VOICE_NOTE_PLACEHOLDER_BODY);
   pushNewMessage(access, null);
+  await reportFirstMessage(supabase, user, access);
 
   return NextResponse.json({ message: { ...message, audioUrl: signed?.signedUrl ?? null } }, { status: 201 });
 });
@@ -363,7 +381,7 @@ export const ratingGet: Handler = withAccess(async ({ supabase, userId, access }
   });
 });
 
-export const ratingPut: Handler = withAccess(async ({ request, supabase, userId, access }) => {
+export const ratingPut: Handler = withAccess(async ({ request, supabase, userId, user, access }) => {
   const parsed = ratingBodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
@@ -399,6 +417,10 @@ export const ratingPut: Handler = withAccess(async ({ request, supabase, userId,
     payload: { ...matchNotificationPayload(access), score: parsed.data.score },
   });
 
+  await reportMetaEvent("Rate", {
+    user: { id: user.id, email: user.email, phone: user.phone },
+    params: { content_category: access.categorySlug, value: parsed.data.score },
+  });
   const counterpart = await ratingAggregateForUser(access.otherUserId);
 
   return NextResponse.json({ mine: saved, counterpart });

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 /**
  * Explicit save/remove rather than a toggle -- retrying either one
@@ -45,6 +46,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ prof
     return NextResponse.json({ error: "Cannot save this profile" }, { status: 403 });
   }
 
+  await reportMetaEvent("AddToWishlist", {
+    user: { id: user.id, email: user.email, phone: user.phone },
+    params: { content_type: "profile", content_ids: [profileId] },
+  });
   return NextResponse.json({ status: "saved", favorite: inserted }, { status: 201 });
 }
 

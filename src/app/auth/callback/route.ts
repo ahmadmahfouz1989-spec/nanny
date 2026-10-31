@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { getPublicOrigin } from "@/lib/site-url";
 import { routing } from "@/i18n/routing";
 import { RETURN_PATH_COOKIE, safeReturnPath } from "@/lib/return-path";
-import { META_SIGNUP_COOKIE } from "@/lib/meta-signup";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 // An account created this recently is a sign-up, not a returning sign-in.
 const NEW_ACCOUNT_WINDOW_MS = 10 * 60 * 1000;
@@ -53,13 +53,18 @@ export async function GET(request: Request) {
       const response = NextResponse.redirect(`${origin}/${locale}${next}`);
       response.cookies.delete(RETURN_PATH_COOKIE);
 
-      // A brand-new Google account: let the Meta Pixel report the sign-up on
-      // the next page (see MetaPixel). Email sign-ups report it from the
-      // signup form instead, so they're skipped here to avoid counting twice.
+      // A brand-new Google or Apple account is a sign-up for Meta. Email
+      // sign-ups are reported by /api/auth/signup instead, so they're
+      // skipped here to avoid counting twice.
       const createdAt = data.user?.created_at ? Date.parse(data.user.created_at) : NaN;
       const provider = data.user?.app_metadata?.provider;
       if (provider && provider !== "email" && Date.now() - createdAt < NEW_ACCOUNT_WINDOW_MS) {
-        response.cookies.set(META_SIGNUP_COOKIE, "1", { path: "/", maxAge: 300, sameSite: "lax" });
+        await reportMetaEvent("CompleteRegistration", {
+          user: { id: data.user!.id, email: data.user!.email, fullName: data.user!.user_metadata?.full_name },
+          params: { content_name: provider },
+          sourceUrl: `${origin}/${locale}${next}`,
+          cookieTarget: response.cookies,
+        });
       }
       return response;
     }

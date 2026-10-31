@@ -14,6 +14,7 @@ import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
 import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 import { asAttributes } from "@/lib/attributes";
 import type { Json } from "@/lib/supabase/database.types";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 type GenericRole = "seeker" | "provider";
 
@@ -157,7 +158,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   // (claimed as a draft when the role was picked).
   const { data: before } = await db
     .from("generic_profiles")
-    .select("profile_photo_url")
+    .select("profile_photo_url, status")
     .eq("user_id", user.id)
     .eq("category_id", category.id)
     .eq("role", role)
@@ -247,6 +248,13 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
   await Promise.all([recomputeGenericMatchesForProfile(data.id), refreshSearchText([data.id])]);
   await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
+  // The first submit (not an edit): a request posted, or a provider applying.
+  if (!before || before.status === "draft") {
+    await reportMetaEvent(role === "seeker" ? "Lead" : "SubmitApplication", {
+      user: { id: user.id, email: user.email, phone: contactPhone || user.phone, fullName },
+      params: { content_category: categorySlug },
+    });
+  }
 
   return NextResponse.json({ profile: data }, { status: mode === "create" ? 201 : 200 });
 }

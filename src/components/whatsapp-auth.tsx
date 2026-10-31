@@ -5,7 +5,6 @@ import { useLocale, useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { request, getJson } from "@/lib/request";
-import { trackMetaEvent } from "@/components/meta-pixel";
 import { ui } from "@/lib/ui";
 import { internationalNumber } from "@/lib/phone";
 
@@ -98,8 +97,8 @@ function WhatsAppAuthPanel({ mode, next = null }: { mode: "login" | "signup"; ne
     }
 
     request("/api/auth/log-login", { method: "POST" });
+    // Also reports a new account to Meta (see /api/auth/phone-verified).
     const verified = await getJson<{ newAccount?: boolean }>("/api/auth/phone-verified", { method: "POST" });
-    if (verified?.newAccount) trackMetaEvent("CompleteRegistration");
 
     // Same suspended-account check as the password login.
     const me = await getJson<{ user?: { status?: string } }>("/api/auth/me");

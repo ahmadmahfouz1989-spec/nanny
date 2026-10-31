@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
 import { resolvePostAuthors, decoratePosts, POST_FEED_COLUMNS } from "@/lib/posts";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 const PAGE_SIZE = 20;
 
@@ -106,6 +107,8 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+
+  await reportMetaEvent("CreatePost", { user: { id: user.id, email: user.email, phone: user.phone }, params: { content_type: post.kind } });
 
   return NextResponse.json(
     { post: { ...post, author: (await resolvePostAuthors([post])).get(post.id) ?? null, likeCount: 0, likedByMe: false, replyCount: 0, featured: false, isMine: true } },
