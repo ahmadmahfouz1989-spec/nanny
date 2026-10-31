@@ -2,7 +2,7 @@
 // server's Conversions API sender (lib/meta-capi.ts).
 
 /** Not a secret -- it's in every visitor's page source anyway. Override with NEXT_PUBLIC_META_PIXEL_ID. */
-export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "4002285310066540";
+export const META_PIXEL_ID = process.env.NEXT_PUBLIC_META_PIXEL_ID || "1985845965431578";
 
 // Events the server reports (sign-ups, posts, first messages...) are also
 // left in this cookie for the Pixel to send under the same event ID, so
