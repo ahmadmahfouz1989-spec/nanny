@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Suspense } from "react";
 import Script from "next/script";
 import { Baloo_2, Inter, Cairo, Plus_Jakarta_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
@@ -106,7 +107,10 @@ export default async function LocaleLayout({
         </Script>
         <ServiceWorkerRegister />
         <NativeAppBridge />
-        <MetaPixel />
+        {/* Reads the search query, which needs a Suspense boundary. */}
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
         <NextIntlClientProvider>{children}</NextIntlClientProvider>
       </body>
     </html>

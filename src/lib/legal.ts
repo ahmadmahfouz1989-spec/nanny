@@ -42,7 +42,7 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "6. Advertising and Analytics (Meta Pixel)",
-        body: "The platform uses the Meta Pixel, a tool provided by Meta Platforms (Facebook and Instagram), to measure how visitors use the website and how effective our advertising is. When you visit the website, the Meta Pixel may collect technical information such as the pages you view, the actions you take (for example, creating an account), your browser and device type, and your IP address, and send it to Meta. Meta may combine this with information it already holds, under its own privacy policy, to show you relevant ads. The platform does not send your messages or the contents of your profile to Meta. You can limit the use of this information for ads through your Facebook or Instagram ad settings, or by blocking third-party cookies in your browser.",
+        body: "The platform uses the Meta Pixel, a tool provided by Meta Platforms (Facebook and Instagram), to measure how visitors use the website and how effective our advertising is. When you visit the website, the Meta Pixel may collect technical information such as the pages you view, the actions you take (for example, creating an account), your browser and device type, and your IP address, and send it to Meta. Our server also reports the same actions to Meta (such as creating an account, posting a request, saving a profile or sending someone a first message), with your email address and phone number in scrambled (hashed) form, so Meta can match them to its users without receiving them readable. Meta may combine this with information it already holds, under its own privacy policy, to show you relevant ads. The platform does not send your messages or the contents of your profile to Meta. You can limit the use of this information for ads through your Facebook or Instagram ad settings, or by blocking third-party cookies in your browser.",
       },
       {
         heading: "7. Content and Conduct",
@@ -82,7 +82,7 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "٦. الإعلانات والتحليلات (Meta Pixel)",
-        body: "تستخدم المنصة أداة Meta Pixel المقدَّمة من شركة Meta Platforms (فيسبوك وإنستغرام) لقياس كيفية استخدام الزوار للموقع ومدى فعالية إعلاناتنا. عند زيارتك للموقع، قد تجمع أداة Meta Pixel معلومات تقنية مثل الصفحات التي تتصفّحها والإجراءات التي تقوم بها (كإنشاء حساب) ونوع المتصفح والجهاز وعنوان IP الخاص بك، وترسلها إلى Meta. وقد تربط Meta هذه المعلومات بمعلومات أخرى لديها، وفقاً لسياسة الخصوصية الخاصة بها، لعرض إعلانات مناسبة لك. لا ترسل المنصة رسائلك أو محتوى ملفك الشخصي إلى Meta. يمكنك الحدّ من استخدام هذه المعلومات في الإعلانات من خلال إعدادات الإعلانات في حسابك على فيسبوك أو إنستغرام، أو بحظر ملفات تعريف الارتباط الخاصة بالأطراف الثالثة في متصفحك.",
+        body: "تستخدم المنصة أداة Meta Pixel المقدَّمة من شركة Meta Platforms (فيسبوك وإنستغرام) لقياس كيفية استخدام الزوار للموقع ومدى فعالية إعلاناتنا. عند زيارتك للموقع، قد تجمع أداة Meta Pixel معلومات تقنية مثل الصفحات التي تتصفّحها والإجراءات التي تقوم بها (كإنشاء حساب) ونوع المتصفح والجهاز وعنوان IP الخاص بك، وترسلها إلى Meta. كما يُبلغ خادمنا Meta بالإجراءات نفسها (كإنشاء حساب أو نشر طلب أو حفظ ملف أو إرسال أول رسالة إلى شخص)، مع بريدك الإلكتروني ورقم هاتفك بشكل مشفَّر (hashed)، لتتمكّن Meta من مطابقتها مع مستخدميها من دون أن تتلقّاها بشكل مقروء. وقد تربط Meta هذه المعلومات بمعلومات أخرى لديها، وفقاً لسياسة الخصوصية الخاصة بها، لعرض إعلانات مناسبة لك. لا ترسل المنصة رسائلك أو محتوى ملفك الشخصي إلى Meta. يمكنك الحدّ من استخدام هذه المعلومات في الإعلانات من خلال إعدادات الإعلانات في حسابك على فيسبوك أو إنستغرام، أو بحظر ملفات تعريف الارتباط الخاصة بالأطراف الثالثة في متصفحك.",
       },
       {
         heading: "٧. المحتوى والسلوك",
@@ -112,7 +112,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "3. What is collected automatically",
-        body: "When you sign in we record the time, your IP address and the approximate country and city it points to (looked up through ipapi.co), to protect accounts from misuse. We count how often a profile is viewed, without telling its owner who viewed it. If you turn on notifications, we keep your device's notification token. On the website only, the Meta Pixel measures visits and ad results (see the Terms); the iOS and Android apps don't use it and don't track you across other apps or websites.",
+        body: "When you sign in we record the time, your IP address and the approximate country and city it points to (looked up through ipapi.co), to protect accounts from misuse. We count how often a profile is viewed, without telling its owner who viewed it. If you turn on notifications, we keep your device's notification token. On the website only, the Meta Pixel and our server report visits and actions such as signing up to Meta to measure ad results, with your email and phone hashed (see the Terms); the iOS and Android apps don't use it and don't track you across other apps or websites.",
       },
       {
         heading: "4. How it is used",
@@ -148,7 +148,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "٣. ما يُجمع تلقائياً",
-        body: "عند تسجيل الدخول نسجّل الوقت وعنوان IP والبلد والمدينة التقريبيين المرتبطين به (عبر خدمة ipapi.co)، لحماية الحسابات من سوء الاستخدام. نحصي عدد مرات مشاهدة الملف من دون أن نخبر صاحبه من شاهده. إذا فعّلت الإشعارات، نحتفظ برمز الإشعارات الخاص بجهازك. على الموقع فقط، تقيس أداة Meta Pixel الزيارات ونتائج الإعلانات (راجع الشروط)؛ أمّا تطبيقا iOS وأندرويد فلا يستخدمانها ولا يتتبّعانك عبر التطبيقات أو المواقع الأخرى.",
+        body: "عند تسجيل الدخول نسجّل الوقت وعنوان IP والبلد والمدينة التقريبيين المرتبطين به (عبر خدمة ipapi.co)، لحماية الحسابات من سوء الاستخدام. نحصي عدد مرات مشاهدة الملف من دون أن نخبر صاحبه من شاهده. إذا فعّلت الإشعارات، نحتفظ برمز الإشعارات الخاص بجهازك. على الموقع فقط، تُبلغ أداة Meta Pixel وخادمنا Meta بالزيارات وبإجراءات مثل إنشاء حساب لقياس نتائج الإعلانات، مع تشفير بريدك الإلكتروني ورقم هاتفك (راجع الشروط)؛ أمّا تطبيقا iOS وأندرويد فلا يستخدمانها ولا يتتبّعانك عبر التطبيقات أو المواقع الأخرى.",
       },
       {
         heading: "٤. كيف نستخدمه",

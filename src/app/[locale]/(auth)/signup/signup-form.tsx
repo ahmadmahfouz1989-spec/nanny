@@ -10,7 +10,6 @@ import AppleAuthButton from "@/components/apple-auth-button";
 import WhatsAppAuth from "@/components/whatsapp-auth";
 import EmailCodeForm from "@/components/email-code-form";
 import { useRouter } from "@/i18n/navigation";
-import { trackMetaEvent } from "@/components/meta-pixel";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 
@@ -60,7 +59,6 @@ export default function SignupForm() {
       return;
     }
 
-    trackMetaEvent("CompleteRegistration");
     const body = await res.json().catch(() => ({}));
     if (body?.signedIn) {
       // No confirmation step (local development): straight to the start.

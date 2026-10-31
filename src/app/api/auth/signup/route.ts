@@ -5,6 +5,7 @@ import { signupSchema } from "@/lib/validation/auth";
 import { sendEmail, alreadyRegisteredEmail } from "@/lib/email";
 import { notifyAdminsOfNewSignup } from "@/lib/signup-notify";
 import { getPublicOrigin } from "@/lib/site-url";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 export async function POST(request: Request) {
   const body = await request.json().catch(() => null);
@@ -52,6 +53,7 @@ export async function POST(request: Request) {
     await sendEmail(email!, subject, html);
   } else if (data.user) {
     await notifyAdminsOfNewSignup(email!);
+    await reportMetaEvent("CompleteRegistration", { user: { id: data.user.id, email }, params: { content_name: "email" } });
   }
 
   // With email confirmation off (local development) Supabase signs the

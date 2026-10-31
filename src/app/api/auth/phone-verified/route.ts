@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { notifyAdminsOfNewSignup } from "@/lib/signup-notify";
+import { reportMetaEvent } from "@/lib/meta-capi";
 
 // An account this young, signing in with its phone for the first time, is
 // a new WhatsApp sign-up rather than an existing user adding a login.
@@ -33,7 +34,10 @@ export async function POST() {
     .maybeSingle();
 
   const isNew = Date.now() - Date.parse(user.created_at) < NEW_ACCOUNT_WINDOW_MS;
-  if (firstTime && isNew) await notifyAdminsOfNewSignup(`+${user.phone}`);
+  if (firstTime && isNew) {
+    await notifyAdminsOfNewSignup(`+${user.phone}`);
+    await reportMetaEvent("CompleteRegistration", { user: { id: user.id, phone: user.phone }, params: { content_name: "whatsapp" } });
+  }
 
   return NextResponse.json({ newAccount: Boolean(firstTime && isNew) });
 }
