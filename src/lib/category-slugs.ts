@@ -4,7 +4,7 @@
 // schema pair in CATEGORY_SCHEMAS (src/app/api/generic-profile/route.ts),
 // a form pair in category-onboarding-client.tsx and a scoring branch in
 // src/lib/matching/generic-recompute.ts.
-export const CATEGORY_SLUGS = ["nanny", "nursing", "tutoring", "maintenance", "errands"] as const;
+export const CATEGORY_SLUGS = ["nanny", "nursing", "tutoring", "maintenance", "errands", "cleaning"] as const;
 
 export type CategorySlug = (typeof CATEGORY_SLUGS)[number];
 

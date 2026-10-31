@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { placeScore } from "@/lib/matching/place";
+import { computeCleaningMatchScore, type CleaningProviderMatchInput, type CleaningSeekerMatchInput } from "@/lib/matching/cleaning-engine";
 import {
   computeErrandsMatchScore,
   dayOfWeek,
@@ -270,5 +271,68 @@ describe("place rule", () => {
     expect(placeScore({ governorateId: "mount" }, { governorateId: "mount", districtId: "metn" })).toBe(1);
     expect(placeScore(seeker, { governorateId: "beirut", serviceAreaIds: ["mount"] })).toBe(1);
     expect(placeScore({ governorateId: null }, { governorateId: "mount" })).toBe(0);
+  });
+});
+
+describe("computeCleaningMatchScore", () => {
+  const seeker: CleaningSeekerMatchInput = {
+    governorateId: "beirut",
+    districtId: "d-beirut",
+    service: "home",
+    frequency: "weekly",
+    timing: "asap",
+    scheduledDay: null,
+    neededDays: ["mon", "thu"],
+    size: "100_200",
+    highWindows: false,
+    needsSupplies: false,
+    canPickUp: false,
+  };
+  const cleaner: CleaningProviderMatchInput = {
+    governorateId: "beirut",
+    districtId: "d-beirut",
+    coverDistrictIds: [],
+    services: ["home", "deep"],
+    providerType: "individual",
+    equipment: [],
+    bringsSupplies: true,
+    transport: "public",
+    availabilityDays: ["mon", "tue", "wed", "thu"],
+    takesUrgentJobs: false,
+  };
+
+  it("is a full match for the right service, place and days", () => {
+    expect(computeCleaningMatchScore(seeker, cleaner).score).toBe(100);
+  });
+
+  it("scores 0 without the service, however close", () => {
+    expect(computeCleaningMatchScore({ ...seeker, service: "upholstery" }, cleaner).score).toBe(0);
+  });
+
+  it("counts how many of a regular helper's days they can do", () => {
+    const result = computeCleaningMatchScore(seeker, { ...cleaner, availabilityDays: ["mon"] });
+    expect(result.breakdown.availability.raw).toBe(0.5);
+  });
+
+  it("asks the job's needs of the provider", () => {
+    // A sofa wash needs the machine.
+    const sofa = { ...seeker, service: "upholstery" as const, frequency: "once" as const };
+    const washer = { ...cleaner, services: ["upholstery"] };
+    expect(computeCleaningMatchScore(sofa, washer).breakdown.requirements.raw).toBe(0);
+    expect(computeCleaningMatchScore(sofa, { ...washer, equipment: ["upholstery_machine"] }).breakdown.requirements.raw).toBe(1);
+    // Someone who needs a lift fits only a family who can give one.
+    const needsLift = { ...cleaner, transport: "needs_pickup" };
+    expect(computeCleaningMatchScore(seeker, needsLift).breakdown.requirements.raw).toBe(0);
+    expect(computeCleaningMatchScore({ ...seeker, canPickUp: true }, needsLift).breakdown.requirements.raw).toBe(1);
+    // After building work, a team beats one person.
+    const site = { ...seeker, service: "construction" as const, frequency: "once" as const };
+    expect(computeCleaningMatchScore(site, { ...cleaner, services: ["construction"] }).breakdown.requirements.raw).toBe(0.5);
+    expect(computeCleaningMatchScore(site, { ...cleaner, services: ["construction"], providerType: "team" }).breakdown.requirements.raw).toBe(1);
+  });
+
+  it("needs a same-day cleaner for a right-now job", () => {
+    const now = { ...seeker, frequency: "once" as const, timing: "asap" as const };
+    expect(computeCleaningMatchScore(now, cleaner).breakdown.availability.raw).toBe(0);
+    expect(computeCleaningMatchScore(now, { ...cleaner, takesUrgentJobs: true }).breakdown.availability.raw).toBe(1);
   });
 });

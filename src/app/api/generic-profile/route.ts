@@ -7,6 +7,7 @@ import { nursingProviderSchema, nursingSeekerSchema, DEFAULT_LICENSE_VERIFICATIO
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
+import { cleaningProviderSchema, cleaningSeekerSchema } from "@/lib/validation/cleaning";
 import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { refreshSearchText } from "@/lib/search-text";
@@ -26,6 +27,7 @@ const CATEGORY_SCHEMAS: Record<string, { seeker: z.ZodTypeAny; provider: z.ZodTy
   tutoring: { seeker: tutoringSeekerSchema, provider: tutoringProviderSchema },
   maintenance: { seeker: maintenanceSeekerSchema, provider: maintenanceProviderSchema },
   errands: { seeker: errandSeekerSchema, provider: errandProviderSchema },
+  cleaning: { seeker: cleaningSeekerSchema, provider: cleaningProviderSchema },
 };
 
 async function resolveCategory(supabase: Awaited<ReturnType<typeof createClient>>, slug: string) {

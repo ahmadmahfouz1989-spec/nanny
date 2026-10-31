@@ -5,6 +5,8 @@ import { requireActiveUser } from "@/lib/session";
 
 const BUCKET = "id-documents";
 const MAX_BYTES = 10 * 1024 * 1024;
+// Required for delivery & errands, optional (an "ID checked" badge) for cleaners.
+const ID_CATEGORIES = ["errands", "cleaning"];
 const TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -26,7 +28,7 @@ export async function GET(request: Request) {
 }
 
 /**
- * A delivery & errands provider's ID or driving licence photo, for one of
+ * A delivery & errands or cleaning provider's ID or driving licence photo, for one of
  * their own profiles. Stored privately (only admins open it, through a
  * short-lived link), so it's written with the service role rather than
  * the user's session. A new upload replaces the old one and the profile
@@ -53,7 +55,7 @@ export async function POST(request: Request) {
     .eq("id", profileId)
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!own || own.role !== "provider" || own.categories?.slug !== "errands") {
+  if (!own || own.role !== "provider" || !ID_CATEGORIES.includes(own.categories?.slug ?? "")) {
     return NextResponse.json({ error: "Profile not found" }, { status: 404 });
   }
 

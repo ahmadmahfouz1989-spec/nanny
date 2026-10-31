@@ -39,6 +39,8 @@ const TAGGED: Record<string, string> = {
   urgency: "Urgency",
   errandServices: "ErrandServices",
   errandService: "ErrandServices",
+  cleaningServices: "CleaningServices",
+  cleaningService: "CleaningServices",
   vehicle: "Vehicles",
   additionalDuties: "Duties",
   patientAgeGroup: "PatientAgeGroups",
@@ -85,6 +87,8 @@ export function searchableText(profile: SearchableProfile): string {
       if (typeof code === "string") parts.push(code, ...labels(namespace, code));
     }
   }
+  // Cleaning goes by many everyday names ("تنضيف", "شغالة", "ménage").
+  if (a.cleaningServices !== undefined || a.cleaningService !== undefined) parts.push(...labels("CleaningServices", "searchWords"));
   // Nanny experience is a list of { ageGroup, yearsExperience }.
   if (Array.isArray(a.experience)) {
     for (const e of a.experience as { ageGroup?: unknown }[]) {

@@ -4,6 +4,7 @@ import { nursingProviderSchema, nursingSeekerSchema } from "@/lib/validation/nur
 import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/tutoring";
 import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
+import { cleaningProviderSchema, cleaningSeekerSchema } from "@/lib/validation/cleaning";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
 const DISTRICT = "22222222-2222-4222-8222-222222222222";
@@ -109,6 +110,41 @@ describe("profile validation", () => {
     expect(errandSeekerSchema.safeParse({ ...request, errandService: "paperwork" }).success).toBe(false);
     expect(errandSeekerSchema.safeParse({ ...request, errandService: "paperwork", institution: "Baabda Municipality" }).success).toBe(true);
     expect(errandSeekerSchema.safeParse({ ...request, errandService: "moto_taxi", passengers: 3 }).success).toBe(false);
+  });
+
+  it("validates cleaning profiles and requests per service", () => {
+    const cleaner = {
+      ...base, providerType: "individual", cleaningServices: ["home", "deep"], availability, takesUrgentJobs: false,
+      transport: "public", yearsExperience: 3, pricing: "per_hour", priceFromUsd: 6, minHours: 4,
+    };
+    const cleanerResult = cleaningProviderSchema.safeParse(cleaner);
+    expect(cleanerResult.success, JSON.stringify(cleanerResult.error?.issues)).toBe(true);
+    // A person states a nationality; a company doesn't, but says how many work there.
+    expect(cleaningProviderSchema.safeParse({ ...cleaner, nationality: undefined }).success).toBe(false);
+    const company = { ...cleaner, providerType: "company", nationality: undefined };
+    expect(cleaningProviderSchema.safeParse(company).success).toBe(false);
+    expect(cleaningProviderSchema.safeParse({ ...company, teamSize: 6 }).success).toBe(true);
+    expect(cleaningProviderSchema.safeParse({ ...cleaner, cleaningServices: [] }).success).toBe(false);
+    expect(cleaningProviderSchema.safeParse({ ...cleaner, transport: undefined }).success).toBe(false);
+
+    const request = {
+      fullName: "Test Person", locationId: LOCATION, districtId: DISTRICT, locationDetail: "Hamra",
+      cleaningService: "home", placeType: "apartment", size: "100_200", bathrooms: 2, frequency: "weekly", neededDays: ["mon"], timing: "asap",
+    };
+    const requestResult = cleaningSeekerSchema.safeParse(request);
+    expect(requestResult.success, JSON.stringify(requestResult.error?.issues)).toBe(true);
+    // A home clean needs its size; a one-off at a set time needs the time.
+    expect(cleaningSeekerSchema.safeParse({ ...request, size: undefined }).success).toBe(false);
+    expect(cleaningSeekerSchema.safeParse({ ...request, frequency: "once", timing: "scheduled" }).success).toBe(false);
+    expect(cleaningSeekerSchema.safeParse({ ...request, frequency: "once", timing: "scheduled", scheduledAt: "2026-11-07T09:00" }).success).toBe(true);
+    // Sofas and carpets: at least one count; no size or place asked.
+    const sofa = { ...request, cleaningService: "upholstery", placeType: undefined, size: undefined, frequency: "once" };
+    expect(cleaningSeekerSchema.safeParse(sofa).success).toBe(false);
+    expect(cleaningSeekerSchema.safeParse({ ...sofa, sofaSeats: 5 }).success).toBe(true);
+    // "Other" has to say what it is.
+    const other = { ...sofa, cleaningService: "other" };
+    expect(cleaningSeekerSchema.safeParse(other).success).toBe(false);
+    expect(cleaningSeekerSchema.safeParse({ ...other, jobDescription: "A garden terrace" }).success).toBe(true);
   });
 
   it("needs a district, the area being optional", () => {

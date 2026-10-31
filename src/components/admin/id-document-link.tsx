@@ -7,8 +7,9 @@ import { ui } from "@/lib/ui";
 /**
  * For a delivery provider in the review queue: their ID photo, opened
  * through a short-lived private link -- or a warning that there's none.
+ * Cleaners' IDs are optional (`optional`): nothing shows without one.
  */
-export default function IdDocumentLink({ profileId }: { profileId: string }) {
+export default function IdDocumentLink({ profileId, optional = false }: { profileId: string; optional?: boolean }) {
   const t = useTranslations("IdDocument");
   const [doc, setDoc] = useState<{ url: string; status: string } | null | undefined>(undefined);
 
@@ -24,6 +25,7 @@ export default function IdDocumentLink({ profileId }: { profileId: string }) {
   }, [profileId]);
 
   if (doc === undefined) return null;
+  if (!doc && optional) return null;
   if (!doc) return <p className="mb-3 text-sm font-medium text-danger">{t("adminMissing")}</p>;
   return (
     <p className="mb-3 flex items-center gap-2 text-sm">

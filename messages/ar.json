@@ -31,7 +31,8 @@
     "tagline": "كل الخدمات في مكان واحد",
     "closeMenu": "إغلاق القائمة",
     "errands": "توصيل ومشاوير",
-    "privacy": "سياسة الخصوصية"
+    "privacy": "سياسة الخصوصية",
+    "cleaning": "تنظيف"
   },
   "Install": {
     "title": "احصل على تطبيق ouiKnow",
@@ -313,7 +314,12 @@
     "errorWhen": "اختار التاريخ والوقت.",
     "loading": "عم يحمّل…",
     "progress": "{done} من {total} من الأجوبة المطلوبة",
-    "restored": "حفظنا اللي كنت عبّيته المرّة الماضية."
+    "restored": "حفظنا اللي كنت عبّيته المرّة الماضية.",
+    "errorTeamSize": "اكتب قدّيش في حدا بيشتغل معك.",
+    "errorSize": "اختار المساحة.",
+    "errorPlaceType": "اختار نوع المكان.",
+    "errorItems": "اكتب العدد لشي واحد على الأقل.",
+    "errorDescribe": "قلّن شو بدّو تنظيف."
   },
   "Location": {
     "governorate": "المحافظة",
@@ -476,6 +482,12 @@
       "roleSeekerDescription": "توصيل، معاملات، انتظار بالدور، مشتريات أو مشوار بالموتو — منلاقيلك حدا قريب منك.",
       "roleProviderTitle": "أنا بوصّل وبعمل مشاوير",
       "roleProviderDescription": "اعمل بروفايل تا الناس اللي قريبين منك يطلبوك للتوصيل، المعاملات، الدور، المشتريات أو مشاوير الموتو."
+    },
+    "cleaning": {
+      "roleSeekerTitle": "بدّي حدا ينضّف",
+      "roleSeekerDescription": "عاملة تنظيف بالساعة، تنظيف عميق، كنب وسجّاد، خزانات وغيرها — منلاقيلك حدا قريب منك.",
+      "roleProviderTitle": "أنا بنضّف بيوت أو مكاتب",
+      "roleProviderDescription": "لحالك، مع فريق أو شركة — اعمل بروفايل تا الناس اللي قريبين منك يطلبوك."
     }
   },
   "NursingProviderOnboarding": {
@@ -715,7 +727,8 @@
     "emptyEdit": "عدّل طلبي",
     "emptyWiden": "زيد مناطق أو أيام",
     "retry": "جرّب مرّة تانية",
-    "whyMatch": "ليش هالتطابق"
+    "whyMatch": "ليش هالتطابق",
+    "safetyTip": "نصيحة أمان: اتفقوا على العمل والساعات والسعر هنا في المحادثة أولاً. شارك عنوانك الكامل فقط بعد الاتفاق، وأبلغ عن أي شخص يطلب المال مسبقاً."
   },
   "Featured": {
     "title": "كن مميّزًا",
@@ -1355,6 +1368,238 @@
     "tooLarge": "الملف كبير (١٠ ميغا كحدّ أقصى).",
     "badge": "الهوية متحقّق منها",
     "adminView": "شوف الهوية",
-    "adminMissing": "ما في هوية محمّلة — مطلوبة لمقدّمي التوصيل."
+    "adminMissing": "ما في هوية محمّلة — مطلوبة لمقدّمي التوصيل.",
+    "whyOptional": "اختيارية. بس فريق ouiKnow بيشوفها — مش الزباين. بعد ما نتحقّق منها، بيطلع على ملفك «الهوية متحقّق منها»، وهيدا شي بتدوّر عليه العيل قبل ما يفوّتو حدا عالبيت."
+  },
+  "CleaningServices": {
+    "home": "تنظيف البيت",
+    "deep": "تنظيف عميق",
+    "move": "قبل أو بعد النقلة",
+    "construction": "تنظيف بعد الورشة",
+    "office": "مكاتب ومحلات",
+    "windows": "شبابيك وزجاج",
+    "upholstery": "كنب وسجّاد وفرش",
+    "water_tanks": "خزانات المي",
+    "other": "تنظيف تاني",
+    "homeSeeker": "عاملة تنظيف مرّة، أو كل جمعة",
+    "deepSeeker": "تنظيف كامل من فوق لتحت",
+    "moveSeeker": "قبل ما تسكن أو بعد ما تفلّ",
+    "constructionSeeker": "غبرة ووسخ بعد الترميم",
+    "officeSeeker": "مكتبك، عيادتك أو محلّك",
+    "windowsSeeker": "شبابيك، أبواب زجاج وواجهات",
+    "upholsterySeeker": "غسيل بالبيت بالماكينة",
+    "water_tanksSeeker": "تفريغ وفرك وشطف",
+    "otherSeeker": "قلّن شو بدّك",
+    "homeProvider": "تنظيف بالساعة أو باليوم، مرّة أو بشكل دايم",
+    "deepProvider": "مطابخ، حمّامات، جوّا الخزاين والأجهزة",
+    "moveProvider": "بيوت فاضية قبل أو بعد النقلة",
+    "constructionProvider": "غبرة، دهان وردم بعد الترميم",
+    "officeProvider": "مكاتب، عيادات ومحلات، بالدوام أو بعده",
+    "windowsProvider": "شبابيك، زجاج وواجهات",
+    "upholsteryProvider": "كنب، سجّاد وفرش، بالماكينة",
+    "water_tanksProvider": "تفريغ وفرك الخزانات عالسطح",
+    "otherProvider": "أي شي تاني بتنضّفو",
+    "searchWords": "cleaning cleaner cleaning lady housekeeper maid ménage femme de ménage nettoyage تنظيف تنضيف تنضيفات منظفة عاملة تنظيف عاملة بالساعة شغالة كلينينغ غسيل كنب غسيل سجاد فرش خزانات"
+  },
+  "CleaningOptions": {
+    "placeType": {
+      "apartment": "شقة",
+      "house": "بيت مستقل",
+      "office": "مكتب",
+      "shop": "محل"
+    },
+    "size": {
+      "under_100": "أقل من ١٠٠ م²",
+      "100_200": "١٠٠–٢٠٠ م²",
+      "200_300": "٢٠٠–٣٠٠ م²",
+      "over_300": "أكتر من ٣٠٠ م²"
+    },
+    "dirtLevel": {
+      "light": "غبرة خفيفة",
+      "heavy": "غبرة كتير وردم"
+    },
+    "extras": {
+      "oven": "جوّا الفرن",
+      "fridge": "جوّا البرّاد",
+      "cabinets": "جوّا الخزاين",
+      "inside_windows": "الشبابيك من جوّا",
+      "balcony": "البلكون",
+      "ironing": "كوي"
+    },
+    "frequency": {
+      "once": "مرّة وحدة",
+      "weekly": "كل جمعة",
+      "twice_weekly": "مرّتين بالجمعة",
+      "biweekly": "كل جمعتين",
+      "monthly": "كل شهر"
+    },
+    "providerType": {
+      "individual": "لحالي",
+      "team": "فريق",
+      "company": "شركة"
+    },
+    "equipment": {
+      "steam": "ماكينة بخار",
+      "upholstery_machine": "ماكينة كنب وسجّاد",
+      "pressure_washer": "ماكينة ضغط مي",
+      "high_reach": "سلّم أو عدّة للأماكن العالية"
+    },
+    "transport": {
+      "own": "وسيلة نقل خاصة (سيارة أو موتو)",
+      "public": "باص أو تاكسي",
+      "needs_pickup": "بحاجة حدا يجيبو"
+    },
+    "pricing": {
+      "per_hour": "بالساعة",
+      "per_visit": "بالزيارة",
+      "per_item": "بالقطعة",
+      "quote": "حسب الشغل"
+    }
+  },
+  "CleaningSeekerOnboarding": {
+    "pickTitle": "شو بدّك تنضّف؟",
+    "pickSubtitle": "اختار وحدة — منسألك بس اللي بتحتاجه هالخدمة.",
+    "changeService": "غيّر",
+    "createTitle": "اعمل طلبك",
+    "editTitle": "عدّل طلبك",
+    "section1Title": "المكان",
+    "section2Title": "الوقت",
+    "section3Title": "وين، وشي منيح تعرفو",
+    "section4Title": "عنك",
+    "placeType": "شو نوع المكان؟",
+    "size": "قدّيش المساحة؟",
+    "bathrooms": "عدد الحمّامات",
+    "furnished": "مفروش؟",
+    "furnishedYes": "مفروش",
+    "furnishedNo": "فاضي",
+    "dirtLevel": "قدّيش في غبرة وردم؟",
+    "windowsCount": "كم شبّاك؟",
+    "highWindows": "في شبابيك من برّا فوق الطابق الأرضي",
+    "itemsHint": "قدّيش من كل وحدة؟ اترك اللي ما بدّك ياه.",
+    "sofaSeats": "مقاعد كنب",
+    "carpets": "سجّادات",
+    "mattresses": "فرش",
+    "tankCount": "كم خزّان؟",
+    "extras": "كمان نضّف",
+    "describe": "في شي لازم يعرفوه؟",
+    "describeOther": "شو بدّو تنظيف؟",
+    "placeholder": {
+      "home": "مثلاً: ٣ غرف نوم، تشطيف أرض، غبرة والمطبخ",
+      "deep": "مثلاً: دهن بالمطبخ وكلس بالحمّام",
+      "move": "مثلاً: فالّين الجمعة، بدّنا البيت يلمع",
+      "construction": "مثلاً: دهان عالأرض وغبرة بكل مكان",
+      "office": "مثلاً: عيادة صغيرة، غرفتين وصالة انتظار",
+      "windows": "مثلاً: أبواب زجاج كبار عالبلكون",
+      "upholstery": "مثلاً: كنباية قماش فاتح عليها بقعة قهوة",
+      "water_tanks": "مثلاً: خزّان واحد عالسطح، في أسانسير",
+      "other": "مثلاً: تراس جنينة، أو سيارة من جوّا وبرّا"
+    },
+    "frequency": "قدّيش بتحتاج؟",
+    "neededDays": "أيّا أيام بتناسبك؟",
+    "timing": "إيمتى؟",
+    "scheduledAt": "التاريخ والوقت",
+    "hoursPerVisit": "تقريباً كم ساعة كل مرّة؟",
+    "addressHint": "بس المنطقة — العنوان الكامل بتبعتو بالمحادثة بعد ما تتّفقوا.",
+    "good": "منيح يعرفو",
+    "needsSupplies": "جيبو معكن مواد وعدّة التنظيف",
+    "canPickUp": "بقدر جيب عاملة التنظيف",
+    "hasPets": "في حيوانات أليفة بالبيت",
+    "budgetUsd": "ميزانيتك (بالدولار)",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)"
+  },
+  "CleaningProviderOnboarding": {
+    "createTitle": "اعمل بروفايلك",
+    "editTitle": "عدّل بروفايلك",
+    "section1Title": "إنت ومنطقتك",
+    "section2Title": "شو بتنضّف",
+    "section3Title": "إيمتى بتشتغل",
+    "section4Title": "الأسعار وعنك",
+    "providerType": "بتشتغل…",
+    "namePlaceholder": "اسمك",
+    "businessNamePlaceholder": "اسم الفريق أو الشركة",
+    "teamSize": "كم شخص؟",
+    "contactPhonePlaceholder": "رقم الهاتف (اختياري)",
+    "logoHint": "للفريق أو الشركة، اللوغو بيمشي منيح كصورة.",
+    "nationality": "الجنسية",
+    "languages": "اللغات اللي بتحكيها",
+    "services": "الخدمات اللي بتقدّمها (اختار كل اللي بينطبق)",
+    "supplies": "المواد",
+    "bringsSupplies": "بجيب مواد وعدّة التنظيف معي",
+    "ecoProducts": "بقدر استعمل مواد صديقة للبيئة",
+    "equipment": "العدّة اللي معك",
+    "upholsteryHint": "غسيل الكنب والسجّاد بدّو ماكينة عادةً — علّم عليها إذا معك.",
+    "yearsExperience": "سنين الخبرة",
+    "availableDays": "الأيام المتاحة",
+    "from": "من",
+    "to": "لـ",
+    "takesUrgentJobs": "بقبل شغل بنفس اليوم",
+    "transport": "كيف بتوصل عالشغل",
+    "pricing": "كيف بتحاسب",
+    "priceFrom": {
+      "per_hour": "من قدّيش بالساعة؟ (بالدولار)",
+      "per_visit": "من قدّيش بالزيارة؟ (بالدولار)",
+      "per_item": "من قدّيش بالقطعة؟ (بالدولار)"
+    },
+    "minHours": "أقل عدد ساعات بالزيارة",
+    "priceNote": "تفاصيل عن أسعارك",
+    "priceNotePlaceholder": "مثلاً: المواصلات ضمن السعر جوّا بيروت",
+    "shortIntro": "عنك",
+    "shortIntroPlaceholder": "مثلاً: ٦ سنين عم نضّف بيوت بالمتن، دقيقة وعالوقت"
+  },
+  "CleaningFields": {
+    "cleaningServices": "الخدمات",
+    "cleaningService": "الخدمة",
+    "providerType": "بيشتغل",
+    "people": "{count, plural, one {شخص واحد} two {شخصين} few {# أشخاص} many {# شخص} other {# شخص}}",
+    "pricing": "السعر",
+    "price": {
+      "per_hour": "بالساعة",
+      "per_visit": "بالزيارة",
+      "per_item": "بالقطعة",
+      "quote": "حسب الشغل"
+    },
+    "priceFrom": {
+      "per_hour": "من {amount} بالساعة",
+      "per_visit": "من {amount} بالزيارة",
+      "per_item": "من {amount} بالقطعة"
+    },
+    "minHours": "الحد الأدنى",
+    "priceNote": "عن الأسعار",
+    "supplies": "بيجيب",
+    "bringsSupplies": "مواد وعدّة التنظيف",
+    "ecoProducts": "مواد صديقة للبيئة",
+    "equipment": "العدّة",
+    "transport": "كيف بيوصل",
+    "placeType": "المكان",
+    "size": "المساحة",
+    "bathrooms": "الحمّامات",
+    "furnished": "مفروش",
+    "furnishedYes": "مفروش",
+    "furnishedNo": "فاضي",
+    "dirtLevel": "الغبرة والردم",
+    "extras": "كمان نضّف",
+    "windowsCount": "الشبابيك",
+    "highWindows": "شبابيك عالية من برّا",
+    "items": "للغسيل",
+    "sofaSeats": "{count, plural, one {مقعد كنب واحد} two {مقعدين كنب} few {# مقاعد كنب} many {# مقعد كنب} other {# مقعد كنب}}",
+    "carpets": "{count, plural, one {سجّادة وحدة} two {سجّادتين} few {# سجّادات} many {# سجّادة} other {# سجّادة}}",
+    "mattresses": "{count, plural, one {فرشة وحدة} two {فرشتين} few {# فرش} many {# فرشة} other {# فرشة}}",
+    "tankCount": "الخزانات",
+    "frequency": "قدّيش",
+    "hoursPerVisit": "كل زيارة",
+    "timing": "إيمتى",
+    "good": "منيح يعرفو",
+    "needsSupplies": "يجيبو مواد وعدّة",
+    "hasPets": "في حيوانات بالبيت",
+    "canPickUp": "بيقدرو يجيبو عاملة التنظيف",
+    "budgetUsd": "الميزانية",
+    "hours": "{count, plural, one {ساعة وحدة} two {ساعتين} few {# ساعات} many {# ساعة} other {# ساعة}}",
+    "yes": "إيه",
+    "providerTypes": {
+      "individual": "لحالو",
+      "team": "فريق",
+      "company": "شركة"
+    }
   }
 }
