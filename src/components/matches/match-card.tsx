@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CriteriaChecklist from "./criteria-checklist";
 import MatchActions from "./match-actions";
@@ -15,6 +15,7 @@ import { formatHoursRange } from "@/lib/format-hours";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
 import { ChevronDownIcon } from "@/components/home-icons";
+import { cleaningPrice } from "@/components/cleaning-details";
 
 export type OtherProfile = {
   id: string;
@@ -65,6 +66,9 @@ export default function MatchCard({
   const tSubject = useTranslations("Subjects");
   const tCare = useTranslations("CareSpecialties");
   const tErrand = useTranslations("ErrandServices");
+  const tCleaning = useTranslations("CleaningServices");
+  const tCleaningFields = useTranslations("CleaningFields");
+  const format = useFormatter();
   const locale = useLocale();
 
   const other = match.other;
@@ -91,11 +95,15 @@ export default function MatchCard({
     [a.subjects ?? a.subjectsNeeded, tSubject],
     [a.careSpecialties ?? a.careSpecialtiesNeeded, tCare],
     [a.errandServices ?? (typeof a.errandService === "string" ? [a.errandService] : undefined), tErrand],
+    [a.cleaningServices ?? (typeof a.cleaningService === "string" ? [a.cleaningService] : undefined), tCleaning],
   ];
   const skills = skillGroups
     .flatMap(([codes, tr]) => (Array.isArray(codes) ? (codes as string[]).map((c) => labelOr(tr, c)) : []))
     .slice(0, 4);
-  const price = typeof a.priceNote === "string" && a.priceNote.trim() ? a.priceNote : null;
+  // A cleaner's "from" price ("From $6 an hour"), else what they wrote.
+  const price =
+    (a.cleaningServices ? cleaningPrice(a, tCleaningFields, format) : null) ??
+    (typeof a.priceNote === "string" && a.priceNote.trim() ? a.priceNote : null);
   // The full details live on the profile page; the card keeps a taste.
   const intro = [a.shortIntro, a.jobDescription, a.familyDescription].find(
     (v): v is string => typeof v === "string" && v.trim() !== "",

@@ -12,6 +12,8 @@ import MaintenanceProviderForm from "./maintenance-provider-form";
 import MaintenanceSeekerForm from "./maintenance-seeker-form";
 import ErrandsProviderForm from "./errands-provider-form";
 import ErrandsSeekerForm from "./errands-seeker-form";
+import CleaningProviderForm from "./cleaning-provider-form";
+import CleaningSeekerForm from "./cleaning-seeker-form";
 import { ChevronIcon, PersonIcon, ProviderIcon } from "@/components/home-icons";
 import { request } from "@/lib/request";
 
@@ -24,6 +26,7 @@ const FORMS: Record<string, { provider: typeof NursingProviderForm; seeker: type
   tutoring: { provider: TutoringProviderForm, seeker: TutoringSeekerForm },
   maintenance: { provider: MaintenanceProviderForm, seeker: MaintenanceSeekerForm },
   errands: { provider: ErrandsProviderForm, seeker: ErrandsSeekerForm },
+  cleaning: { provider: CleaningProviderForm, seeker: CleaningSeekerForm },
 };
 
 type ExistingProfile = {

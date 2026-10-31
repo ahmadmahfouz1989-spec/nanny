@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { labelOr } from "@/lib/i18n-fallback";
 import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 import { useErrandRows } from "@/components/errand-details";
+import { useCleaningRows } from "@/components/cleaning-details";
 import type { OtherProfile } from "./match-card";
 
 /**
@@ -31,6 +32,7 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
   const locale = useLocale();
   const governorates = useGovernorates();
   const errandRows = useErrandRows();
+  const cleaningRows = useCleaningRows();
 
   const a = profile.attributes ?? {};
   const langs = (profile.languages ?? []).map((l) => (locale === "ar" ? l.name_ar : locale === "fr" ? l.name_fr : l.name_en));
@@ -195,7 +197,7 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
           <dd>{a.takesUrgentJobs ? t("yes") : t("no")}</dd>
         </>
       )}
-      {errandRows(a).map((row) => (
+      {[...errandRows(a), ...cleaningRows(a)].map((row) => (
         <Fragment key={row.label}>
           <dt className="text-muted">{row.label}</dt>
           <dd>{row.value}</dd>

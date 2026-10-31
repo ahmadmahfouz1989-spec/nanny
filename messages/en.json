@@ -31,7 +31,8 @@
     "tagline": "All services in one place",
     "closeMenu": "Close menu",
     "errands": "Delivery & Errands",
-    "privacy": "Privacy policy"
+    "privacy": "Privacy policy",
+    "cleaning": "Cleaning"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -313,7 +314,12 @@
     "errorWhen": "Pick a date and time.",
     "loading": "Loading…",
     "progress": "{done} of {total} required answers",
-    "restored": "We kept what you'd filled in last time."
+    "restored": "We kept what you'd filled in last time.",
+    "errorTeamSize": "Enter how many people work with you.",
+    "errorSize": "Choose the size.",
+    "errorPlaceType": "Choose the place.",
+    "errorItems": "Enter how many of at least one.",
+    "errorDescribe": "Tell them what needs cleaning."
   },
   "Location": {
     "governorate": "Governorate",
@@ -476,6 +482,12 @@
       "roleSeekerDescription": "Deliveries, paperwork, waiting in a queue, shopping or a moto taxi ride — get matched with someone near you.",
       "roleProviderTitle": "I run deliveries and errands",
       "roleProviderDescription": "Create a profile so people near you can hire you for deliveries, paperwork, queues, shopping or moto taxi rides."
+    },
+    "cleaning": {
+      "roleSeekerTitle": "I need cleaning",
+      "roleSeekerDescription": "A regular cleaner, a deep clean, sofas and carpets, water tanks and more — get matched with cleaners near you.",
+      "roleProviderTitle": "I clean homes or offices",
+      "roleProviderDescription": "On your own, as a team or a company — create a profile so people near you can hire you."
     }
   },
   "NursingProviderOnboarding": {
@@ -715,7 +727,8 @@
     "emptyEdit": "Edit my request",
     "emptyWiden": "Add areas or days",
     "retry": "Try again",
-    "whyMatch": "Why this match"
+    "whyMatch": "Why this match",
+    "safetyTip": "Stay safe: agree on the work, the hours and the price here in the chat first. Share your exact address only once you've agreed, and report anyone who asks for money up front."
   },
   "Featured": {
     "title": "Get Featured",
@@ -1355,6 +1368,238 @@
     "tooLarge": "That file is too big (10MB at most).",
     "badge": "ID checked",
     "adminView": "View ID document",
-    "adminMissing": "No ID uploaded — required for delivery providers."
+    "adminMissing": "No ID uploaded — required for delivery providers.",
+    "whyOptional": "Optional. Only the ouiKnow team sees it — never customers. Once checked, your profile shows “ID checked”, which families look for before letting someone into their home."
+  },
+  "CleaningServices": {
+    "home": "Regular home cleaning",
+    "deep": "Deep cleaning",
+    "move": "Move-in / move-out",
+    "construction": "After building work",
+    "office": "Offices & shops",
+    "windows": "Windows & glass",
+    "upholstery": "Sofas, carpets & mattresses",
+    "water_tanks": "Water tanks",
+    "other": "Other cleaning",
+    "homeSeeker": "A cleaner once, or every week",
+    "deepSeeker": "A thorough top-to-bottom clean",
+    "moveSeeker": "Before you move in or after you move out",
+    "constructionSeeker": "Dust and mess after renovation",
+    "officeSeeker": "Your office, clinic or shop",
+    "windowsSeeker": "Windows, glass doors and facades",
+    "upholsterySeeker": "Washed at home with a machine",
+    "water_tanksSeeker": "Emptied, scrubbed and rinsed",
+    "otherSeeker": "Tell them what you need",
+    "homeProvider": "Hourly or daily cleaning, once or regularly",
+    "deepProvider": "Kitchens, bathrooms, inside cabinets and appliances",
+    "moveProvider": "Empty homes before or after a move",
+    "constructionProvider": "Heavy dust, paint and debris after renovation",
+    "officeProvider": "Offices, clinics and shops, during or after hours",
+    "windowsProvider": "Windows, glass and facades",
+    "upholsteryProvider": "Sofas, carpets and mattresses, with a machine",
+    "water_tanksProvider": "Emptying and scrubbing rooftop tanks",
+    "otherProvider": "Anything else you clean",
+    "searchWords": "cleaning cleaner cleaning lady housekeeper maid ménage femme de ménage nettoyage تنظيف تنضيف تنضيفات منظفة عاملة تنظيف عاملة بالساعة شغالة كلينينغ غسيل كنب غسيل سجاد فرش خزانات"
+  },
+  "CleaningOptions": {
+    "placeType": {
+      "apartment": "Apartment",
+      "house": "House",
+      "office": "Office",
+      "shop": "Shop"
+    },
+    "size": {
+      "under_100": "Under 100 m²",
+      "100_200": "100–200 m²",
+      "200_300": "200–300 m²",
+      "over_300": "Over 300 m²"
+    },
+    "dirtLevel": {
+      "light": "Light dust",
+      "heavy": "Heavy dust and debris"
+    },
+    "extras": {
+      "oven": "Inside the oven",
+      "fridge": "Inside the fridge",
+      "cabinets": "Inside cabinets",
+      "inside_windows": "Windows from inside",
+      "balcony": "Balcony",
+      "ironing": "Ironing"
+    },
+    "frequency": {
+      "once": "Once",
+      "weekly": "Every week",
+      "twice_weekly": "Twice a week",
+      "biweekly": "Every 2 weeks",
+      "monthly": "Every month"
+    },
+    "providerType": {
+      "individual": "Just me",
+      "team": "A team",
+      "company": "A company"
+    },
+    "equipment": {
+      "steam": "Steam cleaner",
+      "upholstery_machine": "Sofa & carpet machine",
+      "pressure_washer": "Pressure washer",
+      "high_reach": "Ladder or gear for high places"
+    },
+    "transport": {
+      "own": "Own transport (car or motorbike)",
+      "public": "Bus or taxi",
+      "needs_pickup": "Needs a pickup"
+    },
+    "pricing": {
+      "per_hour": "Per hour",
+      "per_visit": "Per visit",
+      "per_item": "Per item",
+      "quote": "On quote"
+    }
+  },
+  "CleaningSeekerOnboarding": {
+    "pickTitle": "What do you need cleaned?",
+    "pickSubtitle": "Pick one — you'll only be asked what that service needs.",
+    "changeService": "Change",
+    "createTitle": "Create your request",
+    "editTitle": "Edit your request",
+    "section1Title": "The place",
+    "section2Title": "When",
+    "section3Title": "Where, and good to know",
+    "section4Title": "About you",
+    "placeType": "What kind of place?",
+    "size": "How big?",
+    "bathrooms": "Bathrooms",
+    "furnished": "Is it furnished?",
+    "furnishedYes": "Furnished",
+    "furnishedNo": "Empty",
+    "dirtLevel": "How much dust and debris?",
+    "windowsCount": "How many windows?",
+    "highWindows": "Some are outside, above the ground floor",
+    "itemsHint": "How many of each? Leave out what you don't need.",
+    "sofaSeats": "Sofa seats",
+    "carpets": "Carpets",
+    "mattresses": "Mattresses",
+    "tankCount": "How many tanks?",
+    "extras": "Also clean",
+    "describe": "Anything they should know?",
+    "describeOther": "What needs cleaning?",
+    "placeholder": {
+      "home": "e.g. 3 bedrooms, mostly dusting, floors and the kitchen",
+      "deep": "e.g. Kitchen grease and bathroom limescale",
+      "move": "e.g. Moving out on Friday, the place needs to be spotless",
+      "construction": "e.g. Paint on the floors, dust everywhere",
+      "office": "e.g. Small clinic, two rooms and a waiting area",
+      "windows": "e.g. Large balcony glass doors",
+      "upholstery": "e.g. A light fabric sofa with a coffee stain",
+      "water_tanks": "e.g. One tank on the roof, the building has an elevator",
+      "other": "e.g. A garden terrace, or a car inside and out"
+    },
+    "frequency": "How often?",
+    "neededDays": "Which days suit you?",
+    "timing": "When?",
+    "scheduledAt": "Date and time",
+    "hoursPerVisit": "About how many hours each time?",
+    "addressHint": "Just the area — share the exact address in chat once you've agreed.",
+    "good": "Good to know",
+    "needsSupplies": "Please bring cleaning products and tools",
+    "canPickUp": "I can pick the cleaner up",
+    "hasPets": "There are pets at home",
+    "budgetUsd": "Your budget (USD)",
+    "namePlaceholder": "Your name",
+    "contactPhonePlaceholder": "Phone number (optional)"
+  },
+  "CleaningProviderOnboarding": {
+    "createTitle": "Create your profile",
+    "editTitle": "Edit your profile",
+    "section1Title": "You and your area",
+    "section2Title": "What you clean",
+    "section3Title": "When you work",
+    "section4Title": "Prices and about you",
+    "providerType": "You work…",
+    "namePlaceholder": "Your name",
+    "businessNamePlaceholder": "Team or company name",
+    "teamSize": "How many people?",
+    "contactPhonePlaceholder": "Phone number (optional)",
+    "logoHint": "For a team or company, your logo works well as the photo.",
+    "nationality": "Nationality",
+    "languages": "Languages you speak",
+    "services": "Services you offer (pick all that apply)",
+    "supplies": "Products",
+    "bringsSupplies": "I bring my own cleaning products and tools",
+    "ecoProducts": "I can use eco-friendly products",
+    "equipment": "Equipment you have",
+    "upholsteryHint": "Sofa and carpet washing usually needs a machine — tick it if you have one.",
+    "yearsExperience": "Years of experience",
+    "availableDays": "Available days",
+    "from": "From",
+    "to": "To",
+    "takesUrgentJobs": "I take same-day jobs",
+    "transport": "Getting to jobs",
+    "pricing": "How you charge",
+    "priceFrom": {
+      "per_hour": "From how much an hour? (USD)",
+      "per_visit": "From how much a visit? (USD)",
+      "per_item": "From how much an item? (USD)"
+    },
+    "minHours": "Minimum hours per visit",
+    "priceNote": "More about your prices",
+    "priceNotePlaceholder": "e.g. Transport included inside Beirut",
+    "shortIntro": "About you",
+    "shortIntroPlaceholder": "e.g. 6 years cleaning homes in Metn, careful and on time"
+  },
+  "CleaningFields": {
+    "cleaningServices": "Services",
+    "cleaningService": "Service",
+    "providerType": "Works as",
+    "people": "{count, plural, one {# person} other {# people}}",
+    "pricing": "Price",
+    "price": {
+      "per_hour": "Per hour",
+      "per_visit": "Per visit",
+      "per_item": "Per item",
+      "quote": "On quote"
+    },
+    "priceFrom": {
+      "per_hour": "From {amount} an hour",
+      "per_visit": "From {amount} a visit",
+      "per_item": "From {amount} an item"
+    },
+    "minHours": "Minimum",
+    "priceNote": "About prices",
+    "supplies": "Brings",
+    "bringsSupplies": "Own products and tools",
+    "ecoProducts": "Eco-friendly products",
+    "equipment": "Equipment",
+    "transport": "Getting there",
+    "placeType": "Place",
+    "size": "Size",
+    "bathrooms": "Bathrooms",
+    "furnished": "Furnished",
+    "furnishedYes": "Furnished",
+    "furnishedNo": "Empty",
+    "dirtLevel": "Dust and debris",
+    "extras": "Also clean",
+    "windowsCount": "Windows",
+    "highWindows": "High outside windows",
+    "items": "To wash",
+    "sofaSeats": "{count, plural, one {# sofa seat} other {# sofa seats}}",
+    "carpets": "{count, plural, one {# carpet} other {# carpets}}",
+    "mattresses": "{count, plural, one {# mattress} other {# mattresses}}",
+    "tankCount": "Tanks",
+    "frequency": "How often",
+    "hoursPerVisit": "Each visit",
+    "timing": "When",
+    "good": "Good to know",
+    "needsSupplies": "Bring products and tools",
+    "hasPets": "Pets at home",
+    "canPickUp": "Can pick the cleaner up",
+    "budgetUsd": "Budget",
+    "hours": "{count, plural, one {# hour} other {# hours}}",
+    "yes": "Yes",
+    "providerTypes": {
+      "individual": "On their own",
+      "team": "A team",
+      "company": "A company"
+    }
   }
 }

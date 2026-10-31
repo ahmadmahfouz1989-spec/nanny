@@ -45,6 +45,8 @@ export function useErrandRows() {
   const format = useFormatter();
 
   return (a: Record<string, unknown>): { label: string; value: string }[] => {
+    // Other categories share some keys (timing, budgetUsd): only an errand gets these rows.
+    if (a.errandServices === undefined && a.errandService === undefined) return [];
     const rows: { label: string; value: string }[] = [];
     const add = (key: string, value: string | null | undefined) => {
       if (value) rows.push({ label: t(key), value });

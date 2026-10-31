@@ -23,6 +23,8 @@ import {
 } from "./maintenance-engine";
 import { computeErrandsMatchScore, dayOfWeek, type ErrandProviderMatchInput, type ErrandSeekerMatchInput } from "./errands-engine";
 import type { ErrandService } from "@/lib/validation/errands";
+import { computeCleaningMatchScore, type CleaningProviderMatchInput, type CleaningSeekerMatchInput } from "./cleaning-engine";
+import type { CleaningService, Frequency, ProviderType } from "@/lib/validation/cleaning";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
@@ -148,6 +150,40 @@ function errandProviderInput(profile: GenericProfileRow): ErrandProviderMatchInp
   };
 }
 
+function cleaningSeekerInput(profile: GenericProfileRow): CleaningSeekerMatchInput {
+  const a = profile.attributes;
+  const frequency = (a.frequency as Frequency) ?? "once";
+  return {
+    governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    service: (a.cleaningService as CleaningService) ?? null,
+    frequency,
+    timing: a.timing === "scheduled" ? "scheduled" : "asap",
+    scheduledDay: frequency === "once" && a.timing === "scheduled" ? dayOfWeek(a.scheduledAt as string | undefined) : null,
+    neededDays: (a.neededDays as string[]) ?? [],
+    size: typeof a.size === "string" ? a.size : null,
+    highWindows: !!a.highWindows,
+    needsSupplies: !!a.needsSupplies,
+    canPickUp: !!a.canPickUp,
+  };
+}
+
+function cleaningProviderInput(profile: GenericProfileRow): CleaningProviderMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    coverDistrictIds: placeOf(profile).coverDistrictIds,
+    services: (a.cleaningServices as string[]) ?? [],
+    providerType: (a.providerType as ProviderType) ?? null,
+    equipment: (a.equipment as string[]) ?? [],
+    bringsSupplies: !!a.bringsSupplies,
+    transport: typeof a.transport === "string" ? a.transport : null,
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    takesUrgentJobs: !!a.takesUrgentJobs,
+  };
+}
+
 function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
   if (categorySlug === "nanny") {
     return computeNannyMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
@@ -160,6 +196,9 @@ function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: Gen
   }
   if (categorySlug === "errands") {
     return computeErrandsMatchScore(errandSeekerInput(seeker), errandProviderInput(provider));
+  }
+  if (categorySlug === "cleaning") {
+    return computeCleaningMatchScore(cleaningSeekerInput(seeker), cleaningProviderInput(provider));
   }
   if (categorySlug === "nursing") {
     return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));

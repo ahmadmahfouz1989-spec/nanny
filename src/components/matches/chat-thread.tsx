@@ -48,6 +48,8 @@ const TYPING_SHOW_FOR_MS = 4000;
 // Suggested openers for an empty conversation -- tapping one fills the box,
 // it's never sent automatically.
 const STARTERS = ["starter1", "starter2", "starter3"] as const;
+// People meet in each other's homes: a short safety note heads a new conversation.
+const SAFETY_TIP_UNTIL = 6;
 
 // Only ever called from event handlers (typing), never while rendering.
 function currentTime() {
@@ -407,6 +409,10 @@ export default function ChatThread({
         {/* Pushes a short thread to the bottom, next to the composer, the
             way chat apps read -- without breaking scrolling once it's long. */}
         {full && <div className="mt-auto" aria-hidden />}
+        {/* While a conversation is new -- for both sides, not just whoever writes first. */}
+        {messages && messages.length < SAFETY_TIP_UNTIL && (
+          <p className="mx-auto mb-2 max-w-md rounded-2xl bg-surface-sunken px-3.5 py-2.5 text-center text-xs leading-relaxed text-muted">{t("safetyTip")}</p>
+        )}
         {messages && messages.length === 0 && (
           <div className="flex flex-col items-center gap-3 py-4 text-center">
             <p className="text-sm text-muted">{t("chatEmpty")}</p>

@@ -8,8 +8,8 @@ import { ui } from "@/lib/ui";
 type Status = "pending" | "approved" | "rejected" | null;
 
 /**
- * Photo of an ID or driving licence, required for delivery & errands
- * providers. Uploaded straight away (privately -- only admins see it) and
+ * Photo of an ID or driving licence: required for delivery & errands
+ * providers, optional for cleaners (`optional`), who get "ID checked". Uploaded straight away (privately -- only admins see it) and
  * reported through `onStatus`, so the form can tell it's there. Shows
  * whether it's waiting for review or already checked.
  */
@@ -17,10 +17,12 @@ export default function IdDocumentField({
   profileId,
   onStatus,
   error,
+  optional = false,
 }: {
   profileId: string;
   onStatus: (status: Status) => void;
   error?: boolean;
+  optional?: boolean;
 }) {
   const t = useTranslations("IdDocument");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -69,7 +71,7 @@ export default function IdDocumentField({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold">{t("title")}</span>
-          <span className="block text-xs text-muted">{t("why")}</span>
+          <span className="block text-xs text-muted">{t(optional ? "whyOptional" : "why")}</span>
         </span>
       </div>
       {status && (

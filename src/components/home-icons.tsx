@@ -329,3 +329,91 @@ export function MotoIcon(p: IconProps) {
     </Svg>
   );
 }
+
+/** Cleaning: a house with a sparkle -- the category's icon. */
+export function CleanHomeIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3.5 11 11 4.5l5 4.3" />
+      <path d="M5.5 9.5V20h11v-5" />
+      <path d="M9.5 20v-4.5h3V20" />
+      <path d="M18.5 3.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8.8-2.2Z" />
+    </Svg>
+  );
+}
+
+/** Regular home cleaning: a broom. */
+export function BroomIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M19.5 4.5 13 11" />
+      <path d="M13.8 10.2c-1.6-1-3.6-.6-4.9.7L5 15l4 4 4.1-3.9c1.3-1.3 1.7-3.3.7-4.9Z" />
+      <path d="M7 17l-2.5 2.5M9.5 14l1.5 1.5" />
+    </Svg>
+  );
+}
+
+/** Deep cleaning: sparkles. */
+export function SparklesIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M10 4l1.5 4.5L16 10l-4.5 1.5L10 16l-1.5-4.5L4 10l4.5-1.5L10 4Z" />
+      <path d="M17.5 14.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8Z" />
+    </Svg>
+  );
+}
+
+/** After building work: a hard hat. */
+export function HardHatIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3.5 17.5h17" />
+      <path d="M5 17.5V15a7 7 0 0 1 14 0v2.5" />
+      <path d="M10 8.3V6.5h4v1.8M12 6.5V12" />
+    </Svg>
+  );
+}
+
+/** Offices and shops: a building. */
+export function BuildingIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M5.5 20.5V4.5h9v16M14.5 9.5h4v11" />
+      <path d="M3.5 20.5h17" />
+      <path d="M8.5 8h3M8.5 11.5h3M8.5 15h3" />
+    </Svg>
+  );
+}
+
+/** Windows and glass. */
+export function WindowIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <rect x="4.5" y="3.5" width="15" height="17" rx="1.5" />
+      <path d="M12 3.5v17M4.5 12h15" />
+      <path d="M7 7.5l2-2" />
+    </Svg>
+  );
+}
+
+/** Sofas, carpets and mattresses: a sofa. */
+export function SofaIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M6 11V8.5A2.5 2.5 0 0 1 8.5 6h7A2.5 2.5 0 0 1 18 8.5V11" />
+      <path d="M4.5 18.5v-6a1.5 1.5 0 0 1 3 0v1.5h9v-1.5a1.5 1.5 0 0 1 3 0v6Z" />
+      <path d="M6.5 18.5V20M17.5 18.5V20" />
+    </Svg>
+  );
+}
+
+/** Water tanks: a rooftop tank with a drop. */
+export function TankIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <ellipse cx="12" cy="6.5" rx="6.5" ry="2" />
+      <path d="M5.5 6.5V17c0 1.1 2.9 2 6.5 2s6.5-.9 6.5-2V6.5" />
+      <path d="M12 10.5c-1.2 1.5-1.8 2.5-1.8 3.3a1.8 1.8 0 0 0 3.6 0c0-.8-.6-1.8-1.8-3.3Z" />
+    </Svg>
+  );
+}
