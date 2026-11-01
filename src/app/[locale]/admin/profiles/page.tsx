@@ -8,6 +8,7 @@ import { labelOr } from "@/lib/i18n-fallback";
 import { useGovernorates, governorateNames } from "@/components/onboarding/use-governorates";
 import { ERRAND_KEYS, useErrandRows } from "@/components/errand-details";
 import { CLEANING_KEYS, useCleaningRows } from "@/components/cleaning-details";
+import { BEAUTY_KEYS, useBeautyRows } from "@/components/beauty-details";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import IdDocumentLink from "@/components/admin/id-document-link";
 import { getJson, request } from "@/lib/request";
@@ -72,6 +73,7 @@ export default function AdminProfilesPage() {
   const governorates = useGovernorates();
   const errandRows = useErrandRows();
   const cleaningRows = useCleaningRows();
+  const beautyRows = useBeautyRows();
   const [profiles, setProfiles] = useState<QueueProfile[] | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [rejecting, setRejecting] = useState<string | null>(null);
@@ -200,7 +202,7 @@ export default function AdminProfilesPage() {
       takesUrgentJobs: { label: tMatches("takesUrgentJobs"), value: yesNo },
     };
     // Shown elsewhere on the card (area line) or resolved separately.
-    const skip = new Set<string>(["locationDetail", "languageIds", ...ERRAND_KEYS, ...CLEANING_KEYS]);
+    const skip = new Set<string>(["locationDetail", "languageIds", ...ERRAND_KEYS, ...CLEANING_KEYS, ...BEAUTY_KEYS]);
 
     const rows: { key: string; label: string; value: string }[] = [];
     for (const [key, value] of Object.entries(a)) {
@@ -217,6 +219,7 @@ export default function AdminProfilesPage() {
     }
     errandRows(a).forEach((row) => rows.push({ key: row.label, ...row }));
     cleaningRows(a).forEach((row) => rows.push({ key: row.label, ...row }));
+    beautyRows(a).forEach((row) => rows.push({ key: row.label, ...row }));
     const langs = profile.languages.map((l) => localizedLangName(l, locale));
     if (langs.length) rows.push({ key: "languages", label: tNanny("languages"), value: langs.join(", ") });
 
@@ -305,7 +308,9 @@ export default function AdminProfilesPage() {
                 )}
                 {area && <p className="text-sm text-muted mb-3">{area}</p>}
                 {profile.categories?.slug === "errands" && profile.role === "provider" && <IdDocumentLink profileId={profile.id} />}
-                {profile.categories?.slug === "cleaning" && profile.role === "provider" && <IdDocumentLink profileId={profile.id} optional />}
+                {(profile.categories?.slug === "cleaning" || profile.categories?.slug === "beauty") && profile.role === "provider" && (
+                  <IdDocumentLink profileId={profile.id} optional />
+                )}
 
                 <button
                   type="button"

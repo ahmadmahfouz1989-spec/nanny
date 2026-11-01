@@ -32,7 +32,8 @@
     "closeMenu": "Close menu",
     "errands": "Delivery & Errands",
     "privacy": "Privacy policy",
-    "cleaning": "Cleaning"
+    "cleaning": "Cleaning",
+    "beauty": "Beauty & Wellness"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -319,7 +320,8 @@
     "errorSize": "Choose the size.",
     "errorPlaceType": "Choose the place.",
     "errorItems": "Enter how many of at least one.",
-    "errorDescribe": "Tell them what needs cleaning."
+    "errorDescribe": "Tell them what needs cleaning.",
+    "errorDescribeNeed": "Tell them what you need."
   },
   "Location": {
     "governorate": "Governorate",
@@ -488,6 +490,12 @@
       "roleSeekerDescription": "A regular cleaner, a deep clean, sofas and carpets, water tanks and more — get matched with cleaners near you.",
       "roleProviderTitle": "I clean homes or offices",
       "roleProviderDescription": "On your own, as a team or a company — create a profile so people near you can hire you."
+    },
+    "beauty": {
+      "roleSeekerTitle": "I'd like a beauty or wellness service",
+      "roleSeekerDescription": "Hair, nails, makeup, massage, waxing, a bride's look and more — at home or at their place, matched with people near you.",
+      "roleProviderTitle": "I do hair, beauty or massage",
+      "roleProviderDescription": "On your own, as a team or a salon — create a profile so people near you can book you."
     }
   },
   "NursingProviderOnboarding": {
@@ -1601,5 +1609,261 @@
       "team": "A team",
       "company": "A company"
     }
+  },
+  "BeautyServices": {
+    "hair": "Hair",
+    "nails": "Nails",
+    "makeup": "Makeup",
+    "skin": "Skincare & facials",
+    "massage": "Massage",
+    "hair_removal": "Hair removal",
+    "lashes_brows": "Lashes & brows",
+    "bridal": "Bridal",
+    "other": "Other beauty services",
+    "hairSeeker": "Cut, blow-dry, color, keratin, styling",
+    "nailsSeeker": "Manicure, pedicure, gel and extensions",
+    "makeupSeeker": "For a night out, an event or a photoshoot",
+    "skinSeeker": "Facials and skin treatments",
+    "massageSeeker": "Relaxing, deep tissue, lymphatic and more",
+    "hair_removalSeeker": "Waxing, sugaring (halawa) and threading",
+    "lashes_browsSeeker": "Lash extensions, lifts, brow shaping",
+    "bridalSeeker": "The bride's hair and makeup, and her party",
+    "otherSeeker": "Tell them what you need",
+    "hairProvider": "Cuts, blow-dries, color, treatments, styling",
+    "nailsProvider": "Manicures, pedicures, gel, extensions, nail art",
+    "makeupProvider": "Everyday, evening and event makeup",
+    "skinProvider": "Facials, cleansing and skin treatments",
+    "massageProvider": "Professional, therapeutic massage",
+    "hair_removalProvider": "Waxing, sugaring and threading",
+    "lashes_browsProvider": "Lashes, brows, tinting",
+    "bridalProvider": "Brides and their party, on the day and the trial",
+    "otherProvider": "Anything else you do",
+    "searchWords": "beauty beautician salon hairdresser hair stylist barber makeup artist nails manicure pedicure waxing threading massage spa facial lashes brows bridal coiffure coiffeuse esthéticienne maquillage ongles épilation تجميل صالون كوافير كوافيرة كوافيرا مزيّن شعر حلّاق سشوار صبغة كيراتين مكياج ميك اب أظافر مناكير مانيكير بديكير جل حلاوة شمع خيط مساج تدليك سبا بشرة تنظيف بشرة رموش حواجب عروس عرايس"
+  },
+  "BeautyTreatments": {
+    "cut": "Cut",
+    "blowdry": "Blow-dry",
+    "color": "Color",
+    "highlights": "Highlights",
+    "keratin": "Keratin / protein",
+    "styling": "Styling & updos",
+    "hair_extensions": "Extensions",
+    "barber": "Men's cut & beard",
+    "manicure": "Manicure",
+    "pedicure": "Pedicure",
+    "gel": "Gel / semi-permanent",
+    "nail_extensions": "Extensions",
+    "nail_art": "Nail art",
+    "removal": "Removal",
+    "everyday": "Everyday",
+    "evening": "Evening / event",
+    "photoshoot": "Photoshoot",
+    "lesson": "Makeup lesson",
+    "classic_facial": "Classic facial",
+    "deep_cleansing": "Deep cleansing",
+    "hydrating": "Hydrating",
+    "anti_aging": "Anti-aging",
+    "acne": "Acne care",
+    "relaxing": "Relaxing",
+    "deep_tissue": "Deep tissue",
+    "sports": "Sports",
+    "lymphatic": "Lymphatic drainage",
+    "prenatal": "Pregnancy",
+    "reflexology": "Reflexology",
+    "wax": "Waxing",
+    "sugaring": "Sugaring (halawa)",
+    "threading": "Threading",
+    "lash_extensions": "Lash extensions",
+    "lash_lift": "Lash lift",
+    "brow_shaping": "Brow shaping",
+    "brow_lamination": "Brow lamination",
+    "tint": "Tinting",
+    "bride_hair": "Bride's hair",
+    "bride_makeup": "Bride's makeup",
+    "trial": "A trial before",
+    "party": "Her mother, sisters, bridesmaids"
+  },
+  "BeautyOptions": {
+    "providerType": {
+      "individual": "Just me",
+      "team": "A team",
+      "salon": "A salon"
+    },
+    "gender": {
+      "female": "I'm a woman",
+      "male": "I'm a man"
+    },
+    "teamGender": {
+      "female": "All women",
+      "male": "All men",
+      "mixed": "Women and men"
+    },
+    "serves": {
+      "women": "Women",
+      "men": "Men",
+      "kids": "Children"
+    },
+    "workplaces": {
+      "client_home": "I go to clients' homes",
+      "own_place": "At my home or studio",
+      "salon": "At my salon"
+    },
+    "workplacesShown": {
+      "client_home": "Home visits",
+      "own_place": "At their home or studio",
+      "salon": "At their salon"
+    },
+    "forWhom": {
+      "woman": "A woman",
+      "man": "A man",
+      "child": "A child"
+    },
+    "genderPreference": {
+      "any": "No preference",
+      "female": "A woman",
+      "male": "A man"
+    },
+    "place": {
+      "at_home": "At my home",
+      "go_to_them": "I'll go to them",
+      "either": "Either"
+    },
+    "hairLength": {
+      "short": "Short",
+      "medium": "Medium",
+      "long": "Long"
+    },
+    "removalAreas": {
+      "face": "Face",
+      "underarms": "Underarms",
+      "arms": "Arms",
+      "legs": "Legs",
+      "bikini": "Bikini",
+      "full_body": "Full body"
+    },
+    "pricing": {
+      "per_session": "Per session",
+      "per_hour": "Per hour",
+      "quote": "Depends on the work"
+    }
+  },
+  "BeautySeekerOnboarding": {
+    "pickTitle": "What would you like?",
+    "pickSubtitle": "Pick one — you'll only be asked what that service needs.",
+    "changeService": "Change",
+    "createTitle": "Create your request",
+    "editTitle": "Edit your request",
+    "section1Title": "What you'd like",
+    "section2Title": "Who it's for",
+    "section3Title": "Where and when",
+    "section4Title": "About you",
+    "treatments": "Which ones? (pick all you want)",
+    "hairLength": "Hair length",
+    "massageMinutes": "How long?",
+    "removalAreas": "Which areas?",
+    "peopleCount": "How many people?",
+    "describe": "Anything they should know?",
+    "describeOther": "What do you need?",
+    "placeholder": {
+      "hair": "e.g. Blow-dry with waves for a wedding on Saturday",
+      "nails": "e.g. Gel on hands and feet, nude colors",
+      "makeup": "e.g. Soft evening makeup, I have sensitive eyes",
+      "skin": "e.g. Dry skin, no strong peels please",
+      "massage": "e.g. Back and neck pain from sitting all day",
+      "hair_removal": "e.g. Sensitive skin, I prefer halawa",
+      "lashes_brows": "e.g. Natural-looking lashes",
+      "bridal": "e.g. Wedding in Jounieh, getting ready at home from 1 pm",
+      "other": "e.g. Henna for a henna night"
+    },
+    "forWhom": "Who is it for?",
+    "providerGender": "Would you prefer a woman or a man?",
+    "place": "Where?",
+    "timing": "When?",
+    "scheduledAt": "Date and time",
+    "weddingAt": "Wedding day and the time to be ready by",
+    "addressHint": "Just the area — share the exact address in chat once you've agreed.",
+    "budgetUsd": "Your budget (USD)",
+    "namePlaceholder": "Your name",
+    "contactPhonePlaceholder": "Phone number (optional)"
+  },
+  "BeautyProviderOnboarding": {
+    "createTitle": "Create your profile",
+    "editTitle": "Edit your profile",
+    "section1Title": "About you",
+    "section2Title": "What you do",
+    "section3Title": "Where and when you work",
+    "section4Title": "Prices and about you",
+    "providerType": "You work…",
+    "namePlaceholder": "Your name",
+    "businessNamePlaceholder": "Team or salon name",
+    "teamSize": "How many people?",
+    "gender": "You are…",
+    "teamGender": "Your team is…",
+    "contactPhonePlaceholder": "Phone number (optional)",
+    "logoHint": "For a team or salon, your logo works well as the photo.",
+    "languages": "Languages you speak",
+    "services": "Services you offer (pick all that apply)",
+    "treatmentsHint": "What exactly do you do? Requests are matched on these.",
+    "massageNote": "Professional, therapeutic massage only — anything else gets a profile removed.",
+    "serves": "Who do you serve?",
+    "certified": "I have a diploma or certificate in what I do",
+    "yearsExperience": "Years of experience",
+    "workplaces": "Where do you work? (pick all that apply)",
+    "bringsKit": "I bring everything I need (products, tools, massage table)",
+    "chargesTravel": "I charge extra for transport",
+    "availableDays": "Available days",
+    "from": "From",
+    "to": "To",
+    "takesUrgentJobs": "I take same-day bookings",
+    "pricing": "How you charge",
+    "priceFrom": {
+      "per_session": "From how much a session? (USD)",
+      "per_hour": "From how much an hour? (USD)"
+    },
+    "priceNote": "Your main prices",
+    "priceNotePlaceholder": "e.g. Blow-dry $15, gel manicure $20, bridal makeup $150",
+    "shortIntro": "About you",
+    "shortIntroPlaceholder": "e.g. 8 years as a hairdresser in Achrafieh, specialized in color and bridal styling",
+    "photosHint": "Tip: once your profile is saved, add photos of your work from your profile page — clients choose by photos."
+  },
+  "BeautyFields": {
+    "beautyServices": "Services",
+    "beautyService": "Service",
+    "treatments": "Treatments",
+    "providerType": "Works as",
+    "people": "{count, plural, one {# person} other {# people}}",
+    "providerTypes": {
+      "individual": "On their own",
+      "team": "A team",
+      "salon": "A salon"
+    },
+    "team": "Team",
+    "serves": "Serves",
+    "workplaces": "Where",
+    "good": "Good to know",
+    "certified": "Has a diploma or certificate",
+    "bringsKit": "Brings everything needed",
+    "chargesTravel": "Charges for transport",
+    "pricing": "Price",
+    "price": {
+      "per_session": "Per session",
+      "per_hour": "Per hour",
+      "quote": "Depends on the work"
+    },
+    "priceFrom": {
+      "per_session": "From {amount} a session",
+      "per_hour": "From {amount} an hour"
+    },
+    "priceNote": "Prices",
+    "forWhom": "For",
+    "peopleCount": "People",
+    "providerGender": "Prefers",
+    "place": "Where",
+    "hairLength": "Hair length",
+    "massageMinutes": "Length",
+    "minutes": "{count} min",
+    "removalAreas": "Areas",
+    "timing": "When",
+    "budgetUsd": "Budget"
   }
 }

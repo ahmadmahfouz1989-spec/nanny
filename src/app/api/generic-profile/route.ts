@@ -8,6 +8,7 @@ import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/t
 import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
 import { cleaningProviderSchema, cleaningSeekerSchema } from "@/lib/validation/cleaning";
+import { beautyProviderSchema, beautySeekerSchema } from "@/lib/validation/beauty";
 import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { refreshSearchText } from "@/lib/search-text";
@@ -28,6 +29,7 @@ const CATEGORY_SCHEMAS: Record<string, { seeker: z.ZodTypeAny; provider: z.ZodTy
   maintenance: { seeker: maintenanceSeekerSchema, provider: maintenanceProviderSchema },
   errands: { seeker: errandSeekerSchema, provider: errandProviderSchema },
   cleaning: { seeker: cleaningSeekerSchema, provider: cleaningProviderSchema },
+  beauty: { seeker: beautySeekerSchema, provider: beautyProviderSchema },
 };
 
 async function resolveCategory(supabase: Awaited<ReturnType<typeof createClient>>, slug: string) {

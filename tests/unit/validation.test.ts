@@ -5,6 +5,7 @@ import { tutoringProviderSchema, tutoringSeekerSchema } from "@/lib/validation/t
 import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
 import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
 import { cleaningProviderSchema, cleaningSeekerSchema } from "@/lib/validation/cleaning";
+import { beautyProviderSchema, beautySeekerSchema } from "@/lib/validation/beauty";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
 const DISTRICT = "22222222-2222-4222-8222-222222222222";
@@ -145,6 +146,37 @@ describe("profile validation", () => {
     const other = { ...sofa, cleaningService: "other" };
     expect(cleaningSeekerSchema.safeParse(other).success).toBe(false);
     expect(cleaningSeekerSchema.safeParse({ ...other, jobDescription: "A garden terrace" }).success).toBe(true);
+  });
+
+  it("validates beauty profiles and requests", () => {
+    const beautician = {
+      ...base, providerType: "individual", gender: "female", serves: ["women"], workplaces: ["client_home"],
+      beautyServices: ["hair", "nails"], treatments: ["blowdry", "gel"], availability, takesUrgentJobs: true,
+      yearsExperience: 5, pricing: "per_session", priceFromUsd: 15,
+    };
+    const result = beautyProviderSchema.safeParse(beautician);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    // One person is a woman or a man; "both" is for a team or salon, and a team says how many.
+    expect(beautyProviderSchema.safeParse({ ...beautician, gender: "mixed" }).success).toBe(false);
+    expect(beautyProviderSchema.safeParse({ ...beautician, providerType: "team", gender: "mixed" }).success).toBe(false);
+    expect(beautyProviderSchema.safeParse({ ...beautician, providerType: "team", gender: "mixed", teamSize: 4 }).success).toBe(true);
+    expect(beautyProviderSchema.safeParse({ ...beautician, providerType: "salon", gender: "mixed" }).success).toBe(true);
+    expect(beautyProviderSchema.safeParse({ ...beautician, workplaces: [] }).success).toBe(false);
+    expect(beautyProviderSchema.safeParse({ ...beautician, serves: [] }).success).toBe(false);
+    expect(beautyProviderSchema.safeParse({ ...beautician, treatments: ["not_a_treatment"] }).success).toBe(false);
+
+    const request = {
+      fullName: "Test Person", locationId: LOCATION, districtId: DISTRICT, locationDetail: "Hamra",
+      beautyService: "hair", treatments: ["blowdry"], forWhom: "woman", place: "at_home", timing: "asap",
+    };
+    const requestResult = beautySeekerSchema.safeParse(request);
+    expect(requestResult.success, JSON.stringify(requestResult.error?.issues)).toBe(true);
+    expect(beautySeekerSchema.safeParse({ ...request, forWhom: undefined }).success).toBe(false);
+    expect(beautySeekerSchema.safeParse({ ...request, place: undefined }).success).toBe(false);
+    expect(beautySeekerSchema.safeParse({ ...request, timing: "scheduled" }).success).toBe(false);
+    expect(beautySeekerSchema.safeParse({ ...request, timing: "scheduled", scheduledAt: "2026-12-05T13:00" }).success).toBe(true);
+    expect(beautySeekerSchema.safeParse({ ...request, beautyService: "other", treatments: [] }).success).toBe(false);
+    expect(beautySeekerSchema.safeParse({ ...request, beautyService: "massage", massageMinutes: 45 }).success).toBe(false);
   });
 
   it("needs a district, the area being optional", () => {

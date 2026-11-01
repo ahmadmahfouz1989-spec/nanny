@@ -417,3 +417,101 @@ export function TankIcon(p: IconProps) {
     </Svg>
   );
 }
+
+/** Beauty & wellness: a lotus -- the category's icon. */
+export function LotusIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 19c-2.5-1.6-3.8-4-3.8-6.8 0-2.4 1.4-4.6 3.8-6.7 2.4 2.1 3.8 4.3 3.8 6.7 0 2.8-1.3 5.2-3.8 6.8Z" />
+      <path d="M8.4 10.2C6.5 9.6 4.6 9.7 3 10.5c.4 4.6 4 8.1 9 8.5" />
+      <path d="M15.6 10.2c1.9-.6 3.8-.5 5.4.3-.4 4.6-4 8.1-9 8.5" />
+    </Svg>
+  );
+}
+
+/** Hair: scissors. */
+export function ScissorsIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="6.5" cy="17" r="2.5" />
+      <circle cx="17.5" cy="17" r="2.5" />
+      <path d="M8.3 15.3 18 4.5M15.7 15.3 6 4.5" />
+    </Svg>
+  );
+}
+
+/** Nails: a nail polish bottle. */
+export function NailPolishIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M10 3.5h4v5h-4z" />
+      <path d="M8.5 8.5h7a1.5 1.5 0 0 1 1.5 1.5v8.5a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V10a1.5 1.5 0 0 1 1.5-1.5Z" />
+      <path d="M10 13.5h4" />
+    </Svg>
+  );
+}
+
+/** Makeup: a lipstick. */
+export function LipstickIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M9.5 9.5V6.8l4-3.3v6" />
+      <path d="M8 9.5h7v4H8z" />
+      <path d="M7 13.5h9v7H7z" />
+    </Svg>
+  );
+}
+
+/** Skincare and facials: a face with a leaf. */
+export function FaceIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3.5c-3.9 0-6.5 3-6.5 7.2 0 4.8 2.9 9.3 6.5 9.3s6.5-4.5 6.5-9.3c0-4.2-2.6-7.2-6.5-7.2Z" />
+      <path d="M9.3 10.5h.01M14.7 10.5h.01" strokeWidth={2.4} />
+      <path d="M10 15c1.2.8 2.8.8 4 0" />
+    </Svg>
+  );
+}
+
+/** Massage: stacked spa stones. */
+export function StonesIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <ellipse cx="12" cy="18" rx="7.5" ry="2.5" />
+      <ellipse cx="12" cy="12.8" rx="5.5" ry="2.2" />
+      <ellipse cx="12" cy="8.2" rx="3.5" ry="1.8" />
+    </Svg>
+  );
+}
+
+/** Hair removal: a pot of warm wax. */
+export function WaxIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M5 10h14l-1.2 9a1.5 1.5 0 0 1-1.5 1.5H7.7A1.5 1.5 0 0 1 6.2 19L5 10Z" />
+      <path d="M4 10h16M9 10V8.5a1 1 0 0 1 2 0V12" />
+      <path d="M13 6.5c.6-.8.6-1.7 0-2.5M16 6.5c.6-.8.6-1.7 0-2.5" />
+    </Svg>
+  );
+}
+
+/** Lashes and brows: an eye with lashes. */
+export function LashIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M3 13c2.4-3.2 5.4-4.8 9-4.8s6.6 1.6 9 4.8c-2.4 3.2-5.4 4.8-9 4.8S5.4 16.2 3 13Z" />
+      <circle cx="12" cy="13" r="2.3" />
+      <path d="M12 8.2V5.5M7.5 9.3 6 7M16.5 9.3 18 7" />
+    </Svg>
+  );
+}
+
+/** Bridal: a crown. */
+export function CrownIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M4 8.5 7.5 13 12 6.5l4.5 6.5L20 8.5l-1.5 9.5h-13L4 8.5Z" />
+      <path d="M5.5 20.5h13" />
+    </Svg>
+  );
+}

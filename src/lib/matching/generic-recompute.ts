@@ -25,6 +25,8 @@ import { computeErrandsMatchScore, dayOfWeek, type ErrandProviderMatchInput, typ
 import type { ErrandService } from "@/lib/validation/errands";
 import { computeCleaningMatchScore, type CleaningProviderMatchInput, type CleaningSeekerMatchInput } from "./cleaning-engine";
 import type { CleaningService, Frequency, ProviderType } from "@/lib/validation/cleaning";
+import { computeBeautyMatchScore, type BeautyProviderMatchInput, type BeautySeekerMatchInput } from "./beauty-engine";
+import type { BeautyProviderType, BeautyService, ForWhom, Gender, GenderPreference, Place } from "@/lib/validation/beauty";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
@@ -184,6 +186,40 @@ function cleaningProviderInput(profile: GenericProfileRow): CleaningProviderMatc
   };
 }
 
+function beautySeekerInput(profile: GenericProfileRow): BeautySeekerMatchInput {
+  const a = profile.attributes;
+  const scheduled = a.timing === "scheduled";
+  return {
+    governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    service: (a.beautyService as BeautyService) ?? null,
+    treatments: (a.treatments as string[]) ?? [],
+    place: (a.place as Place) ?? "either",
+    forWhom: (a.forWhom as ForWhom) ?? "woman",
+    providerGender: (a.providerGender as GenderPreference) ?? "any",
+    peopleCount: typeof a.peopleCount === "number" ? a.peopleCount : 1,
+    timing: scheduled ? "scheduled" : "asap",
+    scheduledDay: scheduled ? dayOfWeek(a.scheduledAt as string | undefined) : null,
+  };
+}
+
+function beautyProviderInput(profile: GenericProfileRow): BeautyProviderMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    coverDistrictIds: placeOf(profile).coverDistrictIds,
+    services: (a.beautyServices as string[]) ?? [],
+    treatments: (a.treatments as string[]) ?? [],
+    workplaces: (a.workplaces as string[]) ?? [],
+    serves: (a.serves as string[]) ?? [],
+    gender: (a.gender as Gender) ?? null,
+    providerType: (a.providerType as BeautyProviderType) ?? null,
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    takesUrgentJobs: !!a.takesUrgentJobs,
+  };
+}
+
 function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
   if (categorySlug === "nanny") {
     return computeNannyMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
@@ -199,6 +235,9 @@ function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: Gen
   }
   if (categorySlug === "cleaning") {
     return computeCleaningMatchScore(cleaningSeekerInput(seeker), cleaningProviderInput(provider));
+  }
+  if (categorySlug === "beauty") {
+    return computeBeautyMatchScore(beautySeekerInput(seeker), beautyProviderInput(provider));
   }
   if (categorySlug === "nursing") {
     return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));

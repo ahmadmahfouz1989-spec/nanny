@@ -36,6 +36,7 @@ const CATEGORY_NAV = [
   { slug: "maintenance", icon: "wrench" },
   { slug: "errands", icon: "scooter" },
   { slug: "cleaning", icon: "spray" },
+  { slug: "beauty", icon: "lotus" },
 ] as const satisfies readonly { slug: CategorySlug; icon: string }[];
 
 /**

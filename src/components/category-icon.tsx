@@ -1,4 +1,4 @@
-import { BabyIcon, BookOpenIcon, CleanHomeIcon, NurseIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
+import { BabyIcon, BookOpenIcon, CleanHomeIcon, LotusIcon, NurseIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
 
 const PATHS: Record<string, React.ReactNode> = {
   spray: (
@@ -30,6 +30,7 @@ const SAME_AS_HOME: Record<string, (p: { className?: string }) => React.ReactNod
   wrench: WrenchIcon,
   scooter: ScooterIcon,
   spray: CleanHomeIcon,
+  lotus: LotusIcon,
 };
 
 export default function CategoryIcon({ name, className = "" }: { name: string; className?: string }) {

@@ -32,7 +32,8 @@
     "closeMenu": "إغلاق القائمة",
     "errands": "توصيل ومشاوير",
     "privacy": "سياسة الخصوصية",
-    "cleaning": "تنظيف"
+    "cleaning": "تنظيف",
+    "beauty": "تجميل وعناية"
   },
   "Install": {
     "title": "احصل على تطبيق ouiKnow",
@@ -319,7 +320,8 @@
     "errorSize": "اختار المساحة.",
     "errorPlaceType": "اختار نوع المكان.",
     "errorItems": "اكتب العدد لشي واحد على الأقل.",
-    "errorDescribe": "قلّن شو بدّو تنظيف."
+    "errorDescribe": "قلّن شو بدّو تنظيف.",
+    "errorDescribeNeed": "قلّن شو بدّك."
   },
   "Location": {
     "governorate": "المحافظة",
@@ -488,6 +490,12 @@
       "roleSeekerDescription": "عاملة تنظيف بالساعة، تنظيف عميق، كنب وسجّاد، خزانات وغيرها — منلاقيلك حدا قريب منك.",
       "roleProviderTitle": "أنا بنضّف بيوت أو مكاتب",
       "roleProviderDescription": "لحالك، مع فريق أو شركة — اعمل بروفايل تا الناس اللي قريبين منك يطلبوك."
+    },
+    "beauty": {
+      "roleSeekerTitle": "بدّي خدمة تجميل أو عناية",
+      "roleSeekerDescription": "شعر، أظافر، مكياج، مساج، حلاوة، طلّة العروس وغيرها — بالبيت أو عندن، منلاقيلك حدا قريب منك.",
+      "roleProviderTitle": "أنا بشتغل بالشعر، التجميل أو المساج",
+      "roleProviderDescription": "لحالك، مع فريق أو صالون — اعمل بروفايل تا الناس اللي قريبين منك يحجزوك."
     }
   },
   "NursingProviderOnboarding": {
@@ -1601,5 +1609,261 @@
       "team": "فريق",
       "company": "شركة"
     }
+  },
+  "BeautyServices": {
+    "hair": "شعر",
+    "nails": "أظافر",
+    "makeup": "مكياج",
+    "skin": "عناية بالبشرة",
+    "massage": "مساج",
+    "hair_removal": "إزالة الشعر",
+    "lashes_brows": "رموش وحواجب",
+    "bridal": "عرايس",
+    "other": "خدمات تجميل تانية",
+    "hairSeeker": "قص، سشوار، صبغة، كيراتين، تسريحة",
+    "nailsSeeker": "مانيكير، باديكير، جل وتركيب",
+    "makeupSeeker": "لسهرة، مناسبة أو جلسة تصوير",
+    "skinSeeker": "تنظيف بشرة وعلاجات",
+    "massageSeeker": "استرخاء، عميق، لمفاوي وغيرو",
+    "hair_removalSeeker": "شمع، حلاوة وخيط",
+    "lashes_browsSeeker": "تركيب رموش، رفع رموش، ترتيب حواجب",
+    "bridalSeeker": "شعر ومكياج العروس ومرافقيناتها",
+    "otherSeeker": "قلّن شو بدّك",
+    "hairProvider": "قص، سشوار، صبغة، علاجات، تسريحات",
+    "nailsProvider": "مانيكير، باديكير، جل، تركيب، رسم عالأظافر",
+    "makeupProvider": "مكياج يومي، سهرة ومناسبات",
+    "skinProvider": "تنظيف بشرة وعلاجات",
+    "massageProvider": "مساج مهني وعلاجي",
+    "hair_removalProvider": "شمع، حلاوة وخيط",
+    "lashes_browsProvider": "رموش، حواجب، صبغة",
+    "bridalProvider": "العروس ومرافقيناتها، يوم العرس والتجربة",
+    "otherProvider": "أي شي تاني بتعملو",
+    "searchWords": "beauty beautician salon hairdresser hair stylist barber makeup artist nails manicure pedicure waxing threading massage spa facial lashes brows bridal coiffure coiffeuse esthéticienne maquillage ongles épilation تجميل صالون كوافير كوافيرة كوافيرا مزيّن شعر حلّاق سشوار صبغة كيراتين مكياج ميك اب أظافر مناكير مانيكير بديكير جل حلاوة شمع خيط مساج تدليك سبا بشرة تنظيف بشرة رموش حواجب عروس عرايس"
+  },
+  "BeautyTreatments": {
+    "cut": "قص",
+    "blowdry": "سشوار",
+    "color": "صبغة",
+    "highlights": "هايلايت",
+    "keratin": "كيراتين / بروتين",
+    "styling": "تسريحة ورفعة",
+    "hair_extensions": "وصلات شعر",
+    "barber": "حلاقة رجالي ودقن",
+    "manicure": "مانيكير",
+    "pedicure": "باديكير",
+    "gel": "جل / شبه دائم",
+    "nail_extensions": "تركيب أظافر",
+    "nail_art": "رسم عالأظافر",
+    "removal": "إزالة",
+    "everyday": "يومي",
+    "evening": "سهرة / مناسبة",
+    "photoshoot": "جلسة تصوير",
+    "lesson": "درس مكياج",
+    "classic_facial": "تنظيف بشرة كلاسيك",
+    "deep_cleansing": "تنظيف عميق",
+    "hydrating": "ترطيب",
+    "anti_aging": "ضد التجاعيد",
+    "acne": "علاج حبوب",
+    "relaxing": "استرخاء",
+    "deep_tissue": "عميق",
+    "sports": "رياضي",
+    "lymphatic": "تصريف لمفاوي",
+    "prenatal": "للحوامل",
+    "reflexology": "ريفلكسولوجي",
+    "wax": "شمع",
+    "sugaring": "حلاوة",
+    "threading": "خيط",
+    "lash_extensions": "تركيب رموش",
+    "lash_lift": "رفع رموش",
+    "brow_shaping": "ترتيب حواجب",
+    "brow_lamination": "لامينيشن حواجب",
+    "tint": "صبغة",
+    "bride_hair": "شعر العروس",
+    "bride_makeup": "مكياج العروس",
+    "trial": "تجربة قبل",
+    "party": "الإم، الخيّات والمرافقات"
+  },
+  "BeautyOptions": {
+    "providerType": {
+      "individual": "لحالي",
+      "team": "فريق",
+      "salon": "صالون"
+    },
+    "gender": {
+      "female": "أنا امرأة",
+      "male": "أنا رجّال"
+    },
+    "teamGender": {
+      "female": "كلّن نسوان",
+      "male": "كلّن رجال",
+      "mixed": "نسوان ورجال"
+    },
+    "serves": {
+      "women": "نسوان",
+      "men": "رجال",
+      "kids": "ولاد"
+    },
+    "workplaces": {
+      "client_home": "بروح لعند الزباين عالبيت",
+      "own_place": "ببيتي أو بالستوديو",
+      "salon": "بالصالون"
+    },
+    "workplacesShown": {
+      "client_home": "بيروح عالبيت",
+      "own_place": "ببيتو أو بالستوديو",
+      "salon": "بالصالون"
+    },
+    "forWhom": {
+      "woman": "امرأة",
+      "man": "رجّال",
+      "child": "ولد"
+    },
+    "genderPreference": {
+      "any": "ما بتفرق",
+      "female": "امرأة",
+      "male": "رجّال"
+    },
+    "place": {
+      "at_home": "عندي بالبيت",
+      "go_to_them": "أنا بروح لعندن",
+      "either": "ما بتفرق"
+    },
+    "hairLength": {
+      "short": "قصير",
+      "medium": "وسط",
+      "long": "طويل"
+    },
+    "removalAreas": {
+      "face": "الوجه",
+      "underarms": "تحت الإبط",
+      "arms": "الإيدين",
+      "legs": "الإجرين",
+      "bikini": "بيكيني",
+      "full_body": "كل الجسم"
+    },
+    "pricing": {
+      "per_session": "بالجلسة",
+      "per_hour": "بالساعة",
+      "quote": "حسب الشغل"
+    }
+  },
+  "BeautySeekerOnboarding": {
+    "pickTitle": "شو بدّك؟",
+    "pickSubtitle": "اختار وحدة — منسألك بس اللي بتحتاجه هالخدمة.",
+    "changeService": "غيّر",
+    "createTitle": "اعمل طلبك",
+    "editTitle": "عدّل طلبك",
+    "section1Title": "شو بدّك",
+    "section2Title": "لمين",
+    "section3Title": "وين وإيمتى",
+    "section4Title": "عنك",
+    "treatments": "شو بالزبط؟ (اختار كل اللي بدّك ياه)",
+    "hairLength": "طول الشعر",
+    "massageMinutes": "قدّيش مدّته؟",
+    "removalAreas": "أيّا مناطق؟",
+    "peopleCount": "كم شخص؟",
+    "describe": "في شي لازم يعرفوه؟",
+    "describeOther": "شو بدّك؟",
+    "placeholder": {
+      "hair": "مثلاً: سشوار ويفي لعرس نهار السبت",
+      "nails": "مثلاً: جل عالإيدين والإجرين، ألوان نود",
+      "makeup": "مثلاً: مكياج سهرة ناعم، عيوني حسّاسين",
+      "skin": "مثلاً: بشرتي ناشفة، بلا تقشير قوي",
+      "massage": "مثلاً: وجع ضهر ورقبة من القعدة كل النهار",
+      "hair_removal": "مثلاً: بشرتي حسّاسة، بفضّل الحلاوة",
+      "lashes_brows": "مثلاً: رموش طبيعية",
+      "bridal": "مثلاً: العرس بجونية، منتحضّر بالبيت من الساعة ١",
+      "other": "مثلاً: حنّة لليلة الحنّة"
+    },
+    "forWhom": "لمين الخدمة؟",
+    "providerGender": "بتفضّل امرأة أو رجّال؟",
+    "place": "وين؟",
+    "timing": "إيمتى؟",
+    "scheduledAt": "التاريخ والوقت",
+    "weddingAt": "نهار العرس والساعة اللي لازم تكوني جاهزة فيها",
+    "addressHint": "بس المنطقة — العنوان الكامل بتبعتو بالشات بعد ما تتفقوا.",
+    "budgetUsd": "ميزانيتك (بالدولار)",
+    "namePlaceholder": "اسمك",
+    "contactPhonePlaceholder": "رقم التلفون (اختياري)"
+  },
+  "BeautyProviderOnboarding": {
+    "createTitle": "اعمل بروفايلك",
+    "editTitle": "عدّل بروفايلك",
+    "section1Title": "عنك",
+    "section2Title": "شو بتعمل",
+    "section3Title": "وين وإيمتى بتشتغل",
+    "section4Title": "الأسعار ونبذة عنك",
+    "providerType": "بتشتغل…",
+    "namePlaceholder": "اسمك",
+    "businessNamePlaceholder": "اسم الفريق أو الصالون",
+    "teamSize": "كم شخص؟",
+    "gender": "إنت…",
+    "teamGender": "فريقك…",
+    "contactPhonePlaceholder": "رقم التلفون (اختياري)",
+    "logoHint": "للفريق أو الصالون، اللوغو بيمشي منيح كصورة.",
+    "languages": "اللغات اللي بتحكيها",
+    "services": "الخدمات اللي بتقدّمها (اختار كل اللي بينطبق)",
+    "treatmentsHint": "شو بتعمل بالزبط؟ الطلبات بتنطابق على هيدول.",
+    "massageNote": "مساج مهني وعلاجي بس — أي شي تاني بيشيل البروفايل.",
+    "serves": "لمين بتشتغل؟",
+    "certified": "معي شهادة أو دبلوم باللي بعملو",
+    "yearsExperience": "سنين الخبرة",
+    "workplaces": "وين بتشتغل؟ (اختار كل اللي بينطبق)",
+    "bringsKit": "بجيب معي كل شي بحتاجو (مواد، عدّة، طاولة مساج)",
+    "chargesTravel": "باخد زيادة عالمواصلات",
+    "availableDays": "الأيام اللي بتكون فاضي فيها",
+    "from": "من",
+    "to": "لـ",
+    "takesUrgentJobs": "باخد حجوزات بنفس النهار",
+    "pricing": "كيف بتسعّر",
+    "priceFrom": {
+      "per_session": "من قدّيش الجلسة؟ (بالدولار)",
+      "per_hour": "من قدّيش الساعة؟ (بالدولار)"
+    },
+    "priceNote": "أهم أسعارك",
+    "priceNotePlaceholder": "مثلاً: سشوار ١٥$، مانيكير جل ٢٠$، مكياج عروس ١٥٠$",
+    "shortIntro": "نبذة عنك",
+    "shortIntroPlaceholder": "مثلاً: ٨ سنين كوافيرة بالأشرفية، متخصّصة بالصبغة وتسريحات العرايس",
+    "photosHint": "نصيحة: بعد ما تحفظ البروفايل، زيد صور من شغلك من صفحة بروفايلك — الزباين بيختاروا عالصور."
+  },
+  "BeautyFields": {
+    "beautyServices": "الخدمات",
+    "beautyService": "الخدمة",
+    "treatments": "شو بالزبط",
+    "providerType": "بيشتغل",
+    "people": "{count, plural, one {شخص واحد} two {شخصين} few {# أشخاص} many {# شخص} other {# شخص}}",
+    "providerTypes": {
+      "individual": "لحالو",
+      "team": "فريق",
+      "salon": "صالون"
+    },
+    "team": "الفريق",
+    "serves": "بيشتغل مع",
+    "workplaces": "وين",
+    "good": "منيح تعرف",
+    "certified": "معو شهادة أو دبلوم",
+    "bringsKit": "بيجيب كل شي بيحتاجو",
+    "chargesTravel": "بياخد عالمواصلات",
+    "pricing": "السعر",
+    "price": {
+      "per_session": "بالجلسة",
+      "per_hour": "بالساعة",
+      "quote": "حسب الشغل"
+    },
+    "priceFrom": {
+      "per_session": "من {amount} الجلسة",
+      "per_hour": "من {amount} بالساعة"
+    },
+    "priceNote": "الأسعار",
+    "forWhom": "لـ",
+    "peopleCount": "الأشخاص",
+    "providerGender": "بيفضّل",
+    "place": "وين",
+    "hairLength": "طول الشعر",
+    "massageMinutes": "المدّة",
+    "minutes": "{count} دقيقة",
+    "removalAreas": "المناطق",
+    "timing": "إيمتى",
+    "budgetUsd": "الميزانية"
   }
 }

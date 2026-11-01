@@ -1,4 +1,4 @@
-import { BabyIcon, BookOpenIcon, CleanHomeIcon, NurseIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
+import { BabyIcon, BookOpenIcon, CleanHomeIcon, LotusIcon, NurseIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
 
 // How each service looks wherever services are listed (Home, the services
 // page, the welcome question), and the label set search also matches
@@ -12,5 +12,6 @@ export const LOOK: Record<string, Look> = {
   maintenance: { Icon: WrenchIcon, card: "bg-accent-soft/70", circle: "bg-accent-soft text-accent-hover", words: "Trades" },
   errands: { Icon: ScooterIcon, card: "bg-success-soft/60", circle: "bg-success-soft text-success", words: "ErrandServices" },
   cleaning: { Icon: CleanHomeIcon, card: "bg-sky-soft/70", circle: "bg-sky-soft text-sky-ink", words: "CleaningServices" },
+  beauty: { Icon: LotusIcon, card: "bg-rose-soft/70", circle: "bg-rose-soft text-rose", words: "BeautyServices" },
 };
 

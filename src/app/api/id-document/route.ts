@@ -5,8 +5,9 @@ import { requireActiveUser } from "@/lib/session";
 
 const BUCKET = "id-documents";
 const MAX_BYTES = 10 * 1024 * 1024;
-// Required for delivery & errands, optional (an "ID checked" badge) for cleaners.
-const ID_CATEGORIES = ["errands", "cleaning"];
+// Required for delivery & errands, optional (an "ID checked" badge) for
+// cleaners and beauty & wellness, who come into people's homes too.
+const ID_CATEGORIES = ["errands", "cleaning", "beauty"];
 const TYPES: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -28,7 +29,7 @@ export async function GET(request: Request) {
 }
 
 /**
- * A delivery & errands or cleaning provider's ID or driving licence photo, for one of
+ * A delivery & errands, cleaning or beauty provider's ID or driving licence photo, for one of
  * their own profiles. Stored privately (only admins open it, through a
  * short-lived link), so it's written with the service role rather than
  * the user's session. A new upload replaces the old one and the profile

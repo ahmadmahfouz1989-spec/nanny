@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { placeScore } from "@/lib/matching/place";
+import { computeBeautyMatchScore, type BeautyProviderMatchInput, type BeautySeekerMatchInput } from "@/lib/matching/beauty-engine";
 import { computeCleaningMatchScore, type CleaningProviderMatchInput, type CleaningSeekerMatchInput } from "@/lib/matching/cleaning-engine";
 import {
   computeErrandsMatchScore,
@@ -334,5 +335,70 @@ describe("computeCleaningMatchScore", () => {
     const now = { ...seeker, frequency: "once" as const, timing: "asap" as const };
     expect(computeCleaningMatchScore(now, cleaner).breakdown.availability.raw).toBe(0);
     expect(computeCleaningMatchScore(now, { ...cleaner, takesUrgentJobs: true }).breakdown.availability.raw).toBe(1);
+  });
+});
+
+describe("computeBeautyMatchScore", () => {
+  const seeker: BeautySeekerMatchInput = {
+    governorateId: "beirut",
+    districtId: "d-beirut",
+    service: "hair",
+    treatments: ["blowdry", "color"],
+    place: "at_home",
+    forWhom: "woman",
+    providerGender: "any",
+    peopleCount: 1,
+    timing: "scheduled",
+    scheduledDay: "sat",
+  };
+  const hairdresser: BeautyProviderMatchInput = {
+    governorateId: "beirut",
+    districtId: "d-beirut",
+    coverDistrictIds: [],
+    services: ["hair", "makeup"],
+    treatments: ["cut", "blowdry", "color"],
+    workplaces: ["client_home"],
+    serves: ["women"],
+    gender: "female",
+    providerType: "individual",
+    availabilityDays: ["fri", "sat"],
+    takesUrgentJobs: false,
+  };
+
+  it("is a full match for the right service, treatments, place and day", () => {
+    expect(computeBeautyMatchScore(seeker, hairdresser).score).toBe(100);
+  });
+
+  it("scores 0 without the service, a home visit, the client or the gender asked for", () => {
+    expect(computeBeautyMatchScore({ ...seeker, service: "nails" }, hairdresser).score).toBe(0);
+    expect(computeBeautyMatchScore(seeker, { ...hairdresser, workplaces: ["salon"] }).score).toBe(0);
+    expect(computeBeautyMatchScore({ ...seeker, place: "go_to_them" }, { ...hairdresser, workplaces: ["salon"] }).score).toBe(100);
+    expect(computeBeautyMatchScore({ ...seeker, forWhom: "man" }, hairdresser).score).toBe(0);
+    expect(computeBeautyMatchScore({ ...seeker, providerGender: "male" }, hairdresser).score).toBe(0);
+    expect(computeBeautyMatchScore({ ...seeker, providerGender: "female" }, hairdresser).score).toBe(100);
+  });
+
+  it("weighs the treatments asked for", () => {
+    const cutOnly = { ...hairdresser, treatments: ["cut"] };
+    expect(computeBeautyMatchScore(seeker, cutOnly).breakdown.requirements.raw).toBe(0);
+    expect(computeBeautyMatchScore(seeker, { ...cutOnly, treatments: ["cut", "blowdry"] }).breakdown.requirements.raw).toBe(0.5);
+    // Ticked none of this service's treatments: probably does the usual ones.
+    expect(computeBeautyMatchScore(seeker, { ...hairdresser, treatments: ["evening"] }).breakdown.requirements.raw).toBe(0.75);
+  });
+
+  it("prefers a team for a big group and a mixed salon is partly a fit for a gender preference", () => {
+    const party = { ...seeker, service: "bridal" as const, treatments: [], peopleCount: 6 };
+    const bridal = { ...hairdresser, services: ["bridal"] };
+    expect(computeBeautyMatchScore(party, bridal).breakdown.requirements.raw).toBe(0.5);
+    expect(computeBeautyMatchScore(party, { ...bridal, providerType: "team" }).breakdown.requirements.raw).toBe(1);
+    const mixed = { ...hairdresser, providerType: "salon" as const, gender: "mixed" as const };
+    expect(computeBeautyMatchScore({ ...seeker, treatments: [], providerGender: "female" }, mixed).breakdown.requirements.raw).toBe(0.75);
+  });
+
+  it("ignores travel coverage when the client goes to them", () => {
+    const far = { ...seeker, place: "go_to_them" as const, districtId: "d-metn", governorateId: "mount" };
+    const salon = { ...hairdresser, workplaces: ["salon"], coverDistrictIds: ["d-metn"] };
+    expect(computeBeautyMatchScore(far, salon).breakdown.location.raw).toBe(0);
+    expect(computeBeautyMatchScore({ ...far, place: "at_home" }, { ...salon, workplaces: ["client_home"] }).breakdown.location.raw).toBe(1);
   });
 });
