@@ -515,3 +515,100 @@ export function CrownIcon(p: IconProps) {
     </Svg>
   );
 }
+
+/** Car services: a car from the front -- the category's icon. */
+export function CarIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="m5 11 1.6-4.2A1.5 1.5 0 0 1 8 5.8h8a1.5 1.5 0 0 1 1.4 1L19 11" />
+      <path d="M4.5 11h15a1 1 0 0 1 1 1v4.5h-17V12a1 1 0 0 1 1-1Z" />
+      <path d="M6 16.5v2M18 16.5v2M10 14h4" />
+      <path d="M7 13.8h.01M17 13.8h.01" strokeWidth={2.6} />
+    </Svg>
+  );
+}
+
+/** Car electrics: a lightning bolt. */
+export function BoltIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M13 3 5.5 13.5H12l-1 7.5 7.5-10.5H12L13 3Z" />
+    </Svg>
+  );
+}
+
+/** Battery. */
+export function BatteryIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <rect x="3.5" y="7.5" width="17" height="12" rx="1.5" />
+      <path d="M7 7.5V5.5h2.5v2M14.5 7.5V5.5H17v2" />
+      <path d="M7 13.5h3M8.5 12v3M14 13.5h3" />
+    </Svg>
+  );
+}
+
+/** Tyres: a wheel. */
+export function TireIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <circle cx="12" cy="12" r="8.5" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 3.5V9M12 15v5.5M3.5 12H9M15 12h5.5" />
+    </Svg>
+  );
+}
+
+/** Car air conditioning: a snowflake. */
+export function SnowflakeIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9" />
+      <path d="M9.5 4.5 12 7l2.5-2.5M9.5 19.5 12 17l2.5 2.5" />
+    </Svg>
+  );
+}
+
+/** Towing: a flatbed truck. */
+export function TowTruckIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M2.5 16.5V11h4l2-3h3v8.5" />
+      <path d="M11.5 13.5h10v3h-19" />
+      <path d="M13.5 13.5 17 9" />
+      <circle cx="6" cy="17.5" r="1.8" />
+      <circle cx="17.5" cy="17.5" r="1.8" />
+    </Svg>
+  );
+}
+
+/** Roadside help: a warning triangle. */
+export function WarningIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M12 4 21 19.5H3L12 4Z" />
+      <path d="M12 10v4.5M12 17h.01" />
+    </Svg>
+  );
+}
+
+/** Bodywork and paint: a paint brush. */
+export function BrushIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M19.5 3.5 11 12" />
+      <path d="M11.5 11.5c-2.3-1-4.5.2-4.8 2.5-.2 1.6-.9 3-2.7 4 3.6 1.2 7.6.4 8.3-2.8.3-1.4.1-2.8-.8-3.7Z" />
+    </Svg>
+  );
+}
+
+/** Car wash: drops of water. */
+export function DropsIcon(p: IconProps) {
+  return (
+    <Svg {...p}>
+      <path d="M9 4c-2.2 2.9-3.5 5-3.5 6.8a3.5 3.5 0 0 0 7 0C12.5 9 11.2 6.9 9 4Z" />
+      <path d="M16.5 11c-1.4 1.8-2.2 3.1-2.2 4.3a2.2 2.2 0 0 0 4.4 0c0-1.2-.8-2.5-2.2-4.3Z" />
+      <path d="M4.5 20h15" />
+    </Svg>
+  );
+}

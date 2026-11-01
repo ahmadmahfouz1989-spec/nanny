@@ -6,6 +6,7 @@ import { maintenanceProviderSchema, maintenanceSeekerSchema } from "@/lib/valida
 import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/errands";
 import { cleaningProviderSchema, cleaningSeekerSchema } from "@/lib/validation/cleaning";
 import { beautyProviderSchema, beautySeekerSchema } from "@/lib/validation/beauty";
+import { carProviderSchema, carSeekerSchema } from "@/lib/validation/car";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
 const DISTRICT = "22222222-2222-4222-8222-222222222222";
@@ -177,6 +178,30 @@ describe("profile validation", () => {
     expect(beautySeekerSchema.safeParse({ ...request, timing: "scheduled", scheduledAt: "2026-12-05T13:00" }).success).toBe(true);
     expect(beautySeekerSchema.safeParse({ ...request, beautyService: "other", treatments: [] }).success).toBe(false);
     expect(beautySeekerSchema.safeParse({ ...request, beautyService: "massage", massageMinutes: 45 }).success).toBe(false);
+  });
+
+  it("validates car services profiles and requests", () => {
+    const mechanic = {
+      ...base, providerType: "individual", carServices: ["mechanic", "battery"], workplaces: ["mobile"], makes: ["toyota"],
+      fuels: ["hybrid"], availability, takesUrgentJobs: true, yearsExperience: 10, pricing: "per_job", priceFromUsd: 20,
+    };
+    const result = carProviderSchema.safeParse(mechanic);
+    expect(result.success, JSON.stringify(result.error?.issues)).toBe(true);
+    expect(carProviderSchema.safeParse({ ...mechanic, workplaces: [] }).success).toBe(false);
+    expect(carProviderSchema.safeParse({ ...mechanic, fuels: ["petrol"] }).success).toBe(false);
+
+    const request = {
+      fullName: "Test Person", locationId: LOCATION, districtId: DISTRICT, locationDetail: "Hamra",
+      carService: "mechanic", issues: ["wont_start"], carMake: "kia", place: "at_location", timing: "asap",
+    };
+    const requestResult = carSeekerSchema.safeParse(request);
+    expect(requestResult.success, JSON.stringify(requestResult.error?.issues)).toBe(true);
+    expect(carSeekerSchema.safeParse({ ...request, carMake: undefined }).success).toBe(false);
+    // A car that can't be driven can't be brought to the garage.
+    expect(carSeekerSchema.safeParse({ ...request, drivable: false, place: "bring_to_them" }).success).toBe(false);
+    // Towing says where to.
+    expect(carSeekerSchema.safeParse({ ...request, carService: "towing", issues: [] }).success).toBe(false);
+    expect(carSeekerSchema.safeParse({ ...request, carService: "towing", issues: [], towTo: "Dora" }).success).toBe(true);
   });
 
   it("needs a district, the area being optional", () => {

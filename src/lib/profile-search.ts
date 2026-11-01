@@ -44,6 +44,11 @@ const TAGGED: Record<string, string> = {
   beautyServices: "BeautyServices",
   beautyService: "BeautyServices",
   treatments: "BeautyTreatments",
+  carServices: "CarServices",
+  carService: "CarServices",
+  issues: "CarIssues",
+  carMake: "CarMakes",
+  makes: "CarMakes",
   vehicle: "Vehicles",
   additionalDuties: "Duties",
   patientAgeGroup: "PatientAgeGroups",
@@ -93,6 +98,7 @@ export function searchableText(profile: SearchableProfile): string {
   // Cleaning goes by many everyday names ("تنضيف", "شغالة", "ménage").
   if (a.cleaningServices !== undefined || a.cleaningService !== undefined) parts.push(...labels("CleaningServices", "searchWords"));
   if (a.beautyServices !== undefined || a.beautyService !== undefined) parts.push(...labels("BeautyServices", "searchWords"));
+  if (a.carServices !== undefined || a.carService !== undefined) parts.push(...labels("CarServices", "searchWords"));
   // Nanny experience is a list of { ageGroup, yearsExperience }.
   if (Array.isArray(a.experience)) {
     for (const e of a.experience as { ageGroup?: unknown }[]) {

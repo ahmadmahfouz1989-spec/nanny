@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { placeScore } from "@/lib/matching/place";
+import { computeCarMatchScore, type CarProviderMatchInput, type CarSeekerMatchInput } from "@/lib/matching/car-engine";
 import { computeBeautyMatchScore, type BeautyProviderMatchInput, type BeautySeekerMatchInput } from "@/lib/matching/beauty-engine";
 import { computeCleaningMatchScore, type CleaningProviderMatchInput, type CleaningSeekerMatchInput } from "@/lib/matching/cleaning-engine";
 import {
@@ -400,5 +401,58 @@ describe("computeBeautyMatchScore", () => {
     const salon = { ...hairdresser, workplaces: ["salon"], coverDistrictIds: ["d-metn"] };
     expect(computeBeautyMatchScore(far, salon).breakdown.location.raw).toBe(0);
     expect(computeBeautyMatchScore({ ...far, place: "at_home" }, { ...salon, workplaces: ["client_home"] }).breakdown.location.raw).toBe(1);
+  });
+});
+
+describe("computeCarMatchScore", () => {
+  const seeker: CarSeekerMatchInput = {
+    governorateId: "beirut",
+    districtId: "d-beirut",
+    service: "mechanic",
+    place: "at_location",
+    make: "kia",
+    fuel: "petrol",
+    timing: "asap",
+    scheduledDay: null,
+  };
+  const mechanic: CarProviderMatchInput = {
+    governorateId: "beirut",
+    districtId: "d-beirut",
+    coverDistrictIds: [],
+    services: ["mechanic", "battery"],
+    workplaces: ["mobile", "garage"],
+    makes: [],
+    fuels: [],
+    emergency24h: false,
+    availabilityDays: ["mon", "sat"],
+    takesUrgentJobs: true,
+  };
+
+  it("is a full match for the right service, place and time", () => {
+    expect(computeCarMatchScore(seeker, mechanic).score).toBe(100);
+  });
+
+  it("scores 0 without the service, or when nobody can come to the car", () => {
+    expect(computeCarMatchScore({ ...seeker, service: "towing" }, mechanic).score).toBe(0);
+    expect(computeCarMatchScore(seeker, { ...mechanic, workplaces: ["garage"] }).score).toBe(0);
+    expect(computeCarMatchScore({ ...seeker, place: "bring_to_them" }, { ...mechanic, workplaces: ["garage"] }).score).toBe(100);
+    // Towing goes to the car whatever they ticked.
+    expect(computeCarMatchScore({ ...seeker, service: "towing", place: "either" }, { ...mechanic, services: ["towing"], workplaces: ["garage"] }).score).toBe(100);
+  });
+
+  it("wants someone on call for an emergency", () => {
+    const stuck = { ...seeker, timing: "emergency" as const };
+    expect(computeCarMatchScore(stuck, mechanic).breakdown.availability.raw).toBe(0.5);
+    expect(computeCarMatchScore(stuck, { ...mechanic, emergency24h: true }).breakdown.availability.raw).toBe(1);
+  });
+
+  it("checks the make and a hybrid or electric car", () => {
+    expect(computeCarMatchScore(seeker, { ...mechanic, makes: ["mercedes"] }).breakdown.requirements.raw).toBe(0.5);
+    expect(computeCarMatchScore(seeker, { ...mechanic, makes: ["kia"] }).breakdown.requirements.raw).toBe(1);
+    const hybrid = { ...seeker, fuel: "hybrid" as const };
+    expect(computeCarMatchScore(hybrid, mechanic).breakdown.requirements.raw).toBe(0);
+    expect(computeCarMatchScore(hybrid, { ...mechanic, fuels: ["hybrid"] }).breakdown.requirements.raw).toBe(1);
+    // A tyre change doesn't care what the engine runs on.
+    expect(computeCarMatchScore({ ...hybrid, service: "tires" }, { ...mechanic, services: ["tires"] }).breakdown.requirements.raw).toBe(1);
   });
 });

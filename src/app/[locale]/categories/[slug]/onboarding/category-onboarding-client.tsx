@@ -16,6 +16,8 @@ import CleaningProviderForm from "./cleaning-provider-form";
 import CleaningSeekerForm from "./cleaning-seeker-form";
 import BeautyProviderForm from "./beauty-provider-form";
 import BeautySeekerForm from "./beauty-seeker-form";
+import CarProviderForm from "./car-provider-form";
+import CarSeekerForm from "./car-seeker-form";
 import { ChevronIcon, PersonIcon, ProviderIcon } from "@/components/home-icons";
 import { request } from "@/lib/request";
 
@@ -30,6 +32,7 @@ const FORMS: Record<string, { provider: typeof NursingProviderForm; seeker: type
   errands: { provider: ErrandsProviderForm, seeker: ErrandsSeekerForm },
   cleaning: { provider: CleaningProviderForm, seeker: CleaningSeekerForm },
   beauty: { provider: BeautyProviderForm, seeker: BeautySeekerForm },
+  car: { provider: CarProviderForm, seeker: CarSeekerForm },
 };
 
 type ExistingProfile = {

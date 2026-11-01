@@ -7,6 +7,7 @@ import { useGovernorates, governorateNames } from "@/components/onboarding/use-g
 import { useErrandRows } from "@/components/errand-details";
 import { useCleaningRows } from "@/components/cleaning-details";
 import { useBeautyRows } from "@/components/beauty-details";
+import { useCarRows } from "@/components/car-details";
 import type { OtherProfile } from "./match-card";
 
 /**
@@ -35,6 +36,7 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
   const errandRows = useErrandRows();
   const cleaningRows = useCleaningRows();
   const beautyRows = useBeautyRows();
+  const carRows = useCarRows();
 
   const a = profile.attributes ?? {};
   const langs = (profile.languages ?? []).map((l) => (locale === "ar" ? l.name_ar : locale === "fr" ? l.name_fr : l.name_en));
@@ -199,7 +201,7 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
           <dd>{a.takesUrgentJobs ? t("yes") : t("no")}</dd>
         </>
       )}
-      {[...errandRows(a), ...cleaningRows(a), ...beautyRows(a)].map((row) => (
+      {[...errandRows(a), ...cleaningRows(a), ...beautyRows(a), ...carRows(a)].map((row) => (
         <Fragment key={row.label}>
           <dt className="text-muted">{row.label}</dt>
           <dd>{row.value}</dd>

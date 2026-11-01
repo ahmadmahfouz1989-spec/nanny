@@ -27,6 +27,8 @@ import { computeCleaningMatchScore, type CleaningProviderMatchInput, type Cleani
 import type { CleaningService, Frequency, ProviderType } from "@/lib/validation/cleaning";
 import { computeBeautyMatchScore, type BeautyProviderMatchInput, type BeautySeekerMatchInput } from "./beauty-engine";
 import type { BeautyProviderType, BeautyService, ForWhom, Gender, GenderPreference, Place } from "@/lib/validation/beauty";
+import { computeCarMatchScore, type CarProviderMatchInput, type CarSeekerMatchInput } from "./car-engine";
+import type { CarPlace, CarService, CarTiming, Fuel } from "@/lib/validation/car";
 
 type Admin = ReturnType<typeof createAdminClient>;
 type GenericProfileRow = {
@@ -220,6 +222,37 @@ function beautyProviderInput(profile: GenericProfileRow): BeautyProviderMatchInp
   };
 }
 
+function carSeekerInput(profile: GenericProfileRow): CarSeekerMatchInput {
+  const a = profile.attributes;
+  const timing = (a.timing as CarTiming) ?? "asap";
+  return {
+    governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    service: (a.carService as CarService) ?? null,
+    place: (a.place as CarPlace) ?? "either",
+    make: typeof a.carMake === "string" ? a.carMake : null,
+    fuel: (a.fuel as Fuel) ?? "petrol",
+    timing,
+    scheduledDay: timing === "scheduled" ? dayOfWeek(a.scheduledAt as string | undefined) : null,
+  };
+}
+
+function carProviderInput(profile: GenericProfileRow): CarProviderMatchInput {
+  const a = profile.attributes;
+  return {
+    governorateId: profile.location_id,
+    districtId: placeOf(profile).districtId,
+    coverDistrictIds: placeOf(profile).coverDistrictIds,
+    services: (a.carServices as string[]) ?? [],
+    workplaces: (a.workplaces as string[]) ?? [],
+    makes: (a.makes as string[]) ?? [],
+    fuels: (a.fuels as string[]) ?? [],
+    emergency24h: !!a.emergency24h,
+    availabilityDays: (a.availability as { days?: string[] } | undefined)?.days ?? [],
+    takesUrgentJobs: !!a.takesUrgentJobs,
+  };
+}
+
 function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: GenericProfileRow) {
   if (categorySlug === "nanny") {
     return computeNannyMatchScore(parentInputFromProfile(seeker), nannyInputFromProfile(provider));
@@ -238,6 +271,9 @@ function scoreFor(categorySlug: string, seeker: GenericProfileRow, provider: Gen
   }
   if (categorySlug === "beauty") {
     return computeBeautyMatchScore(beautySeekerInput(seeker), beautyProviderInput(provider));
+  }
+  if (categorySlug === "car") {
+    return computeCarMatchScore(carSeekerInput(seeker), carProviderInput(provider));
   }
   if (categorySlug === "nursing") {
     return computeCareMatchScore(nursingSeekerInput(seeker), nursingProviderInput(provider));

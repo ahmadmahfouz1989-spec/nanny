@@ -17,6 +17,7 @@ import { labelOr } from "@/lib/i18n-fallback";
 import { ChevronDownIcon } from "@/components/home-icons";
 import { cleaningPrice } from "@/components/cleaning-details";
 import { beautyPrice } from "@/components/beauty-details";
+import { carPrice } from "@/components/car-details";
 
 export type OtherProfile = {
   id: string;
@@ -71,6 +72,8 @@ export default function MatchCard({
   const tCleaningFields = useTranslations("CleaningFields");
   const tBeauty = useTranslations("BeautyServices");
   const tBeautyFields = useTranslations("BeautyFields");
+  const tCar = useTranslations("CarServices");
+  const tCarFields = useTranslations("CarFields");
   const format = useFormatter();
   const locale = useLocale();
 
@@ -100,6 +103,7 @@ export default function MatchCard({
     [a.errandServices ?? (typeof a.errandService === "string" ? [a.errandService] : undefined), tErrand],
     [a.cleaningServices ?? (typeof a.cleaningService === "string" ? [a.cleaningService] : undefined), tCleaning],
     [a.beautyServices ?? (typeof a.beautyService === "string" ? [a.beautyService] : undefined), tBeauty],
+    [a.carServices ?? (typeof a.carService === "string" ? [a.carService] : undefined), tCar],
   ];
   const skills = skillGroups
     .flatMap(([codes, tr]) => (Array.isArray(codes) ? (codes as string[]).map((c) => labelOr(tr, c)) : []))
@@ -108,6 +112,7 @@ export default function MatchCard({
   const price =
     (a.cleaningServices ? cleaningPrice(a, tCleaningFields, format) : null) ??
     (a.beautyServices ? beautyPrice(a, tBeautyFields, format) : null) ??
+    (a.carServices ? carPrice(a, tCarFields, format) : null) ??
     (typeof a.priceNote === "string" && a.priceNote.trim() ? a.priceNote : null);
   // The full details live on the profile page; the card keeps a taste.
   const intro = [a.shortIntro, a.jobDescription, a.familyDescription].find(
