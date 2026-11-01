@@ -14,9 +14,14 @@ import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
 import { SUBJECTS, GRADE_LEVELS, TUTORING_FORMATS, tutoringProviderSchema } from "@/lib/validation/tutoring";
+import RateField, { EMPTY_RATE, ratePayload, rateState, type RateState } from "@/components/onboarding/rate-field";
+import IdDocumentField from "@/components/onboarding/id-document-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
+
+const RATE_UNITS = CATEGORY_RATE_UNITS.tutoring;
 
 type FormState = {
   fullName: string;
@@ -36,6 +41,7 @@ type FormState = {
   yearsExperience: number;
   hasTransportation: boolean;
   shortIntro: string;
+  rate: RateState;
   languageIds: string[];
 };
 
@@ -57,6 +63,7 @@ const initialState: FormState = {
   yearsExperience: 0,
   hasTransportation: false,
   shortIntro: "",
+  rate: EMPTY_RATE,
   languageIds: [],
 };
 
@@ -93,6 +100,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     yearsExperience: (a.yearsExperience as number) ?? 0,
     hasTransportation: !!a.hasTransportation,
     shortIntro: (a.shortIntro as string) ?? "",
+    rate: rateState(a.rate),
     languageIds: (a.languageIds as string[]) ?? [],
   };
 }
@@ -158,6 +166,7 @@ export default function TutoringProviderForm({
     yearsExperience: form.yearsExperience,
     hasTransportation: form.hasTransportation,
     shortIntro: form.shortIntro || undefined,
+    rate: ratePayload(form.rate),
     languageIds: form.languageIds,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(tutoringProviderSchema, payload) : {};
@@ -217,6 +226,8 @@ export default function TutoringProviderForm({
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
+        {/* Optional: a checked ID shows as "ID checked" on the profile. */}
+        {initialProfile && <IdDocumentField profileId={initialProfile.id} onStatus={() => {}} optional />}
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
@@ -294,6 +305,7 @@ export default function TutoringProviderForm({
 
         <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
+        <RateField units={RATE_UNITS} value={form.rate} onChange={(v) => update("rate", v)} errors={fieldErrors} notePlaceholder={t("rateNotePlaceholder")} />
       </div>
     </EditShell>
   );

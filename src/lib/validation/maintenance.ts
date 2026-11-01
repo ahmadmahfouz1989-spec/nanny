@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { budgetSchema, rateSchema } from "@/lib/validation/rate";
 import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
@@ -39,6 +40,7 @@ export const maintenanceProviderSchema = z.object({
   yearsExperience: z.number().min(0, "Enter your years of experience"),
   takesUrgentJobs: z.boolean(),
   shortIntro: z.string().max(500, "That's too long").optional(),
+  rate: rateSchema,
 });
 
 export type MaintenanceProviderInput = z.infer<typeof maintenanceProviderSchema>;
@@ -51,6 +53,7 @@ export const maintenanceSeekerSchema = z.object({
   ...areaFields,
   tradesNeeded: z.array(z.enum(TRADES)).min(1, "Pick at least one trade"),
   jobDescription: z.string().trim().min(10, "Describe the job in a few words").max(1000, "That's too long"),
+  budget: budgetSchema,
   urgency: z.enum(URGENCIES, "Select how soon you need it"),
   neededDays: z.array(z.enum(DAYS)).default([]),
   desiredStartDate: z

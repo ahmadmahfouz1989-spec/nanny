@@ -13,11 +13,15 @@ import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannySeekerSchema } from "@/lib/validation/nanny";
+import BudgetField, { budgetPayload, budgetState, type BudgetState } from "@/components/onboarding/budget-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 const DUTY_OPTIONS = ["light_housekeeping", "cooking", "pet_care", "homework_help", "laundry"] as const;
+
+const BUDGET_UNITS = CATEGORY_RATE_UNITS.nanny;
 
 type FormState = {
   fullName: string;
@@ -38,6 +42,7 @@ type FormState = {
   languageIds: string[];
   additionalDuties: string[];
   familyDescription: string;
+  budget: BudgetState;
 };
 
 const initialState: FormState = {
@@ -59,6 +64,7 @@ const initialState: FormState = {
   languageIds: [],
   additionalDuties: [],
   familyDescription: "",
+  budget: { unit: BUDGET_UNITS[0], maxUsd: "" },
 };
 
 type ExistingProfile = {
@@ -94,6 +100,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     languageIds: (a.languageIds as string[]) ?? [],
     additionalDuties: (a.additionalDuties as string[]) ?? [],
     familyDescription: (a.familyDescription as string) ?? "",
+    budget: budgetState(a.budget, BUDGET_UNITS),
   };
 }
 
@@ -195,6 +202,7 @@ export default function NannySeekerForm({
     transportationRequired: form.transportationRequired,
     additionalDuties: form.additionalDuties,
     familyDescription: form.familyDescription || undefined,
+    budget: budgetPayload(form.budget),
     languageIds: form.languageIds,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(nannySeekerSchema, payload) : {};
@@ -428,6 +436,7 @@ export default function NannySeekerForm({
             value={form.familyDescription}
             onChange={(e) => update("familyDescription", e.target.value)}
           />
+          <BudgetField units={BUDGET_UNITS} value={form.budget} onChange={(v) => update("budget", v)} errors={fieldErrors} />
       </div>
     </>
   );

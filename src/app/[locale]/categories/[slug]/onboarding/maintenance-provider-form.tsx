@@ -13,9 +13,14 @@ import DistrictCoverage from "@/components/onboarding/district-coverage";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, maintenanceProviderSchema } from "@/lib/validation/maintenance";
+import RateField, { EMPTY_RATE, ratePayload, rateState, type RateState } from "@/components/onboarding/rate-field";
+import IdDocumentField from "@/components/onboarding/id-document-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
+
+const RATE_UNITS = CATEGORY_RATE_UNITS.maintenance;
 
 type FormState = {
   fullName: string;
@@ -34,6 +39,7 @@ type FormState = {
   yearsExperience: number;
   takesUrgentJobs: boolean;
   shortIntro: string;
+  rate: RateState;
 };
 
 const initialState: FormState = {
@@ -53,6 +59,7 @@ const initialState: FormState = {
   yearsExperience: 0,
   takesUrgentJobs: false,
   shortIntro: "",
+  rate: EMPTY_RATE,
 };
 
 type ExistingProfile = {
@@ -87,6 +94,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     yearsExperience: (a.yearsExperience as number) ?? 0,
     takesUrgentJobs: !!a.takesUrgentJobs,
     shortIntro: (a.shortIntro as string) ?? "",
+    rate: rateState(a.rate),
   };
 }
 
@@ -149,6 +157,7 @@ export default function MaintenanceProviderForm({
     yearsExperience: form.yearsExperience,
     takesUrgentJobs: form.takesUrgentJobs,
     shortIntro: form.shortIntro || undefined,
+    rate: ratePayload(form.rate),
   };
   const fieldErrors = showErrors ? fieldErrorsFor(maintenanceProviderSchema, payload) : {};
   const progress = requiredProgress(maintenanceProviderSchema, payload);
@@ -207,6 +216,8 @@ export default function MaintenanceProviderForm({
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
+        {/* Optional: a checked ID shows as "ID checked" on the profile. */}
+        {initialProfile && <IdDocumentField profileId={initialProfile.id} onStatus={() => {}} optional />}
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
@@ -265,6 +276,8 @@ export default function MaintenanceProviderForm({
         <SectionHeading>{t("section4Title")}</SectionHeading>
         <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} placeholder={t("shortIntroPlaceholder")} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
+        <RateField units={RATE_UNITS} value={form.rate} onChange={(v) => update("rate", v)} errors={fieldErrors} notePlaceholder={t("rateNotePlaceholder")} />
+        <p className="text-xs text-muted">{t("photosHint")}</p>
       </div>
     </EditShell>
   );

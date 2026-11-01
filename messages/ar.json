@@ -529,7 +529,13 @@
     "section1Title": "بياناتك ومنطقتك",
     "section2Title": "الترخيص والمؤهلات",
     "section3Title": "تفضيلات العمل وأوقات التوفر",
-    "section4Title": "التخصصات واللغات والنبذة"
+    "section4Title": "التخصصات واللغات والنبذة",
+    "rateNotePlaceholder": "مثلاً: ٦٠$ لمناوبة ليلية ١٢ ساعة (اختياري)",
+    "gender": "إنت…",
+    "genderOptions": {
+      "female": "امرأة",
+      "male": "رجّال"
+    }
   },
   "NursingSeekerOnboarding": {
     "createTitle": "أنشئ طلبك",
@@ -550,7 +556,13 @@
     "section1Title": "بياناتك ومنطقتك",
     "section2Title": "الرعاية المطلوبة",
     "section3Title": "الجدول الزمني",
-    "section4Title": "اللغات"
+    "section4Title": "اللغات",
+    "providerGender": "بتفضّل امرأة أو رجّال؟",
+    "providerGenderOptions": {
+      "any": "ما بتفرق",
+      "female": "امرأة",
+      "male": "رجّال"
+    }
   },
   "TutoringProviderOnboarding": {
     "createTitle": "أنشئ ملفك كمدرّس/ة",
@@ -569,7 +581,8 @@
     "section1Title": "بياناتك ومنطقتك",
     "section2Title": "ما تدرّسه",
     "section3Title": "أوقات التوفر والخبرة",
-    "section4Title": "اللغات والنبذة"
+    "section4Title": "اللغات والنبذة",
+    "rateNotePlaceholder": "مثلاً: ١٥$ بالساعة لمواد المدرسة، ٢٥$ للـSAT (اختياري)"
   },
   "TutoringSeekerOnboarding": {
     "createTitle": "أنشئ طلبك",
@@ -608,7 +621,9 @@
     "section1Title": "بياناتك ومنطقتك",
     "section2Title": "مهنتك",
     "section3Title": "أين ومتى تعمل",
-    "section4Title": "نبذة عنك"
+    "section4Title": "نبذة عنك",
+    "rateNotePlaceholder": "مثلاً: كشفية ١٠$، بتنحسم إذا عملت الشغلة (اختياري)",
+    "photosHint": "نصيحة: بعد ما تحفظ البروفايل، زيد صور قبل وبعد من شغلك من صفحة بروفايلك — الزباين بيختاروا عالصور."
   },
   "MaintenanceSeekerOnboarding": {
     "createTitle": "أنشئ طلبك",
@@ -955,7 +970,8 @@
     "canDrive": "أستطيع القيادة",
     "certifications": "الشهادات",
     "shortIntro": "نبذة تعريفية مختصرة",
-    "createTitle": "أنشئ ملفك كمربية"
+    "createTitle": "أنشئ ملفك كمربية",
+    "rateNotePlaceholder": "مثلاً: ٦$ بالساعة للسهر عالولاد، ٥٠٠$ بالشهر دوام كامل (اختياري)"
   },
   "SavedProfiles": {
     "saveLabel": "حفظ الملف الشخصي",
@@ -1562,7 +1578,8 @@
     "priceNote": "تفاصيل عن أسعارك",
     "priceNotePlaceholder": "مثلاً: المواصلات ضمن السعر جوّا بيروت",
     "shortIntro": "عنك",
-    "shortIntroPlaceholder": "مثلاً: ٦ سنين عم نضّف بيوت بالمتن، دقيقة وعالوقت"
+    "shortIntroPlaceholder": "مثلاً: ٦ سنين عم نضّف بيوت بالمتن، دقيقة وعالوقت",
+    "photosHint": "نصيحة: بعد ما تحفظ البروفايل، زيد صور قبل وبعد من صفحة بروفايلك — الزباين بيختاروا عالصور."
   },
   "CleaningFields": {
     "cleaningServices": "الخدمات",
@@ -2131,5 +2148,49 @@
     "place": "وين",
     "timing": "إيمتى",
     "budgetUsd": "الميزانية"
+  },
+  "Rates": {
+    "howYouCharge": "كيف بتسعّر",
+    "unit": {
+      "per_hour": "بالساعة",
+      "per_day": "باليوم أو المناوبة",
+      "per_month": "بالشهر",
+      "per_session": "بالجلسة",
+      "per_job": "عالشغلة",
+      "quote": "منتفق"
+    },
+    "fromQuestion": {
+      "per_hour": "من قدّيش الساعة؟ (بالدولار)",
+      "per_day": "من قدّيش اليوم أو المناوبة؟ (بالدولار)",
+      "per_month": "من قدّيش الشهر؟ (بالدولار)",
+      "per_session": "من قدّيش الجلسة؟ (بالدولار)",
+      "per_job": "من قدّيش الشغلة؟ (بالدولار)"
+    },
+    "notePlaceholder": "تفاصيل أكتر عن أسعارك (اختياري)",
+    "yourBudget": "ميزانيتك (بالدولار)",
+    "budgetPlaceholder": "لحد قدّيش؟",
+    "price": "السعر",
+    "prices": "عن الأسعار",
+    "budget": "الميزانية",
+    "from": {
+      "per_hour": "من {amount} بالساعة",
+      "per_day": "من {amount} باليوم",
+      "per_month": "من {amount} بالشهر",
+      "per_session": "من {amount} الجلسة",
+      "per_job": "من {amount} الشغلة"
+    },
+    "upTo": {
+      "per_hour": "لحد {amount} بالساعة",
+      "per_day": "لحد {amount} باليوم",
+      "per_month": "لحد {amount} بالشهر",
+      "per_session": "لحد {amount} الجلسة",
+      "per_job": "لحد {amount} الشغلة"
+    },
+    "gender": "الجنس",
+    "prefers": "بيفضّل",
+    "genders": {
+      "female": "امرأة",
+      "male": "رجّال"
+    }
   }
 }

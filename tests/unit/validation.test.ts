@@ -38,9 +38,10 @@ describe("profile validation", () => {
     const nurse = {
       ...base, workRadiusKm: 10, employmentType: "part_time", liveArrangementPref: "either", availability,
       yearsExperience: 5, hasTransportation: true, canDrive: true, licenseNumber: "RN-1234", hasNursingDiploma: true,
-      careSpecialties: ["elderly_care"],
+      careSpecialties: ["elderly_care"], gender: "female",
     };
     expect(nursingProviderSchema.safeParse(nurse).success).toBe(true);
+    expect(nursingProviderSchema.safeParse({ ...nurse, gender: undefined }).success).toBe(false);
     expect(nursingProviderSchema.safeParse({ ...nurse, licenseNumber: "" }).success).toBe(false);
     expect(nursingProviderSchema.safeParse({ ...nurse, careSpecialties: [] }).success).toBe(false);
     const seeker = {
@@ -202,6 +203,20 @@ describe("profile validation", () => {
     // Towing says where to.
     expect(carSeekerSchema.safeParse({ ...request, carService: "towing", issues: [] }).success).toBe(false);
     expect(carSeekerSchema.safeParse({ ...request, carService: "towing", issues: [], towTo: "Dora" }).success).toBe(true);
+  });
+
+  it("takes an optional price and budget in the older categories", () => {
+    const fixer = { ...base, trades: ["plumber"], serviceAreaIds: [LOCATION], availability, yearsExperience: 4, takesUrgentJobs: true };
+    expect(maintenanceProviderSchema.safeParse(fixer).success).toBe(true);
+    expect(maintenanceProviderSchema.safeParse({ ...fixer, rate: { unit: "per_job", fromUsd: 20, note: "Visit $10" } }).success).toBe(true);
+    expect(maintenanceProviderSchema.safeParse({ ...fixer, rate: { unit: "quote" } }).success).toBe(true);
+    expect(maintenanceProviderSchema.safeParse({ ...fixer, rate: { unit: "per_week" } }).success).toBe(false);
+    const parent = {
+      ...base, numChildren: 1, childrenAgeRanges: ["toddler"], scheduleType: "either", liveArrangement: "live_out",
+      desiredStartDate: "2026-11-01", transportationRequired: false,
+    };
+    expect(nannySeekerSchema.safeParse({ ...parent, budget: { unit: "per_month", maxUsd: 600 } }).success).toBe(true);
+    expect(nannySeekerSchema.safeParse({ ...parent, budget: { unit: "per_month" } }).success).toBe(false);
   });
 
   it("needs a district, the area being optional", () => {

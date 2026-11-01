@@ -57,6 +57,7 @@ function nursingSeekerInput(profile: GenericProfileRow): CareSeekerMatchInput {
     transportationRequired: !!a.transportationRequired,
     careSpecialtiesNeeded: (a.careSpecialtiesNeeded as string[]) ?? [],
     languageIds: (a.languageIds as string[]) ?? [],
+    providerGender: (a.providerGender as CareSeekerMatchInput["providerGender"]) ?? "any",
   };
 }
 
@@ -70,6 +71,7 @@ function nursingProviderInput(profile: GenericProfileRow): CareProviderMatchInpu
     hasTransportation: !!a.hasTransportation,
     careSpecialties: (a.careSpecialties as string[]) ?? [],
     languageIds: (a.languageIds as string[]) ?? [],
+    gender: (a.gender as CareProviderMatchInput["gender"]) ?? null,
   };
 }
 

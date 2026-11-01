@@ -11,11 +11,15 @@ import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import { DAYS } from "@/lib/validation/profile";
 import { TRADES, URGENCIES, maintenanceSeekerSchema } from "@/lib/validation/maintenance";
+import BudgetField, { budgetPayload, budgetState, type BudgetState } from "@/components/onboarding/budget-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 type Urgency = (typeof URGENCIES)[number];
+
+const BUDGET_UNITS = CATEGORY_RATE_UNITS.maintenance;
 
 type FormState = {
   fullName: string;
@@ -26,6 +30,7 @@ type FormState = {
   areaId: string | null;
   tradesNeeded: string[];
   jobDescription: string;
+  budget: BudgetState;
   urgency: Urgency;
   neededDays: string[];
   desiredStartDate: string;
@@ -40,6 +45,7 @@ const initialState: FormState = {
   areaId: null,
   tradesNeeded: [],
   jobDescription: "",
+  budget: { unit: BUDGET_UNITS[0], maxUsd: "" },
   urgency: "this_week",
   neededDays: [],
   desiredStartDate: "",
@@ -68,6 +74,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     areaId: (a.areaId as string) ?? null,
     tradesNeeded: (a.tradesNeeded as string[]) ?? [],
     jobDescription: (a.jobDescription as string) ?? "",
+    budget: budgetState(a.budget, BUDGET_UNITS),
     urgency: (a.urgency as Urgency) ?? "this_week",
     neededDays: (a.neededDays as string[]) ?? [],
     desiredStartDate: (a.desiredStartDate as string) ?? "",
@@ -129,6 +136,7 @@ export default function MaintenanceSeekerForm({
     areaId: form.areaId,
     tradesNeeded: form.tradesNeeded,
     jobDescription: form.jobDescription,
+    budget: budgetPayload(form.budget),
     urgency: form.urgency,
     neededDays: urgent ? [] : form.neededDays,
     desiredStartDate: urgent ? undefined : form.desiredStartDate || undefined,
@@ -215,6 +223,7 @@ export default function MaintenanceSeekerForm({
 
         <FieldLabel field="jobDescription" errors={fieldErrors}>{t("jobDescription")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={1000} placeholder={t("jobDescriptionPlaceholder")} value={form.jobDescription} onChange={(e) => update("jobDescription", e.target.value)} />
+        <BudgetField units={BUDGET_UNITS} value={form.budget} onChange={(v) => update("budget", v)} errors={fieldErrors} />
       </div>
 
       <div className="flex flex-col gap-3">

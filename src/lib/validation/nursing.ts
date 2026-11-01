@@ -1,6 +1,10 @@
 import { z } from "zod";
+import { budgetSchema, rateSchema } from "@/lib/validation/rate";
 import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
+
+export const GENDERS = ["female", "male"] as const;
+export const GENDER_PREFERENCES = ["any", "female", "male"] as const;
 
 // generic_profiles only has top-level `full_name` / `location_id` /
 // `profile_photo_url` columns -- everything else (including
@@ -56,6 +60,9 @@ export const nursingProviderSchema = z.object({
   hasNursingDiploma: z.boolean(),
   careSpecialties: z.array(z.enum(CARE_SPECIALTIES)).min(1, "Pick at least one care specialty"),
   shortIntro: z.string().max(500, "That's too long").optional(),
+  rate: rateSchema,
+  // Many families want a woman caring for their mother (or a man for their father).
+  gender: z.enum(GENDERS, "Choose one"),
   languageIds: z.array(uuid).default([]),
 });
 
@@ -76,6 +83,8 @@ export const nursingSeekerSchema = z.object({
   patientAgeGroup: z.enum(PATIENT_AGE_GROUPS, "Select who needs care"),
   careSpecialtiesNeeded: z.array(z.enum(CARE_SPECIALTIES)).min(1, "Pick at least one type of care needed"),
   medicalConditionNotes: z.string().max(1000, "That's too long").optional(),
+  budget: budgetSchema,
+  providerGender: z.enum(GENDER_PREFERENCES).default("any"),
   languageIds: z.array(uuid).default([]),
 });
 

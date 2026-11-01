@@ -14,11 +14,16 @@ import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannyProviderSchema } from "@/lib/validation/nanny";
+import RateField, { EMPTY_RATE, ratePayload, rateState, type RateState } from "@/components/onboarding/rate-field";
+import IdDocumentField from "@/components/onboarding/id-document-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
 
 const CERTIFICATION_OPTIONS = ["first_aid_cpr", "early_childhood_ed", "newborn_care_specialist"] as const;
+
+const RATE_UNITS = CATEGORY_RATE_UNITS.nanny;
 
 type FormState = {
   fullName: string;
@@ -43,6 +48,7 @@ type FormState = {
   canDrive: boolean;
   certifications: string[];
   shortIntro: string;
+  rate: RateState;
 };
 
 const initialState: FormState = {
@@ -68,6 +74,7 @@ const initialState: FormState = {
   canDrive: false,
   certifications: [],
   shortIntro: "",
+  rate: EMPTY_RATE,
 };
 
 type ExistingProfile = {
@@ -109,6 +116,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     canDrive: !!a.canDrive,
     certifications: (a.certifications as string[]) ?? [],
     shortIntro: (a.shortIntro as string) ?? "",
+    rate: rateState(a.rate),
   };
 }
 
@@ -201,6 +209,7 @@ export default function NannyProviderForm({
     canDrive: form.canDrive,
     certifications: form.certifications,
     shortIntro: form.shortIntro || undefined,
+    rate: ratePayload(form.rate),
     languageIds: form.languageIds,
     experience: activeAgeGroups.map((ageGroup) => ({
       ageGroup,
@@ -309,6 +318,8 @@ export default function NannyProviderForm({
               className="hidden"
             />
           </div>
+          {/* Optional: a checked ID shows as "ID checked" on the profile. */}
+          {initialProfile && <IdDocumentField profileId={initialProfile.id} onStatus={() => {}} optional />}
 
           <LocationPicker
             governorateId={form.locationId}
@@ -487,6 +498,7 @@ export default function NannyProviderForm({
             value={form.shortIntro}
             onChange={(e) => update("shortIntro", e.target.value)}
           />
+          <RateField units={RATE_UNITS} value={form.rate} onChange={(v) => update("rate", v)} errors={fieldErrors} notePlaceholder={t("rateNotePlaceholder")} />
       </div>
     </>
   );

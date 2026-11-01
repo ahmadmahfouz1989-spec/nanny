@@ -12,10 +12,14 @@ import LocationPicker from "@/components/onboarding/location-picker";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
-import { CARE_SPECIALTIES, PATIENT_AGE_GROUPS, nursingSeekerSchema } from "@/lib/validation/nursing";
+import { CARE_SPECIALTIES, GENDER_PREFERENCES, PATIENT_AGE_GROUPS, nursingSeekerSchema } from "@/lib/validation/nursing";
+import BudgetField, { budgetPayload, budgetState, type BudgetState } from "@/components/onboarding/budget-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
+
+const BUDGET_UNITS = CATEGORY_RATE_UNITS.nursing;
 
 type FormState = {
   fullName: string;
@@ -33,6 +37,8 @@ type FormState = {
   patientAgeGroup: string;
   careSpecialtiesNeeded: string[];
   medicalConditionNotes: string;
+  budget: BudgetState;
+  providerGender: (typeof GENDER_PREFERENCES)[number];
   languageIds: string[];
 };
 
@@ -52,6 +58,8 @@ const initialState: FormState = {
   patientAgeGroup: "",
   careSpecialtiesNeeded: [],
   medicalConditionNotes: "",
+  budget: { unit: BUDGET_UNITS[0], maxUsd: "" },
+  providerGender: "any",
   languageIds: [],
 };
 
@@ -85,6 +93,8 @@ function stateFromExisting(p: ExistingProfile): FormState {
     patientAgeGroup: (a.patientAgeGroup as string) ?? "",
     careSpecialtiesNeeded: (a.careSpecialtiesNeeded as string[]) ?? [],
     medicalConditionNotes: (a.medicalConditionNotes as string) ?? "",
+    budget: budgetState(a.budget, BUDGET_UNITS),
+    providerGender: (a.providerGender as (typeof GENDER_PREFERENCES)[number]) ?? "any",
     languageIds: (a.languageIds as string[]) ?? [],
   };
 }
@@ -150,6 +160,8 @@ export default function NursingSeekerForm({
     patientAgeGroup: form.patientAgeGroup,
     careSpecialtiesNeeded: form.careSpecialtiesNeeded,
     medicalConditionNotes: form.medicalConditionNotes || undefined,
+    budget: budgetPayload(form.budget),
+    providerGender: form.providerGender,
     languageIds: form.languageIds,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(nursingSeekerSchema, payload) : {};
@@ -246,6 +258,15 @@ export default function NursingSeekerForm({
 
         <FieldLabel field="medicalConditionNotes" errors={fieldErrors} optional>{t("medicalConditionNotes")}</FieldLabel>
         <textarea className={ui.input} rows={3} maxLength={1000} value={form.medicalConditionNotes} onChange={(e) => update("medicalConditionNotes", e.target.value)} />
+        <FieldLabel field="providerGender" errors={fieldErrors}>{t("providerGender")}</FieldLabel>
+        <div className="flex flex-wrap gap-2">
+          {GENDER_PREFERENCES.map((g) => (
+            <button type="button" key={g} onClick={() => update("providerGender", g)} className={ui.pill(form.providerGender === g)}>
+              {t(`providerGenderOptions.${g}`)}
+            </button>
+          ))}
+        </div>
+        <BudgetField units={BUDGET_UNITS} value={form.budget} onChange={(v) => update("budget", v)} errors={fieldErrors} />
       </div>
 
       <div className="flex flex-col gap-3">

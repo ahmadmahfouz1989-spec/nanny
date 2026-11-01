@@ -529,7 +529,13 @@
     "section1Title": "You and your area",
     "section2Title": "License & qualifications",
     "section3Title": "Work preferences & availability",
-    "section4Title": "Specialties, languages & intro"
+    "section4Title": "Specialties, languages & intro",
+    "rateNotePlaceholder": "e.g. $60 for a 12-hour night shift (optional)",
+    "gender": "You are…",
+    "genderOptions": {
+      "female": "A woman",
+      "male": "A man"
+    }
   },
   "NursingSeekerOnboarding": {
     "createTitle": "Create your request",
@@ -550,7 +556,13 @@
     "section1Title": "You and your area",
     "section2Title": "Care needed",
     "section3Title": "Schedule",
-    "section4Title": "Languages"
+    "section4Title": "Languages",
+    "providerGender": "Would you prefer a woman or a man?",
+    "providerGenderOptions": {
+      "any": "No preference",
+      "female": "A woman",
+      "male": "A man"
+    }
   },
   "TutoringProviderOnboarding": {
     "createTitle": "Create your tutoring profile",
@@ -569,7 +581,8 @@
     "section1Title": "You and your area",
     "section2Title": "What you teach",
     "section3Title": "Availability & experience",
-    "section4Title": "Languages & intro"
+    "section4Title": "Languages & intro",
+    "rateNotePlaceholder": "e.g. $15 an hour for school subjects, $25 for SAT (optional)"
   },
   "TutoringSeekerOnboarding": {
     "createTitle": "Create your request",
@@ -608,7 +621,9 @@
     "section1Title": "You and your area",
     "section2Title": "Your trade",
     "section3Title": "Where and when you work",
-    "section4Title": "About you"
+    "section4Title": "About you",
+    "rateNotePlaceholder": "e.g. Visit and diagnosis $10, deducted if I do the job (optional)",
+    "photosHint": "Tip: once your profile is saved, add before-and-after photos of your work from your profile page — clients choose by photos."
   },
   "MaintenanceSeekerOnboarding": {
     "createTitle": "Create your request",
@@ -955,7 +970,8 @@
     "canDrive": "I can drive",
     "certifications": "Certifications",
     "shortIntro": "Short introduction",
-    "createTitle": "Create your nanny profile"
+    "createTitle": "Create your nanny profile",
+    "rateNotePlaceholder": "e.g. $6 an hour for babysitting, $500 a month full-time (optional)"
   },
   "SavedProfiles": {
     "saveLabel": "Save profile",
@@ -1562,7 +1578,8 @@
     "priceNote": "More about your prices",
     "priceNotePlaceholder": "e.g. Transport included inside Beirut",
     "shortIntro": "About you",
-    "shortIntroPlaceholder": "e.g. 6 years cleaning homes in Metn, careful and on time"
+    "shortIntroPlaceholder": "e.g. 6 years cleaning homes in Metn, careful and on time",
+    "photosHint": "Tip: once your profile is saved, add before-and-after photos from your profile page — clients choose by photos."
   },
   "CleaningFields": {
     "cleaningServices": "Services",
@@ -2131,5 +2148,49 @@
     "place": "Where",
     "timing": "When",
     "budgetUsd": "Budget"
+  },
+  "Rates": {
+    "howYouCharge": "How you charge",
+    "unit": {
+      "per_hour": "Per hour",
+      "per_day": "Per day or shift",
+      "per_month": "Per month",
+      "per_session": "Per session",
+      "per_job": "Per job",
+      "quote": "To discuss"
+    },
+    "fromQuestion": {
+      "per_hour": "From how much an hour? (USD)",
+      "per_day": "From how much a day or shift? (USD)",
+      "per_month": "From how much a month? (USD)",
+      "per_session": "From how much a session? (USD)",
+      "per_job": "From how much a job? (USD)"
+    },
+    "notePlaceholder": "More about your prices (optional)",
+    "yourBudget": "Your budget (USD)",
+    "budgetPlaceholder": "Up to how much?",
+    "price": "Price",
+    "prices": "About prices",
+    "budget": "Budget",
+    "from": {
+      "per_hour": "From {amount} an hour",
+      "per_day": "From {amount} a day",
+      "per_month": "From {amount} a month",
+      "per_session": "From {amount} a session",
+      "per_job": "From {amount} a job"
+    },
+    "upTo": {
+      "per_hour": "Up to {amount} an hour",
+      "per_day": "Up to {amount} a day",
+      "per_month": "Up to {amount} a month",
+      "per_session": "Up to {amount} a session",
+      "per_job": "Up to {amount} a job"
+    },
+    "gender": "Gender",
+    "prefers": "Prefers",
+    "genders": {
+      "female": "A woman",
+      "male": "A man"
+    }
   }
 }

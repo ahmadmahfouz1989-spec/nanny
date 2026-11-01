@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { budgetSchema, rateSchema } from "@/lib/validation/rate";
 import { areaFields, coverageFields } from "@/lib/validation/area";
 import { DAYS, nationality } from "@/lib/validation/profile";
 
@@ -53,6 +54,7 @@ export const tutoringProviderSchema = z.object({
   yearsExperience: z.number().min(0, "Enter your years of experience"),
   hasTransportation: z.boolean(),
   shortIntro: z.string().max(500, "That's too long").optional(),
+  rate: rateSchema,
   languageIds: z.array(uuid).default([]),
 });
 
@@ -72,6 +74,7 @@ export const tutoringSeekerSchema = z.object({
   desiredStartDate: z.string().refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date"),
   transportationRequired: z.boolean(),
   additionalNotes: z.string().max(1000, "That's too long").optional(),
+  budget: budgetSchema,
   languageIds: z.array(uuid).default([]),
 });
 

@@ -13,10 +13,15 @@ import DistrictCoverage from "@/components/onboarding/district-coverage";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
-import { CARE_SPECIALTIES, nursingProviderSchema } from "@/lib/validation/nursing";
+import { CARE_SPECIALTIES, GENDERS, nursingProviderSchema } from "@/lib/validation/nursing";
+import RateField, { EMPTY_RATE, ratePayload, rateState, type RateState } from "@/components/onboarding/rate-field";
+import IdDocumentField from "@/components/onboarding/id-document-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
+
+const RATE_UNITS = CATEGORY_RATE_UNITS.nursing;
 
 type FormState = {
   fullName: string;
@@ -41,6 +46,8 @@ type FormState = {
   hasNursingDiploma: boolean;
   careSpecialties: string[];
   shortIntro: string;
+  rate: RateState;
+  gender: (typeof GENDERS)[number] | "";
   languageIds: string[];
 };
 
@@ -67,6 +74,8 @@ const initialState: FormState = {
   hasNursingDiploma: false,
   careSpecialties: [],
   shortIntro: "",
+  rate: EMPTY_RATE,
+  gender: "",
   languageIds: [],
 };
 
@@ -111,6 +120,8 @@ function stateFromExisting(p: ExistingProfile): FormState {
     hasNursingDiploma: !!a.hasNursingDiploma,
     careSpecialties: (a.careSpecialties as string[]) ?? [],
     shortIntro: (a.shortIntro as string) ?? "",
+    rate: rateState(a.rate),
+    gender: (a.gender as (typeof GENDERS)[number]) ?? "",
     languageIds: (a.languageIds as string[]) ?? [],
   };
 }
@@ -181,6 +192,8 @@ export default function NursingProviderForm({
     hasNursingDiploma: form.hasNursingDiploma,
     careSpecialties: form.careSpecialties,
     shortIntro: form.shortIntro || undefined,
+    rate: ratePayload(form.rate),
+    gender: form.gender || undefined,
     languageIds: form.languageIds,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(nursingProviderSchema, payload) : {};
@@ -240,6 +253,8 @@ export default function NursingProviderForm({
         {initialProfile && (
           <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
         )}
+        {/* Optional: a checked ID shows as "ID checked" on the profile. */}
+        {initialProfile && <IdDocumentField profileId={initialProfile.id} onStatus={() => {}} optional />}
         <LocationPicker
           governorateId={form.locationId}
           detail={form.locationDetail}
@@ -256,6 +271,14 @@ export default function NursingProviderForm({
           homeDistrictId={form.districtId}
           homeGovernorateId={form.locationId}
         />
+        <FieldLabel field="gender" errors={fieldErrors}>{t("gender")}</FieldLabel>
+        <div className="flex flex-wrap gap-2">
+          {GENDERS.map((g) => (
+            <button type="button" key={g} onClick={() => update("gender", g)} className={ui.pill(form.gender === g)}>
+              {t(`genderOptions.${g}`)}
+            </button>
+          ))}
+        </div>
         <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
         <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
       </div>
@@ -329,6 +352,7 @@ export default function NursingProviderForm({
 
         <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
+        <RateField units={RATE_UNITS} value={form.rate} onChange={(v) => update("rate", v)} errors={fieldErrors} notePlaceholder={t("rateNotePlaceholder")} />
       </div>
     </EditShell>
   );

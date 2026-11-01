@@ -435,6 +435,7 @@ export default function CleaningProviderForm({
 
         <FieldLabel field="shortIntro" errors={fieldErrors} optional>{t("shortIntro")}</FieldLabel>
         <textarea className={ui.input} rows={4} maxLength={500} placeholder={t("shortIntroPlaceholder")} value={form.shortIntro} onChange={(e) => update("shortIntro", e.target.value)} />
+        <p className="text-xs text-muted">{t("photosHint")}</p>
       </div>
     </EditShell>
   );

@@ -127,6 +127,13 @@ describe("nursing rubric", () => {
     expect(r.breakdown.specialty.met).toBe(false);
     expect(r.score).toBe(96.5);
   });
+
+  it("keeps to a woman or a man when asked, and still shows nurses who haven't said", () => {
+    const wantsWoman = { ...seeker, providerGender: "female" as const };
+    expect(computeCareMatchScore(wantsWoman, { ...provider, gender: "male" }).score).toBe(0);
+    expect(computeCareMatchScore(wantsWoman, { ...provider, gender: "female" }).score).toBe(100);
+    expect(computeCareMatchScore(wantsWoman, provider).score).toBe(100);
+  });
 });
 
 describe("tutoring rubric", () => {

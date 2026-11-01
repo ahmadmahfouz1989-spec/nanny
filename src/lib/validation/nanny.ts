@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { budgetSchema, rateSchema } from "@/lib/validation/rate";
 import { areaFields, coverageFields } from "@/lib/validation/area";
 import { AGE_GROUPS, DAYS, nationality } from "@/lib/validation/profile";
 
@@ -32,6 +33,7 @@ export const nannySeekerSchema = z.object({
   transportationRequired: z.boolean(),
   additionalDuties: z.array(z.string()).default([]),
   familyDescription: z.string().max(1000).optional(),
+  budget: budgetSchema,
   languageIds: z.array(uuid).default([]),
 });
 
@@ -61,6 +63,7 @@ export const nannyProviderSchema = z.object({
   canDrive: z.boolean(),
   certifications: z.array(z.string()).default([]),
   shortIntro: z.string().max(500).optional(),
+  rate: rateSchema,
   languageIds: z.array(uuid).default([]),
   experience: z.array(nannyExperienceEntrySchema).min(1),
 });

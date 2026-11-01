@@ -24,6 +24,8 @@ export interface CareSeekerMatchInput {
   transportationRequired: boolean;
   careSpecialtiesNeeded: string[];
   languageIds: string[];
+  /** A woman or a man asked for; "any" (or missing, on older requests) when not. */
+  providerGender?: "any" | "female" | "male";
 }
 
 export interface CareProviderMatchInput {
@@ -34,6 +36,8 @@ export interface CareProviderMatchInput {
   hasTransportation: boolean;
   careSpecialties: string[];
   languageIds: string[];
+  /** Missing on profiles made before it was asked. */
+  gender?: "female" | "male" | null;
 }
 
 export const CARE_CRITERIA_WEIGHTS = {
@@ -119,6 +123,11 @@ export function computeCareMatchScore(
     score += weighted;
     breakdown[key] = { raw: raw[key], weighted, met: raw[key] >= 0.75 };
   }
+
+  // A family who asked for a woman isn't shown men, and the other way
+  // round. A nurse who hasn't said yet (an older profile) still shows.
+  const asked = seeker.providerGender ?? "any";
+  if (asked !== "any" && provider.gender && provider.gender !== asked) score = 0;
 
   return { score: Math.round(score * 10000) / 100, breakdown };
 }

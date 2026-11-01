@@ -13,9 +13,13 @@ import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { DAYS } from "@/lib/validation/profile";
 import { SUBJECTS, GRADE_LEVELS, TUTORING_FORMATS, tutoringSeekerSchema } from "@/lib/validation/tutoring";
+import BudgetField, { budgetPayload, budgetState, type BudgetState } from "@/components/onboarding/budget-field";
+import { CATEGORY_RATE_UNITS } from "@/lib/validation/rate";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
+
+const BUDGET_UNITS = CATEGORY_RATE_UNITS.tutoring;
 
 type FormState = {
   fullName: string;
@@ -32,6 +36,7 @@ type FormState = {
   desiredStartDate: string;
   transportationRequired: boolean;
   additionalNotes: string;
+  budget: BudgetState;
   languageIds: string[];
 };
 
@@ -50,6 +55,7 @@ const initialState: FormState = {
   desiredStartDate: "",
   transportationRequired: false,
   additionalNotes: "",
+  budget: { unit: BUDGET_UNITS[0], maxUsd: "" },
   languageIds: [],
 };
 
@@ -82,6 +88,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     desiredStartDate: (a.desiredStartDate as string) ?? "",
     transportationRequired: !!a.transportationRequired,
     additionalNotes: (a.additionalNotes as string) ?? "",
+    budget: budgetState(a.budget, BUDGET_UNITS),
     languageIds: (a.languageIds as string[]) ?? [],
   };
 }
@@ -145,6 +152,7 @@ export default function TutoringSeekerForm({
     desiredStartDate: form.desiredStartDate,
     transportationRequired: form.transportationRequired,
     additionalNotes: form.additionalNotes || undefined,
+    budget: budgetPayload(form.budget),
     languageIds: form.languageIds,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(tutoringSeekerSchema, payload) : {};
@@ -250,6 +258,7 @@ export default function TutoringSeekerForm({
 
         <FieldLabel field="additionalNotes" errors={fieldErrors} optional>{t("additionalNotes")}</FieldLabel>
         <textarea className={ui.input} rows={3} maxLength={1000} value={form.additionalNotes} onChange={(e) => update("additionalNotes", e.target.value)} />
+        <BudgetField units={BUDGET_UNITS} value={form.budget} onChange={(v) => update("budget", v)} errors={fieldErrors} />
       </div>
 
       <div className="flex flex-col gap-3">

@@ -18,6 +18,7 @@ import { ChevronDownIcon } from "@/components/home-icons";
 import { cleaningPrice } from "@/components/cleaning-details";
 import { beautyPrice } from "@/components/beauty-details";
 import { carPrice } from "@/components/car-details";
+import { ratePrice } from "@/components/rate-details";
 
 export type OtherProfile = {
   id: string;
@@ -74,6 +75,7 @@ export default function MatchCard({
   const tBeautyFields = useTranslations("BeautyFields");
   const tCar = useTranslations("CarServices");
   const tCarFields = useTranslations("CarFields");
+  const tRates = useTranslations("Rates");
   const format = useFormatter();
   const locale = useLocale();
 
@@ -113,6 +115,7 @@ export default function MatchCard({
     (a.cleaningServices ? cleaningPrice(a, tCleaningFields, format) : null) ??
     (a.beautyServices ? beautyPrice(a, tBeautyFields, format) : null) ??
     (a.carServices ? carPrice(a, tCarFields, format) : null) ??
+    ratePrice(a.rate, tRates, format) ??
     (typeof a.priceNote === "string" && a.priceNote.trim() ? a.priceNote : null);
   // The full details live on the profile page; the card keeps a taste.
   const intro = [a.shortIntro, a.jobDescription, a.familyDescription].find(
