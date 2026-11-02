@@ -59,6 +59,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  // Same rule as posting: no profile, no public replies.
+  const { count: profiles } = await supabase
+    .from("generic_profiles")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .neq("status", "draft");
+  if (!profiles) {
+    return NextResponse.json(
+      { error: "Create a profile before replying, so people can see who they're talking to.", code: "profile_required" },
+      { status: 403 },
+    );
+  }
+
   if (containsContactInfo(parsed.data.body)) {
     return NextResponse.json(
       { error: "Please remove phone numbers, emails, or social handles. Contact details are only shared once you match." },

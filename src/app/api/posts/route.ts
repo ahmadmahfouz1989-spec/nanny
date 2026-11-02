@@ -8,14 +8,16 @@ import { resolvePostAuthors, decoratePosts, POST_FEED_COLUMNS } from "@/lib/post
 import { reportMetaEvent } from "@/lib/meta-capi";
 
 const PAGE_SIZE = 20;
+const PROFILE_REQUIRED = "Create a profile before posting, so people can see who they're talking to.";
 
 const createSchema = z.object({
   caption: z.string().trim().min(1).max(500),
   kind: z.enum(["looking_for", "offering"]),
-  // Omitted or null always means "no chosen identity" (the legacy
-  // display path) -- the server never guesses one on the caller's behalf.
-  // See src/lib/post-identities.ts for how the client learns what's
-  // eligible and which one to default to.
+  // Which of the caller's profiles the post shows as. Required: people
+  // without a profile can't post (they showed up as "Someone"). Kept
+  // nullable in the schema so an old client gets the clear "create a
+  // profile" error below rather than a validation dump. See
+  // src/lib/post-identities.ts for how the client learns what's eligible.
   postedAs: z.object({ profileId: z.string().uuid() }).nullable().optional(),
 });
 
@@ -49,9 +51,14 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  const results = await decoratePosts(posts ?? [], user.id, supabase);
+  const decorated = await decoratePosts(posts ?? [], user.id, supabase);
+  // Older posts from accounts with no profile at all (they showed as
+  // "Someone") stay out of the public feed; their author still sees them
+  // under "my posts".
+  const results = mine ? decorated : decorated.filter((p) => p.author);
+  const last = posts?.[posts.length - 1];
 
-  return NextResponse.json({ posts: results, nextCursor: results.length === PAGE_SIZE ? results[results.length - 1].created_at : null });
+  return NextResponse.json({ posts: results, nextCursor: posts?.length === PAGE_SIZE && last ? last.created_at : null });
 }
 
 export async function POST(request: Request) {
@@ -74,13 +81,17 @@ export async function POST(request: Request) {
     );
   }
 
+  if (!parsed.data.postedAs) {
+    return NextResponse.json({ error: PROFILE_REQUIRED, code: "profile_required" }, { status: 403 });
+  }
+
   const insertPayload: TablesInsert<"posts"> = {
     user_id: user.id,
     kind: parsed.data.kind,
     caption: parsed.data.caption,
   };
 
-  if (parsed.data.postedAs) {
+  {
     const { profileId } = parsed.data.postedAs;
     // Re-verified here (not just left to RLS) so a bad postedAs value gets
     // a clean 400 instead of a raw permission-denied error -- RLS

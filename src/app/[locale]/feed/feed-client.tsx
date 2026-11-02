@@ -319,7 +319,8 @@ export default function FeedClient({
     const data = (await res?.json().catch(() => ({}))) ?? {};
     setSendingReply((prev) => ({ ...prev, [postId]: false }));
     if (!res || !res.ok) {
-      setReplyError((prev) => ({ ...prev, [postId]: typeof data.error === "string" ? data.error : t("replyError") }));
+      const message = data.code === "profile_required" ? t("profileRequired") : typeof data.error === "string" ? data.error : t("replyError");
+      setReplyError((prev) => ({ ...prev, [postId]: message }));
       return;
     }
     const reply = { ...data.reply, parent_reply_id: parentReplyId ?? null } as Reply;

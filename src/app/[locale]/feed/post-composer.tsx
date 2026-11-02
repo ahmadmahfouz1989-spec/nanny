@@ -2,6 +2,7 @@
 
 import { useLocale, useTranslations } from "next-intl";
 import type { PostIdentityOption } from "@/lib/post-identities";
+import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { Avatar } from "./feed-shared";
 
@@ -41,6 +42,20 @@ export default function PostComposer({
   function identityLabel(identity: PostIdentityOption) {
     const categoryName = locale === "ar" ? identity.categoryNameAr : identity.categoryNameEn;
     return `${identity.fullName} (${categoryName})`;
+  }
+
+  // Posting needs a profile (the post shows as one of them), so someone
+  // without one is sent to make one instead of getting a box that can't post.
+  if (identities?.length === 0) {
+    return (
+      <div className="flex items-center gap-3 p-4 border-b border-border">
+        <Avatar photoUrl={null} size={44} />
+        <p className="flex-1 min-w-0 text-sm text-muted">{t("profileRequired")}</p>
+        <Link href="/categories" className={ui.buttonPrimary + " shrink-0 px-4! py-2!"}>
+          {t("createProfile")}
+        </Link>
+      </div>
+    );
   }
 
   return (

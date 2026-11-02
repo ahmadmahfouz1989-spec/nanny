@@ -132,7 +132,9 @@
     "composeOffer": "I'm offering help",
     "placeholderNeed": "What do you need? e.g. A math tutor in Hazmieh, twice a week",
     "placeholderOffer": "What do you offer? e.g. Babysitting evenings in Jounieh",
-    "postingAs": "Posting as"
+    "postingAs": "Posting as",
+    "profileRequired": "Create a profile to post, so people can see who they're talking to.",
+    "createProfile": "Create profile"
   },
   "Home": {
     "badge": "Now live across Lebanon",
