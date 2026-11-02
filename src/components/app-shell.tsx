@@ -3,6 +3,7 @@ import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
 import BrandMark from "@/components/brand-mark";
+import { ui } from "@/lib/ui";
 import ThemeSwitcher from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
@@ -204,7 +205,19 @@ export default async function AppShell({
                   <ThemeSwitcher />
                   <LocaleSwitcher />
                 </div>
-                <SignOutButton />
+                {/* Visitors can browse and search too (no account): sign in instead. */}
+                {user ? (
+                  <SignOutButton />
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <Link href="/signup" className={ui.buttonPrimary + " text-center"}>
+                      {t("signup")}
+                    </Link>
+                    <Link href="/login" className="text-sm font-medium text-primary">
+                      {t("login")}
+                    </Link>
+                  </div>
+                )}
               </div>
             </aside>
 

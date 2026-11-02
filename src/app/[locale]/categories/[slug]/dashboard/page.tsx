@@ -69,11 +69,13 @@ export default async function CategoryDashboardPage({
     );
 
   // Nothing real submitted yet (no row at all, or only an abandoned draft)
-  // -- straight to the role picker rather than a "no profile yet, click
+  // -- to the service's providers (below) rather than a "no profile yet, click
   // here" dead end. The picker itself decides whether to show both
   // options again or resume the draft's form.
   if (myProfiles.length === 0) {
-    redirect({ href: `/categories/${slug}/onboarding`, locale });
+    // Nothing here yet: see who's offering it first (no profile needed to
+    // look); the page has the ways to ask or to offer.
+    redirect({ href: `/browse/${slug}`, locale });
     return;
   }
 

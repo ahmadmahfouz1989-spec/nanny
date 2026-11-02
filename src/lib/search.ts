@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { getCategories } from "@/lib/categories";
 import { normalizeForSearch, searchAlternatives, searchWords } from "@/lib/profile-search";
 import { fillMissingSearchText } from "@/lib/search-text";
@@ -56,12 +57,17 @@ function about(a: Record<string, unknown>): string | null {
  * one they also cover. Never the viewer's own profiles.
  * Runs as the viewer, so the usual visibility rules apply (approved,
  * active, not suspended).
+ *
+ * Signed out (`userId` null): providers only, with their public page on,
+ * read on the server (visitors can't read profiles themselves) -- never
+ * seekers or posts.
  */
-export async function search(query: string, region: string | null, userId: string, locale: string): Promise<SearchResults> {
+export async function search(query: string, region: string | null, userId: string | null, locale: string): Promise<SearchResults> {
   const words = searchWords(query).map(safeWord).filter(Boolean);
   if (words.length === 0) return { offering: [], seeking: [], posts: [] };
 
-  const supabase = await createClient();
+  const visitor = userId === null;
+  const supabase = visitor ? createAdminClient() : await createClient();
   // The region is a governorate or a district (Home's area picker).
   const { data: regionRow } = region
     ? await supabase.from("locations").select("level, parent_location_id").eq("id", region).maybeSingle()
@@ -79,12 +85,12 @@ export async function search(query: string, region: string | null, userId: strin
   const people = (role: "seeker" | "provider") => {
     let q = supabase
       .from("generic_profiles")
-      .select("id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
+      .select("id, user_id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
       .eq("role", role)
       .eq("status", "active")
       .eq("moderation_status", "approved")
-      .neq("user_id", userId)
       .in("category_id", categories.map((c) => c.id));
+    q = visitor ? q.eq("public_page", true) : q.neq("user_id", userId);
     for (const w of words) {
       // The word, or the word its everyday synonyms are stored under.
       const alts = searchAlternatives(w).map(safeWord).filter(Boolean);
@@ -110,12 +116,25 @@ export async function search(query: string, region: string | null, userId: strin
     postQuery = postQuery.or(searchAlternatives(w).map(safeWord).filter(Boolean).map((a) => `caption.ilike.*${a}*`).join(","));
   }
 
+  const none = Promise.resolve({ data: [] as never[] });
   const [{ data: providersRaw }, { data: seekersRaw }, { data: posts }] = await Promise.all([
     people("provider"),
-    people("seeker"),
-    postQuery.order("created_at", { ascending: false }).limit(SEARCH_LIMIT),
+    visitor ? none : people("seeker"),
+    visitor ? none : postQuery.order("created_at", { ascending: false }).limit(SEARCH_LIMIT),
   ]);
-  const [providers, seekers] = await Promise.all([withPlaceNames(providersRaw ?? []), withPlaceNames(seekersRaw ?? [])]);
+  // The database's own rule hides suspended accounts from signed-in
+  // viewers; read on the server for a visitor, it's done here.
+  let shownProviders = providersRaw ?? [];
+  if (visitor && shownProviders.length) {
+    const { data: suspended } = await supabase
+      .from("users")
+      .select("id")
+      .in("id", shownProviders.map((p) => p.user_id))
+      .eq("status", "suspended");
+    const out = new Set((suspended ?? []).map((u) => u.id));
+    shownProviders = shownProviders.filter((p) => !out.has(p.user_id));
+  }
+  const [providers, seekers] = await Promise.all([withPlaceNames(shownProviders), withPlaceNames(seekersRaw ?? [])]);
 
   const byId = new Map(categories.map((c) => [c.id, c]));
   const toPerson = (p: NonNullable<typeof providers>[number]): PersonResult => {

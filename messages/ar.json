@@ -183,7 +183,9 @@
     "stepLabel": "الخطوة {number}",
     "readyTitle": "جاهز للبدء؟",
     "footer": "© {year} ouiKnow. نربط الناس في جميع أنحاء لبنان.",
-    "liveServices": "{count} خدمات متاحة"
+    "liveServices": "{count} خدمات متاحة",
+    "heroSearchPlaceholder": "دوّر: مربية، كهربجي، أستاذ، توصيل…",
+    "heroSearch": "دوّر"
   },
   "Auth": {
     "genericError": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
@@ -2440,5 +2442,24 @@
     "opening": "عم نفتح المحادثة…",
     "yourName": "اسمك",
     "error": "صار في مشكلة. جرّب مرّة تانية."
+  },
+  "Browse": {
+    "metaTitle": "{service} بلبنان — ouiKnow",
+    "title": "{service}",
+    "subtitle": "مقدّمي خدمة موافق عليهم بكل لبنان. تفرّج براحتك — بس بدّك حساب لتتواصل مع حدا.",
+    "ctaText": "بدّك هنّي يجوك؟ انشر شو بدّك وبيوصلك ردود.",
+    "ctaQuotes": "خود أسعار",
+    "ctaOrder": "اطلب توصيل",
+    "ctaRequest": "انشر طلب",
+    "allLebanon": "كل لبنان",
+    "all": "الكل",
+    "emptyTitle": "ما في حدا هون بعد",
+    "emptyBody": "جرّب كل لبنان، أو انشر شو بدّك — اللي بينضمّوا بعدين بيشوفوه.",
+    "widen": "ورجيني كل لبنان",
+    "new": "جديد",
+    "idChecked": "الهوية متحقّق منها",
+    "more": "ورجيني أكتر",
+    "offerToo": "بتقدّم {service}؟",
+    "offerLink": "اعمل ملفك"
   }
 }

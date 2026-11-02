@@ -183,7 +183,9 @@
     "stepLabel": "Step {number}",
     "readyTitle": "Ready to get started?",
     "footer": "© {year} ouiKnow. Connecting people across Lebanon.",
-    "liveServices": "{count} services live"
+    "liveServices": "{count} services live",
+    "heroSearchPlaceholder": "Search: nanny, electrician, tutor, delivery…",
+    "heroSearch": "Search"
   },
   "Auth": {
     "genericError": "Something went wrong. Please try again.",
@@ -2440,5 +2442,24 @@
     "opening": "Opening…",
     "yourName": "Your name",
     "error": "Something went wrong. Try again."
+  },
+  "Browse": {
+    "metaTitle": "{service} in Lebanon — ouiKnow",
+    "title": "{service}",
+    "subtitle": "Approved providers across Lebanon. Look freely — you only need an account to contact someone.",
+    "ctaText": "Want them to come to you? Post what you need and get replies.",
+    "ctaQuotes": "Get quotes",
+    "ctaOrder": "Order a delivery",
+    "ctaRequest": "Post a request",
+    "allLebanon": "All of Lebanon",
+    "all": "All",
+    "emptyTitle": "No one here yet",
+    "emptyBody": "Try all of Lebanon, or post what you need — providers who join later will see it.",
+    "widen": "Show all of Lebanon",
+    "new": "New",
+    "idChecked": "ID checked",
+    "more": "Show more",
+    "offerToo": "Do you offer {service}?",
+    "offerLink": "Create your profile"
   }
 }

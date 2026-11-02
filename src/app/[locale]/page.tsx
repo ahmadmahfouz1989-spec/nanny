@@ -40,7 +40,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const tCare = await getTranslations("CareSpecialties");
   const tSubject = await getTranslations("Subjects");
   const tTrade = await getTranslations("Trades");
-  const categories = await getCategories();
+  // The service tiles open each service's providers -- no account needed to look.
+  const categories = (await getCategories()).map((c) => ({ ...c, href: c.href ? `/browse/${c.slug}` : null }));
 
   const supabase = await createClient();
   const {
@@ -147,8 +148,24 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               ))}
             </ul>
 
+            {/* Look first, no account needed: search goes to the open results. */}
+            <form role="search" action={`/${locale}/search`} className="oui-in mt-3 flex w-full max-w-lg items-center gap-2 rounded-2xl border border-border bg-surface p-1.5 ps-4 shadow-sm focus-within:border-primary/50" style={{ animationDelay: "0.2s" }}>
+              <input
+                type="search"
+                name="q"
+                dir="auto"
+                placeholder={t("heroSearchPlaceholder")}
+                aria-label={t("heroSearchPlaceholder")}
+                enterKeyHint="search"
+                className="min-w-0 flex-1 bg-transparent py-2 text-[15px] outline-none placeholder:text-muted"
+              />
+              <button type="submit" className={ui.buttonPrimary + " shrink-0 px-5!"}>
+                {t("heroSearch")}
+              </button>
+            </form>
+
             <div className="oui-in mt-3" style={{ animationDelay: "0.24s" }}>
-              <Link href="/signup" className={ui.buttonPrimary + " px-8! py-3! text-base!"}>
+              <Link href="/signup" className={ui.buttonSecondary + " px-8! py-3! text-base!"}>
                 {t("ctaGetStarted")}
               </Link>
             </div>

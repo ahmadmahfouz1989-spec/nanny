@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { getTranslations } from "next-intl/server";
-import { redirect, Link } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import { Avatar } from "../feed/feed-shared";
@@ -27,10 +27,7 @@ export default async function SearchPage({
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) {
-    redirect({ href: "/login", locale });
-    return;
-  }
+  // Visitors search too: providers only (lib/search.ts).
 
   const t = await getTranslations("Search");
   const query = q.trim().slice(0, 100);
@@ -41,7 +38,7 @@ export default async function SearchPage({
     : { data: null };
   const regionName = place ? (locale === "ar" ? place.name_ar : place.name_en) : null;
 
-  const results = query ? await search(query, region, user.id, locale) : null;
+  const results = query ? await search(query, region, user?.id ?? null, locale) : null;
   const total = results ? results.offering.length + results.seeking.length + results.posts.length : 0;
   const widen = `/search?${new URLSearchParams({ q: query, all: "1" })}`;
   const narrow = `/search?${new URLSearchParams({ q: query })}`;

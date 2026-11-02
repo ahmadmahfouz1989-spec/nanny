@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import CategoryTiles from "@/components/category-tiles";
@@ -17,11 +16,8 @@ export default async function CategoriesPage({
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) {
-    redirect({ href: "/login", locale });
-  }
-
-  const categories = await getCategories();
+  // Open to visitors too: a service tile takes them to its providers.
+  const categories = (await getCategories()).map((c) => (user ? c : { ...c, href: c.href ? `/browse/${c.slug}` : null }));
 
   return (
     <AppShell active="categories">
