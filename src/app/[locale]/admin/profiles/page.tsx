@@ -86,6 +86,10 @@ export default function AdminProfilesPage() {
   const [submitting, setSubmitting] = useState<string | null>(null);
   const [categories, setCategories] = useState<{ slug: string; nameEn: string; nameAr: string }[]>([]);
   const [statusFilter, setStatusFilter] = useState<"pending" | "approved">("pending");
+  // Decided profiles stay where they are (marked done) until the list is
+  // reloaded: removing them moved the next card under the pointer, so a
+  // second click could approve the wrong person.
+  const [decided, setDecided] = useState<Record<string, "approved" | "rejected">>({});
   const [categoryFilter, setCategoryFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
@@ -132,7 +136,7 @@ export default function AdminProfilesPage() {
 
     setRejecting(null);
     setNotes("");
-    setProfiles((prev) => prev?.filter((p) => p.id !== profile.id) ?? null);
+    setDecided((prev) => ({ ...prev, [profile.id]: status }));
 
     if (status === "rejected") {
       const body = await res.json().catch(() => null);
@@ -351,6 +355,10 @@ export default function AdminProfilesPage() {
                       </button>
                     </div>
                   </div>
+                ) : decided[profile.id] ? (
+                  <p className={`text-sm font-medium ${decided[profile.id] === "approved" ? "text-success" : "text-danger"}`}>
+                    ✓ {decided[profile.id] === "approved" ? t("moderationApproved") : t("decidedRejected")}
+                  </p>
                 ) : (
                   <div className="flex items-center gap-2">
                     <button

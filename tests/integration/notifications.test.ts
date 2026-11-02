@@ -241,8 +241,23 @@ describe("profile review", () => {
     const res = await moderation.PATCH(new Request("http://localhost/api", { method: "PATCH", body: JSON.stringify({ status: "approved" }) }), ctx(pending));
     expect(res.status).toBe(200);
     await settle();
-    expect(pushesTo(outsider)[0]).toMatchObject({ url: "/en/categories/errands/dashboard" });
-    expect(pushesTo(outsider)[0]!.body).toMatch(/Delivery|Errands|approved/);
+    // A rider's approval says what to do next: nothing reaches them until
+    // they switch to Available.
+    expect(pushesTo(outsider)[0]).toMatchObject({ url: "/en/orders?tab=provider" });
+    expect(pushesTo(outsider)[0]!.body).toMatch(/approved.*Available/);
+  });
+
+  it("names the service on other approvals and opens its dashboard", async () => {
+    const moderator = await createUser("n-admin2");
+    await admin.from("users").update({ role: "admin" }).eq("id", moderator.id);
+    const pending = await createProfile(outsider, "tutoring", "seeker", {}, { approved: false });
+    as(moderator);
+    const res = await moderation.PATCH(new Request("http://localhost/api", { method: "PATCH", body: JSON.stringify({ status: "approved" }) }), ctx(pending));
+    expect(res.status).toBe(200);
+    await settle();
+    const last = pushesTo(outsider).at(-1)!;
+    expect(last).toMatchObject({ url: "/en/categories/tutoring/dashboard" });
+    expect(last.body).toMatch(/Tutoring/);
   });
 });
 

@@ -44,7 +44,14 @@ const ORDER_TYPES = new Set([
 // (?match=<id>, which the dashboard page also uses to pick the right
 // seeking/offering tab); a rating you received opens the ratings section
 // of your profile.
+// A delivery rider's approval isn't about matches: nothing reaches them
+// until they switch to Available, so that's what it says and where it goes.
+function isRiderApproval(n: NotificationLike) {
+  return n.type === "profile_approved" && n.payload?.category_slug === "errands" && n.payload?.role === "provider";
+}
+
 export function notificationHref(n: NotificationLike): string {
+  if (isRiderApproval(n)) return "/orders?tab=provider";
   const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
   const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   if (ORDER_TYPES.has(n.type)) {
@@ -95,6 +102,7 @@ const PER_CATEGORY = new Set(["new_match", "profile_approved", "profile_rejected
 export function notificationLabel(n: NotificationLike, t: Translate, categoryName?: (slug: string) => string | null): string {
   const slug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   const category = slug && categoryName ? categoryName(slug) : null;
+  if (isRiderApproval(n)) return t("profile_approved_rider");
   if (category && PER_CATEGORY.has(n.type)) return t(`${n.type}_in`, { category });
   if (ORDER_TYPES.has(n.type)) {
     const number = typeof n.payload?.order_number === "number" ? n.payload.order_number : "";
@@ -132,6 +140,6 @@ const ACTIONS: Record<string, string> = {
 };
 
 export function notificationAction(n: NotificationLike, t: Translate): string | null {
-  const key = ACTIONS[n.type];
+  const key = isRiderApproval(n) ? "actionGoAvailable" : ACTIONS[n.type];
   return key ? t(key) : null;
 }

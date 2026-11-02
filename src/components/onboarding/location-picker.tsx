@@ -52,6 +52,14 @@ export default function LocationPicker({
   const searchSeq = useRef(0);
   // A plain flag for the effects (onArea itself is a new function each render).
   const withAreas = !!onArea;
+  // The latest onArea and district, for the auto-pick below (read after a
+  // fetch, so they mustn't be the values from when it started).
+  const onAreaRef = useRef(onArea);
+  const districtRef = useRef(districtId);
+  useEffect(() => {
+    onAreaRef.current = onArea;
+    districtRef.current = districtId;
+  });
 
   useEffect(() => {
     fetch("/api/locations?level=governorate")
@@ -66,7 +74,14 @@ export default function LocationPicker({
     let active = true;
     fetch(`/api/areas?governorate=${governorateId}`)
       .then((r) => r.json())
-      .then((b) => active && setDistricts(b.areas ?? []))
+      .then((b) => {
+        if (!active) return;
+        const list: AreaHit[] = b.areas ?? [];
+        setDistricts(list);
+        // A governorate with a single district (Beirut, Akkar): nothing to
+        // choose, so choose it.
+        if (list.length === 1 && !districtRef.current) onAreaRef.current?.(list[0].id, null);
+      })
       .catch(() => {});
     return () => {
       active = false;

@@ -38,10 +38,11 @@ const MESSAGE_PAGE_SIZE = 200;
 const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at";
 const CONVERSATION_CLOSED = "This conversation is closed";
 
-// Raised by before_generic_message_insert (20261005000001_open_messaging.sql).
+// Raised by before_generic_message_insert (20261102000003_message_while_in_review.sql).
 const SEND_REFUSALS: Record<string, { status: number; error: string }> = {
   new_conversation_limit: { status: 429, error: "You've started the maximum number of new conversations for today" },
   profile_not_available: { status: 409, error: "This profile isn't available to message right now" },
+  own_profile_not_ready: { status: 409, error: "Finish or resubmit your profile before starting a conversation" },
   conversation_blocked: { status: 403, error: CONVERSATION_CLOSED },
 };
 

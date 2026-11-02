@@ -62,6 +62,9 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       body: JSON.stringify(body),
     });
     const data = await res?.json().catch(() => null);
+    // The rider's next-step button stays where it was; a short pause stops
+    // a double tap from skipping a step ("on the way" → "arrived").
+    if (action === "advance" && res?.ok) await new Promise((r) => setTimeout(r, 1500));
     setBusy(false);
     setConfirming(null);
     if (!res?.ok) {

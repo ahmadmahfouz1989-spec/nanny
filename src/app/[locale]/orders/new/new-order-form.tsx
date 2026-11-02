@@ -12,18 +12,29 @@ import { NEEDS_DROPOFF } from "@/lib/validation/errand-order";
 type Place = { governorateId: string | null; districtId: string | null; areaId: string | null; detail: string };
 const emptyPlace: Place = { governorateId: null, districtId: null, areaId: null, detail: "" };
 
+/** Answers carried over from the Delivery & Errands request just filled in. */
+export type OrderPrefill = {
+  service: ErrandService;
+  description: string;
+  pickup: Place;
+  dropoffDetail: string;
+  timing: "asap" | "scheduled";
+  scheduledAt: string;
+  budget: string;
+};
+
 /** A new Delivery & Errands order: service, what's needed, where, when. */
-export default function NewOrderForm() {
+export default function NewOrderForm({ prefill = null }: { prefill?: OrderPrefill | null }) {
   const t = useTranslations("Orders");
   const ts = useTranslations("ErrandServices");
   const router = useRouter();
-  const [service, setService] = useState<ErrandService>("delivery");
-  const [description, setDescription] = useState("");
-  const [pickup, setPickup] = useState<Place>(emptyPlace);
-  const [dropoff, setDropoff] = useState<Place>(emptyPlace);
-  const [timing, setTiming] = useState<"asap" | "scheduled">("asap");
-  const [scheduledAt, setScheduledAt] = useState("");
-  const [budget, setBudget] = useState("");
+  const [service, setService] = useState<ErrandService>(prefill?.service ?? "delivery");
+  const [description, setDescription] = useState(prefill?.description ?? "");
+  const [pickup, setPickup] = useState<Place>(prefill?.pickup ?? emptyPlace);
+  const [dropoff, setDropoff] = useState<Place>(prefill ? { ...emptyPlace, detail: prefill.dropoffDetail } : emptyPlace);
+  const [timing, setTiming] = useState<"asap" | "scheduled">(prefill?.timing ?? "asap");
+  const [scheduledAt, setScheduledAt] = useState(prefill?.scheduledAt ?? "");
+  const [budget, setBudget] = useState(prefill?.budget ?? "");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const needsDropoff = (NEEDS_DROPOFF as readonly string[]).includes(service);
@@ -62,15 +73,18 @@ export default function NewOrderForm() {
     router.push(`/orders/${body.order.id}`);
   }
 
-  const placeFields = (place: Place, set: (p: Place) => void) => (
+  // Functional updates: picking an area from the search sets the
+  // governorate and then the district in the same click, and the second
+  // mustn't overwrite the first.
+  const placeFields = (place: Place, set: React.Dispatch<React.SetStateAction<Place>>) => (
     <LocationPicker
       governorateId={place.governorateId}
       districtId={place.districtId}
       areaId={place.areaId}
       detail={place.detail}
-      onGovernorate={(id) => set({ ...place, governorateId: id, districtId: null, areaId: null })}
-      onArea={(districtId, areaId) => set({ ...place, districtId, areaId })}
-      onDetail={(detail) => set({ ...place, detail })}
+      onGovernorate={(id) => set((p) => ({ ...p, governorateId: id, districtId: null, areaId: null }))}
+      onArea={(districtId, areaId) => set((p) => ({ ...p, districtId, areaId }))}
+      onDetail={(detail) => set((p) => ({ ...p, detail }))}
     />
   );
 
@@ -81,6 +95,7 @@ export default function NewOrderForm() {
           ← {t("back")}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink">{t("newOrder")}</h1>
+        {prefill && <p className="mt-1 text-sm text-muted">{t("prefilledHint")}</p>}
       </div>
 
       <section className="flex flex-col gap-2">

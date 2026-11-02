@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { DRAFT_NAME } from "@/lib/draft-profile";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
@@ -58,14 +59,32 @@ export async function POST(request: Request) {
     return NextResponse.json({ profile: existing });
   }
 
+  // Someone starting in a second service has already told us their name
+  // and where they are: start from those rather than asking again.
+  const { data: earlier } = await db
+    .from("generic_profiles")
+    .select("full_name, location_id, attributes")
+    .eq("user_id", user.id)
+    .neq("status", "draft")
+    .order("updated_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const earlierAttributes = (earlier?.attributes ?? {}) as Record<string, unknown>;
+  const carried: Record<string, string> = {};
+  for (const key of ["districtId", "areaId", "locationDetail"]) {
+    const value = earlierAttributes[key];
+    if (typeof value === "string" && value) carried[key] = value;
+  }
+
   const { data: created, error } = await db
     .from("generic_profiles")
     .insert({
       user_id: user.id,
       category_id: category.id,
       role,
-      full_name: "Draft profile",
-      attributes: {},
+      full_name: earlier?.full_name?.trim() || DRAFT_NAME,
+      location_id: earlier?.location_id ?? null,
+      attributes: carried,
       status: "draft",
     })
     .select("id, role, full_name, location_id, attributes, status, moderation_status")

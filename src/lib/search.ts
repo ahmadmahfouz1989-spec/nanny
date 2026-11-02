@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/categories";
-import { normalizeForSearch, searchWords } from "@/lib/profile-search";
+import { normalizeForSearch, searchAlternatives, searchWords } from "@/lib/profile-search";
 import { fillMissingSearchText } from "@/lib/search-text";
 import { POST_FEED_COLUMNS, resolvePostAuthors } from "@/lib/posts";
 import { withPlaceNames } from "@/lib/place-names";
@@ -86,10 +86,12 @@ export async function search(query: string, region: string | null, userId: strin
       .neq("user_id", userId)
       .in("category_id", categories.map((c) => c.id));
     for (const w of words) {
-      const inCategories = categories.filter((c) => categoryText.get(c.id)!.includes(w)).map((c) => c.id);
-      q = q.or(
-        inCategories.length ? `search_text.ilike.*${w}*,category_id.in.(${inCategories.join(",")})` : `search_text.ilike.*${w}*`,
-      );
+      // The word, or the word its everyday synonyms are stored under.
+      const alts = searchAlternatives(w).map(safeWord).filter(Boolean);
+      const inCategories = categories.filter((c) => alts.some((a) => categoryText.get(c.id)!.includes(a))).map((c) => c.id);
+      const clauses = alts.map((a) => `search_text.ilike.*${a}*`);
+      if (inCategories.length) clauses.push(`category_id.in.(${inCategories.join(",")})`);
+      q = q.or(clauses.join(","));
     }
     if (region && regionLevel === "district") {
       // In the district, covering it, or (saved before districts) in its governorate.
@@ -104,7 +106,9 @@ export async function search(query: string, region: string | null, userId: strin
   };
 
   let postQuery = supabase.from("posts").select(POST_FEED_COLUMNS).eq("status", "open");
-  for (const w of words) postQuery = postQuery.ilike("caption", `%${w}%`);
+  for (const w of words) {
+    postQuery = postQuery.or(searchAlternatives(w).map(safeWord).filter(Boolean).map((a) => `caption.ilike.*${a}*`).join(","));
+  }
 
   const [{ data: providersRaw }, { data: seekersRaw }, { data: posts }] = await Promise.all([
     people("provider"),

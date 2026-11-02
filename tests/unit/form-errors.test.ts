@@ -21,7 +21,8 @@ describe("fieldErrorsFor", () => {
   it("asks to type into empty text fields and to choose in empty selects", () => {
     const errors = fieldErrorsFor(nannySeekerSchema, blankSeeker);
     expect(errors.fullName).toBe("errorRequired");
-    expect(errors.locationDetail).toBe("errorRequired");
+    // Street/building is optional: the area picker already says where.
+    expect(errors.locationDetail).toBeUndefined();
     expect(errors.desiredStartDate).toBe("errorRequired");
     expect(errors.locationId).toBe("errorChoose");
     expect(errors.nationality).toBe("errorChoose");
@@ -32,9 +33,8 @@ describe("fieldErrorsFor", () => {
   });
 
   it("says too short, not empty, for a one-letter entry", () => {
-    const errors = fieldErrorsFor(nannySeekerSchema, { ...blankSeeker, fullName: "A", locationDetail: "B" });
+    const errors = fieldErrorsFor(nannySeekerSchema, { ...blankSeeker, fullName: "A" });
     expect(errors.fullName).toBe("errorTooShort");
-    expect(errors.locationDetail).toBe("errorTooShort");
   });
 
   it("reports nested problems under the top-level field, and nothing for a valid form", () => {

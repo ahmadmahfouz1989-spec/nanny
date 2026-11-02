@@ -100,6 +100,28 @@ describe("starting conversations", () => {
     expect(error?.message).toContain("profile_not_available");
   });
 
+  it("can be started while the sender's own profile is still in review, but not once it's rejected", async () => {
+    const [p, n] = await Promise.all([createUser("review-parent"), createUser("review-nanny")]);
+    const parentProfile = await createProfile(p, "nanny", "seeker", NANNY_SEEKER);
+    const nannyProfile = await createProfile(n, "nanny", "provider", NANNY_PROVIDER);
+    await recomputeGenericMatchesForProfile(nannyProfile);
+    const id = await matchBetween(parentProfile, nannyProfile);
+
+    await admin.from("generic_profiles").update({ moderation_status: "rejected" }).eq("id", parentProfile);
+    const { error: rejected } = await send(p, id, "Hello?");
+    expect(rejected?.message).toContain("own_profile_not_ready");
+
+    await admin.from("generic_profiles").update({ moderation_status: "pending" }).eq("id", parentProfile);
+    expect((await send(p, id, "Hello, is Monday possible?")).error).toBeNull();
+
+    // The nanny can read it, see who wrote, and answer.
+    const { data: seen } = await n.client.from("generic_messages").select("body").eq("match_id", id);
+    expect(seen!.map((m) => m.body)).toEqual(["Hello, is Monday possible?"]);
+    const { data: sender } = await n.client.from("generic_profiles").select("full_name").eq("id", parentProfile).maybeSingle();
+    expect(sender?.full_name).toBeTruthy();
+    expect((await send(n, id, "Yes, Monday works")).error).toBeNull();
+  });
+
   it("is limited to 30 new people a day, while replies stay unlimited", async () => {
     const sender = await createUser("busy-parent");
     const senderProfile = await createProfile(sender, "nanny", "seeker", NANNY_SEEKER);

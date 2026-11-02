@@ -279,8 +279,11 @@ export async function ensureConversation(db: Admin, seekerProfileId: string | nu
 }
 
 /**
- * The caller's approved Delivery & Errands profiles: the request profile
- * (needed to order) and the provider profile (needed to receive orders).
+ * The caller's Delivery & Errands profiles that can be used right now: the
+ * request profile (needed to order -- approved or still waiting for review,
+ * so a new customer isn't kept waiting on an admin) and the provider
+ * profile (needed to receive orders -- approved only: riders are checked,
+ * ID included, before they get anyone's order).
  */
 export async function myErrandProfiles(db: Admin, userId: string) {
   const categoryId = await errandsCategoryId(db);
@@ -291,6 +294,11 @@ export async function myErrandProfiles(db: Admin, userId: string) {
     .eq("user_id", userId)
     .eq("category_id", categoryId)
     .neq("status", "draft");
-  const approved = (role: string) => (data ?? []).find((p) => p.role === role && p.moderation_status === "approved") ?? null;
-  return { seeker: approved("seeker"), provider: approved("provider") };
+  const rows = data ?? [];
+  const seeker =
+    rows.find((p) => p.role === "seeker" && p.status === "active" && p.moderation_status === "approved") ??
+    rows.find((p) => p.role === "seeker" && p.status === "active" && p.moderation_status === "pending") ??
+    null;
+  const provider = rows.find((p) => p.role === "provider" && p.moderation_status === "approved") ?? null;
+  return { seeker, provider };
 }

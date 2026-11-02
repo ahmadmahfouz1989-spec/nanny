@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { initialFullName } from "@/lib/draft-profile";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
@@ -112,7 +113,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     providerType: (a.providerType as BeautyProviderType) ?? "",
     // A freshly-claimed draft (see /api/generic-profile/claim) has a
     // placeholder full_name -- show the field empty rather than that.
-    fullName: p.status === "draft" ? "" : p.full_name,
+    fullName: initialFullName(p),
     teamSize: num(a.teamSize),
     gender: (a.gender as Gender) ?? "",
     contactPhone: p.contact_phone ?? "",

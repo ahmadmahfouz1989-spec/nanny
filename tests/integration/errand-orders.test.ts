@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { dispatchOrder, eligibleProviders, closeExpiredOrders } from "@/lib/errand-orders";
+import { dispatchOrder, eligibleProviders, closeExpiredOrders, myErrandProfiles } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
 import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
@@ -67,6 +67,19 @@ describe("errand orders", () => {
     await provider("order-offline", beirut, { available: false });
     await provider("order-paperwork", beirut, { services: ["paperwork"] });
     await provider("order-tripoli", tripoli);
+  });
+
+  it("lets a customer order while their request is in review, but a rider only once approved", async () => {
+    const newcomer = await createUser("order-newcomer");
+    const request = await createProfile(newcomer, "errands", "seeker", { errandService: "delivery", districtId: beirut.id }, { approved: false });
+    const rider = await createProfile(newcomer, "errands", "provider", { errandServices: ["delivery"], districtId: beirut.id }, { approved: false });
+    const mine = await myErrandProfiles(admin, newcomer.id);
+    expect(mine.seeker?.id).toBe(request);
+    expect(mine.provider).toBeNull();
+
+    await admin.from("generic_profiles").update({ moderation_status: "rejected" }).eq("id", request);
+    expect((await myErrandProfiles(admin, newcomer.id)).seeker).toBeNull();
+    expect(rider).toBeTruthy();
   });
 
   it("sends an order only to eligible providers, nearest first", async () => {

@@ -190,7 +190,14 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
 
 /** Short summaries for a list of orders (no offers or history). */
 export async function orderSummaries(db: Admin, orders: OrderRow[]) {
-  const names = await placeNames(db, orders.flatMap((o) => [o.pickup_district_id, o.dropoff_district_id]));
+  // Lists name the area when there is one ("Ras Beirut → Achrafieh"), not
+  // just the district ("Beirut → Beirut").
+  const names = await placeNames(
+    db,
+    orders.flatMap((o) => [o.pickup_district_id, o.dropoff_district_id, o.pickup_area_id, o.dropoff_area_id]),
+  );
+  const nameOf = (area: string | null, district: string | null) =>
+    (area ? names.get(area) : undefined) ?? (district ? names.get(district) : undefined) ?? null;
   const ids = orders.map((o) => o.id);
   const { data: recipients } = ids.length
     ? await db.from("errand_order_recipients").select("order_id, status").in("order_id", ids)
@@ -202,8 +209,8 @@ export async function orderSummaries(db: Admin, orders: OrderRow[]) {
       number: o.number,
       service: o.service,
       description: o.description,
-      pickupDistrict: names.get(o.pickup_district_id) ?? null,
-      dropoffDistrict: o.dropoff_district_id ? (names.get(o.dropoff_district_id) ?? null) : null,
+      pickupDistrict: nameOf(o.pickup_area_id, o.pickup_district_id),
+      dropoffDistrict: o.dropoff_district_id ? nameOf(o.dropoff_area_id, o.dropoff_district_id) : null,
       status: o.status,
       createdAt: o.created_at,
       timing: o.timing,

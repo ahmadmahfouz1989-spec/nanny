@@ -84,7 +84,7 @@ export async function POST(request: Request) {
   const db = createAdminClient();
   const { seeker } = await myErrandProfiles(db, user.id);
   if (!seeker) {
-    return NextResponse.json({ error: "Your Delivery & Errands request needs to be approved before you can order.", code: "profile_required" }, { status: 403 });
+    return NextResponse.json({ error: "Create your Delivery & Errands request profile before you order.", code: "profile_required" }, { status: 403 });
   }
 
   // The places must be real districts (and areas inside them).

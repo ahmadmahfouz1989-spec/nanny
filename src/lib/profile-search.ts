@@ -119,8 +119,40 @@ export function searchWords(query: string): string[] {
   return normalizeForSearch(query).split(/\s+/).filter(Boolean).slice(0, 10);
 }
 
+// Everyday words for the same thing, each pointing at a word every
+// matching profile's search text already contains (the English label is
+// always stored). People type كهربائي or كهربا, the label says كهربجي;
+// they type سنكري, it says سبّاك.
+const SYNONYM_GROUPS: [canonical: string, words: string[]][] = [
+  ["electrician", ["كهربائي", "كهربايي", "كهربا", "كهرباء", "كهربجي", "electric", "electrical", "electricien"]],
+  ["plumber", ["سباك", "سنكري", "سمكري", "سنكرية", "plumbing", "plombier"]],
+  ["painter", ["دهان", "بويجي", "دهين", "painting", "peintre"]],
+  ["tiler", ["بلاط", "بليط", "تبليط", "tiles", "tiling", "carreleur"]],
+  ["carpenter", ["نجار", "نجارة", "carpentry", "menuisier"]],
+  ["nanny", ["مربيه", "داده", "دادا", "جليسه", "جليسة", "babysitter", "baby-sitter", "nounou"]],
+  ["nurs", ["ممرضه", "ممرض", "ممرضة", "تمريض", "infirmier", "infirmiere"]],
+  ["tutor", ["استاذ", "أستاذ", "معلم", "معلمه", "مدرس", "مدرسه", "teacher", "professeur", "prof"]],
+  ["deliver", ["توصيل", "ديليفري", "دليفري", "delivery", "livraison"]],
+];
+
+const SYNONYMS = new Map<string, string>();
+for (const [canonical, words] of SYNONYM_GROUPS) {
+  for (const w of words) SYNONYMS.set(normalizeForSearch(w), canonical);
+}
+
+/**
+ * The ways one typed word can match: itself, plus the word its everyday
+ * synonyms are stored under. Arabic spellings of ة/ه and أ/ا are treated
+ * as the same when looking up the synonym.
+ */
+export function searchAlternatives(word: string): string[] {
+  const loose = word.replace(/ة/g, "ه").replace(/[أإآ]/g, "ا");
+  const canonical = SYNONYMS.get(word) ?? SYNONYMS.get(loose);
+  return canonical && canonical !== word ? [word, canonical] : [word];
+}
+
 /** The same rule list_profile_matches applies, for code that has the profile in hand. */
 export function matchesSearch(profile: SearchableProfile, query: string): boolean {
   const text = searchableText(profile);
-  return searchWords(query).every((w) => text.includes(w));
+  return searchWords(query).every((w) => searchAlternatives(w).some((alt) => text.includes(alt)));
 }
