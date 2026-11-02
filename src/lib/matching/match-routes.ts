@@ -23,6 +23,7 @@ import {
 } from "@/lib/voice-notes";
 import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
 import { reportMetaEvent } from "@/lib/meta-capi";
+import { alertLanguage, newMessageAlert, sendWhatsAppAlert, whatsappAlertsEnabled } from "@/lib/whatsapp";
 
 /**
  * Route handlers for everything a party can do on one match, in any
@@ -249,7 +250,7 @@ export const messagesMarkRead: Handler = withAccess(async ({ supabase, userId, a
 });
 
 /**
- * Email the recipient -- but only for the first still-unread message in
+ * Email the recipient (WhatsApp for an account with no email) -- but only for the first still-unread message in
  * the thread, so an active back-and-forth doesn't send an email per line.
  * The counter re-arms once they read (which clears read_at on all of the
  * sender's messages). Best-effort: a mail failure never fails the send.
@@ -277,7 +278,7 @@ function pushNewMessage(access: MatchAccess, preview: string | null) {
 }
 
 async function emailRecipientOnFirstUnread(request: Request, access: MatchAccess, snippet: string) {
-  if (!activityEmailsEnabled()) return;
+  if (!activityEmailsEnabled() && !whatsappAlertsEnabled()) return;
 
   try {
     const admin = createAdminClient();
@@ -291,11 +292,21 @@ async function emailRecipientOnFirstUnread(request: Request, access: MatchAccess
     if ((count ?? 0) !== 1) return;
 
     const [{ data: recipient }, { data: senderProfile }] = await Promise.all([
-      admin.from("users").select("email, preferred_language").eq("id", access.otherUserId).single(),
+      admin.from("users").select("email, phone, preferred_language").eq("id", access.otherUserId).single(),
       admin.from("generic_profiles").select("full_name").eq("id", access.myProfileId).single(),
     ]);
 
-    if (!recipient?.email) return;
+    // Signed up with WhatsApp, so no email: tell them on WhatsApp instead.
+    if (!recipient?.email && recipient?.phone && whatsappAlertsEnabled()) {
+      const language = alertLanguage(recipient.preferred_language);
+      const error = await sendWhatsAppAlert(
+        newMessageAlert(recipient.phone, senderProfile?.full_name ?? "Someone", `${language}/messages?match=${access.id}`, language),
+      );
+      if (error) console.error("[messages] WhatsApp alert failed:", error);
+      return;
+    }
+
+    if (!recipient?.email || !activityEmailsEnabled()) return;
 
     const lang = recipient.preferred_language as "en" | "ar" | "fr" | null;
     const locale = lang === "ar" ? "ar" : "en";

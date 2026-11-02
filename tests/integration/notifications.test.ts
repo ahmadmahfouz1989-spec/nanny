@@ -3,8 +3,9 @@ import type { TestUser, Db } from "./helpers";
 
 // End to end: the real route handlers run against the local database, as
 // the signed-in user, and we check who gets what -- the bell entry, the
-// push to their devices (wording and link), and the email. Only the
-// network sends (web push, email) are captured instead of sent.
+// push to their devices (wording and link), the email, and the WhatsApp
+// alert. Only the network sends (web push, email, WhatsApp) are captured
+// instead of sent.
 
 const captured = vi.hoisted(() => {
   process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY = "test-public";
@@ -12,6 +13,7 @@ const captured = vi.hoisted(() => {
   return {
     pushes: [] as { endpoint: string; payload: { title: string; body: string; url: string; tag: string } }[],
     emails: [] as { to: string; subject: string }[],
+    whatsapp: [] as { to: string; template: { name?: string; language: { code: string }; components: { parameters: { text: string }[] }[] } }[],
     pending: [] as Promise<unknown>[],
     acting: { client: null as unknown },
   };
@@ -33,6 +35,19 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: async () => captured.act
 vi.mock("next/server", async (importOriginal) => {
   const actual = await importOriginal<typeof import("next/server")>();
   return { ...actual, after: (fn: () => unknown) => void captured.pending.push(Promise.resolve().then(fn)) };
+});
+
+// WhatsApp alerts on, with the send to Meta captured.
+vi.mock("@/lib/whatsapp", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/whatsapp")>();
+  return {
+    ...actual,
+    whatsappAlertsEnabled: () => true,
+    sendWhatsAppAlert: async (message: (typeof captured.whatsapp)[number]) => {
+      captured.whatsapp.push(message);
+      return null;
+    },
+  };
 });
 
 // Ad measurement needs a real request; not what's under test here.
@@ -103,6 +118,7 @@ beforeAll(async () => {
 beforeEach(() => {
   captured.pushes.length = 0;
   captured.emails.length = 0;
+  captured.whatsapp.length = 0;
 });
 
 describe("messages", () => {
@@ -116,6 +132,7 @@ describe("messages", () => {
     expect(pushes).toHaveLength(2);
     expect(pushes[0]).toMatchObject({ title: "Rana Customer", body: "Hi, can you pick up a parcel?", url: `/en/messages?match=${matchId}`, tag: `message-${matchId}` });
     expect(emailsTo(provider)).toHaveLength(1);
+    expect(captured.whatsapp).toEqual([]);
     expect(pushesTo(customer)).toEqual([]);
     expect(pushesTo(outsider)).toEqual([]);
     // Messages show as an unread count, not in the bell.
@@ -153,7 +170,7 @@ describe("ratings", () => {
 });
 
 describe("a WhatsApp sign-up (phone, no email)", () => {
-  it("gets the bell and phone notifications; there's just no email to send", async () => {
+  it("gets phone notifications, and a WhatsApp message instead of the email", async () => {
     const phone = `9617${String(Date.now()).slice(-7)}`;
     const { data, error } = await admin.auth.admin.createUser({ phone, phone_confirm: true });
     if (error || !data.user) throw new Error(error?.message);
@@ -174,6 +191,14 @@ describe("a WhatsApp sign-up (phone, no email)", () => {
 
       expect(pushesTo(whatsappUser)[0]).toMatchObject({ title: "Rana Customer", body: "Are you free today?" });
       expect(captured.emails).toEqual([]);
+      expect(captured.whatsapp).toHaveLength(1);
+      expect(captured.whatsapp[0]!.to).toBe(phone);
+      expect(captured.whatsapp[0]!.template.components.map((c) => c.parameters[0]!.text)).toEqual(["Rana Customer", `en/messages?match=${match!.id}`]);
+
+      // Like the email: one per conversation until they read it.
+      expect((await messagesPost(json({ body: "Around 5?" }), ctx(match!.id))).status).toBe(201);
+      await settle();
+      expect(captured.whatsapp).toHaveLength(1);
     } finally {
       await admin.auth.admin.deleteUser(data.user.id);
     }
