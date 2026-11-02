@@ -24,7 +24,7 @@ declare global {
   }
 }
 
-// Meta's base code, minus its built-in PageView: that one only fires on a
+// Meta's base code, minus its init (see pixelReady) and its built-in PageView: that one only fires on a
 // full page load, and this app moves between pages without reloading.
 // MetaPixel below sends a PageView on every page change instead.
 // autoConfig off stops the pixel collecting button text and page details on
@@ -37,7 +37,6 @@ n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
 document,'script','https://connect.facebook.net/en_US/fbevents.js');
 fbq('set', 'autoConfig', false, '${META_PIXEL_ID}');
-fbq('init', '${META_PIXEL_ID}');
 `;
 
 // The admin panel is staff-only and not something ads should learn from.
@@ -57,17 +56,36 @@ function pixelSend(name: string, params: MetaParams | undefined, eventId: string
   window.fbq?.(STANDARD_META_EVENTS.has(name) ? "track" : "trackCustom", name, params ?? {}, { eventID: eventId });
 }
 
-// The base code runs after hydration, so on the very first page fbq may
-// not exist yet -- wait for it briefly rather than miss that visit.
-function whenPixelReady(fn: () => void) {
-  let tries = 0;
-  const timer = setInterval(() => {
-    if (window.fbq || ++tries > 50) {
-      clearInterval(timer);
-      if (window.fbq) fn();
+// The Pixel is started with the signed-in person's hashed email/phone/ID
+// (advanced matching, the same hashes the server sends), so its events
+// match people as well as the server's do. The base code runs after
+// hydration, so on the very first page fbq may not exist yet -- wait for
+// it briefly rather than miss that visit.
+let started: Promise<boolean> | null = null;
+function pixelReady() {
+  started ??= (async () => {
+    const userData = fetch("/api/meta/event", { signal: AbortSignal.timeout(3000) })
+      .then((r) => (r.ok ? r.json() : {}))
+      .catch(() => ({}));
+    for (let tries = 0; !window.fbq && tries < 50; tries++) await new Promise((r) => setTimeout(r, 100));
+    if (!window.fbq) {
+      started = null;
+      return false;
     }
-  }, 100);
-  return () => clearInterval(timer);
+    window.fbq("init", META_PIXEL_ID, await userData);
+    return true;
+  })();
+  return started;
+}
+
+function whenPixelReady(fn: () => void) {
+  let cancelled = false;
+  void pixelReady().then((ok) => {
+    if (ok && !cancelled) fn();
+  });
+  return () => {
+    cancelled = true;
+  };
 }
 
 /** A browser-side event: to the Pixel, and to the server's copy under the same ID. */
@@ -100,13 +118,17 @@ function sendQueuedEvents() {
   }
 }
 
-// Ad clicks arrive with ?fbclid=. The Pixel keeps it in _fbc; when an ad
-// blocker stops the Pixel, keep it ourselves so the server's events can
-// still be tied to the ad.
-function rememberAdClick() {
+// The Pixel's browser ID (_fbp) and ad click ID (_fbc, from ?fbclid=).
+// When an ad blocker stops the Pixel, set them ourselves in Meta's format
+// so the server's events still carry a steady browser ID and the ad that
+// brought the visitor. A Pixel that does load later takes them over.
+function rememberBrowser() {
+  const keep = (name: string, value: string) => {
+    document.cookie = `${name}=${value}; Max-Age=${90 * 86400}; path=/; SameSite=Lax`;
+  };
+  if (!document.cookie.includes("_fbp=")) keep("_fbp", `fb.1.${Date.now()}.${Math.floor(Math.random() * 2 ** 31)}`);
   const fbclid = new URLSearchParams(location.search).get("fbclid");
-  if (!fbclid || document.cookie.includes("_fbc=")) return;
-  document.cookie = `_fbc=fb.1.${Date.now()}.${fbclid}; Max-Age=${90 * 86400}; path=/; SameSite=Lax`;
+  if (fbclid && !document.cookie.includes("_fbc=")) keep("_fbc", `fb.1.${Date.now()}.${fbclid}`);
 }
 
 // What the page is, for Meta: a person's profile, or a category's page.
@@ -128,7 +150,7 @@ export default function MetaPixel() {
 
   useEffect(() => {
     if (!tracked) return;
-    rememberAdClick();
+    rememberBrowser();
     const stops = [trackMetaEvent("PageView")];
     const content = pageContent(pathname);
     if (content) stops.push(trackMetaEvent("ViewContent", content));
@@ -145,7 +167,7 @@ export default function MetaPixel() {
   useEffect(() => {
     if (!ENABLED || app) return;
     const stop = whenPixelReady(sendQueuedEvents);
-    const timer = setInterval(sendQueuedEvents, 3000);
+    const timer = setInterval(() => void pixelReady().then((ok) => ok && sendQueuedEvents()), 3000);
     return () => {
       stop();
       clearInterval(timer);

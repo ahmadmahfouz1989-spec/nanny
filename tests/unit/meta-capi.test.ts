@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { describe, expect, it } from "vitest";
-import { hashedUserData, readQueue } from "@/lib/meta-capi";
+import { hashedUserData, pixelUserData, readQueue } from "@/lib/meta-capi";
 
 const sha = (v: string) => createHash("sha256").update(v).digest("hex");
 
@@ -22,6 +22,13 @@ describe("hashedUserData", () => {
   it("leaves out what it doesn't have", () => {
     expect(hashedUserData({ email: null, phone: "12" })).toEqual({});
     expect(hashedUserData(null)).toEqual({});
+  });
+});
+
+describe("pixelUserData", () => {
+  it("gives the Pixel the same hashes, one per key", () => {
+    expect(pixelUserData({ id: "u1", email: "Rana@example.com" })).toEqual({ em: sha("rana@example.com"), external_id: sha("u1") });
+    expect(pixelUserData(null)).toEqual({});
   });
 });
 

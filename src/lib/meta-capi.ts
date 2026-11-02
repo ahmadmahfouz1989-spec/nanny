@@ -43,6 +43,15 @@ export function hashedUserData(user: MetaUser | null | undefined) {
   return data;
 }
 
+/**
+ * The same hashes in the form the browser Pixel takes for advanced
+ * matching (one value per key; already-hashed values are sent as they
+ * are), so both copies of an event carry the same person.
+ */
+export function pixelUserData(user: MetaUser | null | undefined) {
+  return Object.fromEntries(Object.entries(hashedUserData(user)).map(([key, [value]]) => [key, value!]));
+}
+
 /** The ad click id: the Pixel's _fbc cookie, or built from ?fbclid= when the Pixel was blocked. */
 function clickId(cookie: string | undefined, sourceUrl: string | null) {
   if (cookie) return cookie;
