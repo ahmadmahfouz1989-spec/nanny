@@ -169,7 +169,7 @@ export async function notify(rows: NotificationRow | NotificationRow[]) {
       title: "ouiKnow",
       body: notificationLabel(row, pushTranslator(locale, "Notifications"), (slug) => (isCategorySlug(slug) ? pushTranslator(locale, "Nav")(slug) : null)),
       url: `/${locale}${notificationHref(row)}`,
-      tag: `${row.type}-${String(row.payload.generic_match_id ?? row.payload.post_id ?? "")}`,
+      tag: `${row.type}-${String(row.payload.generic_match_id ?? row.payload.post_id ?? row.payload.order_id ?? "")}`,
     }));
   }
 }

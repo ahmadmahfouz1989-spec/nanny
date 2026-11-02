@@ -167,3 +167,13 @@ export function BellIcon({ className = "", fill = "none" }: { className?: string
     </svg>
   );
 }
+
+/** A delivery box, for orders. */
+export function BoxIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden="true">
+      <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+      <path d="m3 8 9 5 9-5M12 13v8" />
+    </svg>
+  );
+}

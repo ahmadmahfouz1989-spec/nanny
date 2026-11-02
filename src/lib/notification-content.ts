@@ -27,6 +27,18 @@ const KNOWN_TYPES = new Set([
   "work_rejected",
 ]);
 
+// Delivery & Errands orders: every one opens the order itself and says
+// its number ("Order #1042: on the way").
+const ORDER_TYPES = new Set([
+  "errand_request",
+  "errand_offer",
+  "errand_selected",
+  "errand_confirmed",
+  "errand_status",
+  "errand_cancelled",
+  "errand_no_provider",
+]);
+
 // The app has no per-match detail route — match cards live on the
 // dashboard, so match notifications deep-link to the specific card
 // (?match=<id>, which the dashboard page also uses to pick the right
@@ -35,6 +47,10 @@ const KNOWN_TYPES = new Set([
 export function notificationHref(n: NotificationLike): string {
   const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
   const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
+  if (ORDER_TYPES.has(n.type)) {
+    const orderId = typeof n.payload?.order_id === "string" ? n.payload.order_id : null;
+    return orderId ? `/orders/${orderId}` : "/orders";
+  }
   switch (n.type) {
     case "interest_accepted":
     case "interest_received":
@@ -80,6 +96,11 @@ export function notificationLabel(n: NotificationLike, t: Translate, categoryNam
   const slug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   const category = slug && categoryName ? categoryName(slug) : null;
   if (category && PER_CATEGORY.has(n.type)) return t(`${n.type}_in`, { category });
+  if (ORDER_TYPES.has(n.type)) {
+    const number = typeof n.payload?.order_number === "number" ? n.payload.order_number : "";
+    const status = typeof n.payload?.status === "string" ? n.payload.status : null;
+    return t(n.type === "errand_status" && status ? `errand_status_${status}` : n.type, { number });
+  }
   if (n.type === "rating_received") {
     const score = typeof n.payload?.score === "number" ? (n.payload.score as number) : null;
     return score ? t("rating_received", { score }) : t("rating_received_generic");
@@ -101,6 +122,13 @@ const ACTIONS: Record<string, string> = {
   work_rejected: "actionWork",
   verification_updated: "actionProfile",
   profile_pending_review: "actionReview",
+  errand_request: "actionOrder",
+  errand_offer: "actionOrder",
+  errand_selected: "actionOrder",
+  errand_confirmed: "actionOrder",
+  errand_status: "actionOrder",
+  errand_cancelled: "actionOrder",
+  errand_no_provider: "actionOrder",
 };
 
 export function notificationAction(n: NotificationLike, t: Translate): string | null {

@@ -10,6 +10,7 @@ import { isCategorySlug } from "@/lib/category-slugs";
 import RememberCategory from "@/components/remember-category";
 import { REGION_COOKIE } from "@/lib/region";
 import ServiceSwitcher from "@/components/service-switcher";
+import OrdersEntry from "@/components/orders/orders-entry";
 
 const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
   success: "bg-success-soft",
@@ -55,7 +56,16 @@ export default async function CategoryDashboardPage({
   const myProfiles = (profiles ?? []).filter((p) => p.status !== "draft");
   const region = (await cookies()).get(REGION_COOKIE)?.value ?? "";
   const categoryName = locale === "ar" ? category.name_ar : category.name_en;
-  const switcher = <ServiceSwitcher current={slug} />;
+  // Delivery & Errands also has orders: ask for one, get offers nearby.
+  const switcher =
+    slug === "errands" ? (
+      <div className="flex flex-col gap-3">
+        <ServiceSwitcher current={slug} />
+        <OrdersEntry />
+      </div>
+    ) : (
+      <ServiceSwitcher current={slug} />
+    );
 
   // Nothing real submitted yet (no row at all, or only an abandoned draft)
   // -- straight to the role picker rather than a "no profile yet, click

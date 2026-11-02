@@ -44,6 +44,158 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"errand_order_events": {
+                  Row: {
+                    "actor_role": string,"actor_user_id": string | null,"created_at": string,"detail": NonNullable<Json>,"id": number,"order_id": string,"type": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "actor_role": string,"actor_user_id"?: string | null,"created_at"?: string,"detail"?: NonNullable<Json>,"id"?: never,"order_id": string,"type": string
+                  }
+                  Update: {
+                    "actor_role"?: string,"actor_user_id"?: string | null,"created_at"?: string,"detail"?: NonNullable<Json>,"id"?: never,"order_id"?: string,"type"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "errand_order_events_actor_user_id_fkey"
+      columns: ["actor_user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_order_events_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "errand_orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"errand_order_recipients": {
+                  Row: {
+                    "distance_km": number | null,"eta_minutes": number | null,"id": string,"note": string | null,"order_id": string,"price_usd": number | null,"provider_profile_id": string,"provider_user_id": string,"rank": number,"responded_at": string | null,"sent_at": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "distance_km"?: number | null,"eta_minutes"?: number | null,"id"?: string,"note"?: string | null,"order_id": string,"price_usd"?: number | null,"provider_profile_id": string,"provider_user_id": string,"rank": number,"responded_at"?: string | null,"sent_at"?: string,"status"?: string
+                  }
+                  Update: {
+                    "distance_km"?: number | null,"eta_minutes"?: number | null,"id"?: string,"note"?: string | null,"order_id"?: string,"price_usd"?: number | null,"provider_profile_id"?: string,"provider_user_id"?: string,"rank"?: number,"responded_at"?: string | null,"sent_at"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "errand_order_recipients_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: false
+      referencedRelation: "errand_orders"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_order_recipients_provider_profile_id_fkey"
+      columns: ["provider_profile_id"]
+isOneToOne: false
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_order_recipients_provider_user_id_fkey"
+      columns: ["provider_user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"errand_orders": {
+                  Row: {
+                    "budget_usd": number | null,"cancel_reason": string | null,"cancelled_by": string | null,"created_at": string,"description": string,"dropoff_area_id": string | null,"dropoff_detail": string | null,"dropoff_district_id": string | null,"generic_match_id": string | null,"id": string,"number": number,"open_until": string,"pickup_area_id": string | null,"pickup_detail": string | null,"pickup_district_id": string,"provider_profile_id": string | null,"provider_user_id": string | null,"scheduled_at": string | null,"seeker_profile_id": string | null,"seeker_user_id": string,"selected_recipient_id": string | null,"service": string,"status": string,"status_changed_at": string,"timing": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"created_at"?: string,"description": string,"dropoff_area_id"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until": string,"pickup_area_id"?: string | null,"pickup_detail"?: string | null,"pickup_district_id": string,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id": string,"selected_recipient_id"?: string | null,"service": string,"status"?: string,"status_changed_at"?: string,"timing": string,"updated_at"?: string
+                  }
+                  Update: {
+                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"created_at"?: string,"description"?: string,"dropoff_area_id"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until"?: string,"pickup_area_id"?: string | null,"pickup_detail"?: string | null,"pickup_district_id"?: string,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id"?: string,"selected_recipient_id"?: string | null,"service"?: string,"status"?: string,"status_changed_at"?: string,"timing"?: string,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "errand_orders_dropoff_area_id_fkey"
+      columns: ["dropoff_area_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_dropoff_district_id_fkey"
+      columns: ["dropoff_district_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_generic_match_id_fkey"
+      columns: ["generic_match_id"]
+isOneToOne: false
+      referencedRelation: "generic_matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_pickup_area_id_fkey"
+      columns: ["pickup_area_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_pickup_district_id_fkey"
+      columns: ["pickup_district_id"]
+isOneToOne: false
+      referencedRelation: "locations"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_provider_profile_id_fkey"
+      columns: ["provider_profile_id"]
+isOneToOne: false
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_provider_user_id_fkey"
+      columns: ["provider_user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_seeker_profile_id_fkey"
+      columns: ["seeker_profile_id"]
+isOneToOne: false
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_seeker_user_id_fkey"
+      columns: ["seeker_user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "errand_orders_selected_recipient_fkey"
+      columns: ["selected_recipient_id"]
+isOneToOne: false
+      referencedRelation: "errand_order_recipients"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"errand_settings": {
+                  Row: {
+                    "id": boolean,"max_recipients": number,"open_minutes": number,"updated_at": string,"updated_by": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "id"?: boolean,"max_recipients"?: number,"open_minutes"?: number,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Update: {
+                    "id"?: boolean,"max_recipients"?: number,"open_minutes"?: number,"updated_at"?: string,"updated_by"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "errand_settings_updated_by_fkey"
+      columns: ["updated_by"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"favorites": {
                   Row: {
                     "created_at": string,"generic_profile_id": string | null,"id": string,"nanny_profile_id": string | null,"parent_profile_id": string | null,"user_id": string
@@ -168,14 +320,14 @@ isOneToOne: false
                   ]
                 },"generic_profiles": {
                   Row: {
-                    "attributes": NonNullable<Json>,"category_id": string,"created_at": string,"full_name": string,"headline": string | null,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
+                    "attributes": NonNullable<Json>,"available_changed_at": string | null,"available_now": boolean,"category_id": string,"created_at": string,"full_name": string,"headline": string | null,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attributes"?: NonNullable<Json>,"category_id": string,"created_at"?: string,"full_name": string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
+                    "attributes"?: NonNullable<Json>,"available_changed_at"?: string | null,"available_now"?: boolean,"category_id": string,"created_at"?: string,"full_name": string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "attributes"?: NonNullable<Json>,"category_id"?: string,"created_at"?: string,"full_name"?: string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "attributes"?: NonNullable<Json>,"available_changed_at"?: string | null,"available_now"?: boolean,"category_id"?: string,"created_at"?: string,"full_name"?: string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {
