@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
@@ -12,6 +12,8 @@ import { request } from "@/lib/request";
  * visits and sign-ups from shared profiles show up as their own source.
  * Also the switch that turns the public page off.
  */
+const noop = () => () => {};
+
 export default function ShareProfileButton({
   profileId,
   name,
@@ -29,6 +31,13 @@ export default function ShareProfileButton({
   const t = useTranslations("PublicProfile");
   const locale = useLocale();
   const [open, setOpen] = useState(autoOpen);
+  // Whether this device has its own share menu -- false while rendering on
+  // the server, so the first render matches.
+  const canSystemShare = useSyncExternalStore(
+    noop,
+    () => typeof navigator.share === "function",
+    () => false,
+  );
   const [isPublic, setIsPublic] = useState(initialPublic);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -41,20 +50,16 @@ export default function ShareProfileButton({
   };
   const message = t("shareText", { name, service });
 
-  async function share() {
-    if (!isPublic) {
-      setOpen(true);
-      return;
+  // Our own options first (WhatsApp, Facebook, copy): a computer's share
+  // menu (Safari on a Mac: AirDrop, Mail, Notes…) has none of the apps
+  // people actually share to here. The phone's or computer's own menu is
+  // one tap further, under "More options".
+  async function systemShare() {
+    try {
+      await navigator.share({ title: name, text: message, url: link() });
+    } catch {
+      // Cancelled, or not allowed here: the options stay open.
     }
-    if (typeof navigator !== "undefined" && navigator.share) {
-      try {
-        await navigator.share({ title: name, text: message, url: link() });
-        return;
-      } catch {
-        // Cancelled, or not allowed here: fall through to the options.
-      }
-    }
-    setOpen(true);
   }
 
   async function copy() {
@@ -80,7 +85,7 @@ export default function ShareProfileButton({
 
   return (
     <>
-      <button type="button" className={ui.buttonPrimary} onClick={share}>
+      <button type="button" className={ui.buttonPrimary} onClick={() => setOpen((o) => !o)}>
         {t("share")}
       </button>
       {open && (
@@ -108,6 +113,11 @@ export default function ShareProfileButton({
                 <button type="button" className={ui.buttonSecondary} onClick={copy}>
                   {copied ? t("copied") : t("copyLink")}
                 </button>
+                {canSystemShare && (
+                  <button type="button" className={ui.buttonGhost} onClick={systemShare}>
+                    {t("moreOptions")}
+                  </button>
+                )}
               </div>
               <p className="text-xs text-muted">{t("instagramHint")}</p>
             </>

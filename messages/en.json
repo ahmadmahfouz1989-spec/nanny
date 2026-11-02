@@ -2439,7 +2439,8 @@
     "offHint": "Your public page is off: people need an account to see your profile.",
     "publicToggle": "Anyone with the link can see my profile",
     "nudgeTitle": "Get more clients",
-    "nudgeBody": "Share your profile on WhatsApp, Facebook or Instagram — anyone can open it, no account needed."
+    "nudgeBody": "Share your profile on WhatsApp, Facebook or Instagram — anyone can open it, no account needed.",
+    "moreOptions": "More options"
   },
   "MessageNow": {
     "message": "Message {name}",
