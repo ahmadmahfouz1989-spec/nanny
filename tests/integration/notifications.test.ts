@@ -152,6 +152,34 @@ describe("ratings", () => {
   });
 });
 
+describe("a WhatsApp sign-up (phone, no email)", () => {
+  it("gets the bell and phone notifications; there's just no email to send", async () => {
+    const phone = `9617${String(Date.now()).slice(-7)}`;
+    const { data, error } = await admin.auth.admin.createUser({ phone, phone_confirm: true });
+    if (error || !data.user) throw new Error(error?.message);
+    const whatsappUser = { id: data.user.id, email: "", client: null as unknown as Db };
+    try {
+      const { data: beirut } = await admin.from("locations").select("id").eq("code", "LB11").single();
+      const theirProfile = await createProfile(whatsappUser, "errands", "provider", { errandServices: ["delivery"], districtId: beirut!.id }, { fullName: "Phone Only" });
+      await subscribe(whatsappUser);
+      const { data: match } = await admin
+        .from("generic_matches")
+        .insert({ category_id: (await admin.from("categories").select("id").eq("slug", "errands").single()).data!.id, seeker_profile_id: customerProfile, provider_profile_id: theirProfile, score: 90, score_breakdown: {} })
+        .select("id")
+        .single();
+
+      as(customer);
+      expect((await messagesPost(json({ body: "Are you free today?" }), ctx(match!.id))).status).toBe(201);
+      await settle();
+
+      expect(pushesTo(whatsappUser)[0]).toMatchObject({ title: "Rana Customer", body: "Are you free today?" });
+      expect(captured.emails).toEqual([]);
+    } finally {
+      await admin.auth.admin.deleteUser(data.user.id);
+    }
+  });
+});
+
 describe("feed", () => {
   let postId: string;
   beforeAll(async () => {
