@@ -166,7 +166,7 @@ export default function LoginForm() {
       </p>
       <p className="text-xs text-muted mt-2 text-center">
         {t("newHere")}{" "}
-        <Link href="/signup" className={ui.link}>
+        <Link href={explicitNext ? `/signup?next=${encodeURIComponent(explicitNext)}` : "/signup"} className={ui.link}>
           {t("createAccount")}
         </Link>
       </p>

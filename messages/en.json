@@ -2408,5 +2408,31 @@
     "entryProJobsHint": "Customers ask for quotes here. Send your price to win the job.",
     "where": "Where",
     "quotesCount": "{count, plural, =0 {No quotes yet} one {# quote} other {# quotes}}"
+  },
+  "PublicProfile": {
+    "serviceIn": "{service} in {place}",
+    "previewFallback": "{service} on ouiKnow — message them directly, free.",
+    "signIn": "Sign in",
+    "new": "New on ouiKnow",
+    "idChecked": "ID checked",
+    "years": "{years, plural, one {# year} other {# years}} experience",
+    "message": "Message {name}",
+    "getQuote": "Get a quote",
+    "signupHint": "Free. Create an account in a minute and you'll come straight back here.",
+    "about": "About",
+    "work": "Work",
+    "reviews": "Reviews",
+    "memberSince": "On ouiKnow since {date}",
+    "pitchTitle": "Services across Lebanon",
+    "pitchBody": "Nannies, nurses, tutors, repairs, deliveries — from people near you, with ratings.",
+    "explore": "Explore ouiKnow",
+    "share": "Share my profile",
+    "shareText": "{name} — {service} on ouiKnow:",
+    "shareHint": "Share your profile in WhatsApp groups, on your Facebook page or in your Instagram bio. Anyone can open it — no account needed.",
+    "copyLink": "Copy link",
+    "copied": "Link copied",
+    "instagramHint": "Instagram: copy the link and paste it in your bio or a story link sticker.",
+    "offHint": "Your public page is off: people need an account to see your profile.",
+    "publicToggle": "Anyone with the link can see my profile"
   }
 }

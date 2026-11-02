@@ -2408,5 +2408,31 @@
     "entryProJobsHint": "الزباين بيطلبوا أسعار هون. ابعت سعرك لتاخد الشغلة.",
     "where": "وين",
     "quotesCount": "{count, plural, =0 {ما في أسعار بعد} one {سعر واحد} other {# أسعار}}"
+  },
+  "PublicProfile": {
+    "serviceIn": "{service} في {place}",
+    "previewFallback": "{service} على ouiKnow — راسلو مباشرة، ببلاش.",
+    "signIn": "تسجيل الدخول",
+    "new": "جديد على ouiKnow",
+    "idChecked": "الهوية متحقّق منها",
+    "years": "{years, plural, one {سنة خبرة} two {سنتين خبرة} other {# سنين خبرة}}",
+    "message": "راسل {name}",
+    "getQuote": "خود سعر",
+    "signupHint": "ببلاش. اعمل حساب بدقيقة ورح ترجع لهون مباشرة.",
+    "about": "عنّي",
+    "work": "الشغل",
+    "reviews": "التقييمات",
+    "memberSince": "على ouiKnow من {date}",
+    "pitchTitle": "خدمات بكل لبنان",
+    "pitchBody": "مربيات، ممرضين، أساتذة، تصليحات، توصيل — من ناس قريبين منك، مع تقييمات.",
+    "explore": "اكتشف ouiKnow",
+    "share": "شارك ملفي",
+    "shareText": "{name} — {service} على ouiKnow:",
+    "shareHint": "شارك ملفك بغروبات الواتساب، على صفحتك بفيسبوك أو بالـ bio على إنستغرام. أي حدا فيه يفتحو — بلا حساب.",
+    "copyLink": "انسخ الرابط",
+    "copied": "تمّ نسخ الرابط",
+    "instagramHint": "إنستغرام: انسخ الرابط وحطّو بالـ bio أو بستيكر الرابط بالستوري.",
+    "offHint": "صفحتك العامة مسكّرة: لازم يكون عند الناس حساب ليشوفوا ملفك.",
+    "publicToggle": "أي حدا معو الرابط فيه يشوف ملفي"
   }
 }

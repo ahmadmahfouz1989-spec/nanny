@@ -27,6 +27,8 @@ export type ProfilePageProfile = {
   attributes: Record<string, unknown>;
   moderation_status: string;
   headline: string | null;
+  /** Provider: whether anyone with the link can open it (see public-profile.ts). */
+  public_page: boolean;
   locations: Localized | null;
   categories: { slug: string; name_en: string; name_ar: string } | null;
   languages: ({ id: string } & Localized)[];
@@ -71,7 +73,7 @@ export type ProfilePageData = {
 };
 
 const FIELDS =
-  "id, user_id, full_name, profile_photo_url, role, location_id, attributes, category_id, moderation_status, headline, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)";
+  "id, user_id, full_name, profile_photo_url, role, location_id, attributes, category_id, moderation_status, headline, public_page, locations(name_en, name_ar, name_fr), categories(slug, name_en, name_ar)";
 
 /**
  * Everything the profile page (/u/[id]) shows about one profile and the

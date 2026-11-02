@@ -320,14 +320,14 @@ isOneToOne: false
                   ]
                 },"generic_profiles": {
                   Row: {
-                    "attributes": NonNullable<Json>,"available_changed_at": string | null,"available_now": boolean,"category_id": string,"created_at": string,"full_name": string,"headline": string | null,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
+                    "attributes": NonNullable<Json>,"available_changed_at": string | null,"available_now": boolean,"category_id": string,"created_at": string,"full_name": string,"headline": string | null,"id": string,"location_id": string | null,"moderation_status": string,"profile_photo_url": string | null,"public_page": boolean,"role": string,"search_text": string | null,"status": string,"updated_at": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "attributes"?: NonNullable<Json>,"available_changed_at"?: string | null,"available_now"?: boolean,"category_id": string,"created_at"?: string,"full_name": string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
+                    "attributes"?: NonNullable<Json>,"available_changed_at"?: string | null,"available_now"?: boolean,"category_id": string,"created_at"?: string,"full_name": string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"public_page"?: boolean,"role": string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string
                   }
                   Update: {
-                    "attributes"?: NonNullable<Json>,"available_changed_at"?: string | null,"available_now"?: boolean,"category_id"?: string,"created_at"?: string,"full_name"?: string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
+                    "attributes"?: NonNullable<Json>,"available_changed_at"?: string | null,"available_now"?: boolean,"category_id"?: string,"created_at"?: string,"full_name"?: string,"headline"?: string | null,"id"?: string,"location_id"?: string | null,"moderation_status"?: string,"profile_photo_url"?: string | null,"public_page"?: boolean,"role"?: string,"search_text"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     {

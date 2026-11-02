@@ -5,6 +5,9 @@ import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { loadProfilePage, type ProfilePageData } from "@/lib/profile-page";
+import { loadPublicProfile } from "@/lib/public-profile";
+import PublicProfileView from "@/components/public-profile-view";
+import ShareProfileButton from "@/components/share-profile-button";
 import { isCategorySlug } from "@/lib/category-slugs";
 import { DAYS } from "@/lib/validation/profile";
 import { formatHoursRange } from "@/lib/format-hours";
@@ -33,8 +36,32 @@ const getPage = cache(async (id: string) => {
   return { user, data: await loadProfilePage(supabase, user.id, id) };
 });
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
-  const { id } = await params;
+// The shareable view of a provider (anyone with the link), or null.
+const getPublic = cache((id: string) => loadPublicProfile(id));
+
+/**
+ * The link preview WhatsApp, Instagram and Facebook show: the provider's
+ * photo, "Name · Plumber in Beirut" and their intro. Built from the
+ * public view only, so a link never previews more than a visitor may see.
+ */
+export async function generateMetadata({ params }: { params: Promise<{ locale: string; id: string }> }): Promise<Metadata> {
+  const { locale, id } = await params;
+  const shared = await getPublic(id);
+  if (shared) {
+    const t = await getTranslations({ locale, namespace: "PublicProfile" });
+    const service = locale === "ar" ? shared.category.name_ar : shared.category.name_en;
+    const place = shared.place ? (locale === "ar" ? shared.place.name_ar : shared.place.name_en) : null;
+    const title = `${shared.fullName} · ${place ? t("serviceIn", { service, place }) : service}`;
+    const stars = shared.rating.average !== null ? `★ ${shared.rating.average} (${shared.rating.count}) · ` : "";
+    const description = `${stars}${shared.headline ?? shared.intro ?? t("previewFallback", { service })}`.slice(0, 200);
+    const images = shared.photoUrl ? [{ url: shared.photoUrl, alt: shared.fullName }] : undefined;
+    return {
+      title,
+      description,
+      openGraph: { title, description, type: "profile", siteName: "ouiKnow", locale: locale === "ar" ? "ar_LB" : "en_US", images },
+      twitter: { card: images ? "summary_large_image" : "summary", title, description, images: images?.map((i) => i.url) },
+    };
+  }
   const { data } = await getPage(id);
   return data ? { title: data.profile.full_name } : {};
 }
@@ -56,7 +83,11 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   const { user, data } = await getPage(id);
 
   if (!user) {
-    redirect({ href: "/login", locale });
+    // A shared provider link opens without an account; anything else asks
+    // to sign in and comes back here.
+    const shared = await getPublic(id);
+    if (shared) return <PublicProfileView profile={shared} locale={locale} />;
+    redirect({ href: `/login?next=${encodeURIComponent(`/u/${id}`)}`, locale });
     return;
   }
 
@@ -175,10 +206,13 @@ async function ProfileHeader({ data, locale }: { data: ProfilePageData; locale: 
               <p className="rounded-xl bg-warning-soft px-3 py-2 text-sm text-warning">{t("ownNotLive")}</p>
             )}
             <p className="text-xs text-muted">{t("ownPreviewNote")}</p>
-            <div>
+            <div className="flex flex-wrap items-center gap-2">
               <Link href={`/categories/${slug}/onboarding?role=${profile.role}`} className={ui.buttonSecondary}>
                 {tDashboard("editProfile")}
               </Link>
+              {profile.role === "provider" && profile.moderation_status === "approved" && (
+                <ShareProfileButton profileId={profile.id} name={profile.full_name} service={categoryName} initialPublic={profile.public_page} />
+              )}
             </div>
           </>
         ) : (

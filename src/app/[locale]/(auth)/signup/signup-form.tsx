@@ -10,6 +10,8 @@ import AppleAuthButton from "@/components/apple-auth-button";
 import WhatsAppAuth from "@/components/whatsapp-auth";
 import EmailCodeForm from "@/components/email-code-form";
 import { useRouter } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
+import { safeReturnPath } from "@/lib/return-path";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 
@@ -21,6 +23,9 @@ export default function SignupForm() {
   const t = useTranslations("Signup");
   const tAuth = useTranslations("Auth");
   const router = useRouter();
+  // Where to go once signed up -- e.g. back to the profile a shared link
+  // opened (/u/<id>), not the generic start.
+  const next = safeReturnPath(useSearchParams().get("next"));
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -62,7 +67,7 @@ export default function SignupForm() {
     const body = await res.json().catch(() => ({}));
     if (body?.signedIn) {
       // No confirmation step (local development): straight to the start.
-      router.replace("/welcome");
+      router.replace(next ?? "/welcome");
       router.refresh();
       return;
     }
@@ -72,7 +77,7 @@ export default function SignupForm() {
   if (submitted) {
     return (
       <AuthCard>
-        <EmailCodeForm email={email} />
+        <EmailCodeForm email={email} next={next ?? "/welcome"} />
       </AuthCard>
     );
   }
@@ -83,10 +88,10 @@ export default function SignupForm() {
       <p className="text-muted text-sm mb-6">{t("subheadCategory")}</p>
 
       <div className="flex flex-col gap-2">
-        <AppleAuthButton />
-        <GoogleAuthButton />
+        <AppleAuthButton next={next} />
+        <GoogleAuthButton next={next} />
       </div>
-      <WhatsAppAuth mode="signup" />
+      <WhatsAppAuth mode="signup" next={next} />
 
       <div className="flex items-center gap-3 my-5">
         <div className="h-px flex-1 bg-border" />
@@ -126,7 +131,7 @@ export default function SignupForm() {
 
       <p className="text-xs text-muted mt-5 text-center">
         {t("hasAccount")}{" "}
-        <Link href="/login" className={ui.link}>
+        <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className={ui.link}>
           {t("logIn")}
         </Link>
       </p>
