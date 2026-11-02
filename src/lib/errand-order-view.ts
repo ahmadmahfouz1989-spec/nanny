@@ -23,7 +23,11 @@ export type OrderOffer = OrderPerson & {
   recipientId: string;
   distanceKm: number | null;
   priceUsd: number | null;
+  /** A repair quote can be a range: priceUsd–priceMaxUsd. */
+  priceMaxUsd: number | null;
   etaMinutes: number | null;
+  /** A repair quote: when they can come. */
+  visitAt: string | null;
   note: string | null;
   status: RecipientRow["status"];
   respondedAt: string | null;
@@ -34,8 +38,12 @@ export type OrderView = {
   viewer: Viewer;
   id: string;
   number: number;
+  /** "errands" (a delivery or errand) or "maintenance" (a repair job asking for quotes). */
+  category: string;
   service: string;
   description: string;
+  /** Short-lived links to the job's photos. */
+  photoUrls: string[];
   pickup: OrderPlace;
   dropoff: OrderPlace | null;
   timing: string;
@@ -57,7 +65,16 @@ export type OrderView = {
   offers: OrderOffer[];
   counts: { sent: number; offered: number; declined: number; waiting: number };
   /** Provider only: their own answer. */
-  mine: { recipientId: string; status: RecipientRow["status"]; priceUsd: number | null; etaMinutes: number | null; note: string | null; distanceKm: number | null } | null;
+  mine: {
+    recipientId: string;
+    status: RecipientRow["status"];
+    priceUsd: number | null;
+    priceMaxUsd: number | null;
+    etaMinutes: number | null;
+    visitAt: string | null;
+    note: string | null;
+    distanceKm: number | null;
+  } | null;
   /** When each stage was reached, for the timeline. */
   timeline: { status: string; at: string }[];
   /** Admin only: the full history. */
@@ -98,6 +115,13 @@ const strip = <T extends { userId: string }>(p: T | undefined): Omit<T, "userId"
   return rest;
 };
 
+/** Signed links (an hour) to an order's photos; only called for people allowed to see the order. */
+async function photoLinks(db: Admin, paths: string[]): Promise<string[]> {
+  if (!paths?.length) return [];
+  const { data } = await db.storage.from("order-photos").createSignedUrls(paths, 3600);
+  return (data ?? []).map((d) => d.signedUrl).filter((u): u is string => !!u);
+}
+
 export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, viewerUserId: string): Promise<OrderView> {
   const [{ data: recipients }, { data: events }, names] = await Promise.all([
     db.from("errand_order_recipients").select("*").eq("order_id", order.id).order("rank"),
@@ -125,7 +149,9 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
       rating: person?.rating ?? { average: null, count: 0 },
       distanceKm: r.distance_km,
       priceUsd: r.price_usd,
+      priceMaxUsd: r.price_max_usd,
       etaMinutes: r.eta_minutes,
+      visitAt: r.visit_at,
       note: r.note,
       status: r.status,
       respondedAt: r.responded_at,
@@ -142,8 +168,10 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     viewer,
     id: order.id,
     number: order.number,
+    category: order.category,
     service: order.service,
     description: order.description,
+    photoUrls: await photoLinks(db, order.photo_paths),
     pickup: place(order.pickup_district_id, order.pickup_area_id, order.pickup_detail),
     dropoff: order.dropoff_district_id ? place(order.dropoff_district_id, order.dropoff_area_id, order.dropoff_detail) : null,
     timing: order.timing,
@@ -175,7 +203,9 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
           recipientId: mineRow.id,
           status: mineRow.status,
           priceUsd: mineRow.price_usd,
+          priceMaxUsd: mineRow.price_max_usd,
           etaMinutes: mineRow.eta_minutes,
+          visitAt: mineRow.visit_at,
           note: mineRow.note,
           distanceKm: mineRow.distance_km,
         }
@@ -207,8 +237,10 @@ export async function orderSummaries(db: Admin, orders: OrderRow[]) {
     return {
       id: o.id,
       number: o.number,
+      category: o.category,
       service: o.service,
       description: o.description,
+      photos: o.photo_paths?.length ?? 0,
       pickupDistrict: nameOf(o.pickup_area_id, o.pickup_district_id),
       dropoffDistrict: o.dropoff_district_id ? nameOf(o.dropoff_area_id, o.dropoff_district_id) : null,
       status: o.status,

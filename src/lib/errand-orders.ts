@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { placeOf, placeScore } from "@/lib/matching/place";
 import { notify } from "@/lib/push";
 import type { ErrandService } from "@/lib/validation/errands";
+import type { Trade } from "@/lib/validation/maintenance";
 
 // Delivery & Errands orders, Phase 1 (see the migration
 // 20261102000002_errand_orders.sql for the tables). An order goes to every
@@ -10,6 +11,11 @@ import type { ErrandService } from "@/lib/validation/errands";
 // provider moves it through its stages. No waves or timers yet -- an
 // order still open after errand_settings.open_minutes closes as
 // "no provider".
+//
+// Home Maintenance quotes use the same tables (category = 'maintenance'):
+// the service is a trade, there's no Available switch, a tradesperson can
+// have several jobs at once, and requests stay open longer (see
+// 20261103000001_maintenance_quotes.sql).
 
 type Admin = ReturnType<typeof createAdminClient>;
 
@@ -27,8 +33,19 @@ export const ORDER_STATUSES = [
 ] as const;
 export type OrderStatus = (typeof ORDER_STATUSES)[number];
 
-/** The stages a confirmed order moves through, in order. */
+export const ORDER_CATEGORIES = ["errands", "maintenance"] as const;
+export type OrderCategory = (typeof ORDER_CATEGORIES)[number];
+export type OrderService = ErrandService | Trade;
+
+export const isOrderCategory = (v: unknown): v is OrderCategory => (ORDER_CATEGORIES as readonly unknown[]).includes(v);
+
+/** The stages a confirmed delivery moves through, in order. */
 export const PROGRESS: readonly OrderStatus[] = ["accepted", "on_the_way", "arrived", "picked_up", "delivered", "completed"];
+
+/** A repair job has nothing to pick up: on the way, arrived, done ("delivered"), completed. */
+export const JOB_PROGRESS: readonly OrderStatus[] = ["accepted", "on_the_way", "arrived", "delivered", "completed"];
+
+export const progressFor = (category: string): readonly OrderStatus[] => (category === "maintenance" ? JOB_PROGRESS : PROGRESS);
 
 /** A provider with an order in one of these is busy: no new orders reach them. */
 export const BUSY_STATUSES: readonly OrderStatus[] = ["accepted", "on_the_way", "arrived", "picked_up"];
@@ -41,17 +58,22 @@ export const LIVE_STATUSES: readonly OrderStatus[] = ["open", "reserved", ...BUS
  * the provider's to move (open, reserved, done). Completing is the
  * customer's (they confirm it was done), or the provider's once delivered.
  */
-export function nextProviderStatus(status: OrderStatus): OrderStatus | null {
-  const i = PROGRESS.indexOf(status);
-  return i >= 0 && i < PROGRESS.length - 1 ? PROGRESS[i + 1]! : null;
+export function nextProviderStatus(status: OrderStatus, category = "errands"): OrderStatus | null {
+  const steps = progressFor(category);
+  const i = steps.indexOf(status);
+  return i >= 0 && i < steps.length - 1 ? steps[i + 1]! : null;
 }
 
-export type ErrandSettings = { max_recipients: number; open_minutes: number };
+export type ErrandSettings = { max_recipients: number; open_minutes: number; quote_open_minutes: number };
 
 export async function errandSettings(db: Admin): Promise<ErrandSettings> {
-  const { data } = await db.from("errand_settings").select("max_recipients, open_minutes").eq("id", true).maybeSingle();
-  return data ?? { max_recipients: 20, open_minutes: 60 };
+  const { data } = await db.from("errand_settings").select("max_recipients, open_minutes, quote_open_minutes").eq("id", true).maybeSingle();
+  return data ?? { max_recipients: 20, open_minutes: 60, quote_open_minutes: 1440 };
 }
+
+/** How long a new order stays open for offers, in minutes. */
+export const openMinutesFor = (settings: ErrandSettings, category: string) =>
+  category === "maintenance" ? settings.quote_open_minutes : settings.open_minutes;
 
 /** Straight-line distance in km between two points (haversine). */
 export function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
@@ -75,10 +97,12 @@ async function pointsById(db: Admin, ids: (string | null | undefined)[]): Promis
   return out;
 }
 
-export async function errandsCategoryId(db: Admin): Promise<string | null> {
-  const { data } = await db.from("categories").select("id").eq("slug", "errands").maybeSingle();
+export async function categoryIdOf(db: Admin, slug: OrderCategory): Promise<string | null> {
+  const { data } = await db.from("categories").select("id").eq("slug", slug).maybeSingle();
   return data?.id ?? null;
 }
+
+export const errandsCategoryId = (db: Admin) => categoryIdOf(db, "errands");
 
 export type Candidate = { profileId: string; userId: string; distanceKm: number | null };
 
@@ -89,13 +113,18 @@ export type Candidate = { profileId: string; userId: string; distanceKm: number 
  * and not busy with another order. Distance runs from the pickup area (or
  * its district) to the provider's own area (or district, or governorate)
  * -- the centres of those places, since nobody shares a live location.
+ *
+ * A repair job instead goes to tradespeople of that trade anywhere in the
+ * governorate (nearest first): there are fewer of them, they travel, and
+ * they have no Available switch or one-job limit.
  */
 export async function eligibleProviders(
   db: Admin,
-  order: { service: ErrandService; pickupDistrictId: string; pickupAreaId: string | null; seekerUserId: string },
+  order: { category?: string; service: OrderService; pickupDistrictId: string; pickupAreaId: string | null; seekerUserId: string },
   options: { exclude?: string[]; limit: number },
 ): Promise<Candidate[]> {
-  const categoryId = await errandsCategoryId(db);
+  const jobs = order.category === "maintenance";
+  const categoryId = await categoryIdOf(db, jobs ? "maintenance" : "errands");
   if (!categoryId) return [];
 
   const pickup = await pointsById(db, [order.pickupAreaId, order.pickupDistrictId]);
@@ -103,27 +132,30 @@ export async function eligibleProviders(
   const pickupGovernorate = pickupDistrict?.parent ?? null;
   const pickupPoint = (order.pickupAreaId && pickup.get(order.pickupAreaId)) || pickupDistrict || null;
 
-  const { data: providers } = await db
+  let query = db
     .from("generic_profiles")
     .select("id, user_id, location_id, attributes")
     .eq("category_id", categoryId)
     .eq("role", "provider")
     .eq("status", "active")
     .eq("moderation_status", "approved")
-    .eq("available_now", true)
     .neq("user_id", order.seekerUserId);
+  if (!jobs) query = query.eq("available_now", true);
+  const { data: providers } = await query;
 
   const exclude = new Set(options.exclude ?? []);
   const offering = (providers ?? []).filter((p) => {
     if (exclude.has(p.id)) return false;
     const a = (p.attributes ?? {}) as Record<string, unknown>;
-    const services = Array.isArray(a.errandServices) ? a.errandServices : [];
+    const offered = jobs ? a.trades : a.errandServices;
+    const services = Array.isArray(offered) ? offered : [];
     if (!services.includes(order.service)) return false;
     const seekerPlace = { governorateId: pickupGovernorate, districtId: order.pickupDistrictId };
     // 1 = works in that district; 0.5 = same governorate but not that
-    // district -- not "covering" it, so not sent.
+    // district -- not "covering" it, so a delivery isn't sent; a repair job is.
     const score = placeScore(seekerPlace, placeOf(p as { location_id: string | null; attributes: Record<string, unknown> }));
     const a2 = a as { districtId?: unknown };
+    if (jobs) return score > 0;
     return typeof a2.districtId === "string" ? score === 1 : score > 0;
   });
   if (offering.length === 0) return [];
@@ -132,7 +164,9 @@ export async function eligibleProviders(
   const profileIds = offering.map((p) => p.id);
   const [{ data: users }, { data: busy }] = await Promise.all([
     db.from("users").select("id, status").in("id", userIds),
-    db.from("errand_orders").select("provider_profile_id").in("provider_profile_id", profileIds).in("status", [...BUSY_STATUSES]),
+    jobs
+      ? Promise.resolve({ data: [] as { provider_profile_id: string | null }[] })
+      : db.from("errand_orders").select("provider_profile_id").in("provider_profile_id", profileIds).in("status", [...BUSY_STATUSES]),
   ]);
   const suspended = new Set((users ?? []).filter((u) => u.status === "suspended").map((u) => u.id));
   const busyIds = new Set((busy ?? []).map((o) => o.provider_profile_id));
@@ -176,14 +210,20 @@ export async function logOrderEvent(
  */
 export async function dispatchOrder(
   db: Admin,
-  order: { id: string; number: number; service: ErrandService; pickup_district_id: string; pickup_area_id: string | null; seeker_user_id: string },
+  order: { id: string; number: number; category?: string; service: OrderService; pickup_district_id: string; pickup_area_id: string | null; seeker_user_id: string },
   actor: { userId: string | null; role: "seeker" | "provider" | "admin" | "system" },
 ): Promise<number> {
   const settings = await errandSettings(db);
   const { data: already } = await db.from("errand_order_recipients").select("provider_profile_id, rank").eq("order_id", order.id);
   const candidates = await eligibleProviders(
     db,
-    { service: order.service, pickupDistrictId: order.pickup_district_id, pickupAreaId: order.pickup_area_id, seekerUserId: order.seeker_user_id },
+    {
+      category: order.category,
+      service: order.service,
+      pickupDistrictId: order.pickup_district_id,
+      pickupAreaId: order.pickup_area_id,
+      seekerUserId: order.seeker_user_id,
+    },
     { exclude: (already ?? []).map((r) => r.provider_profile_id), limit: Math.max(0, settings.max_recipients - (already ?? []).length) },
   );
   if (candidates.length === 0) {
@@ -212,7 +252,7 @@ export async function dispatchOrder(
     candidates.map((c) => ({
       user_id: c.userId,
       type: "errand_request",
-      payload: { order_id: order.id, order_number: order.number, service: order.service, category_slug: "errands" },
+      payload: { order_id: order.id, order_number: order.number, service: order.service, category_slug: order.category ?? "errands" },
     })),
   );
   return candidates.length;
@@ -231,14 +271,14 @@ export async function closeExpiredOrders(db: Admin, filter: { seekerUserId?: str
     .lt("open_until", new Date().toISOString());
   if (filter.seekerUserId) query = query.eq("seeker_user_id", filter.seekerUserId);
   if (filter.orderId) query = query.eq("id", filter.orderId);
-  const { data } = await query.select("id, number, seeker_user_id");
+  const { data } = await query.select("id, number, seeker_user_id, category");
   for (const order of data ?? []) {
     await logOrderEvent(db, order.id, { userId: null, role: "system" }, "expired");
     await db.from("errand_order_recipients").update({ status: "not_selected" }).eq("order_id", order.id).in("status", ["sent", "offered"]);
     await notify({
       user_id: order.seeker_user_id,
       type: "errand_no_provider",
-      payload: { order_id: order.id, order_number: order.number, category_slug: "errands" },
+      payload: { order_id: order.id, order_number: order.number, category_slug: order.category },
     });
   }
   return (data ?? []).map((o) => o.id);
@@ -249,9 +289,14 @@ export async function closeExpiredOrders(db: Admin, filter: { seekerUserId?: str
  * provider, so they can share the exact address and details. Uses the
  * existing match table: open messaging works on any match.
  */
-export async function ensureConversation(db: Admin, seekerProfileId: string | null, providerProfileId: string): Promise<string | null> {
+export async function ensureConversation(
+  db: Admin,
+  seekerProfileId: string | null,
+  providerProfileId: string,
+  category: OrderCategory = "errands",
+): Promise<string | null> {
   if (!seekerProfileId) return null;
-  const categoryId = await errandsCategoryId(db);
+  const categoryId = await categoryIdOf(db, category);
   if (!categoryId) return null;
   const { data: existing } = await db
     .from("generic_matches")
@@ -285,8 +330,8 @@ export async function ensureConversation(db: Admin, seekerProfileId: string | nu
  * profile (needed to receive orders -- approved only: riders are checked,
  * ID included, before they get anyone's order).
  */
-export async function myErrandProfiles(db: Admin, userId: string) {
-  const categoryId = await errandsCategoryId(db);
+export async function myErrandProfiles(db: Admin, userId: string, category: OrderCategory = "errands") {
+  const categoryId = await categoryIdOf(db, category);
   if (!categoryId) return { seeker: null, provider: null };
   const { data } = await db
     .from("generic_profiles")

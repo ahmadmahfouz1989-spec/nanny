@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { dispatchOrder, eligibleProviders, closeExpiredOrders, myErrandProfiles } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
+import { ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
 
 // Delivery & Errands orders, Phase 1: who receives an order and in what
@@ -166,5 +167,132 @@ describe("errand orders", () => {
       const { data } = await customer.client.from(table).select("*");
       expect(data ?? []).toEqual([]);
     }
+  });
+});
+
+describe("repair quotes (Home Maintenance)", () => {
+  let customer: TestUser;
+  let local: { user: TestUser; profileId: string };
+  let elsewhere: { user: TestUser; profileId: string };
+  const asCustomer = () => ({ userId: customer.id, role: "seeker" as const });
+
+  async function tradesperson(tag: string, home: typeof beirut, trades: string[]) {
+    const user = await createUser(tag);
+    const profileId = await createProfile(user, "maintenance", "provider", { trades, districtId: home.id });
+    await admin.from("generic_profiles").update({ location_id: home.parent_location_id }).eq("id", profileId);
+    return { user, profileId };
+  }
+
+  async function placeJob(service: string, district: typeof beirut) {
+    const made = await ensureJobRequestProfile(admin, customer.id, {
+      service,
+      description: "The kitchen tap is leaking",
+      pickupDistrictId: district.id,
+      timing: "asap",
+      fullName: "Job Customer",
+    });
+    if (!made.ok) throw new Error(made.error);
+    const { data } = await admin
+      .from("errand_orders")
+      .insert({
+        seeker_user_id: customer.id,
+        seeker_profile_id: made.profileId,
+        category: "maintenance",
+        service,
+        description: "The kitchen tap is leaking",
+        pickup_district_id: district.id,
+        timing: "asap",
+        open_until: new Date(Date.now() + 86_400_000).toISOString(),
+      })
+      .select("*")
+      .single();
+    return data!;
+  }
+
+  beforeAll(async () => {
+    [beirut, baabda, tripoli] = await Promise.all([district("LB11"), district("LB32"), district("LB56")]);
+    customer = await createUser("job-customer");
+    // No Available switch for tradespeople: available_now stays false.
+    local = await tradesperson("job-plumber-beirut", beirut, ["plumber"]);
+    // Baabda is in Mount Lebanon, not Beirut: a different governorate.
+    elsewhere = await tradesperson("job-plumber-baabda", baabda, ["plumber"]);
+    await tradesperson("job-electrician-beirut", beirut, ["electrician"]);
+  });
+
+  it("makes the customer's maintenance request from the job, pending review, and needs a name when there's none", async () => {
+    const stranger = await createUser("job-noname");
+    const missing = await ensureJobRequestProfile(admin, stranger.id, {
+      service: "plumber",
+      description: "Leak",
+      pickupDistrictId: beirut.id,
+      timing: "asap",
+    });
+    expect(missing).toMatchObject({ ok: false, code: "name_required" });
+
+    await placeJob("plumber", beirut);
+    const { data: profile } = await admin
+      .from("generic_profiles")
+      .select("full_name, status, moderation_status, attributes, categories(slug)")
+      .eq("user_id", customer.id)
+      .eq("role", "seeker")
+      .single();
+    expect(profile).toMatchObject({ full_name: "Job Customer", status: "active", moderation_status: "pending", categories: { slug: "maintenance" } });
+    expect((profile!.attributes as { tradesNeeded: string[] }).tradesNeeded).toEqual(["plumber"]);
+  });
+
+  it("goes to tradespeople of that trade in the area, with no Available switch", async () => {
+    const job = await placeJob("plumber", beirut);
+    expect(await dispatchOrder(admin, { ...job, service: "plumber" }, asCustomer())).toBeGreaterThanOrEqual(1);
+    const { data: sent } = await admin.from("errand_order_recipients").select("provider_profile_id").eq("order_id", job.id);
+    const ids = (sent ?? []).map((r) => r.provider_profile_id);
+    expect(ids).toContain(local.profileId);
+    expect(ids).not.toContain(elsewhere.profileId);
+  });
+
+  it("takes a quote with a range and a visit time, and runs the job to completed", async () => {
+    const job = await placeJob("plumber", beirut);
+    await dispatchOrder(admin, { ...job, service: "plumber" }, asCustomer());
+    const asPro = { userId: local.user.id, role: "provider" as const };
+
+    // A quote needs a visit time, and the range must make sense.
+    expect((await providerAction(admin, await fresh(job.id), asPro, "offer", { priceUsd: 20 })).ok).toBe(false);
+    const visitAt = new Date(Date.now() + 3 * 3600_000).toISOString();
+    expect((await providerAction(admin, await fresh(job.id), asPro, "offer", { priceUsd: 30, priceMaxUsd: 20, visitAt })).ok).toBe(false);
+    expect((await providerAction(admin, await fresh(job.id), asPro, "offer", { priceUsd: 20, priceMaxUsd: 30, visitAt })).ok).toBe(true);
+
+    const seen = await orderView(admin, await fresh(job.id), "seeker", customer.id);
+    expect(seen.category).toBe("maintenance");
+    expect(seen.offers[0]).toMatchObject({ priceUsd: 20, priceMaxUsd: 30 });
+    expect(Date.parse(seen.offers[0]!.visitAt!)).toBe(Date.parse(visitAt));
+
+    expect((await seekerAction(admin, await fresh(job.id), asCustomer(), "select", { recipientId: seen.offers[0]!.recipientId })).ok).toBe(true);
+    expect((await providerAction(admin, await fresh(job.id), asPro, "confirm", {})).ok).toBe(true);
+    // Nothing to pick up on a repair: on the way, arrived, done.
+    for (const expected of ["on_the_way", "arrived", "delivered"]) {
+      expect((await providerAction(admin, await fresh(job.id), asPro, "advance", {})).ok).toBe(true);
+      expect((await fresh(job.id)).status).toBe(expected);
+    }
+    expect((await seekerAction(admin, await fresh(job.id), asCustomer(), "complete", {})).ok).toBe(true);
+    expect((await fresh(job.id)).status).toBe("completed");
+  });
+
+  it("lets a tradesperson take more than one job at a time", async () => {
+    const asPro = { userId: local.user.id, role: "provider" as const };
+    const visitAt = new Date(Date.now() + 3600_000).toISOString();
+    for (let i = 0; i < 2; i++) {
+      const job = await placeJob("plumber", beirut);
+      await dispatchOrder(admin, { ...job, service: "plumber" }, asCustomer());
+      expect((await providerAction(admin, await fresh(job.id), asPro, "offer", { priceUsd: 15, visitAt })).ok).toBe(true);
+      const { offers } = await orderView(admin, await fresh(job.id), "seeker", customer.id);
+      const mine = offers.find((o) => o.profileId === local.profileId)!;
+      expect((await seekerAction(admin, await fresh(job.id), asCustomer(), "select", { recipientId: mine.recipientId })).ok).toBe(true);
+      expect((await providerAction(admin, await fresh(job.id), asPro, "confirm", {})).ok).toBe(true);
+    }
+    const { count } = await admin
+      .from("errand_orders")
+      .select("id", { count: "exact", head: true })
+      .eq("provider_profile_id", local.profileId)
+      .eq("status", "accepted");
+    expect(count).toBe(2);
   });
 });

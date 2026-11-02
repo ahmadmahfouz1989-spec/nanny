@@ -5,12 +5,12 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { errandSettings } from "@/lib/errand-orders";
 import { settingsSchema } from "@/lib/validation/errand-order";
 
-/** The Delivery & Errands matching settings, changed without a code deploy. */
+/** The Delivery & Errands (and repair quotes) matching settings, changed without a code deploy. */
 export async function GET() {
   const supabase = await createClient();
   if (!(await requireAdmin(supabase))) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   const s = await errandSettings(createAdminClient());
-  return NextResponse.json({ settings: { maxRecipients: s.max_recipients, openMinutes: s.open_minutes } });
+  return NextResponse.json({ settings: { maxRecipients: s.max_recipients, openMinutes: s.open_minutes, quoteOpenMinutes: s.quote_open_minutes } });
 }
 
 export async function PUT(request: Request) {
@@ -25,6 +25,7 @@ export async function PUT(request: Request) {
     .update({
       max_recipients: parsed.data.maxRecipients,
       open_minutes: parsed.data.openMinutes,
+      ...(parsed.data.quoteOpenMinutes ? { quote_open_minutes: parsed.data.quoteOpenMinutes } : {}),
       updated_at: new Date().toISOString(),
       updated_by: admin.userId,
     })

@@ -10,7 +10,7 @@ import { isCategorySlug } from "@/lib/category-slugs";
 import RememberCategory from "@/components/remember-category";
 import { REGION_COOKIE } from "@/lib/region";
 import ServiceSwitcher from "@/components/service-switcher";
-import OrdersEntry from "@/components/orders/orders-entry";
+import OrdersEntry, { JobsEntry } from "@/components/orders/orders-entry";
 
 const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
   success: "bg-success-soft",
@@ -57,11 +57,12 @@ export default async function CategoryDashboardPage({
   const region = (await cookies()).get(REGION_COOKIE)?.value ?? "";
   const categoryName = locale === "ar" ? category.name_ar : category.name_en;
   // Delivery & Errands also has orders: ask for one, get offers nearby.
+  // Home Maintenance has quotes: describe a job, get prices from pros nearby.
   const switcher =
-    slug === "errands" ? (
+    slug === "errands" || slug === "maintenance" ? (
       <div className="flex flex-col gap-3">
         <ServiceSwitcher current={slug} />
-        <OrdersEntry />
+        {slug === "errands" ? <OrdersEntry /> : <JobsEntry />}
       </div>
     ) : (
       <ServiceSwitcher current={slug} />

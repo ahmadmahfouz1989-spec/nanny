@@ -20,6 +20,7 @@ import CarProviderForm from "./car-provider-form";
 import CarSeekerForm from "./car-seeker-form";
 import { ChevronIcon, PersonIcon, ProviderIcon } from "@/components/home-icons";
 import { request } from "@/lib/request";
+import { useRouter } from "@/i18n/navigation";
 
 // Each category's form pair is registered here -- also needs a schema
 // pair in CATEGORY_SCHEMAS (src/app/api/generic-profile/route.ts) and a
@@ -70,6 +71,7 @@ export default function CategoryOnboardingClient({
 }) {
   const t = useTranslations("CategoryOnboarding");
   const tw = useTranslations("Wizard");
+  const router = useRouter();
   // Only a real, already-submitted profile skips straight past the
   // picker -- an abandoned draft (claimed, nothing filled in) always
   // shows both options again, same as never having chosen at all.
@@ -97,6 +99,12 @@ export default function CategoryOnboardingClient({
   // the whole form is submitted. Re-picking a role that's already claimed
   // (or fully onboarded) just reuses that same row -- never overwrites it.
   async function chooseRole(role: "seeker" | "provider") {
+    // Someone who needs a repair asks for quotes straight away -- the
+    // request becomes their maintenance profile (lib/job-request-profile.ts).
+    if (role === "seeker" && categorySlug === "maintenance" && (!seeker || seeker.status === "draft")) {
+      router.push("/quotes/new");
+      return;
+    }
     if (role === "seeker" && seeker) return setChosenRole("seeker");
     if (role === "provider" && provider) return setChosenRole("provider");
 

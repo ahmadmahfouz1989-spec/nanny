@@ -72,14 +72,14 @@ isOneToOne: false
                   ]
                 },"errand_order_recipients": {
                   Row: {
-                    "distance_km": number | null,"eta_minutes": number | null,"id": string,"note": string | null,"order_id": string,"price_usd": number | null,"provider_profile_id": string,"provider_user_id": string,"rank": number,"responded_at": string | null,"sent_at": string,"status": string
+                    "distance_km": number | null,"eta_minutes": number | null,"id": string,"note": string | null,"order_id": string,"price_max_usd": number | null,"price_usd": number | null,"provider_profile_id": string,"provider_user_id": string,"rank": number,"responded_at": string | null,"sent_at": string,"status": string,"visit_at": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "distance_km"?: number | null,"eta_minutes"?: number | null,"id"?: string,"note"?: string | null,"order_id": string,"price_usd"?: number | null,"provider_profile_id": string,"provider_user_id": string,"rank": number,"responded_at"?: string | null,"sent_at"?: string,"status"?: string
+                    "distance_km"?: number | null,"eta_minutes"?: number | null,"id"?: string,"note"?: string | null,"order_id": string,"price_max_usd"?: number | null,"price_usd"?: number | null,"provider_profile_id": string,"provider_user_id": string,"rank": number,"responded_at"?: string | null,"sent_at"?: string,"status"?: string,"visit_at"?: string | null
                   }
                   Update: {
-                    "distance_km"?: number | null,"eta_minutes"?: number | null,"id"?: string,"note"?: string | null,"order_id"?: string,"price_usd"?: number | null,"provider_profile_id"?: string,"provider_user_id"?: string,"rank"?: number,"responded_at"?: string | null,"sent_at"?: string,"status"?: string
+                    "distance_km"?: number | null,"eta_minutes"?: number | null,"id"?: string,"note"?: string | null,"order_id"?: string,"price_max_usd"?: number | null,"price_usd"?: number | null,"provider_profile_id"?: string,"provider_user_id"?: string,"rank"?: number,"responded_at"?: string | null,"sent_at"?: string,"status"?: string,"visit_at"?: string | null
                   }
                   Relationships: [
                     {
@@ -104,14 +104,14 @@ isOneToOne: false
                   ]
                 },"errand_orders": {
                   Row: {
-                    "budget_usd": number | null,"cancel_reason": string | null,"cancelled_by": string | null,"created_at": string,"description": string,"dropoff_area_id": string | null,"dropoff_detail": string | null,"dropoff_district_id": string | null,"generic_match_id": string | null,"id": string,"number": number,"open_until": string,"pickup_area_id": string | null,"pickup_detail": string | null,"pickup_district_id": string,"provider_profile_id": string | null,"provider_user_id": string | null,"scheduled_at": string | null,"seeker_profile_id": string | null,"seeker_user_id": string,"selected_recipient_id": string | null,"service": string,"status": string,"status_changed_at": string,"timing": string,"updated_at": string
+                    "budget_usd": number | null,"cancel_reason": string | null,"cancelled_by": string | null,"category": string,"created_at": string,"description": string,"dropoff_area_id": string | null,"dropoff_detail": string | null,"dropoff_district_id": string | null,"generic_match_id": string | null,"id": string,"number": number,"open_until": string,"photo_paths": (string)[],"pickup_area_id": string | null,"pickup_detail": string | null,"pickup_district_id": string,"provider_profile_id": string | null,"provider_user_id": string | null,"scheduled_at": string | null,"seeker_profile_id": string | null,"seeker_user_id": string,"selected_recipient_id": string | null,"service": string,"status": string,"status_changed_at": string,"timing": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"created_at"?: string,"description": string,"dropoff_area_id"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until": string,"pickup_area_id"?: string | null,"pickup_detail"?: string | null,"pickup_district_id": string,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id": string,"selected_recipient_id"?: string | null,"service": string,"status"?: string,"status_changed_at"?: string,"timing": string,"updated_at"?: string
+                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"category"?: string,"created_at"?: string,"description": string,"dropoff_area_id"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until": string,"photo_paths"?: (string)[],"pickup_area_id"?: string | null,"pickup_detail"?: string | null,"pickup_district_id": string,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id": string,"selected_recipient_id"?: string | null,"service": string,"status"?: string,"status_changed_at"?: string,"timing": string,"updated_at"?: string
                   }
                   Update: {
-                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"created_at"?: string,"description"?: string,"dropoff_area_id"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until"?: string,"pickup_area_id"?: string | null,"pickup_detail"?: string | null,"pickup_district_id"?: string,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id"?: string,"selected_recipient_id"?: string | null,"service"?: string,"status"?: string,"status_changed_at"?: string,"timing"?: string,"updated_at"?: string
+                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"category"?: string,"created_at"?: string,"description"?: string,"dropoff_area_id"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until"?: string,"photo_paths"?: (string)[],"pickup_area_id"?: string | null,"pickup_detail"?: string | null,"pickup_district_id"?: string,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id"?: string,"selected_recipient_id"?: string | null,"service"?: string,"status"?: string,"status_changed_at"?: string,"timing"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     {
@@ -178,14 +178,14 @@ isOneToOne: false
                   ]
                 },"errand_settings": {
                   Row: {
-                    "id": boolean,"max_recipients": number,"open_minutes": number,"updated_at": string,"updated_by": string | null
+                    "id": boolean,"max_recipients": number,"open_minutes": number,"quote_open_minutes": number,"updated_at": string,"updated_by": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "id"?: boolean,"max_recipients"?: number,"open_minutes"?: number,"updated_at"?: string,"updated_by"?: string | null
+                    "id"?: boolean,"max_recipients"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Update: {
-                    "id"?: boolean,"max_recipients"?: number,"open_minutes"?: number,"updated_at"?: string,"updated_by"?: string | null
+                    "id"?: boolean,"max_recipients"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"updated_at"?: string,"updated_by"?: string | null
                   }
                   Relationships: [
                     {

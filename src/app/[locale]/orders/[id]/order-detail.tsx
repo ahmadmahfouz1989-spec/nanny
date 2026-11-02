@@ -6,26 +6,28 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
-import { OrderStatusBadge, placeLabel } from "@/components/orders/order-bits";
+import { OrderStatusBadge, placeLabel, useOrderTitle, useServiceLabel, useStatusLabel } from "@/components/orders/order-bits";
 import type { OrderOffer, OrderPerson, OrderPlace, OrderView } from "@/lib/errand-order-view";
 
 // One order, live: polled every few seconds so offers and each stage
 // appear without a refresh (and a notification arrives as well).
 const POLL_MS = 5_000;
 const STAGES = ["accepted", "on_the_way", "arrived", "picked_up", "delivered", "completed"] as const;
-const NEXT: Record<string, string> = {
-  accepted: "on_the_way",
-  on_the_way: "arrived",
-  arrived: "picked_up",
-  picked_up: "delivered",
-  delivered: "completed",
+// A repair job has nothing to pick up.
+const JOB_STAGES = ["accepted", "on_the_way", "arrived", "delivered", "completed"] as const;
+const stagesFor = (category: string): readonly string[] => (category === "maintenance" ? JOB_STAGES : STAGES);
+const nextStage = (status: string, category: string) => {
+  const stages = stagesFor(category);
+  const i = stages.indexOf(status);
+  return i >= 0 && i < stages.length - 1 ? stages[i + 1]! : null;
 };
 const CANCELLABLE = new Set(["open", "reserved", "accepted", "on_the_way", "arrived"]);
 const DROPPABLE = new Set(["accepted", "on_the_way", "arrived"]);
 
 export default function OrderDetail({ orderId }: { orderId: string }) {
   const t = useTranslations("Orders");
-  const ts = useTranslations("ErrandServices");
+  const serviceLabel = useServiceLabel();
+  const orderTitle = useOrderTitle();
   const locale = useLocale();
   const format = useFormatter();
   const router = useRouter();
@@ -119,10 +121,10 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         </Link>
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
-            <p className="text-sm text-muted">{ts(order.service as "delivery")}</p>
-            <h1 className="text-2xl font-bold text-ink">{t("orderNumber", { number: order.number })}</h1>
+            <p className="text-sm text-muted">{serviceLabel(order.service, order.category)}</p>
+            <h1 className="text-2xl font-bold text-ink">{orderTitle(order.number, order.category)}</h1>
           </div>
-          <OrderStatusBadge status={order.status} />
+          <OrderStatusBadge status={order.status} category={order.category} />
         </div>
       </div>
 
@@ -130,8 +132,19 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         <p dir="auto" className="whitespace-pre-line text-ink">
           {order.description}
         </p>
+        {order.photoUrls.length > 0 && (
+          <div className="flex flex-wrap gap-2 py-1">
+            {order.photoUrls.map((url) => (
+              <a key={url} href={url} target="_blank" rel="noreferrer" className="block h-24 w-24 overflow-hidden rounded-xl border border-border">
+                {/* Short-lived private links: next/image can't optimise them. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={url} alt="" className="h-full w-full object-cover" />
+              </a>
+            ))}
+          </div>
+        )}
         <p className="text-sm text-muted">
-          {t("pickup")}: {place(order.pickup)}
+          {order.category === "maintenance" ? t("where") : t("pickup")}: {place(order.pickup)}
         </p>
         {order.dropoff && (
           <p className="text-sm text-muted">
@@ -156,7 +169,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         <ProviderPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
       )}
 
-      {STAGES.includes(order.status as (typeof STAGES)[number]) && <Timeline order={order} />}
+      {stagesFor(order.category).includes(order.status) && <Timeline order={order} />}
     </div>
   );
 }
@@ -190,16 +203,18 @@ function PersonCard({ title, person, matchId }: { title: string; person: OrderPe
 
 function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   const t = useTranslations("Orders");
+  const format = useFormatter();
+  const job = order.category === "maintenance";
   const [sort, setSort] = useState<"price" | "rating" | "time">("price");
   const offers = useMemo(() => {
     const list = order.offers.filter((o) => o.status === "offered" || o.status === "selected");
     const key: Record<typeof sort, (o: OrderOffer) => number> = {
       price: (o) => o.priceUsd ?? Infinity,
       rating: (o) => -(o.rating.average ?? 0),
-      time: (o) => o.etaMinutes ?? Infinity,
+      time: (o) => (job ? (o.visitAt ? Date.parse(o.visitAt) : Infinity) : (o.etaMinutes ?? Infinity)),
     };
     return [...list].sort((a, b) => key[sort](a) - key[sort](b));
-  }, [order.offers, sort]);
+  }, [order.offers, sort, job]);
 
   if (order.status === "no_provider") {
     return (
@@ -227,20 +242,22 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
     return (
       <div className="flex flex-col gap-3">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-semibold text-ink">{t("offers")}</h2>
+          <h2 className="font-semibold text-ink">{job ? t("quotes") : t("offers")}</h2>
           {offers.length > 1 && (
             <label className="flex items-center gap-2 text-xs text-muted">
               {t("sortBy")}
               <select className="bg-transparent font-medium text-ink outline-none" value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
                 <option value="price">{t("sortPrice")}</option>
                 <option value="rating">{t("sortRating")}</option>
-                <option value="time">{t("sortTime")}</option>
+                <option value="time">{job ? t("sortVisit") : t("sortTime")}</option>
               </select>
             </label>
           )}
         </div>
         {offers.length === 0 ? (
-          <p className="text-sm text-muted">{t("waitingOffers", { count: order.counts.sent })}</p>
+          <p className="text-sm text-muted">
+            {!job ? t("waitingOffers", { count: order.counts.sent }) : order.counts.sent > 0 ? t("waitingQuotes", { count: order.counts.sent }) : t("findingPros")}
+          </p>
         ) : (
           offers.map((o) => (
             <div key={o.recipientId} className={ui.card + " flex items-center gap-3 p-4"}>
@@ -258,8 +275,17 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
                 )}
               </div>
               <div className="flex shrink-0 flex-col items-end gap-1">
-                <p className="text-lg font-bold text-ink">{t("price", { price: o.priceUsd ?? 0 })}</p>
-                <p className="text-xs text-muted">{t("eta", { minutes: o.etaMinutes ?? 0 })}</p>
+                {/* Left-to-right, or Arabic pages show "$25–$15". */}
+                <p dir="ltr" className="text-lg font-bold text-ink">
+                  {o.priceMaxUsd ? t("priceRange", { min: o.priceUsd ?? 0, max: o.priceMaxUsd }) : t("price", { price: o.priceUsd ?? 0 })}
+                </p>
+                <p className="text-xs text-muted">
+                  {job
+                    ? o.visitAt
+                      ? t("visitOn", { date: format.dateTime(new Date(o.visitAt), { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) })
+                      : ""
+                    : t("eta", { minutes: o.etaMinutes ?? 0 })}
+                </p>
                 <button type="button" disabled={busy} className={ui.buttonPrimary + " px-4! py-1.5!"} onClick={() => act("select", { recipientId: o.recipientId })}>
                   {t("choose")}
                 </button>
@@ -278,7 +304,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
         <div className={ui.card + " flex flex-col items-start gap-3 p-4"}>
           <p className="text-sm text-ink">{t("waitingConfirm", { name: order.provider?.name ?? "" })}</p>
           <button type="button" disabled={busy} className={ui.buttonSecondary} onClick={() => act("change")}>
-            {t("chooseAnother")}
+            {job ? t("chooseAnotherQuote") : t("chooseAnother")}
           </button>
         </div>
         {confirmBox("cancel")}
@@ -292,7 +318,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
       <PersonCard title={t("yourProvider")} person={order.provider} matchId={order.matchId} />
       {order.status === "delivered" && (
         <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("complete")}>
-          {t("markComplete")}
+          {job ? t("markJobComplete") : t("markComplete")}
         </button>
       )}
       {CANCELLABLE.has(order.status) && confirmBox("cancel")}
@@ -300,12 +326,24 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   );
 }
 
+// "2026-11-03T15:30" for a datetime-local input, in the viewer's own time zone.
+const localInput = (iso: string | null | undefined) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+};
+
 function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
   const t = useTranslations("Orders");
+  const format = useFormatter();
+  const job = order.category === "maintenance";
   const mine = order.mine;
   const [price, setPrice] = useState(mine?.priceUsd ? String(mine.priceUsd) : "");
+  const [priceMax, setPriceMax] = useState(mine?.priceMaxUsd ? String(mine.priceMaxUsd) : "");
   const [eta, setEta] = useState(mine?.etaMinutes ? String(mine.etaMinutes) : "");
+  const [visitAt, setVisitAt] = useState(localInput(mine?.visitAt));
   const [note, setNote] = useState(mine?.note ?? "");
+  const priceText = (min: number, max: number | null | undefined) => (max ? t("priceRange", { min, max }) : t("price", { price: min }));
 
   if (order.assignedToMe && order.status === "reserved") {
     return (
@@ -313,7 +351,10 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
         <p className="text-sm text-ink">{t("chosenConfirm")}</p>
         {mine?.priceUsd !== null && mine?.priceUsd !== undefined && (
           <p className="text-sm text-muted">
-            {t("yourOffer")}: {t("price", { price: mine.priceUsd })} · {t("eta", { minutes: mine.etaMinutes ?? 0 })}
+            {job ? t("yourQuote") : t("yourOffer")}: <bdi dir="ltr">{priceText(mine.priceUsd, mine.priceMaxUsd)}</bdi> ·{" "}
+            {job && mine.visitAt
+              ? format.dateTime(new Date(mine.visitAt), { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })
+              : t("eta", { minutes: mine.etaMinutes ?? 0 })}
           </p>
         )}
         <div className="flex gap-2">
@@ -328,13 +369,13 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
     );
   }
 
-  if (order.assignedToMe && NEXT[order.status]) {
-    const next = NEXT[order.status]!;
+  const next = nextStage(order.status, order.category);
+  if (order.assignedToMe && next) {
     return (
       <div className="flex flex-col gap-3">
         <PersonCard title={t("customer")} person={order.customer} matchId={order.matchId} />
         <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("advance")}>
-          {t(`next_${next}` as "next_on_the_way")}
+          {job && next === "delivered" ? t("jobNext_delivered") : t(`next_${next}` as "next_on_the_way")}
         </button>
         {DROPPABLE.has(order.status) && confirmBox("drop")}
       </div>
@@ -346,36 +387,64 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
   }
 
   if (order.status !== "open" || !mine || mine.status === "not_selected" || mine.status === "refused") {
-    return <p className="text-sm text-muted">{t("notSelected")}</p>;
+    return <p className="text-sm text-muted">{job ? t("notSelectedJob") : t("notSelected")}</p>;
   }
+
+  const canSend = !!price && (job ? !!visitAt : !!eta);
+  const send = () =>
+    act(
+      "offer",
+      job
+        ? {
+            priceUsd: Number(price),
+            priceMaxUsd: priceMax ? Number(priceMax) : undefined,
+            visitAt: new Date(visitAt).toISOString(),
+            note: note.trim() || undefined,
+          }
+        : { priceUsd: Number(price), etaMinutes: Number(eta), note: note.trim() || undefined },
+    );
 
   return (
     <div className={ui.card + " flex flex-col gap-3 p-4"}>
-      <h2 className="font-semibold text-ink">{t("yourOffer")}</h2>
+      <h2 className="font-semibold text-ink">{job ? t("yourQuote") : t("yourOffer")}</h2>
       {mine.distanceKm !== null && <p className="text-sm text-muted">{t("kmAway", { km: mine.distanceKm })}</p>}
       {mine.status === "declined" && <p className="text-sm text-muted">{t("declined")}</p>}
-      <div className="grid grid-cols-2 gap-3">
-        <label className="flex flex-col gap-1">
-          <span className={ui.label}>{t("priceUsd")}</span>
-          <input type="number" min={0.5} max={10000} step="0.5" inputMode="decimal" className={ui.input} value={price} onChange={(e) => setPrice(e.target.value)} />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className={ui.label}>{t("etaMinutes")}</span>
-          <input type="number" min={5} max={1440} step="5" inputMode="numeric" className={ui.input} value={eta} onChange={(e) => setEta(e.target.value)} />
-        </label>
-      </div>
+      {job ? (
+        <>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1">
+              <span className={ui.label}>{t("priceFromUsd")}</span>
+              <input type="number" min={1} max={10000} step="1" inputMode="decimal" className={ui.input} value={price} onChange={(e) => setPrice(e.target.value)} />
+            </label>
+            <label className="flex flex-col gap-1">
+              <span className={ui.label}>{t("priceMaxUsd")}</span>
+              <input type="number" min={1} max={10000} step="1" inputMode="decimal" className={ui.input} value={priceMax} onChange={(e) => setPriceMax(e.target.value)} />
+            </label>
+          </div>
+          <label className="flex flex-col gap-1">
+            <span className={ui.label}>{t("visitAt")}</span>
+            <input type="datetime-local" className={ui.input} min={localInput(new Date().toISOString())} value={visitAt} onChange={(e) => setVisitAt(e.target.value)} />
+          </label>
+        </>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1">
+            <span className={ui.label}>{t("priceUsd")}</span>
+            <input type="number" min={0.5} max={10000} step="0.5" inputMode="decimal" className={ui.input} value={price} onChange={(e) => setPrice(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className={ui.label}>{t("etaMinutes")}</span>
+            <input type="number" min={5} max={1440} step="5" inputMode="numeric" className={ui.input} value={eta} onChange={(e) => setEta(e.target.value)} />
+          </label>
+        </div>
+      )}
       <label className="flex flex-col gap-1">
         <span className={ui.label}>{t("note")}</span>
         <input dir="auto" maxLength={300} className={ui.input} value={note} onChange={(e) => setNote(e.target.value)} />
       </label>
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={busy || !price || !eta}
-          className={ui.buttonPrimary}
-          onClick={() => act("offer", { priceUsd: Number(price), etaMinutes: Number(eta), note: note.trim() || undefined })}
-        >
-          {mine.status === "offered" ? t("updateOffer") : t("sendOffer")}
+        <button type="button" disabled={busy || !canSend} className={ui.buttonPrimary} onClick={send}>
+          {mine.status === "offered" ? (job ? t("updateQuote") : t("updateOffer")) : job ? t("sendQuote") : t("sendOffer")}
         </button>
         {mine.status === "sent" && (
           <button type="button" disabled={busy} className={ui.buttonSecondary} onClick={() => act("decline")}>
@@ -384,7 +453,7 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
         )}
         {mine.status === "offered" && (
           <button type="button" disabled={busy} className={ui.buttonSecondary} onClick={() => act("withdraw")}>
-            {t("withdraw")}
+            {job ? t("withdrawQuote") : t("withdraw")}
           </button>
         )}
       </div>
@@ -394,20 +463,22 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
 
 function Timeline({ order }: { order: OrderView }) {
   const t = useTranslations("Orders");
+  const statusLabel = useStatusLabel();
   const format = useFormatter();
   const reached = new Map(order.timeline.map((s) => [s.status, s.at]));
-  const current = STAGES.indexOf(order.status as (typeof STAGES)[number]);
+  const stages = stagesFor(order.category);
+  const current = stages.indexOf(order.status);
   return (
     <div className={ui.card + " p-4"}>
       <h2 className="mb-3 font-semibold text-ink">{t("progress")}</h2>
       <ol className="flex flex-col gap-3">
-        {STAGES.map((stage, i) => {
+        {stages.map((stage, i) => {
           const done = i <= current;
           const at = reached.get(stage);
           return (
             <li key={stage} className="flex items-center gap-3">
               <span className={`h-3 w-3 shrink-0 rounded-full ${done ? (i === current ? "bg-primary" : "bg-success") : "bg-border"}`} />
-              <span className={`flex-1 text-sm ${done ? "font-medium text-ink" : "text-muted"}`}>{t(`status_${stage}`)}</span>
+              <span className={`flex-1 text-sm ${done ? "font-medium text-ink" : "text-muted"}`}>{statusLabel(stage, order.category)}</span>
               {done && at && <span className="text-xs text-muted">{format.dateTime(new Date(at), { timeStyle: "short" })}</span>}
             </li>
           );

@@ -5,20 +5,25 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
-import { AVAILABILITY_DOT, OrderStatusBadge, placeLabel } from "@/components/orders/order-bits";
+import { AVAILABILITY_DOT, OrderStatusBadge, placeLabel, useOrderTitle, useServiceLabel } from "@/components/orders/order-bits";
 import type { OrderSummary } from "@/lib/errand-order-view";
 
 type Incoming = OrderSummary & { myStatus: string; myPriceUsd: number | null; distanceKm: number | null };
 type Availability = { status: "available" | "busy" | "offline" | "suspended"; availableNow: boolean } | null;
 type Mine = { canOrder: boolean; orders: OrderSummary[] };
-type ProviderLists = { provider: unknown; incoming: Incoming[]; assigned: OrderSummary[] };
+type ProviderLists = {
+  provider: { rider?: boolean; tradesperson?: boolean } | null;
+  incoming: Incoming[];
+  assigned: OrderSummary[];
+};
 
 const LIVE = new Set(["open", "reserved", "accepted", "on_the_way", "arrived", "picked_up", "delivered"]);
 const POLL_MS = 10_000;
 
 export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "provider" }) {
   const t = useTranslations("Orders");
-  const ts = useTranslations("ErrandServices");
+  const serviceLabel = useServiceLabel();
+  const orderTitle = useOrderTitle();
   const locale = useLocale();
   const [tab, setTab] = useState(initialTab);
   const [mine, setMine] = useState<Mine | null>(null);
@@ -74,14 +79,16 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
     <Link key={o.id} href={`/orders/${o.id}`} className={ui.cardHover + " block p-4"}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs text-muted">{t("orderNumber", { number: o.number })} · {ts(o.service as "delivery")}</p>
+          <p className="text-xs text-muted">
+            {orderTitle(o.number, o.category)} · {serviceLabel(o.service, o.category)}
+          </p>
           <p className="mt-1 truncate font-medium text-ink">{o.description}</p>
           <p className="mt-1 text-sm text-muted">
             {placeLabel(o.pickupDistrict, locale)}
             {o.dropoffDistrict ? ` → ${placeLabel(o.dropoffDistrict, locale)}` : ""}
           </p>
         </div>
-        <OrderStatusBadge status={o.status} />
+        <OrderStatusBadge status={o.status} category={o.category} />
       </div>
       {extra}
     </Link>
@@ -94,10 +101,17 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
           <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
         </div>
-        {shownTab === "seeker" && mine?.canOrder && (
-          <Link href="/orders/new" className={ui.buttonPrimary + " shrink-0"}>
-            {t("newOrder")}
-          </Link>
+        {shownTab === "seeker" && (
+          <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
+            <Link href="/quotes/new" className={ui.buttonSecondary}>
+              {t("newQuote")}
+            </Link>
+            {mine?.canOrder && (
+              <Link href="/orders/new" className={ui.buttonPrimary}>
+                {t("newOrder")}
+              </Link>
+            )}
+          </div>
         )}
       </div>
 
@@ -131,7 +145,14 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
             <p className="py-8 text-center text-sm text-muted">{t("noOrders")}</p>
           ) : (
             mine.orders.map((o) =>
-              row(o, LIVE.has(o.status) && o.status === "open" ? <p className="mt-2 text-sm text-ink/80">{t("offersCount", { count: o.offers })}</p> : null),
+              row(
+                o,
+                LIVE.has(o.status) && o.status === "open" ? (
+                  <p className="mt-2 text-sm text-ink/80">
+                    {o.category === "maintenance" ? t("quotesCount", { count: o.offers }) : t("offersCount", { count: o.offers })}
+                  </p>
+                ) : null,
+              ),
             )
           )}
         </div>
@@ -139,7 +160,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
 
       {shownTab === "provider" && provider && (
         <div className="flex flex-col gap-4">
-          {availability && (
+          {availability && provider.provider?.rider && (
             <div className={ui.card + " flex items-center justify-between gap-3 p-4"}>
               <div className="min-w-0">
                 <p className="text-xs text-muted">{t("availability")}</p>
@@ -167,7 +188,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
           <section className="flex flex-col gap-3">
             <h2 className={ui.eyebrow}>{t("incoming")}</h2>
             {provider.incoming.length === 0 ? (
-              <p className="py-6 text-center text-sm text-muted">{t("noIncoming")}</p>
+              <p className="py-6 text-center text-sm text-muted">{provider.provider?.rider ? t("noIncoming") : t("noIncomingJobs")}</p>
             ) : (
               provider.incoming.map((o) =>
                 row(

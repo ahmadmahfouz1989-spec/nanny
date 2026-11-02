@@ -56,12 +56,65 @@ export default async function OrdersEntry() {
     <Link href="/orders" className={ui.cardHover + " flex items-center gap-3 p-4"}>
       <BoxIcon className="h-8 w-8 shrink-0 text-primary" />
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-ink">{t("title")}</p>
-        <p className="text-sm text-muted">{t("subtitle")}</p>
+        <p className="font-semibold text-ink">{t("deliveryTitle")}</p>
+        <p className="text-sm text-muted">{t("deliverySubtitle")}</p>
       </div>
       <span aria-hidden="true" className="text-muted rtl:rotate-180">
         →
       </span>
     </Link>
+  );
+}
+
+/**
+ * On the Home Maintenance dashboard: "Get quotes" for someone with a job,
+ * or the job requests reaching an approved tradesperson.
+ */
+export async function JobsEntry() {
+  const t = await getTranslations("Orders");
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: category } = user ? await supabase.from("categories").select("id").eq("slug", "maintenance").maybeSingle() : { data: null };
+  const { data: pro } =
+    user && category
+      ? await supabase
+          .from("generic_profiles")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("category_id", category.id)
+          .eq("role", "provider")
+          .eq("moderation_status", "approved")
+          .neq("status", "draft")
+          .limit(1)
+          .maybeSingle()
+      : { data: null };
+
+  return (
+    <div className="flex flex-col gap-3">
+      <Link href="/quotes/new" className={"border-primary/40 bg-primary/5 " + ui.cardHover + " flex items-center gap-3 p-4"}>
+        <BoxIcon className="h-8 w-8 shrink-0 text-primary" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">{t("entryJobsTitle")}</p>
+          <p className="text-sm text-muted">{t("entryJobsHint")}</p>
+        </div>
+        <span aria-hidden="true" className="text-muted rtl:rotate-180">
+          →
+        </span>
+      </Link>
+      {pro && (
+        <Link href="/orders?tab=provider" className={ui.cardHover + " flex items-center gap-3 p-4"}>
+          <BoxIcon className="h-8 w-8 shrink-0 text-primary" />
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-ink">{t("entryProJobsTitle")}</p>
+            <p className="text-sm text-muted">{t("entryProJobsHint")}</p>
+          </div>
+          <span aria-hidden="true" className="text-muted rtl:rotate-180">
+            →
+          </span>
+        </Link>
+      )}
+    </div>
   );
 }

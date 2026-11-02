@@ -18,6 +18,7 @@ const contactPhone = z
 
 // A new trade is just a new entry here plus its Trades.* labels.
 export const TRADES = ["plumber", "electrician", "painter", "tiler", "carpenter"] as const;
+export type Trade = (typeof TRADES)[number];
 
 export const URGENCIES = ["urgent", "this_week", "flexible"] as const;
 

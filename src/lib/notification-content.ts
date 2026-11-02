@@ -90,6 +90,22 @@ export function notificationHref(n: NotificationLike): string {
   }
 }
 
+// Order notifications with their own wording for a repair job
+// (Notifications.<key>_job).
+const JOB_LABELS = new Set([
+  "errand_request",
+  "errand_offer",
+  "errand_selected",
+  "errand_confirmed",
+  "errand_status_on_the_way",
+  "errand_status_arrived",
+  "errand_status_delivered",
+  "errand_status_completed",
+  "errand_status_refused",
+  "errand_cancelled",
+  "errand_no_provider",
+]);
+
 // Notifications about one service say which ("Your Nanny profile was
 // approved") -- an account can be in several, and a bare "your profile"
 // leaves them guessing which one.
@@ -107,7 +123,10 @@ export function notificationLabel(n: NotificationLike, t: Translate, categoryNam
   if (ORDER_TYPES.has(n.type)) {
     const number = typeof n.payload?.order_number === "number" ? n.payload.order_number : "";
     const status = typeof n.payload?.status === "string" ? n.payload.status : null;
-    return t(n.type === "errand_status" && status ? `errand_status_${status}` : n.type, { number });
+    const key = n.type === "errand_status" && status ? `errand_status_${status}` : n.type;
+    // A repair job reads as a job and a quote, not an order and an offer.
+    const job = slug === "maintenance" && JOB_LABELS.has(key);
+    return t(job ? `${key}_job` : key, { number });
   }
   if (n.type === "rating_received") {
     const score = typeof n.payload?.score === "number" ? (n.payload.score as number) : null;

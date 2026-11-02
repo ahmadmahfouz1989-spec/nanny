@@ -5,7 +5,7 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson, request } from "@/lib/request";
-import { OrderStatusBadge, placeLabel } from "@/components/orders/order-bits";
+import { OrderStatusBadge, placeLabel, useServiceLabel } from "@/components/orders/order-bits";
 import type { OrderSummary, OrderView } from "@/lib/errand-order-view";
 
 const STATUSES = ["open", "reserved", "accepted", "on_the_way", "arrived", "picked_up", "delivered", "completed", "cancelled", "no_provider"];
@@ -18,10 +18,11 @@ const STATUSES = ["open", "reserved", "accepted", "on_the_way", "arrived", "pick
 export default function AdminOrdersPage() {
   const t = useTranslations("Admin");
   const to = useTranslations("Orders");
-  const ts = useTranslations("ErrandServices");
+  const serviceLabel = useServiceLabel();
   const locale = useLocale();
   const format = useFormatter();
   const [status, setStatus] = useState("");
+  const [category, setCategory] = useState("");
   const [number, setNumber] = useState("");
   const [orders, setOrders] = useState<OrderSummary[] | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -33,13 +34,14 @@ export default function AdminOrdersPage() {
   useEffect(() => {
     const qs = new URLSearchParams();
     if (status) qs.set("status", status);
+    if (category) qs.set("category", category);
     if (number.trim()) qs.set("number", number.trim().replace(/^#/, ""));
     let active = true;
     getJson<{ orders: OrderSummary[] }>(`/api/admin/errand-orders?${qs}`).then((b) => active && setOrders(b?.orders ?? []));
     return () => {
       active = false;
     };
-  }, [status, number, reload]);
+  }, [status, category, number, reload]);
 
   useEffect(() => {
     if (!openId) return;
@@ -74,6 +76,11 @@ export default function AdminOrdersPage() {
 
       <div className="flex flex-wrap gap-2">
         <input className={ui.input + " max-w-40"} placeholder={t("findOrder")} value={number} inputMode="numeric" onChange={(e) => setNumber(e.target.value)} />
+        <select className={ui.select + " max-w-56"} value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">{t("allOrderKinds")}</option>
+          <option value="errands">{t("kindDeliveries")}</option>
+          <option value="maintenance">{t("kindJobs")}</option>
+        </select>
         <select className={ui.select + " max-w-56"} value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">{t("allStatuses")}</option>
           {STATUSES.map((s) => (
@@ -91,7 +98,8 @@ export default function AdminOrdersPage() {
             <button type="button" className="flex w-full items-start justify-between gap-3 text-start" onClick={() => setOpenId(openId === o.id ? null : o.id)}>
               <div className="min-w-0">
                 <p className="text-xs text-muted">
-                  #{o.number} · {ts(o.service as "delivery")} · {when(o.createdAt)}
+                  #{o.number} · {o.category === "maintenance" ? `${t("kindJobs")} · ` : ""}
+                  {serviceLabel(o.service, o.category)} · {when(o.createdAt)}
                 </p>
                 <p className="mt-1 truncate font-medium text-ink">{o.description}</p>
                 <p className="mt-1 text-sm text-muted">
@@ -99,7 +107,7 @@ export default function AdminOrdersPage() {
                   {o.dropoffDistrict ? ` → ${placeLabel(o.dropoffDistrict, locale)}` : ""} · {to("sentTo", { count: o.sent })} · {to("offersCount", { count: o.offers })}
                 </p>
               </div>
-              <OrderStatusBadge status={o.status} />
+              <OrderStatusBadge status={o.status} category={o.category} />
             </button>
 
             {openId === o.id && detail?.id === o.id && (
@@ -137,7 +145,13 @@ export default function AdminOrdersPage() {
                           <td className="py-1.5 pe-2 text-ink">{r.name}</td>
                           <td className="py-1.5 pe-2 text-muted tabular-nums">{r.distanceKm !== null ? `${r.distanceKm} km` : ""}</td>
                           <td className="py-1.5 pe-2">{t(`rec_${r.status}` as "rec_sent")}</td>
-                          <td className="py-1.5 text-end tabular-nums">{r.priceUsd !== null ? `$${r.priceUsd} · ${r.etaMinutes} min` : ""}</td>
+                          <td dir="ltr" className="py-1.5 text-end tabular-nums">
+                            {r.priceUsd !== null
+                              ? `$${r.priceUsd}${r.priceMaxUsd ? `–${r.priceMaxUsd}` : ""} · ${
+                                  r.visitAt ? when(r.visitAt) : `${r.etaMinutes} min`
+                                }`
+                              : ""}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -170,12 +184,12 @@ export default function AdminOrdersPage() {
 
 function SettingsCard() {
   const t = useTranslations("Admin");
-  const [values, setValues] = useState<{ maxRecipients: number; openMinutes: number } | null>(null);
+  const [values, setValues] = useState<{ maxRecipients: number; openMinutes: number; quoteOpenMinutes: number } | null>(null);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
 
   useEffect(() => {
     let active = true;
-    getJson<{ settings: { maxRecipients: number; openMinutes: number } }>("/api/admin/errand-settings").then((b) => active && setValues(b?.settings ?? null));
+    getJson<{ settings: { maxRecipients: number; openMinutes: number; quoteOpenMinutes: number } }>("/api/admin/errand-settings").then((b) => active && setValues(b?.settings ?? null));
     return () => {
       active = false;
     };
@@ -196,7 +210,7 @@ function SettingsCard() {
   return (
     <div className={ui.card + " flex flex-col gap-3 p-4"}>
       <h2 className="font-semibold text-ink">{t("ordersSettings")}</h2>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <label className="flex flex-col gap-1">
           <span className={ui.label}>{t("maxRecipients")}</span>
           <input
@@ -222,6 +236,20 @@ function SettingsCard() {
             onChange={(e) => {
               setState("idle");
               setValues({ ...values, openMinutes: Number(e.target.value) });
+            }}
+          />
+        </label>
+        <label className="flex flex-col gap-1">
+          <span className={ui.label}>{t("quoteOpenMinutes")}</span>
+          <input
+            type="number"
+            min={60}
+            max={10080}
+            className={ui.input}
+            value={values.quoteOpenMinutes}
+            onChange={(e) => {
+              setState("idle");
+              setValues({ ...values, quoteOpenMinutes: Number(e.target.value) });
             }}
           />
         </label>
