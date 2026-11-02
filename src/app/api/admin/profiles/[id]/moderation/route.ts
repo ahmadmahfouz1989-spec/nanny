@@ -137,7 +137,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   await notify({
     user_id: row.user_id,
     type: "profile_approved",
-    payload: { profile_type: "generic", category_slug: row.categories?.slug ?? null, role: row.role },
+    payload: { profile_type: "generic", category_slug: row.categories?.slug ?? null, role: row.role, profile_id: row.id },
   });
 
   // Approval makes this profile visible to counterparts for the first time —

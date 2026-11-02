@@ -50,8 +50,14 @@ function isRiderApproval(n: NotificationLike) {
   return n.type === "profile_approved" && n.payload?.category_slug === "errands" && n.payload?.role === "provider";
 }
 
+// Any other approved provider: their profile is live -- share it now.
+function isProviderApproval(n: NotificationLike) {
+  return n.type === "profile_approved" && n.payload?.role === "provider" && typeof n.payload?.profile_id === "string" && !isRiderApproval(n);
+}
+
 export function notificationHref(n: NotificationLike): string {
   if (isRiderApproval(n)) return "/orders?tab=provider";
+  if (isProviderApproval(n)) return `/u/${n.payload!.profile_id as string}?share=1`;
   const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
   const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   if (ORDER_TYPES.has(n.type)) {
@@ -119,6 +125,7 @@ export function notificationLabel(n: NotificationLike, t: Translate, categoryNam
   const slug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   const category = slug && categoryName ? categoryName(slug) : null;
   if (isRiderApproval(n)) return t("profile_approved_rider");
+  if (isProviderApproval(n) && category) return t("profile_approved_share", { category });
   if (category && PER_CATEGORY.has(n.type)) return t(`${n.type}_in`, { category });
   if (ORDER_TYPES.has(n.type)) {
     const number = typeof n.payload?.order_number === "number" ? n.payload.order_number : "";
@@ -159,6 +166,6 @@ const ACTIONS: Record<string, string> = {
 };
 
 export function notificationAction(n: NotificationLike, t: Translate): string | null {
-  const key = isRiderApproval(n) ? "actionGoAvailable" : ACTIONS[n.type];
+  const key = isRiderApproval(n) ? "actionGoAvailable" : isProviderApproval(n) ? "actionShare" : ACTIONS[n.type];
   return key ? t(key) : null;
 }

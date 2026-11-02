@@ -84,11 +84,14 @@ export default async function ProfilePage({
   searchParams,
 }: {
   params: Promise<{ locale: string; id: string }>;
-  searchParams: Promise<{ contact?: string }>;
+  searchParams: Promise<{ contact?: string; share?: string }>;
 }) {
   const { locale, id } = await params;
+  const sp = await searchParams;
   // ?contact=1: back from sign-up after tapping "Message" on a shared link.
-  const contact = (await searchParams).contact === "1";
+  const contact = sp.contact === "1";
+  // ?share=1: from the "approved -- share it now" notification.
+  const share = sp.share === "1";
   const { user, data } = await getPage(id);
 
   if (!user) {
@@ -125,7 +128,7 @@ export default async function ProfilePage({
     <AppShell active={active}>
       <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-3 sm:gap-5">
         <BackButton className="self-start" />
-        <ProfileHeader data={data} locale={locale} contact={contact} />
+        <ProfileHeader data={data} locale={locale} contact={contact} share={share} />
         {data.growth && <GrowthCard data={data} />}
         <ProfileSectionNav sections={await sectionsFor(data)} />
         <ProfileBody data={data} locale={locale} />
@@ -134,7 +137,7 @@ export default async function ProfilePage({
   );
 }
 
-async function ProfileHeader({ data, locale, contact }: { data: ProfilePageData; locale: string; contact: boolean }) {
+async function ProfileHeader({ data, locale, contact, share }: { data: ProfilePageData; locale: string; contact: boolean; share: boolean }) {
   const t = await getTranslations("ProfilePage");
   const tMatches = await getTranslations("Matches");
   const tSaved = await getTranslations("SavedProfiles");
@@ -220,7 +223,7 @@ async function ProfileHeader({ data, locale, contact }: { data: ProfilePageData;
                 {tDashboard("editProfile")}
               </Link>
               {profile.role === "provider" && profile.moderation_status === "approved" && (
-                <ShareProfileButton profileId={profile.id} name={profile.full_name} service={categoryName} initialPublic={profile.public_page} />
+                <ShareProfileButton profileId={profile.id} name={profile.full_name} service={categoryName} initialPublic={profile.public_page} autoOpen={share} />
               )}
             </div>
           </>

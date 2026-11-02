@@ -11,6 +11,7 @@ import RememberCategory from "@/components/remember-category";
 import { REGION_COOKIE } from "@/lib/region";
 import ServiceSwitcher from "@/components/service-switcher";
 import OrdersEntry, { JobsEntry } from "@/components/orders/orders-entry";
+import ShareProfileButton from "@/components/share-profile-button";
 
 const MODERATION_BAND: Record<"success" | "warning" | "danger", string> = {
   success: "bg-success-soft",
@@ -46,7 +47,7 @@ export default async function CategoryDashboardPage({
 
   const { data: profiles } = await supabase
     .from("generic_profiles")
-    .select("id, role, status, moderation_status, profile_photo_url")
+    .select("id, role, status, moderation_status, profile_photo_url, full_name, public_page")
     .eq("user_id", user!.id)
     .eq("category_id", category!.id);
 
@@ -57,16 +58,31 @@ export default async function CategoryDashboardPage({
   const region = (await cookies()).get(REGION_COOKIE)?.value ?? "";
   const categoryName = locale === "ar" ? category.name_ar : category.name_en;
   // Delivery & Errands also has orders: ask for one, get offers nearby.
-  // Home Maintenance has quotes: describe a job, get prices from pros nearby.
-  const switcher =
-    slug === "errands" || slug === "maintenance" ? (
-      <div className="flex flex-col gap-3">
-        <ServiceSwitcher current={slug} />
-        {slug === "errands" ? <OrdersEntry /> : <JobsEntry />}
+  // An approved provider here: a nudge to share their profile, where they
+  // look every day -- shared links bring clients without ads.
+  const live = myProfiles.find((p) => p.role === "provider" && p.moderation_status === "approved");
+  const tShare = await getTranslations("PublicProfile");
+  const shareNudge = live ? (
+    <div className={ui.card + " flex flex-col gap-3 p-4"}>
+      <div>
+        <p className="font-semibold text-ink">{tShare("nudgeTitle")}</p>
+        <p className="text-sm text-muted">{tShare("nudgeBody")}</p>
       </div>
-    ) : (
+      <div className="flex flex-wrap items-center gap-2">
+        <ShareProfileButton profileId={live.id} name={live.full_name} service={categoryName} initialPublic={live.public_page} />
+      </div>
+    </div>
+  ) : null;
+
+  // Home Maintenance has quotes: describe a job, get prices from pros nearby.
+  const switcher = (
+    <div className="flex flex-col gap-3">
       <ServiceSwitcher current={slug} />
-    );
+      {slug === "errands" && <OrdersEntry />}
+      {slug === "maintenance" && <JobsEntry />}
+      {shareNudge}
+    </div>
+  );
 
   // Nothing real submitted yet (no row at all, or only an abandoned draft)
   // -- to the service's providers (below) rather than a "no profile yet, click

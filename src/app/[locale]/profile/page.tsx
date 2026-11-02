@@ -40,7 +40,7 @@ export default async function ProfilePage({
 
   const { data: genericRows } = await supabase
     .from("generic_profiles")
-    .select("id, role, category_id, full_name, profile_photo_url, status, moderation_status, headline, attributes, categories(slug, name_en, name_ar)")
+    .select("id, role, category_id, full_name, profile_photo_url, status, moderation_status, headline, public_page, attributes, categories(slug, name_en, name_ar)")
     .eq("user_id", user!.id)
     .order("created_at", { ascending: true });
 
@@ -102,6 +102,7 @@ export default async function ProfilePage({
         roleLabel,
         fullName: p.full_name,
         moderationStatus: p.moderation_status,
+        publicPage: p.public_page,
         growth: (() => {
           const strength = profileStrength({
             role: p.role as "seeker" | "provider",

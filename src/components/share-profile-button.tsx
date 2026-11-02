@@ -17,15 +17,18 @@ export default function ShareProfileButton({
   name,
   service,
   initialPublic,
+  autoOpen = false,
 }: {
   profileId: string;
   name: string;
   service: string;
   initialPublic: boolean;
+  /** Opened from the "approved -- share it now" notification: show the options straight away. */
+  autoOpen?: boolean;
 }) {
   const t = useTranslations("PublicProfile");
   const locale = useLocale();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(autoOpen);
   const [isPublic, setIsPublic] = useState(initialPublic);
   const [copied, setCopied] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -86,22 +89,22 @@ export default function ShareProfileButton({
             <>
               <p className="text-sm text-muted">{t("shareHint")}</p>
               <div className="flex flex-wrap gap-2">
-                <a
+                {/* Built on tap: the link needs the page's address, which the
+                    server doesn't have when this opens already showing. */}
+                <button
+                  type="button"
                   className={ui.buttonSecondary}
-                  href={`https://wa.me/?text=${encodeURIComponent(`${message} ${link()}`)}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent(`${message} ${link()}`)}`, "_blank", "noopener")}
                 >
                   WhatsApp
-                </a>
-                <a
+                </button>
+                <button
+                  type="button"
                   className={ui.buttonSecondary}
-                  href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link())}`}
-                  target="_blank"
-                  rel="noreferrer"
+                  onClick={() => window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(link())}`, "_blank", "noopener")}
                 >
                   Facebook
-                </a>
+                </button>
                 <button type="button" className={ui.buttonSecondary} onClick={copy}>
                   {copied ? t("copied") : t("copyLink")}
                 </button>

@@ -110,7 +110,9 @@
     "errand_status_completed_job": "الشغلة #{number} اكتملت",
     "errand_status_refused_job": "المعلّم ما بيقدر ياخد الشغلة #{number} — اختار سعر تاني",
     "errand_cancelled_job": "الشغلة #{number} انلغت",
-    "errand_no_provider_job": "ما إجت أسعار للشغلة #{number} — جرّب مرّة تانية"
+    "errand_no_provider_job": "ما إجت أسعار للشغلة #{number} — جرّب مرّة تانية",
+    "profile_approved_share": "ملفك بـ{category} صار ظاهر — شاركه هلّق لتجيك أوّل زباين",
+    "actionShare": "شاركه"
   },
   "Push": {
     "title": "الإشعارات الفورية",
@@ -2435,7 +2437,9 @@
     "copied": "تمّ نسخ الرابط",
     "instagramHint": "إنستغرام: انسخ الرابط وحطّو بالـ bio أو بستيكر الرابط بالستوري.",
     "offHint": "صفحتك العامة مسكّرة: لازم يكون عند الناس حساب ليشوفوا ملفك.",
-    "publicToggle": "أي حدا معو الرابط فيه يشوف ملفي"
+    "publicToggle": "أي حدا معو الرابط فيه يشوف ملفي",
+    "nudgeTitle": "جيب زباين أكتر",
+    "nudgeBody": "شارك ملفك على واتساب، فيسبوك أو إنستغرام — أي حدا فيه يفتحو، بلا حساب."
   },
   "MessageNow": {
     "message": "راسل {name}",

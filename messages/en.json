@@ -110,7 +110,9 @@
     "errand_status_completed_job": "Job #{number} is complete",
     "errand_status_refused_job": "The pro can't take job #{number} — choose another quote",
     "errand_cancelled_job": "Job #{number} was cancelled",
-    "errand_no_provider_job": "No quotes came in for job #{number} — try again"
+    "errand_no_provider_job": "No quotes came in for job #{number} — try again",
+    "profile_approved_share": "Your {category} profile is live — share it now to get your first clients",
+    "actionShare": "Share it"
   },
   "Push": {
     "title": "Push notifications",
@@ -2435,7 +2437,9 @@
     "copied": "Link copied",
     "instagramHint": "Instagram: copy the link and paste it in your bio or a story link sticker.",
     "offHint": "Your public page is off: people need an account to see your profile.",
-    "publicToggle": "Anyone with the link can see my profile"
+    "publicToggle": "Anyone with the link can see my profile",
+    "nudgeTitle": "Get more clients",
+    "nudgeBody": "Share your profile on WhatsApp, Facebook or Instagram — anyone can open it, no account needed."
   },
   "MessageNow": {
     "message": "Message {name}",

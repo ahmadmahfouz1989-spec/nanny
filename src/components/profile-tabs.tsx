@@ -17,6 +17,8 @@ export type ProfileTabDef = {
   roleLabel: string;
   fullName: string | null;
   moderationStatus: string;
+  /** Provider: whether the shareable public page is on. */
+  publicPage: boolean;
   growth?: { percent: number; next: StrengthItem | null; views30: number };
 };
 
@@ -64,6 +66,7 @@ export default function ProfileTabs({ tabs, initialSlug }: { tabs: ProfileTabDef
         roleLabel={active.roleLabel}
         fullName={active.fullName}
         moderationStatus={active.moderationStatus}
+        publicPage={active.publicPage}
         growth={active.growth}
       />
     </div>

@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import type { StrengthItem } from "@/lib/profile-growth";
+import ShareProfileButton from "@/components/share-profile-button";
 
 const MODERATION_TONE: Record<string, "success" | "warning" | "danger"> = {
   approved: "success",
@@ -27,6 +28,7 @@ export default function ProfileHeaderCard({
   roleLabel,
   fullName,
   moderationStatus,
+  publicPage,
   growth,
 }: {
   profileId: string;
@@ -37,6 +39,7 @@ export default function ProfileHeaderCard({
   roleLabel: string;
   fullName: string | null;
   moderationStatus: string;
+  publicPage: boolean;
   /** next: the first thing still missing, said under the bar. */
   growth?: { percent: number; next: StrengthItem | null; views30: number };
 }) {
@@ -155,6 +158,12 @@ export default function ProfileHeaderCard({
           )}
           <span className="text-xs text-muted">{tProfile("views30", { count: growth.views30 })}</span>
         </Link>
+      )}
+      {/* An approved provider can share their profile from here, not only from its page. */}
+      {role === "provider" && status === "approved" && (
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <ShareProfileButton profileId={profileId} name={fullName ?? ""} service={categoryLabel} initialPublic={publicPage} />
+        </div>
       )}
       <Link href={`/u/${profileId}`} className={ui.link + " text-sm mt-4 inline-block"}>
         {tProfile("viewMyProfile")}
