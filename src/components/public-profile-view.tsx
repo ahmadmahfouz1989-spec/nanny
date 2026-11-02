@@ -21,6 +21,8 @@ export default async function PublicProfileView({ profile, locale }: { profile: 
   const service = ar ? profile.category.name_ar : profile.category.name_en;
   const place = profile.place ? (ar ? profile.place.name_ar : profile.place.name_en) : null;
   const back = `/u/${profile.id}`;
+  // After sign-up, straight into the conversation (MessageNowButton autoStart).
+  const contact = `/u/${profile.id}?contact=1`;
   const signup = (next: string) => `/signup?next=${encodeURIComponent(next)}`;
   const trade = profile.trades[0];
 
@@ -72,7 +74,7 @@ export default async function PublicProfileView({ profile, locale }: { profile: 
             )}
 
             <div className="flex flex-col gap-2 sm:flex-row">
-              <Link href={signup(back)} className={ui.buttonPrimary + " flex-1 text-center"}>
+              <Link href={signup(contact)} className={ui.buttonPrimary + " flex-1 text-center"}>
                 {t("message", { name: profile.fullName.split(" ")[0] ?? profile.fullName })}
               </Link>
               {trade && (

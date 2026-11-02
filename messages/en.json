@@ -2434,5 +2434,11 @@
     "instagramHint": "Instagram: copy the link and paste it in your bio or a story link sticker.",
     "offHint": "Your public page is off: people need an account to see your profile.",
     "publicToggle": "Anyone with the link can see my profile"
+  },
+  "MessageNow": {
+    "message": "Message {name}",
+    "opening": "Opening…",
+    "yourName": "Your name",
+    "error": "Something went wrong. Try again."
   }
 }

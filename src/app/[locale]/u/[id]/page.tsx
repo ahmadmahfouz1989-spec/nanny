@@ -8,6 +8,7 @@ import { loadProfilePage, type ProfilePageData } from "@/lib/profile-page";
 import { loadPublicProfile } from "@/lib/public-profile";
 import PublicProfileView from "@/components/public-profile-view";
 import ShareProfileButton from "@/components/share-profile-button";
+import MessageNowButton from "@/components/message-now-button";
 import { isCategorySlug } from "@/lib/category-slugs";
 import { DAYS } from "@/lib/validation/profile";
 import { formatHoursRange } from "@/lib/format-hours";
@@ -78,8 +79,16 @@ function localized<T extends { name_en: string; name_ar: string }>(row: T | null
  * app links here. Visibility is the same as on a match card -- see
  * loadProfilePage.
  */
-export default async function ProfilePage({ params }: { params: Promise<{ locale: string; id: string }> }) {
+export default async function ProfilePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+  searchParams: Promise<{ contact?: string }>;
+}) {
   const { locale, id } = await params;
+  // ?contact=1: back from sign-up after tapping "Message" on a shared link.
+  const contact = (await searchParams).contact === "1";
   const { user, data } = await getPage(id);
 
   if (!user) {
@@ -116,7 +125,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
     <AppShell active={active}>
       <div className="max-w-2xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-8 flex flex-col gap-3 sm:gap-5">
         <BackButton className="self-start" />
-        <ProfileHeader data={data} locale={locale} />
+        <ProfileHeader data={data} locale={locale} contact={contact} />
         {data.growth && <GrowthCard data={data} />}
         <ProfileSectionNav sections={await sectionsFor(data)} />
         <ProfileBody data={data} locale={locale} />
@@ -125,7 +134,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ locale
   );
 }
 
-async function ProfileHeader({ data, locale }: { data: ProfilePageData; locale: string }) {
+async function ProfileHeader({ data, locale, contact }: { data: ProfilePageData; locale: string; contact: boolean }) {
   const t = await getTranslations("ProfilePage");
   const tMatches = await getTranslations("Matches");
   const tSaved = await getTranslations("SavedProfiles");
@@ -219,6 +228,10 @@ async function ProfileHeader({ data, locale }: { data: ProfilePageData; locale: 
           <div className="flex flex-wrap items-center gap-3">
             {match ? (
               <MatchActions matchId={match.id} status={match.status} viewerSide={match.viewerSide} />
+            ) : profile.role === "provider" ? (
+              // No request in this service yet (or not matched): message
+              // them anyway -- a short request is made on the way.
+              <MessageNowButton providerProfileId={profile.id} name={profile.full_name.split(" ")[0] ?? profile.full_name} autoStart={contact} />
             ) : data.viewerCanMatch ? (
               <p className="text-sm text-muted">{t("notInMatches", { name: profile.full_name })}</p>
             ) : (
