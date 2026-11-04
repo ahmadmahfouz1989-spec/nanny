@@ -254,9 +254,13 @@ export default async function AppShell({
 
             <main id={APP_MAIN_ID} className="flex-1 min-w-0 h-dvh overflow-y-auto overflow-x-hidden pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
               {/* No entrance animation here: sliding every page in made moving
-                  around the app feel slow. h-full lets a page (Messages) fill
-                  the screen. */}
-              <div className="h-full">{children}</div>
+                  around the app feel slow. Messages fills the screen exactly
+                  (h-full: its own panels scroll). Every other page grows with
+                  its content (min-h-full) -- with h-full a long page spilled
+                  out of this box, the space kept for the tab bar (main's
+                  padding) came after the box instead of after the page, and
+                  the last button (Send on New order) stayed under the tabs. */}
+              <div className={active === "messages" ? "h-full" : "min-h-full"}>{children}</div>
             </main>
           </div>
         </SavedProfilesProvider>
