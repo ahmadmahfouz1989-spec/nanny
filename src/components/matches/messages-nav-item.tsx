@@ -6,13 +6,24 @@ import { Link } from "@/i18n/navigation";
 import { ChatIcon } from "@/components/nav-icons";
 import { UNREAD_CHANGED_EVENT } from "@/lib/unread-events";
 
-function useUnreadCount() {
+function useUnreadCount(signedIn: boolean) {
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
+    // A visitor has no messages: don't ask.
+    if (!signedIn) return;
+    // `load` is hoisted: the timer can start first, so a 401 can stop it.
+    const interval = setInterval(load, 30000);
     function load() {
       fetch("/api/inbox")
-        .then((res) => res.json())
+        .then((res) => {
+          // Not signed in (a visitor looking around): nothing to count.
+          if (res.status === 401) {
+            clearInterval(interval);
+            return { conversations: [] };
+          }
+          return res.json();
+        })
         .then((body) => {
           const total = (body.conversations ?? []).reduce(
             (sum: number, c: { unreadCount: number }) => sum + c.unreadCount,
@@ -23,20 +34,19 @@ function useUnreadCount() {
         .catch(() => {});
     }
     load();
-    const interval = setInterval(load, 30000);
     window.addEventListener(UNREAD_CHANGED_EVENT, load);
     return () => {
       clearInterval(interval);
       window.removeEventListener(UNREAD_CHANGED_EVENT, load);
     };
-  }, []);
+  }, [signedIn]);
 
   return unreadCount;
 }
 
-export function MessagesSidebarItem({ active }: { active: boolean }) {
+export function MessagesSidebarItem({ active, signedIn = true }: { active: boolean; signedIn?: boolean }) {
   const t = useTranslations("Nav");
-  const unreadCount = useUnreadCount();
+  const unreadCount = useUnreadCount(signedIn);
 
   return (
     <Link
@@ -58,9 +68,9 @@ export function MessagesSidebarItem({ active }: { active: boolean }) {
   );
 }
 
-export function MessagesTabItem({ active }: { active: boolean }) {
+export function MessagesTabItem({ active, signedIn = true }: { active: boolean; signedIn?: boolean }) {
   const t = useTranslations("Nav");
-  const unreadCount = useUnreadCount();
+  const unreadCount = useUnreadCount(signedIn);
 
   return (
     <Link

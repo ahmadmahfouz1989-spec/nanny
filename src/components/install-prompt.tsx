@@ -3,6 +3,11 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { isNativeApp } from "@/lib/native-app";
+import { usePathname } from "@/i18n/navigation";
+
+// Only where people are looking around -- never over a form, an order or a
+// chat, where it covered the box being typed in.
+const BROWSING = [/^\/$/, /^\/feed\/?$/, /^\/browse\//, /^\/search\/?$/, /^\/categories\/?$/, /^\/dashboard\/?$/];
 
 const DISMISSED_KEY = "install-prompt-dismissed";
 
@@ -43,9 +48,11 @@ const noopSubscribe = () => () => {};
  * Phone-only banner above the tab bar inviting people to install the app.
  * Android gets a real Install button; iOS (no install API) gets the
  * Share → Add to Home Screen hint. Dismissal is remembered per device.
+ * Shown on browsing pages only (BROWSING).
  */
 export default function InstallPrompt() {
   const t = useTranslations("Install");
+  const pathname = usePathname();
   const iosEligible = useSyncExternalStore(
     noopSubscribe,
     () => isIosSafari() && !isStandalone() && !wasDismissed(),
@@ -89,7 +96,8 @@ export default function InstallPrompt() {
     else dismiss();
   }
 
-  const mode = hidden ? null : iosEligible ? "ios" : deferred ? "android" : null;
+  const browsing = BROWSING.some((re) => re.test(pathname));
+  const mode = hidden || !browsing ? null : iosEligible ? "ios" : deferred ? "android" : null;
   if (!mode) return null;
 
   return (

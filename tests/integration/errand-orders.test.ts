@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { advanceOrders, DEFAULT_SETTINGS, dispatchOrder, eligibleProviders, myErrandProfiles, nextWaveOrClose } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
-import { ensureJobRequestProfile } from "@/lib/job-request-profile";
+import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
 
 // Delivery & Errands orders: who receives an order and in what order,
@@ -178,6 +178,38 @@ describe("errand orders", () => {
       const { data } = await customer.client.from(table).select("*");
       expect(data ?? []).toEqual([]);
     }
+  });
+});
+
+describe("ordering without filling in a request first", () => {
+  it("makes a new customer's Delivery & Errands request from their first order, asking for a name only when there's none", async () => {
+    [beirut, baabda, tripoli] = await Promise.all([district("LB11"), district("LB32"), district("LB56")]);
+    const newcomer = await createUser("order-first-time");
+    const order = {
+      service: "delivery",
+      description: "A folder of documents",
+      pickupDistrictId: beirut.id,
+      pickupDetail: "Hamra",
+      dropoffDetail: "Sassine",
+      timing: "asap",
+    };
+    expect(await ensureErrandRequestProfile(admin, newcomer.id, order)).toMatchObject({ ok: false, code: "name_required" });
+
+    const made = await ensureErrandRequestProfile(admin, newcomer.id, { ...order, fullName: "Maya Saade" });
+    expect(made.ok).toBe(true);
+    const { data: profile } = await admin
+      .from("generic_profiles")
+      .select("full_name, role, status, moderation_status, attributes, categories(slug)")
+      .eq("id", (made as { profileId: string }).profileId)
+      .single();
+    expect(profile).toMatchObject({ full_name: "Maya Saade", role: "seeker", status: "active", moderation_status: "pending", categories: { slug: "errands" } });
+    expect(profile!.attributes).toMatchObject({ errandService: "delivery", jobDescription: "A folder of documents", districtId: beirut.id, pickupPlace: "Hamra", dropoffPlace: "Sassine" });
+    // It counts as their request: they can order (and are seen) as a customer.
+    expect((await myErrandProfiles(admin, newcomer.id)).seeker?.id).toBe((made as { profileId: string }).profileId);
+
+    // A second order reuses it, as it is.
+    const again = await ensureErrandRequestProfile(admin, newcomer.id, { ...order, description: "Keys" });
+    expect(again).toMatchObject({ ok: true, profileId: (made as { profileId: string }).profileId });
   });
 });
 

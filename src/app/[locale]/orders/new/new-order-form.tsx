@@ -24,7 +24,7 @@ export type OrderPrefill = {
 };
 
 /** A new Delivery & Errands order: service, what's needed, where, when. */
-export default function NewOrderForm({ prefill = null }: { prefill?: OrderPrefill | null }) {
+export default function NewOrderForm({ prefill = null, needsName = false }: { prefill?: OrderPrefill | null; needsName?: boolean }) {
   const t = useTranslations("Orders");
   const ts = useTranslations("ErrandServices");
   const router = useRouter();
@@ -35,6 +35,9 @@ export default function NewOrderForm({ prefill = null }: { prefill?: OrderPrefil
   const [timing, setTiming] = useState<"asap" | "scheduled">(prefill?.timing ?? "asap");
   const [scheduledAt, setScheduledAt] = useState(prefill?.scheduledAt ?? "");
   const [budget, setBudget] = useState(prefill?.budget ?? "");
+  // A new customer: the order makes their request, so it needs their name.
+  const [fullName, setFullName] = useState("");
+  const [askName, setAskName] = useState(needsName);
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const needsDropoff = (NEEDS_DROPOFF as readonly string[]).includes(service);
@@ -62,10 +65,16 @@ export default function NewOrderForm({ prefill = null }: { prefill?: OrderPrefil
         timing,
         scheduledAt: timing === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
         budgetUsd: budget ? Number(budget) : undefined,
+        fullName: askName ? fullName.trim() : undefined,
       }),
     });
     const body = await res?.json().catch(() => null);
     setSending(false);
+    if (body?.code === "name_required") {
+      setAskName(true);
+      setError(t("enterYourName"));
+      return;
+    }
     if (!res?.ok || !body?.order) {
       setError(typeof body?.error === "string" ? body.error : t("error"));
       return;
@@ -157,8 +166,15 @@ export default function NewOrderForm({ prefill = null }: { prefill?: OrderPrefil
         <input type="number" min={0} max={10000} step="0.5" inputMode="decimal" className={ui.input} value={budget} onChange={(e) => setBudget(e.target.value)} />
       </label>
 
+      {askName && (
+        <label className="flex flex-col gap-2">
+          <span className={ui.label}>{t("yourName")}</span>
+          <input className={ui.input} maxLength={80} autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        </label>
+      )}
+
       {error && <p className="text-sm text-danger">{error}</p>}
-      <button type="submit" disabled={sending || description.trim().length < 3} className={ui.buttonPrimary}>
+      <button type="submit" disabled={sending || description.trim().length < 3 || (askName && fullName.trim().length < 2)} className={ui.buttonPrimary}>
         {sending ? t("placing") : t("placeOrder")}
       </button>
     </form>

@@ -105,6 +105,12 @@ export default function CategoryOnboardingClient({
       router.push("/quotes/new");
       return;
     }
+    // Someone who needs a delivery or an errand orders straight away: the
+    // order is their request (lib/job-request-profile.ts), one form, not two.
+    if (role === "seeker" && categorySlug === "errands" && (!seeker || seeker.status === "draft")) {
+      router.push("/orders/new");
+      return;
+    }
     if (role === "seeker" && seeker) return setChosenRole("seeker");
     if (role === "provider" && provider) return setChosenRole("provider");
 

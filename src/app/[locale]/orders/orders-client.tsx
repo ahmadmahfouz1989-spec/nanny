@@ -116,11 +116,9 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
             <Link href="/quotes/new" className={ui.buttonSecondary}>
               {t("newQuote")}
             </Link>
-            {mine?.canOrder && (
-              <Link href="/orders/new" className={ui.buttonPrimary}>
-                {t("newOrder")}
-              </Link>
-            )}
+            <Link href="/orders/new" className={ui.buttonPrimary}>
+              {t("newOrder")}
+            </Link>
           </div>
         )}
       </div>
@@ -137,15 +135,6 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
             {t("incoming")}
             {provider && provider.incoming.length > 0 ? ` (${provider.incoming.length})` : ""}
           </button>
-        </div>
-      )}
-
-      {shownTab === "seeker" && mine && !mine.canOrder && (
-        <div className={ui.card + " flex items-center justify-between gap-3 p-4"}>
-          <p className="text-sm text-muted">{t("needRequestProfile")}</p>
-          <Link href="/categories/errands/onboarding?role=seeker" className={ui.buttonSecondary + " shrink-0"}>
-            {t("createRequestProfile")}
-          </Link>
         </div>
       )}
 

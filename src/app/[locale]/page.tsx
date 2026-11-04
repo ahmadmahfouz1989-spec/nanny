@@ -53,6 +53,9 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     ? await supabase.from("users").select("role").eq("id", user.id).single()
     : { data: null };
   const isAdmin = account?.role === "admin";
+  // Signed in, on the website too: Home is the app's Home (the feed, like
+  // the Home tab), not the page that invites you to get started.
+  if (user) redirect({ href: isAdmin ? "/admin" : "/feed", locale });
 
   const steps = [
     { title: t("step1Title"), body: t("step1Body"), Illustration: CreateProfileIllustration },
@@ -73,7 +76,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <>
-      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/70 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-md sm:px-10">
+      <header className="sticky top-0 z-40 flex items-center justify-between border-b border-border/60 bg-background/95 px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))] backdrop-blur-md sm:px-10">
         <BrandMark compact />
         <nav className="flex items-center gap-1.5 sm:gap-3">
           <ThemeSwitcher />

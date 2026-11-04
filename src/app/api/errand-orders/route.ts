@@ -5,7 +5,7 @@ import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
 import { advanceOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
-import { ensureJobRequestProfile } from "@/lib/job-request-profile";
+import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { orderSummaries } from "@/lib/errand-order-view";
 
 const CONTACT_ERROR = "Please remove phone numbers, emails, or social handles. You can share them in chat once a provider confirms.";
@@ -107,21 +107,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Upload the photos again" }, { status: 400 });
   }
 
-  let seekerProfileId: string;
-  if (job) {
-    // No separate form for a repair request: the request itself becomes
-    // the customer's Home Maintenance profile (or updates it).
-    const made = await ensureJobRequestProfile(db, user.id, o);
-    if (!made.ok) return NextResponse.json({ error: made.error, code: made.code }, { status: 400 });
-    seekerProfileId = made.profileId;
-  } else {
-    const { seeker } = await myErrandProfiles(db, user.id);
-    if (!seeker) {
-      return NextResponse.json({ error: "Create your Delivery & Errands request profile before you order.", code: "profile_required" }, { status: 403 });
-    }
-    seekerProfileId = seeker.id;
-  }
-
   // The places must be real districts (and areas inside them).
   const ids = [o.pickupDistrictId, o.pickupAreaId, o.dropoffDistrictId, o.dropoffAreaId].filter((id): id is string => !!id);
   const { data: places } = await db.from("locations").select("id, level, parent_location_id").in("id", ids);
@@ -131,6 +116,21 @@ export async function POST(request: Request) {
     !area || (byId.get(area)?.level === "area" && byId.get(area)?.parent_location_id === parent);
   if (!district(o.pickupDistrictId) || !district(o.dropoffDistrictId) || !areaIn(o.pickupAreaId, o.pickupDistrictId) || !areaIn(o.dropoffAreaId, o.dropoffDistrictId)) {
     return NextResponse.json({ error: "Choose the places from the list" }, { status: 400 });
+  }
+
+  let seekerProfileId: string;
+  if (job) {
+    // No separate form for a repair request: the request itself becomes
+    // the customer's Home Maintenance profile (or updates it).
+    const made = await ensureJobRequestProfile(db, user.id, o);
+    if (!made.ok) return NextResponse.json({ error: made.error, code: made.code }, { status: 400 });
+    seekerProfileId = made.profileId;
+  } else {
+    // The order is the request: a new customer's Delivery & Errands
+    // profile is made from it (or an existing one is used as it is).
+    const made = await ensureErrandRequestProfile(db, user.id, o);
+    if (!made.ok) return NextResponse.json({ error: made.error, code: made.code }, { status: 400 });
+    seekerProfileId = made.profileId;
   }
 
   // Some protection against an account flooding providers.

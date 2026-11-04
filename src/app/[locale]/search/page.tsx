@@ -8,6 +8,7 @@ import { ChevronIcon, PinIcon, SearchIcon } from "@/components/home-icons";
 import { REGION_COOKIE } from "@/lib/region";
 import { SEARCH_LIMIT, search, type PersonResult, type PostResult } from "@/lib/search";
 import { ui } from "@/lib/ui";
+import VerifiedCheck from "@/components/verified-check";
 
 /**
  * Results for Home's search box: people offering, people looking, and
@@ -30,6 +31,7 @@ export default async function SearchPage({
   // Visitors search too: providers only (lib/search.ts).
 
   const t = await getTranslations("Search");
+  const tMatches = await getTranslations("Matches");
   const query = q.trim().slice(0, 100);
   const cookieRegion = (await cookies()).get(REGION_COOKIE)?.value || null;
   const region = all ? null : cookieRegion;
@@ -103,14 +105,14 @@ export default async function SearchPage({
         {results && results.offering.length > 0 && (
           <Section title={t("offering")} count={results.offering.length}>
             {results.offering.map((p) => (
-              <PersonRow key={p.id} person={p} />
+              <PersonRow key={p.id} person={p} verifiedLabel={tMatches("featuredBadge")} />
             ))}
           </Section>
         )}
         {results && results.seeking.length > 0 && (
           <Section title={t("seeking")} count={results.seeking.length}>
             {results.seeking.map((p) => (
-              <PersonRow key={p.id} person={p} />
+              <PersonRow key={p.id} person={p} verifiedLabel={tMatches("featuredBadge")} />
             ))}
           </Section>
         )}
@@ -137,12 +139,15 @@ function Section({ title, count, children }: { title: string; count: number; chi
   );
 }
 
-function PersonRow({ person }: { person: PersonResult }) {
+function PersonRow({ person, verifiedLabel }: { person: PersonResult; verifiedLabel: string }) {
   return (
     <Link href={`/u/${person.id}`} className="flex items-start gap-3 p-4 transition hover:bg-surface-sunken">
       <Avatar photoUrl={person.photoUrl} size={48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="font-semibold text-ink">{person.fullName}</span>
+        <span className="inline-flex items-center gap-1 font-semibold text-ink">
+          {person.fullName}
+          {person.verified && <VerifiedCheck label={verifiedLabel} />}
+        </span>
         <span className="text-xs text-muted">
           {person.categoryName}
           {person.place && ` · ${person.place}`}

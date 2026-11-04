@@ -224,13 +224,14 @@
     "title": "Create your account",
     "subheadParent": "Find a nanny for your family.",
     "subheadNanny": "Find a family that fits your availability.",
-    "subheadCategory": "You'll pick what you're looking for right after you sign in.",
+    "subheadCategory": "You'll pick what you're looking for right after you log in.",
     "roleParent": "I'm a parent",
     "roleNanny": "I'm a nanny",
     "submit": "Create account",
     "submitting": "Creating account…",
     "hasAccount": "Already have an account?",
-    "logIn": "Log in"
+    "logIn": "Log in",
+    "subheadContact": "Create a free account to send your message — you'll come straight back to it."
   },
   "Login": {
     "title": "Welcome back",
@@ -277,8 +278,8 @@
     "roleProvider": "Offering help",
     "email": "Email",
     "phone": "Phone",
-    "verified": "Verified",
-    "unverified": "Unverified",
+    "verified": "Confirmed",
+    "unverified": "Not confirmed",
     "yourProfile": "Your profile",
     "statusApproved": "Approved",
     "statusPending": "Pending review",
@@ -372,7 +373,8 @@
     "areaOptional": "Area (optional)",
     "coverTitle": "Other districts you also work in",
     "coverHint": "Your own district already counts. Customers in the districts you tick see you in their matches.",
-    "allOf": "All of {place}"
+    "allOf": "All of {place}",
+    "coverMore": "More districts in other governorates"
   },
   "AgeGroups": {
     "newborn": "Newborn (0–3mo)",
@@ -1177,8 +1179,8 @@
     "details": "Details",
     "availability": "Availability",
     "trust": "Trust",
-    "phoneVerified": "Phone number verified",
-    "emailVerified": "Email verified",
+    "phoneVerified": "Phone number confirmed",
+    "emailVerified": "Email confirmed",
     "memberSince": "On ouiKnow since {date}",
     "reviews": "Reviews",
     "noReviews": "No reviews yet. Reviews appear after people have worked together.",
@@ -1312,7 +1314,7 @@
     "viewAll": "View all",
     "more": "More services",
     "comingSoon": "Coming soon",
-    "trustVerified": "Verified phone and email badges",
+    "trustVerified": "Confirmed phone and email",
     "trustReport": "Report anything, we review it",
     "trustFree": "100% free to use",
     "trustPrivate": "Your number stays private",
@@ -1448,7 +1450,7 @@
       "pickup": "Pickup point",
       "dropoff": "Destination"
     },
-    "governorate": "Which governorate is this in?"
+    "governorate": "Pick the pickup area from the list"
   },
   "ErrandFields": {
     "errandServices": "Services",
@@ -2484,12 +2486,13 @@
     "status_choosing": "Choose an offer",
     "sameArea": "Same area",
     "from": "From",
-    "to": "To"
+    "to": "To",
+    "enterYourName": "Enter your name so providers know who they're helping."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",
     "previewFallback": "{service} on ouiKnow — message them directly, free.",
-    "signIn": "Sign in",
+    "signIn": "Log in",
     "new": "New on ouiKnow",
     "idChecked": "ID checked",
     "years": "{years, plural, one {# year} other {# years}} experience",

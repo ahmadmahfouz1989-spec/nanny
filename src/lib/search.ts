@@ -5,6 +5,7 @@ import { normalizeForSearch, searchAlternatives, searchWords } from "@/lib/profi
 import { fillMissingSearchText } from "@/lib/search-text";
 import { POST_FEED_COLUMNS, resolvePostAuthors } from "@/lib/posts";
 import { withPlaceNames } from "@/lib/place-names";
+import { featuredUserIds } from "@/lib/featured";
 
 /** Results per section; a full section shows its count as "20+". */
 export const SEARCH_LIMIT = 20;
@@ -18,6 +19,8 @@ export type PersonResult = {
   categoryName: string;
   place: string | null;
   about: string | null;
+  /** Verified (blue check): shown first. */
+  verified: boolean;
 };
 
 export type PostResult = {
@@ -137,6 +140,7 @@ export async function search(query: string, region: string | null, userId: strin
   const [providers, seekers] = await Promise.all([withPlaceNames(shownProviders), withPlaceNames(seekersRaw ?? [])]);
 
   const byId = new Map(categories.map((c) => [c.id, c]));
+  const verified = await featuredUserIds([...(providers ?? []), ...(seekers ?? [])].map((p) => p.user_id));
   const toPerson = (p: NonNullable<typeof providers>[number]): PersonResult => {
     const c = byId.get(p.category_id);
     const place = Array.isArray(p.locations) ? p.locations[0] : p.locations;
@@ -149,11 +153,12 @@ export async function search(query: string, region: string | null, userId: strin
       categoryName: c ? (locale === "ar" ? c.name_ar : c.name_en) : "",
       place: place ? (locale === "ar" ? place.name_ar : place.name_en) : null,
       about: about((p.attributes ?? {}) as Record<string, unknown>),
+      verified: verified.has(p.user_id),
     };
   };
-  // Profiles with a photo first: they're the ones people tap.
+  // Verified people first, then profiles with a photo: they're the ones people tap.
   const ranked = (rows: typeof providers) =>
-    (rows ?? []).map(toPerson).sort((a, b) => Number(!!b.photoUrl) - Number(!!a.photoUrl));
+    (rows ?? []).map(toPerson).sort((a, b) => Number(b.verified) - Number(a.verified) || Number(!!b.photoUrl) - Number(!!a.photoUrl));
 
   const authors = await resolvePostAuthors(posts ?? []);
   return {

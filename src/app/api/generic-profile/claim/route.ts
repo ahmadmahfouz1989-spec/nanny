@@ -91,6 +91,18 @@ export async function POST(request: Request) {
     .single();
 
   if (error) {
+    // Claimed twice at the same moment (a double tap): the other request
+    // made the row -- hand that one back instead of failing.
+    if (error.code === "23505") {
+      const { data: raced } = await db
+        .from("generic_profiles")
+        .select("id, role, full_name, location_id, attributes, status, moderation_status")
+        .eq("user_id", user.id)
+        .eq("category_id", category.id)
+        .eq("role", role)
+        .maybeSingle();
+      if (raced) return NextResponse.json({ profile: raced });
+    }
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 

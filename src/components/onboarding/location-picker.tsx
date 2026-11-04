@@ -6,11 +6,26 @@ import { ui } from "@/lib/ui";
 import { FieldError } from "@/components/onboarding/field-label";
 import { SearchIcon } from "@/components/home-icons";
 import type { FieldErrors } from "@/lib/form-errors";
-import type { AreaHit } from "@/lib/areas";
+import { normalizeAreaText, type AreaHit } from "@/lib/areas";
 
 type Governorate = { id: string; name_en: string; name_ar: string };
 
 const nameOf = (x: { name_en: string; name_ar: string }, locale: string) => (locale === "ar" ? x.name_ar : x.name_en);
+
+/**
+ * A hit found by an everyday name ("Hamra" is in the Ras Beyrouth
+ * cadastre): neither official name contains what was typed. Shown as what
+ * they typed with the official name beside it -- "Hamra (Ras Beyrouth)" --
+ * or "Ras Beyrouth" alone looks wrong next to "Hamra En-Nabattiyeh", and
+ * people pick the village in the south.
+ */
+function typedAlias(hit: AreaHit, typed: string): string | null {
+  const q = normalizeAreaText(typed.trim());
+  if (q.length < 2) return null;
+  if (normalizeAreaText(hit.name_en).includes(q) || normalizeAreaText(hit.name_ar).includes(q)) return null;
+  const t = typed.trim();
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
 
 /**
  * Where someone is: type the area's name (Arabic or English -- "Hamra",
@@ -143,7 +158,15 @@ export default function LocationPicker({
                   onClick={() => pick(h)}
                   className="flex w-full items-baseline justify-between gap-3 px-4 py-2.5 text-start text-sm hover:bg-surface-sunken"
                 >
-                  <span className="font-medium text-ink">{nameOf(h, locale)}</span>
+                  <span className="font-medium text-ink">
+                    {typedAlias(h, query) ? (
+                      <>
+                        {typedAlias(h, query)} <span className="font-normal text-muted">({nameOf(h, locale)})</span>
+                      </>
+                    ) : (
+                      nameOf(h, locale)
+                    )}
+                  </span>
                   <span className="shrink-0 text-xs text-muted">
                     {h.level === "district" ? t("districtOf", { place: h.parent ? nameOf(h.parent, locale) : "" }) : h.parent ? nameOf(h.parent, locale) : ""}
                   </span>

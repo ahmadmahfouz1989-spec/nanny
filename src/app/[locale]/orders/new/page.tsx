@@ -59,10 +59,18 @@ export default async function NewOrderPage({
   if (!user) redirect({ href: "/login", locale });
 
   const prefill = from === "request" ? await prefillFromRequest(supabase, user!.id) : null;
+  // The name is only asked for when none of their profiles has one yet.
+  const { data: named } = await supabase
+    .from("generic_profiles")
+    .select("full_name")
+    .eq("user_id", user!.id)
+    .neq("status", "draft")
+    .limit(1)
+    .maybeSingle();
 
   return (
     <AppShell active="errands">
-      <NewOrderForm prefill={prefill} />
+      <NewOrderForm prefill={prefill} needsName={!named} />
     </AppShell>
   );
 }

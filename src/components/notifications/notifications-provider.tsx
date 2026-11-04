@@ -30,15 +30,24 @@ const NotificationsContext = createContext<NotificationsState | null>(null);
  * sidebar bell, the phone tab bar's badge and the Notifications page all
  * show the same thing and only one of them polls.
  */
-export function NotificationsProvider({ children }: { children: React.ReactNode }) {
+export function NotificationsProvider({ children, signedIn = true }: { children: React.ReactNode; signedIn?: boolean }) {
   const router = useRouter();
   const [items, setItems] = useState<Notification[] | null>(null);
 
   useEffect(() => {
+    // A visitor has no notifications: don't ask.
+    if (!signedIn) return;
     let active = true;
+    // `load` is hoisted: the timer can start first, so a 401 can stop it.
+    const id = setInterval(load, 30000);
     async function load() {
       try {
         const res = await fetch("/api/notifications?pageSize=30");
+        // Not signed in (a visitor looking around): nothing to check for.
+        if (res.status === 401) {
+          clearInterval(id);
+          return;
+        }
         if (!res.ok || !active) return;
         const body = await res.json();
         setItems(body.notifications ?? []);
@@ -47,14 +56,13 @@ export function NotificationsProvider({ children }: { children: React.ReactNode 
       }
     }
     load();
-    const id = setInterval(load, 30000);
     window.addEventListener(APP_REFRESH_EVENT, load);
     return () => {
       active = false;
       clearInterval(id);
       window.removeEventListener(APP_REFRESH_EVENT, load);
     };
-  }, []);
+  }, [signedIn]);
 
   const open = useCallback(
     (n: Notification) => {

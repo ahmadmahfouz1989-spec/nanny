@@ -115,7 +115,7 @@ export default async function AppShell({
 
   return (
     <ToastProvider>
-      <NotificationsProvider>
+      <NotificationsProvider signedIn={!!user}>
         <SavedProfilesProvider>
           <div className="flex min-h-dvh">
             <aside className="hidden sm:flex sm:flex-col sm:w-60 shrink-0 border-e border-border px-3 py-5">
@@ -171,7 +171,7 @@ export default async function AppShell({
                     <span>{t(c.slug)}</span>
                   </Link>
                 ))}
-                <MessagesSidebarItem active={active === "messages"} />
+                <MessagesSidebarItem active={active === "messages"} signedIn={!!user} />
                 <NotificationBell variant="sidebar" />
                 <Link
                   href="/profile"
@@ -242,7 +242,7 @@ export default async function AppShell({
                 active={matchesActive}
                 className={TAB}
               />
-              <MessagesTabItem active={active === "messages"} />
+              <MessagesTabItem active={active === "messages"} signedIn={!!user} />
               <NotificationsTabItem active={active === "notifications"} className={TAB} />
               {/* Your profile, Saved, your services and settings live in
                   the menu behind your photo, as on X -- not here too. */}

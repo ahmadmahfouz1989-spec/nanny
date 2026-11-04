@@ -85,7 +85,8 @@ export default function SignupForm() {
   return (
     <AuthCard>
       <h1 className="font-display text-2xl font-semibold mb-1">{t("title")}</h1>
-      <p className="text-muted text-sm mb-6">{t("subheadCategory")}</p>
+      {/* From "Message <name>" on a shared profile: say why they're here. */}
+      <p className="text-muted text-sm mb-6">{next?.includes("contact=1") ? t("subheadContact") : t("subheadCategory")}</p>
 
       <div className="flex flex-col gap-2">
         <AppleAuthButton next={next} />
@@ -109,15 +110,19 @@ export default function SignupForm() {
             type="checkbox"
             checked={agreed}
             onChange={(e) => setAgreed(e.target.checked)}
-            className="mt-0.5 accent-primary"
+            className="mt-0.5 h-4 w-4 shrink-0 accent-primary"
           />
-          {tAuth.rich("termsLabel", {
-            terms: (chunks) => (
-              <Link href="/terms" target="_blank" className={ui.link}>
-                {chunks}
-              </Link>
-            ),
-          })}
+          {/* One span: in the flex row the link and the full stop were
+              separate items, with a gap before the "." */}
+          <span>
+            {tAuth.rich("termsLabel", {
+              terms: (chunks) => (
+                <Link href="/terms" target="_blank" className={ui.link}>
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </span>
         </label>
 
         {error && (
