@@ -135,11 +135,11 @@ export default async function BrowsePage({ params, searchParams }: Props) {
           </div>
         )}
 
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {result?.cards.map((c) => {
             const place = c.place ? (ar ? c.place.name_ar : c.place.name_en) : null;
             return (
-              <Link key={c.id} href={`/u/${c.id}`} className={ui.cardHover + " flex gap-3 p-3"}>
+              <Link key={c.id} href={`/u/${c.id}`} className={ui.cardHover + " flex min-w-0 gap-3 p-3"}>
                 {c.photoUrl ? (
                   <Image src={c.photoUrl} alt="" width={72} height={72} unoptimized className="h-18 w-18 shrink-0 rounded-xl object-cover" />
                 ) : (

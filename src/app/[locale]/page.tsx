@@ -113,7 +113,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           className="pointer-events-none absolute inset-0 opacity-[0.35] [background-image:radial-gradient(var(--color-border-strong)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_35%,#000,transparent)]"
         />
 
-        <div className="relative mx-auto grid max-w-5xl items-center gap-8 sm:gap-12 lg:grid-cols-[1.05fr_1fr]">
+        <div className="relative mx-auto grid max-w-5xl grid-cols-1 items-center gap-8 sm:gap-12 lg:grid-cols-[1.05fr_1fr]">
           <div className="flex flex-col items-center gap-5 text-center lg:items-start lg:text-start">
             <span className="oui-in inline-flex items-center gap-2 rounded-full border border-border bg-surface px-3 py-1 text-xs font-medium text-secondary">
               <span className="h-1.5 w-1.5 rounded-full bg-secondary" />
@@ -219,7 +219,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </h2>
           <p className="oui-reveal mx-auto mb-10 max-w-lg text-center text-muted">{tPreview("subtitle")}</p>
 
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {previewCards.map((card, i) => (
               <div key={card.name} className="oui-reveal" style={{ animationDelay: `${i * 0.06}s` }}>
                 <PreviewProfileCard {...card} />
@@ -236,7 +236,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
             {t("howItWorksTitle")}
           </h2>
 
-          <ol className="relative grid w-full gap-5 sm:grid-cols-3">
+          <ol className="relative grid w-full grid-cols-1 gap-5 sm:grid-cols-3">
             <span
               aria-hidden
               className="pointer-events-none absolute inset-x-[16%] top-9 hidden h-px bg-gradient-to-r from-transparent via-border-strong to-transparent sm:block"

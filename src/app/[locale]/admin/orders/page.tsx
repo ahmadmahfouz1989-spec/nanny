@@ -371,7 +371,7 @@ function SettingsCard() {
       {SETTING_GROUPS.map((group) => (
         <section key={group.title} className="flex flex-col gap-2">
           <h3 className={ui.eyebrow}>{t(group.title as "settingsWaves")}</h3>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {group.fields.map((f) => (
               <label key={f.key} className="flex flex-col gap-1">
                 <span className={ui.label}>{t(f.label as "waveSize")}</span>
