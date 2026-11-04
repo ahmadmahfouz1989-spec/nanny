@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useSyncExternalStore } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
+import { isNativeApp } from "@/lib/native-app";
 
 const DANGER_BUTTON =
   "inline-flex items-center justify-center rounded-full bg-danger px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none";
@@ -18,6 +19,13 @@ const DANGER_BUTTON =
  */
 export default function DeleteAccountCard({ identifier, kind }: { identifier: string; kind: "email" | "phone" }) {
   const t = useTranslations("DeleteAccount");
+  // In the iOS/Android app (read after the first render, so server and
+  // phone agree on the first draw).
+  const inApp = useSyncExternalStore(
+    () => () => {},
+    () => isNativeApp(),
+    () => false,
+  );
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [typed, setTyped] = useState("");
@@ -82,7 +90,8 @@ export default function DeleteAccountCard({ identifier, kind }: { identifier: st
               <li>{t("lossConversations")}</li>
               <li>{t("lossRatings")}</li>
               <li>{t("lossPosts")}</li>
-              <li>{t("lossFeatured")}</li>
+              {/* Paid on the website only: the apps don't mention it (Apple/Google rules). */}
+              {!inApp && <li>{t("lossFeatured")}</li>}
             </ul>
             <p>{t("reportsKept")}</p>
           </div>
