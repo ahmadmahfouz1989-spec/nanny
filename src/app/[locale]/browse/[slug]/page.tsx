@@ -15,6 +15,7 @@ import { TRADES } from "@/lib/validation/maintenance";
 import { ERRAND_SERVICES } from "@/lib/validation/errands";
 import { ui } from "@/lib/ui";
 import BrowseFilters, { type RegionGroup } from "./browse-filters";
+import VerifiedCheck from "@/components/verified-check";
 
 type Props = {
   params: Promise<{ locale: string; slug: string }>;
@@ -146,7 +147,10 @@ export default async function BrowsePage({ params, searchParams }: Props) {
                   <AvatarIllustration tone="primary" className="h-18 w-18 shrink-0 rounded-xl" />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-ink">{c.fullName}</p>
+                  <p className="flex min-w-0 items-center gap-1 font-semibold text-ink">
+                    <span className="truncate">{c.fullName}</span>
+                    {c.verified && <VerifiedCheck label={t("verified")} />}
+                  </p>
                   {place && <p className="truncate text-xs text-muted">{place}</p>}
                   <div className="mt-0.5 flex flex-wrap items-center gap-2">
                     {c.rating.count > 0 ? <RatingStars average={c.rating.average} count={c.rating.count} size="xs" /> : <span className="text-xs text-muted">{t("new")}</span>}

@@ -19,6 +19,7 @@ import { cleaningPrice } from "@/components/cleaning-details";
 import { beautyPrice } from "@/components/beauty-details";
 import { carPrice } from "@/components/car-details";
 import { ratePrice } from "@/components/rate-details";
+import VerifiedCheck from "@/components/verified-check";
 
 export type OtherProfile = {
   id: string;
@@ -135,17 +136,14 @@ export default function MatchCard({
         </Link>
         <div className="min-w-0 flex-1">
           <Link href={`/u/${other.id}`} className="block min-w-0">
-            <p className="line-clamp-2 font-display text-base font-bold leading-tight text-ink hover:underline">{other.full_name}</p>
+            <p className="line-clamp-2 font-display text-base font-bold leading-tight text-ink hover:underline">
+              {other.full_name}
+              {match.featured && <VerifiedCheck label={t("featuredBadge")} className="ms-1" />}
+            </p>
           </Link>
           {headline && <p className="mt-0.5 text-xs text-muted">{headline}</p>}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
             <span className={ui.badge(ui.scoreTone(match.score)) + " py-0!"}>{t("scoreLabel", { score: Math.round(match.score) })}</span>
-            {match.featured && (
-              <span className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-semibold text-ink">
-                <span aria-hidden>★</span>
-                {t("featuredBadge")}
-              </span>
-            )}
             {(match.rating?.count ?? 0) > 0 && (
               <ProfileRating profileId={other.id} average={match.rating?.average ?? null} count={match.rating?.count ?? 0} />
             )}

@@ -10,6 +10,7 @@ import MatchCard, { type Match } from "./match-card";
 import MatchFilters from "./match-filters";
 import { ui } from "@/lib/ui";
 import { Link } from "@/i18n/navigation";
+import VerifiedCheck from "@/components/verified-check";
 
 const PAGE_SIZE = 20;
 
@@ -237,7 +238,7 @@ export default function GenericResults({
             <div key={r.id} className="flex flex-col gap-2">
               {showFeaturedHeader && (
                 <p className={ui.eyebrow + " flex items-center gap-1.5"}>
-                  <span className="text-accent-hover">★</span>
+                  <VerifiedCheck label="" className="text-sm" />
                   {t("featuredSection")}
                 </p>
               )}

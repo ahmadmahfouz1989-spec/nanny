@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson, request } from "@/lib/request";
+import ProfileTrustControls from "@/components/admin/profile-trust-controls";
 
 type AdminUser = {
   id: string;
@@ -16,9 +17,6 @@ type AdminUser = {
   created_at: string;
 };
 
-function isFeaturedNow(u: AdminUser) {
-  return !!u.featured_until && new Date(u.featured_until) > new Date();
-}
 
 export default function AdminUsersPage() {
   const t = useTranslations("Admin");
@@ -62,29 +60,6 @@ export default function AdminUsersPage() {
     setSubmitting(null);
     if (res?.ok) {
       setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, status: nextStatus } : u)) ?? null);
-    }
-  }
-
-  async function grant(user: AdminUser, plan: "monthly" | "yearly") {
-    setSubmitting(user.id);
-    const res = await request(`/api/admin/users/${user.id}/featured`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan }),
-    });
-    setSubmitting(null);
-    if (res?.ok) {
-      const { featured_until } = await res.json();
-      setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, featured_until } : u)) ?? null);
-    }
-  }
-
-  async function revoke(user: AdminUser) {
-    setSubmitting(user.id);
-    const res = await request(`/api/admin/users/${user.id}/featured`, { method: "DELETE" });
-    setSubmitting(null);
-    if (res?.ok) {
-      setUsers((prev) => prev?.map((u) => (u.id === user.id ? { ...u, featured_until: null } : u)) ?? null);
     }
   }
 
@@ -148,38 +123,7 @@ export default function AdminUsersPage() {
               </div>
             </div>
 
-            {user.role !== "admin" && (
-              <div className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-                <span className={ui.badge(isFeaturedNow(user) ? "success" : "warning")}>
-                  {isFeaturedNow(user)
-                    ? t("featuredUntil", { date: new Date(user.featured_until!).toLocaleDateString() })
-                    : t("notFeatured")}
-                </span>
-                <button
-                  onClick={() => grant(user, "monthly")}
-                  disabled={submitting === user.id}
-                  className={ui.buttonSecondary + " px-3! py-1! text-xs"}
-                >
-                  {t("giveMonth")}
-                </button>
-                <button
-                  onClick={() => grant(user, "yearly")}
-                  disabled={submitting === user.id}
-                  className={ui.buttonSecondary + " px-3! py-1! text-xs"}
-                >
-                  {t("giveYear")}
-                </button>
-                {isFeaturedNow(user) && (
-                  <button
-                    onClick={() => revoke(user)}
-                    disabled={submitting === user.id}
-                    className="text-xs text-muted hover:text-danger transition"
-                  >
-                    {t("revokeFeatured")}
-                  </button>
-                )}
-              </div>
-            )}
+            {user.role !== "admin" && <ProfileTrustControls userId={user.id} featuredUntil={user.featured_until} />}
           </div>
         ))}
       </div>

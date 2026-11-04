@@ -8,6 +8,7 @@ import { ui } from "@/lib/ui";
 import Image from "next/image";
 import { Avatar, formatRelative, type Post } from "./feed-shared";
 import type { PostWork } from "@/lib/posts";
+import VerifiedCheck from "@/components/verified-check";
 
 /** One post in the feed; its open reply section is passed in as children. */
 export default function PostCard({
@@ -47,8 +48,9 @@ export default function PostCard({
       <div className="flex-1 min-w-0 flex flex-col gap-1">
         <div className="flex items-center gap-1.5 flex-wrap text-[15px]">
           {post.author?.profileId ? (
-            <Link href={`/u/${post.author.profileId}`} className="font-semibold text-ink hover:underline">
+            <Link href={`/u/${post.author.profileId}`} className="inline-flex items-center gap-1 font-semibold text-ink hover:underline">
               {post.author.fullName}
+              {post.featured && <VerifiedCheck label={t("featuredBadge")} />}
             </Link>
           ) : (
             <span className="font-semibold text-ink">{post.author?.fullName ?? t("someone")}</span>
@@ -56,7 +58,6 @@ export default function PostCard({
           <span className={ui.badge(post.kind === "looking_for" ? "secondary" : "accent") + " py-0!"}>
             {t(post.kind === "looking_for" ? "kindLookingFor" : "kindOffering")}
           </span>
-          {post.featured && <span className={ui.badge("berry") + " py-0!"}>★ {t("featuredBadge")}</span>}
           <span className="text-muted">·</span>
           <span className="text-muted">{formatRelative(post.created_at, locale, t("justNow"))}</span>
 

@@ -5,13 +5,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 
 const bodySchema = z.object({
-  plan: z.enum(["monthly", "yearly"]),
+  plan: z.enum(["monthly", "yearly", "permanent"]),
   note: z.string().trim().max(500).optional(),
 });
 
-const DAYS: Record<"monthly" | "yearly", number> = { monthly: 30, yearly: 365 };
+// "permanent": verified with no end date (100 years), until an admin removes it.
+const DAYS: Record<"monthly" | "yearly" | "permanent", number> = { monthly: 30, yearly: 365, permanent: 36500 };
 
-// Grant (or extend) a user's Featured placement after an off-app Whish payment.
+// Verify (or extend) a user: the blue check, and shown first in lists.
+// Paid off-app with Whish (30 days or a year), or given with no end date.
+// Stored as users.featured_until -- "featured" is the old name for it.
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
@@ -39,7 +42,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // Extend from whichever is later: now, or the current expiry.
   const now = new Date();
   const current = target.featured_until ? new Date(target.featured_until) : now;
-  const base = current > now ? current : now;
+  const base = parsed.data.plan === "permanent" || current <= now ? now : current;
   const expiresAt = new Date(base.getTime() + DAYS[parsed.data.plan] * 86400000);
 
   const { error: updateError } = await db

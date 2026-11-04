@@ -26,6 +26,7 @@ import WorkSection from "@/components/work/work-section";
 import HeadlineEditor from "@/components/work/headline-editor";
 import BackButton from "@/components/back-button";
 import ProfileSectionNav from "@/components/profile-section-nav";
+import VerifiedCheck from "@/components/verified-check";
 
 // generateMetadata and the page both need it; cache() makes it one load.
 const getPage = cache(async (id: string) => {
@@ -174,19 +175,20 @@ async function ProfileHeader({ data, locale, contact, share }: { data: ProfilePa
             className="h-40 sm:h-48 w-full"
           />
         )}
-        {data.featured && (
-          <span className="absolute top-3 start-3 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-xs font-semibold text-ink shadow-sm">
-            <span aria-hidden>★</span>
-            {tMatches("featuredBadge")}
-          </span>
-        )}
         {match && (
           <span className={ui.badge(ui.scoreTone(match.score)) + " absolute top-3 end-3 bg-surface/90!"}>
             {tMatches("scoreLabel", { score: Math.round(match.score) })}
           </span>
         )}
         <div className="absolute bottom-0 start-0 end-0 p-4 sm:p-5">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white drop-shadow">{profile.full_name}</h1>
+          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white drop-shadow">
+            {profile.full_name}
+            {data.featured && (
+              <span className="ms-1.5 inline-flex rounded-full bg-white align-middle">
+                <VerifiedCheck label={tMatches("featuredBadge")} />
+              </span>
+            )}
+          </h1>
           <p className="text-sm text-white/90 drop-shadow">
             {[categoryName, roleLabel].filter(Boolean).join(" · ")}
           </p>

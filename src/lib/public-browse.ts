@@ -1,6 +1,7 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { withPlaceNames } from "@/lib/place-names";
 import { ratingAggregatesByUser, type RatingAggregate } from "@/lib/ratings";
+import { featuredUserIds } from "@/lib/featured";
 
 export const BROWSE_PAGE_SIZE = 24;
 
@@ -14,6 +15,8 @@ export type BrowseCard = {
   /** Home Maintenance trades / Delivery & Errands services, as codes. */
   services: string[];
   idChecked: boolean;
+  /** Verified (blue check): shown first. */
+  verified: boolean;
 };
 
 /**
@@ -21,8 +24,8 @@ export type BrowseCard = {
  * active, public page on, account not suspended. `region` is a governorate
  * or a district (where they live or one they cover); `service` narrows to
  * a trade or an errand service. Read on the server and reduced to the same
- * safe fields as the public profile page. Profiles with a photo and good
- * ratings first.
+ * safe fields as the public profile page. Verified people first, then
+ * profiles with a photo and good ratings.
  */
 export async function browseProviders(options: {
   slug: string;
@@ -69,11 +72,15 @@ export async function browseProviders(options: {
   const out = new Set((suspended ?? []).map((u) => u.id));
   const visible = all.filter((r) => !out.has(r.user_id));
 
-  const ratings = await ratingAggregatesByUser(visible.map((r) => r.user_id));
+  const [ratings, verified] = await Promise.all([
+    ratingAggregatesByUser(visible.map((r) => r.user_id)),
+    featuredUserIds(visible.map((r) => r.user_id)),
+  ]);
   const ranked = visible
-    .map((r) => ({ r, rating: ratings.get(r.user_id) ?? { average: null, count: 0 } }))
+    .map((r) => ({ r, rating: ratings.get(r.user_id) ?? { average: null, count: 0 }, verified: verified.has(r.user_id) }))
     .sort(
       (a, b) =>
+        Number(b.verified) - Number(a.verified) ||
         Number(!!b.r.profile_photo_url) - Number(!!a.r.profile_photo_url) ||
         (b.rating.average ?? 0) * Math.min(b.rating.count, 5) - (a.rating.average ?? 0) * Math.min(a.rating.count, 5) ||
         a.r.id.localeCompare(b.r.id),
@@ -102,6 +109,7 @@ export async function browseProviders(options: {
       rating: slice[i]!.rating,
       services: Array.isArray(services) ? services.filter((x): x is string => typeof x === "string") : [],
       idChecked: checked.has(p.id),
+      verified: slice[i]!.verified,
     };
   });
   return { cards, more: ranked.length > start + BROWSE_PAGE_SIZE };

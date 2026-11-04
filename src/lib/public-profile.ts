@@ -19,6 +19,8 @@ export type PublicProfile = {
   rating: RatingAggregate;
   reviews: ProfileReview[];
   idChecked: boolean;
+  /** Verified (blue check). */
+  verified: boolean;
   memberSince: string;
   /** Approved work photos, a few. */
   workPhotos: { url: string; caption: string | null }[];
@@ -46,7 +48,7 @@ export async function loadPublicProfile(profileId: string): Promise<PublicProfil
   if (!found.categories) return null;
 
   const [{ data: owner }, [placed], reviews, { data: idDoc }, { data: projects }] = await Promise.all([
-    db.from("users").select("status, created_at").eq("id", found.user_id).maybeSingle(),
+    db.from("users").select("status, created_at, featured_until").eq("id", found.user_id).maybeSingle(),
     withPlaceNames([found]),
     reviewsReceivedByUser(found.user_id),
     db.from("id_documents").select("status").eq("profile_id", profileId).maybeSingle(),
@@ -80,6 +82,7 @@ export async function loadPublicProfile(profileId: string): Promise<PublicProfil
     rating: { average: reviews.average, count: reviews.count },
     reviews: reviews.reviews.filter((r) => r.comment).slice(0, MAX_REVIEWS),
     idChecked: idDoc?.status === "approved",
+    verified: !!owner?.featured_until && new Date(owner.featured_until) > new Date(),
     memberSince: owner.created_at,
     workPhotos,
   };

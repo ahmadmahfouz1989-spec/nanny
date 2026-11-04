@@ -13,6 +13,7 @@ import { CAR_KEYS, useCarRows } from "@/components/car-details";
 import { useGenderRows, useRateRows } from "@/components/rate-details";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import IdDocumentLink from "@/components/admin/id-document-link";
+import ProfileTrustControls from "@/components/admin/profile-trust-controls";
 import { getJson, request } from "@/lib/request";
 
 type Language = { id: string; name_en: string; name_ar: string; name_fr: string };
@@ -29,7 +30,7 @@ type QueueProfile = {
   locations: { name_en: string; name_ar: string; name_fr: string } | null;
   categories: { slug: string; name_en: string; name_ar: string } | null;
   created_at: string;
-  users: { email: string | null; contact_phone: string | null; status: string } | null;
+  users: { email: string | null; contact_phone: string | null; status: string; featured_until: string | null } | null;
 };
 
 function localizedLocationName(
@@ -93,6 +94,8 @@ export default function AdminProfilesPage() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [notice, setNotice] = useState<string | null>(null);
+  // Finds one person among many approved profiles: name, email or phone.
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     getJson("/api/admin/analytics").then((body) => body && setCategories(body.categories ?? []));
@@ -270,6 +273,13 @@ export default function AdminProfilesPage() {
             </option>
           ))}
         </select>
+        <input
+          type="search"
+          className={ui.input + " w-full sm:w-64"}
+          placeholder={t("searchProfiles")}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
         <select className={ui.select + " w-auto"} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
           <option value="">{t("allRoles")}</option>
           <option value="seeker">{t("roleSeeker")}</option>
@@ -280,7 +290,13 @@ export default function AdminProfilesPage() {
       {profiles && profiles.length === 0 && <p className="text-sm text-muted">{t("profilesEmpty")}</p>}
 
       <div className="flex flex-col gap-4">
-        {profiles?.map((profile) => {
+        {profiles
+          ?.filter((profile) => {
+            const q = search.trim().toLowerCase();
+            if (!q) return true;
+            return [profile.full_name, profile.users?.email, profile.users?.contact_phone].some((v) => v?.toLowerCase().includes(q));
+          })
+          .map((profile) => {
           const locationDetail = profile.attributes?.locationDetail;
           const area = [localizedLocationName(profile.locations, locale), typeof locationDetail === "string" ? locationDetail : null]
             .filter(Boolean)
@@ -376,6 +392,10 @@ export default function AdminProfilesPage() {
                       {t("reject")}
                     </button>
                   </div>
+                )}
+
+                {(profile.moderation_status === "approved" || decided[profile.id] === "approved") && (
+                  <ProfileTrustControls userId={profile.user_id} featuredUntil={profile.users?.featured_until ?? null} />
                 )}
               </div>
             </div>

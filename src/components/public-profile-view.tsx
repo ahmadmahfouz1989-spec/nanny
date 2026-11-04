@@ -6,6 +6,7 @@ import BrandMark from "@/components/brand-mark";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import RatingStars from "@/components/matches/rating-stars";
 import type { PublicProfile } from "@/lib/public-profile";
+import VerifiedCheck from "@/components/verified-check";
 
 /**
  * A provider's profile as someone without an account sees it, opened from
@@ -47,7 +48,14 @@ export default async function PublicProfileView({ profile, locale }: { profile: 
               <AvatarIllustration tone="primary" banner className="h-44 w-full" />
             )}
             <div className="absolute bottom-0 start-0 end-0 p-4">
-              <h1 className="font-display text-2xl font-bold text-white drop-shadow">{profile.fullName}</h1>
+              <h1 className="font-display text-2xl font-bold text-white drop-shadow">
+                {profile.fullName}
+                {profile.verified && (
+                  <span className="ms-1.5 inline-flex rounded-full bg-white align-middle">
+                    <VerifiedCheck label={t("verified")} />
+                  </span>
+                )}
+              </h1>
               <p className="text-sm text-white/90 drop-shadow">{place ? t("serviceIn", { service, place }) : service}</p>
             </div>
           </div>
