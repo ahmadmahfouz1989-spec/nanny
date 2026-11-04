@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useFormatter, useLocale, useTranslations } from "next-intl";
+import { useFormatter, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
@@ -9,14 +9,14 @@ import { Avatar } from "@/app/[locale]/feed/feed-shared";
 import {
   Countdown,
   OrderStatusBadge,
-  placeLabel,
   useDistanceLabel,
   useOrderTitle,
   useSecondsLeft,
   useServiceLabel,
   useStatusLabel,
 } from "@/components/orders/order-bits";
-import type { OrderOffer, OrderPerson, OrderPlace, OrderView } from "@/lib/errand-order-view";
+import type { OrderOffer, OrderPerson, OrderView } from "@/lib/errand-order-view";
+import OrderPlaces from "@/components/orders/order-places";
 
 // One order, live: polled every few seconds so offers and each stage
 // appear without a refresh (and a notification arrives as well).
@@ -37,7 +37,6 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const t = useTranslations("Orders");
   const serviceLabel = useServiceLabel();
   const orderTitle = useOrderTitle();
-  const locale = useLocale();
   const format = useFormatter();
   const router = useRouter();
   const [order, setOrder] = useState<OrderView | null | undefined>(undefined);
@@ -101,8 +100,6 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
     );
   }
 
-  const place = (p: OrderPlace) =>
-    [placeLabel(p.district, locale), placeLabel(p.area, locale), p.detail].filter(Boolean).join(" · ");
   const confirmBox = (kind: "cancel" | "drop") =>
     confirming === kind ? (
       <div className={ui.card + " flex flex-col gap-3 p-4"}>
@@ -156,15 +153,6 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
             ))}
           </div>
         )}
-        {/* "From … / To …" for a trip; just "Where" for a task in one place. */}
-        <p className="text-sm text-muted">
-          {order.dropoff ? t("from") : t("where")}: {place(order.pickup)}
-        </p>
-        {order.dropoff && (
-          <p className="text-sm text-muted">
-            {t("to")}: {place(order.dropoff)}
-          </p>
-        )}
         <p className="text-sm text-muted">
           {order.timing === "asap"
             ? t("asap")
@@ -174,6 +162,9 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
           {order.budgetUsd !== null ? ` · ${t("budgetLine", { budget: order.budgetUsd })}` : ""}
         </p>
       </div>
+
+      {/* From and To (or Where), with the map and directions. */}
+      <OrderPlaces pickup={order.pickup} dropoff={order.dropoff} route={order.route} job={order.category === "maintenance"} />
 
       {error && <p className="text-sm text-danger">{error}</p>}
 

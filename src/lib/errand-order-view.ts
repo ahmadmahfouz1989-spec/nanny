@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser, type RatingAggregate } from "@/lib/ratings";
-import type { OrderStatus } from "@/lib/errand-orders";
+import { distanceKm, type OrderStatus } from "@/lib/errand-orders";
 import type { Tables } from "@/lib/supabase/database.types";
 
 // What each side sees of an order. The customer sees the offers (price,
@@ -15,7 +15,25 @@ type RecipientRow = Tables<"errand_order_recipients">;
 export type Viewer = "seeker" | "provider" | "admin";
 
 type PlaceName = { en: string; ar: string };
-export type OrderPlace = { district: PlaceName | null; area: PlaceName | null; detail: string | null };
+export type OrderPlace = {
+  district: PlaceName | null;
+  area: PlaceName | null;
+  detail: string | null;
+  /** On the map: the exact point, or (approximate) the area's centre. */
+  point: { lat: number; lng: number } | null;
+  /** Only the area is shown (a rider who hasn't confirmed sees the drop-off this way). */
+  approximate: boolean;
+  address: string | null;
+  /** The shop, business or place's name. */
+  name: string | null;
+  instructions: string | null;
+  /** Who to ask for there: the confirmed rider, the customer and admins only. */
+  contactName: string | null;
+  contactPhone: string | null;
+};
+
+/** Pickup to drop-off: straight-line km and a Google Maps directions link. */
+export type OrderRoute = { km: number | null; approximate: boolean; mapsUrl: string | null };
 
 export type OrderPerson = { profileId: string; name: string; photoUrl: string | null; rating: RatingAggregate };
 
@@ -64,6 +82,7 @@ export type OrderView = {
   photoUrls: string[];
   pickup: OrderPlace;
   dropoff: OrderPlace | null;
+  route: OrderRoute;
   timing: string;
   scheduledAt: string | null;
   budgetUsd: number | null;
@@ -104,13 +123,22 @@ export type OrderView = {
   events: { type: string; actorRole: string; detail: unknown; at: string }[] | null;
 };
 
-async function placeNames(db: Admin, ids: (string | null)[]): Promise<Map<string, PlaceName>> {
+async function placeNames(db: Admin, ids: (string | null)[]): Promise<Map<string, PlaceName & { lat: number | null; lng: number | null }>> {
   const unique = [...new Set(ids.filter((id): id is string => !!id))];
-  const out = new Map<string, PlaceName>();
+  const out = new Map<string, PlaceName & { lat: number | null; lng: number | null }>();
   if (unique.length === 0) return out;
-  const { data } = await db.from("locations").select("id, name_en, name_ar").in("id", unique);
-  for (const row of data ?? []) out.set(row.id, { en: row.name_en, ar: row.name_ar });
+  const { data } = await db.from("locations").select("id, name_en, name_ar, lat, lon").in("id", unique);
+  for (const row of data ?? []) out.set(row.id, { en: row.name_en, ar: row.name_ar, lat: row.lat, lng: row.lon });
   return out;
+}
+
+const mapsPoint = (p: { lat: number; lng: number }) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+
+/** Google Maps: directions from pickup to drop-off, or the pickup alone. Opens the Maps app on phones. */
+function mapsLink(from: { lat: number; lng: number } | null, to: { lat: number; lng: number } | null): string | null {
+  if (from && to) return `https://www.google.com/maps/dir/?api=1&origin=${mapsPoint(from)}&destination=${mapsPoint(to)}&travelmode=driving`;
+  const one = from ?? to;
+  return one ? `https://www.google.com/maps/search/?api=1&query=${mapsPoint(one)}` : null;
 }
 
 async function people(db: Admin, profileIds: (string | null)[]): Promise<Map<string, OrderPerson & { userId: string }>> {
@@ -154,11 +182,55 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
   const all = recipients ?? [];
   const persons = await people(db, [order.seeker_profile_id, order.provider_profile_id, ...all.map((r) => r.provider_profile_id)]);
 
-  const place = (district: string | null, area: string | null, detail: string | null): OrderPlace => ({
-    district: district ? (names.get(district) ?? null) : null,
-    area: area ? (names.get(area) ?? null) : null,
-    detail,
-  });
+  // Who sees the exact places. The customer and admins: everything. A
+  // rider asked to quote: the exact pickup (it's usually a shop), but only
+  // the drop-off's area -- it's often someone's home -- and no contact
+  // details. The rider who confirms: everything.
+  const confirmedRider =
+    viewer === "provider" && order.provider_user_id === viewerUserId && !["open", "reserved"].includes(order.status);
+  const full = viewer !== "provider" || confirmedRider;
+  const nameOnly = (id: string | null) => {
+    const n = id ? names.get(id) : undefined;
+    return n ? { en: n.en, ar: n.ar } : null;
+  };
+  const centre = (area: string | null, district: string | null) => {
+    const n = (area && names.get(area)) || (district && names.get(district)) || null;
+    return n && n.lat !== null && n.lng !== null ? { lat: n.lat, lng: n.lng } : null;
+  };
+  type Side = "pickup" | "dropoff";
+  const place = (side: Side, exact: boolean): OrderPlace => {
+    const district = side === "pickup" ? order.pickup_district_id : order.dropoff_district_id;
+    const area = side === "pickup" ? order.pickup_area_id : order.dropoff_area_id;
+    const lat = side === "pickup" ? order.pickup_lat : order.dropoff_lat;
+    const lng = side === "pickup" ? order.pickup_lng : order.dropoff_lng;
+    const own = lat !== null && lng !== null ? { lat, lng } : null;
+    const base = { district: nameOnly(district), area: nameOnly(area) };
+    if (!exact) {
+      // The old landmark field ("area or landmark only") was always shown to riders.
+      const detail = side === "pickup" ? order.pickup_detail : order.dropoff_detail;
+      return { ...base, detail, point: centre(area, district), approximate: true, address: null, name: null, instructions: null, contactName: null, contactPhone: null };
+    }
+    const contact = full;
+    return {
+      ...base,
+      detail: side === "pickup" ? order.pickup_detail : order.dropoff_detail,
+      point: own ?? centre(area, district),
+      approximate: !own,
+      address: side === "pickup" ? order.pickup_address : order.dropoff_address,
+      name: side === "pickup" ? order.pickup_place_name : order.dropoff_place_name,
+      instructions: side === "pickup" ? order.pickup_instructions : order.dropoff_instructions,
+      contactName: contact ? (side === "pickup" ? order.pickup_contact_name : order.dropoff_contact_name) : null,
+      contactPhone: contact ? (side === "pickup" ? order.pickup_contact_phone : order.dropoff_contact_phone) : null,
+    };
+  };
+  const pickupPlace = place("pickup", true);
+  const dropoffPlace = order.dropoff_district_id ? place("dropoff", full) : null;
+  const routeKm = pickupPlace.point && dropoffPlace?.point ? distanceKm({ lat: pickupPlace.point.lat, lon: pickupPlace.point.lng }, { lat: dropoffPlace.point.lat, lon: dropoffPlace.point.lng }) : null;
+  const route: OrderRoute = {
+    km: routeKm,
+    approximate: pickupPlace.approximate || !!dropoffPlace?.approximate,
+    mapsUrl: mapsLink(pickupPlace.point, dropoffPlace?.point ?? null),
+  };
 
   const shown =
     viewer === "admin" ? all : viewer === "seeker" ? all.filter((r) => ["offered", "selected", "refused"].includes(r.status) && r.price_usd !== null) : [];
@@ -197,8 +269,9 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     service: order.service,
     description: order.description,
     photoUrls: await photoLinks(db, order.photo_paths),
-    pickup: place(order.pickup_district_id, order.pickup_area_id, order.pickup_detail),
-    dropoff: order.dropoff_district_id ? place(order.dropoff_district_id, order.dropoff_area_id, order.dropoff_detail) : null,
+    pickup: pickupPlace,
+    dropoff: dropoffPlace,
+    route,
     timing: order.timing,
     scheduledAt: order.scheduled_at,
     budgetUsd: order.budget_usd,

@@ -5,6 +5,7 @@ import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
 import { advanceOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
+import { placeOfPoint } from "@/lib/nearest-place";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { orderSummaries } from "@/lib/errand-order-view";
 
@@ -95,10 +96,35 @@ export async function POST(request: Request) {
 
   const parsed = orderCreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  const o = parsed.data;
-  if ([o.description, o.pickupDetail, o.dropoffDetail].some((text) => text && containsContactInfo(text))) {
+  const parsedOrder = parsed.data;
+  // Phone numbers belong in the contact fields (seen only by the rider who
+  // confirms), not in text every rider asked can read.
+  if (
+    [parsedOrder.description, parsedOrder.pickupDetail, parsedOrder.dropoffDetail, parsedOrder.pickupInstructions, parsedOrder.dropoffInstructions, parsedOrder.pickupPlaceName, parsedOrder.dropoffPlaceName].some(
+      (text) => text && containsContactInfo(text),
+    )
+  ) {
     return NextResponse.json({ error: CONTACT_ERROR }, { status: 400 });
   }
+
+  // A place picked on the map: its district and area come from the point.
+  const fromPoint = async (pt: { lat: number; lng: number } | null | undefined, districtId: string | null | undefined, areaId: string | null | undefined) => {
+    if (districtId || !pt) return { districtId: districtId ?? null, areaId: areaId ?? null, ok: true };
+    const place = await placeOfPoint(pt);
+    return place ? { ...place, ok: true } : { districtId: null, areaId: null, ok: false };
+  };
+  const pickupPlace = await fromPoint(parsedOrder.pickupPoint, parsedOrder.pickupDistrictId, parsedOrder.pickupAreaId);
+  const dropoffPlace = await fromPoint(parsedOrder.dropoffPoint, parsedOrder.dropoffDistrictId, parsedOrder.dropoffAreaId);
+  if (!pickupPlace.ok || !dropoffPlace.ok || !pickupPlace.districtId) {
+    return NextResponse.json({ error: "Pick a place in Lebanon" }, { status: 400 });
+  }
+  const o = {
+    ...parsedOrder,
+    pickupDistrictId: pickupPlace.districtId,
+    pickupAreaId: pickupPlace.areaId,
+    dropoffDistrictId: dropoffPlace.districtId,
+    dropoffAreaId: dropoffPlace.areaId,
+  };
 
   const db = createAdminClient();
   const job = o.category === "maintenance";
@@ -128,7 +154,11 @@ export async function POST(request: Request) {
   } else {
     // The order is the request: a new customer's Delivery & Errands
     // profile is made from it (or an existing one is used as it is).
-    const made = await ensureErrandRequestProfile(db, user.id, o);
+    const made = await ensureErrandRequestProfile(db, user.id, {
+      ...o,
+      pickupDetail: o.pickupDetail || o.pickupPlaceName || o.pickupAddress,
+      dropoffDetail: o.dropoffDetail || o.dropoffPlaceName || o.dropoffAddress,
+    });
     if (!made.ok) return NextResponse.json({ error: made.error, code: made.code }, { status: 400 });
     seekerProfileId = made.profileId;
   }
@@ -159,6 +189,20 @@ export async function POST(request: Request) {
       dropoff_district_id: o.dropoffDistrictId ?? null,
       dropoff_area_id: o.dropoffAreaId ?? null,
       dropoff_detail: o.dropoffDetail || null,
+      pickup_lat: o.pickupPoint?.lat ?? null,
+      pickup_lng: o.pickupPoint?.lng ?? null,
+      pickup_address: o.pickupAddress || null,
+      pickup_place_name: o.pickupPlaceName || null,
+      pickup_instructions: o.pickupInstructions || null,
+      pickup_contact_name: o.pickupContactName || null,
+      pickup_contact_phone: o.pickupContactPhone || null,
+      dropoff_lat: o.dropoffPoint?.lat ?? null,
+      dropoff_lng: o.dropoffPoint?.lng ?? null,
+      dropoff_address: o.dropoffAddress || null,
+      dropoff_place_name: o.dropoffPlaceName || null,
+      dropoff_instructions: o.dropoffInstructions || null,
+      dropoff_contact_name: o.dropoffContactName || null,
+      dropoff_contact_phone: o.dropoffContactPhone || null,
       timing: o.timing,
       scheduled_at: o.timing === "scheduled" ? (o.scheduledAt ?? null) : null,
       budget_usd: o.budgetUsd ?? null,

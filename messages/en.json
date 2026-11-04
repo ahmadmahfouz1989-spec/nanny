@@ -2487,7 +2487,12 @@
     "sameArea": "Same area",
     "from": "From",
     "to": "To",
-    "enterYourName": "Enter your name so providers know who they're helping."
+    "enterYourName": "Enter your name so providers know who they're helping.",
+    "choosePlaceOnMap": "Choose the places on the map (search, your location, or move the pin).",
+    "mapFrom": "Pick up from",
+    "mapTo": "Deliver to",
+    "mapWhere": "Where",
+    "mapPrivacyHint": "Riders asked see the pickup and the drop-off's area. The exact drop-off and contact numbers go only to the rider who confirms."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",
@@ -2544,5 +2549,36 @@
     "offerToo": "Do you offer {service}?",
     "offerLink": "Create your profile",
     "verified": "Verified"
+  },
+  "PlacePicker": {
+    "searchPickup": "Search a shop, business or address",
+    "searchDropoff": "Search an address, shop or place",
+    "useCurrentLocation": "Use my current location",
+    "locating": "Finding you…",
+    "locationDenied": "We couldn't get your location. Allow location for ouiKnow, or search or move the map instead.",
+    "locationUnavailable": "This device can't share its location. Search or move the map instead.",
+    "searchFailed": "That place couldn't be loaded. Try another, or move the map.",
+    "mapFailed": "The map didn't load. Check your connection and try again.",
+    "pinPlaced": "Pin placed",
+    "dragHint": "Search, use your location, or move the map so the pin sits on the exact spot.",
+    "shopName": "Shop or place name (optional)",
+    "placeName": "Place name (optional)",
+    "shopNamePlaceholder": "e.g. Pharmacy Mazen",
+    "placeNamePlaceholder": "e.g. My office, Building B",
+    "contactName": "Contact there (optional)",
+    "contactPhone": "Their phone (optional)",
+    "recipientName": "Recipient (optional)",
+    "recipientPhone": "Recipient's phone (optional)",
+    "pickupInstructions": "Pickup instructions (optional)",
+    "dropoffInstructions": "Delivery instructions (optional)",
+    "pickupInstructionsPlaceholder": "e.g. Order under Maya, ask at the counter",
+    "dropoffInstructionsPlaceholder": "e.g. 3rd floor, ring twice",
+    "from": "From",
+    "to": "To",
+    "where": "Where",
+    "distance": "{km} km between them",
+    "distanceAbout": "About {km} km between them",
+    "openInMaps": "Open in Google Maps",
+    "approximateHint": "The exact place and contact show once you confirm."
   }
 }

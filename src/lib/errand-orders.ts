@@ -176,7 +176,15 @@ export async function activeOrderCounts(db: Admin, profileIds: string[]): Promis
  */
 export async function eligibleProviders(
   db: Admin,
-  order: { category?: string; service: OrderService; pickupDistrictId: string; pickupAreaId: string | null; seekerUserId: string },
+  order: {
+    category?: string;
+    service: OrderService;
+    pickupDistrictId: string;
+    pickupAreaId: string | null;
+    seekerUserId: string;
+    /** The exact pickup picked on the map, when there is one: distances run from it. */
+    pickupPoint?: { lat: number; lng: number } | null;
+  },
   options: { exclude?: string[]; limit: number; maxActive?: number },
 ): Promise<Candidate[]> {
   const jobs = order.category === "maintenance";
@@ -186,7 +194,11 @@ export async function eligibleProviders(
   const pickup = await pointsById(db, [order.pickupAreaId, order.pickupDistrictId]);
   const pickupDistrict = pickup.get(order.pickupDistrictId);
   const pickupGovernorate = pickupDistrict?.parent ?? null;
-  const pickupPoint = (order.pickupAreaId && pickup.get(order.pickupAreaId)) || pickupDistrict || null;
+  const pickupPoint =
+    (order.pickupPoint ? { lat: order.pickupPoint.lat, lon: order.pickupPoint.lng } : null) ||
+    (order.pickupAreaId && pickup.get(order.pickupAreaId)) ||
+    pickupDistrict ||
+    null;
 
   let query = db
     .from("generic_profiles")
@@ -280,6 +292,7 @@ export async function dispatchOrder(db: Admin, order: OrderRow, actor: OrderActo
       pickupDistrictId: order.pickup_district_id,
       pickupAreaId: order.pickup_area_id,
       seekerUserId: order.seeker_user_id,
+      pickupPoint: order.pickup_lat !== null && order.pickup_lng !== null ? { lat: order.pickup_lat, lng: order.pickup_lng } : null,
     },
     { exclude: (already ?? []).map((r) => r.provider_profile_id), limit: Math.max(0, settings.max_recipients - (already ?? []).length) },
   );
@@ -346,6 +359,7 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
       pickupDistrictId: order.pickup_district_id,
       pickupAreaId: order.pickup_area_id,
       seekerUserId: order.seeker_user_id,
+      pickupPoint: order.pickup_lat !== null && order.pickup_lng !== null ? { lat: order.pickup_lat, lng: order.pickup_lng } : null,
     },
     { exclude: (already ?? []).map((r) => r.provider_profile_id), limit: Infinity, maxActive: settings.max_active_orders },
   );

@@ -1,6 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { advanceOrders, DEFAULT_SETTINGS, dispatchOrder, eligibleProviders, myErrandProfiles, nextWaveOrClose } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
+import { placeOfPoint } from "@/lib/nearest-place";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
@@ -171,6 +172,57 @@ describe("errand orders", () => {
     expect((await fresh(order.id)).status).toBe("no_provider");
     const reopened = await adminAction(admin, await fresh(order.id), { userId: customer.id, role: "admin" }, "reopen", {});
     expect(reopened.ok).toBe(true);
+  });
+
+  it("finds the district of a map pin, and shows riders the exact drop-off only once they confirm", async () => {
+    // A pin in Hamra (Beirut) is in the Beirut district; one at sea is nowhere.
+    expect((await placeOfPoint({ lat: 33.8966, lng: 35.4823 }))?.districtId).toBe(beirut.id);
+    expect(await placeOfPoint({ lat: 34.2, lng: 34.9 })).toBeNull();
+
+    const order = await placeOrder(customer, customerProfile, beirut);
+    await admin
+      .from("errand_orders")
+      .update({
+        pickup_lat: 33.8966,
+        pickup_lng: 35.4823,
+        pickup_address: "Hamra Street, Beirut",
+        pickup_place_name: "Pharmacy Mazen",
+        pickup_instructions: "Order under Maya",
+        pickup_contact_phone: "+961 1 111 111",
+        dropoff_lat: 33.8869,
+        dropoff_lng: 35.5203,
+        dropoff_address: "Sassine Square, Achrafieh",
+        dropoff_instructions: "3rd floor",
+        dropoff_contact_name: "Lina",
+        dropoff_contact_phone: "+961 3 333 333",
+      })
+      .eq("id", order.id);
+    await dispatchOrder(admin, await fresh(order.id), { userId: customer.id, role: "seeker" });
+
+    // A rider asked to quote: the exact pickup, the drop-off's area only, no phones.
+    const asked = await orderView(admin, await fresh(order.id), "provider", near.user.id);
+    expect(asked.pickup).toMatchObject({ approximate: false, name: "Pharmacy Mazen", address: "Hamra Street, Beirut", contactPhone: null });
+    expect(asked.dropoff).toMatchObject({ approximate: true, address: null, instructions: null, contactName: null, contactPhone: null });
+    expect(asked.route.km).toBeGreaterThan(0);
+    expect(asked.route.mapsUrl).toContain("google.com/maps/dir/");
+    expect(asked.route.mapsUrl).not.toContain("33.886900,35.520300");
+
+    // The customer sees everything.
+    const own = await orderView(admin, await fresh(order.id), "seeker", customer.id);
+    expect(own.dropoff).toMatchObject({ approximate: false, address: "Sassine Square, Achrafieh", contactPhone: "+961 3 333 333" });
+
+    // The rider who confirms sees everything too, with directions to the exact drop-off.
+    await providerAction(admin, await fresh(order.id), { userId: near.user.id, role: "provider" }, "offer", { priceUsd: 5, etaMinutes: 20 });
+    const { offers } = await orderView(admin, await fresh(order.id), "seeker", customer.id);
+    await seekerAction(admin, await fresh(order.id), { userId: customer.id, role: "seeker" }, "select", { recipientId: offers.find((o) => o.profileId === near.profileId)!.recipientId });
+    const reserved = await orderView(admin, await fresh(order.id), "provider", near.user.id);
+    expect(reserved.dropoff?.approximate).toBe(true);
+    await providerAction(admin, await fresh(order.id), { userId: near.user.id, role: "provider" }, "confirm", {});
+    const confirmed = await orderView(admin, await fresh(order.id), "provider", near.user.id);
+    expect(confirmed.dropoff).toMatchObject({ approximate: false, address: "Sassine Square, Achrafieh", contactName: "Lina", contactPhone: "+961 3 333 333" });
+    expect(confirmed.pickup.contactPhone).toBe("+961 1 111 111");
+    expect(confirmed.route.mapsUrl).toContain("33.886900,35.520300");
+    await admin.from("errand_orders").update({ status: "cancelled" }).eq("id", order.id);
   });
 
   it("keeps every order table away from clients", async () => {

@@ -6,6 +6,8 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import LocationPicker from "@/components/onboarding/location-picker";
+import MapPlacePicker from "@/components/orders/map-place-picker";
+import { emptyMapPlace, mapsEnabled, type MapPlace } from "@/lib/google-maps";
 import { ERRAND_SERVICES, type ErrandService } from "@/lib/validation/errands";
 import { NEEDS_DROPOFF } from "@/lib/validation/errand-order";
 
@@ -41,14 +43,37 @@ export default function NewOrderForm({ prefill = null, needsName = false }: { pr
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const needsDropoff = (NEEDS_DROPOFF as readonly string[]).includes(service);
+  // With a Google Maps key: exact places on a map (From and To, each
+  // anywhere). Without one: the area search, as before.
+  const useMap = mapsEnabled();
+  const [pickupMap, setPickupMap] = useState<MapPlace>(emptyMapPlace);
+  const [dropoffMap, setDropoffMap] = useState<MapPlace>(emptyMapPlace);
+  const mapFields = (prefix: "pickup" | "dropoff", m: MapPlace) => ({
+    [`${prefix}Point`]: m.point,
+    [`${prefix}Address`]: m.address.trim() || undefined,
+    [`${prefix}PlaceName`]: m.name.trim() || undefined,
+    [`${prefix}Instructions`]: m.instructions.trim() || undefined,
+    [`${prefix}ContactName`]: m.contactName.trim() || undefined,
+    [`${prefix}ContactPhone`]: m.contactPhone.trim() || undefined,
+  });
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!pickup.districtId || (needsDropoff && !dropoff.districtId)) {
-      setError(t("chooseDistrict"));
+    if (useMap ? !pickupMap.point || (needsDropoff && !dropoffMap.point) : !pickup.districtId || (needsDropoff && !dropoff.districtId)) {
+      setError(useMap ? t("choosePlaceOnMap") : t("chooseDistrict"));
       return;
     }
+    const places = useMap
+      ? { ...mapFields("pickup", pickupMap), ...(needsDropoff ? mapFields("dropoff", dropoffMap) : {}) }
+      : {
+          pickupDistrictId: pickup.districtId,
+          pickupAreaId: pickup.areaId,
+          pickupDetail: pickup.detail.trim() || undefined,
+          dropoffDistrictId: needsDropoff ? dropoff.districtId : null,
+          dropoffAreaId: needsDropoff ? dropoff.areaId : null,
+          dropoffDetail: needsDropoff ? dropoff.detail.trim() || undefined : undefined,
+        };
     setSending(true);
     const res = await request("/api/errand-orders", {
       method: "POST",
@@ -56,12 +81,7 @@ export default function NewOrderForm({ prefill = null, needsName = false }: { pr
       body: JSON.stringify({
         service,
         description: description.trim(),
-        pickupDistrictId: pickup.districtId,
-        pickupAreaId: pickup.areaId,
-        pickupDetail: pickup.detail.trim() || undefined,
-        dropoffDistrictId: needsDropoff ? dropoff.districtId : null,
-        dropoffAreaId: needsDropoff ? dropoff.areaId : null,
-        dropoffDetail: needsDropoff ? dropoff.detail.trim() || undefined : undefined,
+        ...places,
         timing,
         scheduledAt: timing === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
         budgetUsd: budget ? Number(budget) : undefined,
@@ -133,18 +153,36 @@ export default function NewOrderForm({ prefill = null, needsName = false }: { pr
         />
       </label>
 
-      <section className="flex flex-col gap-2">
-        <span className={ui.label}>{t("pickup")}</span>
-        {placeFields(pickup, setPickup)}
-      </section>
+      {useMap ? (
+        <>
+          <section className={ui.card + " flex flex-col gap-3 p-4"}>
+            <h2 className="font-semibold text-ink">{needsDropoff ? t("mapFrom") : t("mapWhere")}</h2>
+            <MapPlacePicker kind="pickup" value={pickupMap} onChange={setPickupMap} />
+          </section>
+          {needsDropoff && (
+            <section className={ui.card + " flex flex-col gap-3 p-4"}>
+              <h2 className="font-semibold text-ink">{t("mapTo")}</h2>
+              <MapPlacePicker kind="dropoff" value={dropoffMap} onChange={setDropoffMap} />
+            </section>
+          )}
+          <p className="-mt-2 text-xs text-muted">{t("mapPrivacyHint")}</p>
+        </>
+      ) : (
+        <>
+          <section className="flex flex-col gap-2">
+            <span className={ui.label}>{t("pickup")}</span>
+            {placeFields(pickup, setPickup)}
+          </section>
 
-      {needsDropoff && (
-        <section className="flex flex-col gap-2">
-          <span className={ui.label}>{t("dropoff")}</span>
-          {placeFields(dropoff, setDropoff)}
-        </section>
+          {needsDropoff && (
+            <section className="flex flex-col gap-2">
+              <span className={ui.label}>{t("dropoff")}</span>
+              {placeFields(dropoff, setDropoff)}
+            </section>
+          )}
+          <p className="-mt-2 text-xs text-muted">{t("landmarkHint")}</p>
+        </>
       )}
-      <p className="-mt-2 text-xs text-muted">{t("landmarkHint")}</p>
 
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("when")}</span>

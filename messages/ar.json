@@ -2487,7 +2487,12 @@
     "sameArea": "بنفس المنطقة",
     "from": "من",
     "to": "لـ",
-    "enterYourName": "اكتب اسمك ليعرفوا مين عم يساعدوا."
+    "enterYourName": "اكتب اسمك ليعرفوا مين عم يساعدوا.",
+    "choosePlaceOnMap": "اختار الأماكن عالخريطة (فتّش، أو موقعك، أو حرّك الدبوس).",
+    "mapFrom": "الاستلام من",
+    "mapTo": "التوصيل لـ",
+    "mapWhere": "وين",
+    "mapPrivacyHint": "السائقين اللي منسألهن بيشوفوا مكان الاستلام ومنطقة التسليم. المكان بالظبط وأرقام التواصل بيروحوا بس للسائق اللي بيأكّد."
   },
   "PublicProfile": {
     "serviceIn": "{service} في {place}",
@@ -2544,5 +2549,36 @@
     "offerToo": "بتقدّم {service}؟",
     "offerLink": "اعمل ملفك",
     "verified": "موثّق"
+  },
+  "PlacePicker": {
+    "searchPickup": "فتّش على محل أو شركة أو عنوان",
+    "searchDropoff": "فتّش على عنوان أو محل أو مكان",
+    "useCurrentLocation": "استعمل موقعي هلّق",
+    "locating": "عم نلاقي موقعك…",
+    "locationDenied": "ما قدرنا ناخد موقعك. اسمح لـ ouiKnow بالموقع، أو فتّش أو حرّك الخريطة.",
+    "locationUnavailable": "هالجهاز ما بيقدر يشارك موقعو. فتّش أو حرّك الخريطة.",
+    "searchFailed": "ما قدرنا نجيب هالمكان. جرّب غيرو أو حرّك الخريطة.",
+    "mapFailed": "الخريطة ما فتحت. شيك عالإنترنت وجرّب مرة تانية.",
+    "pinPlaced": "انحطّ الدبوس",
+    "dragHint": "فتّش، أو استعمل موقعك، أو حرّك الخريطة لحتى يصير الدبوس عالمطرح بالظبط.",
+    "shopName": "اسم المحل أو المكان (اختياري)",
+    "placeName": "اسم المكان (اختياري)",
+    "shopNamePlaceholder": "مثلاً: صيدلية مازن",
+    "placeNamePlaceholder": "مثلاً: مكتبي، بناية B",
+    "contactName": "مين نسأل هونيك (اختياري)",
+    "contactPhone": "رقمو (اختياري)",
+    "recipientName": "المستلم (اختياري)",
+    "recipientPhone": "رقم المستلم (اختياري)",
+    "pickupInstructions": "تعليمات الاستلام (اختياري)",
+    "dropoffInstructions": "تعليمات التوصيل (اختياري)",
+    "pickupInstructionsPlaceholder": "مثلاً: الطلب باسم مايا، اسأل عالكاشير",
+    "dropoffInstructionsPlaceholder": "مثلاً: الطابق التالت، دقّ مرتين",
+    "from": "من",
+    "to": "لـ",
+    "where": "وين",
+    "distance": "{km} كم بيناتهن",
+    "distanceAbout": "حوالي {km} كم بيناتهن",
+    "openInMaps": "افتح بـ Google Maps",
+    "approximateHint": "المكان بالظبط ورقم التواصل بيبيّنوا بس تأكّد الطلب."
   }
 }

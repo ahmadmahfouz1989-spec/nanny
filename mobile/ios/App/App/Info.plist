@@ -39,6 +39,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>Take a profile photo, a photo of your work, or a photo to send in a message.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Use your current location as the pickup or drop-off place of a delivery, only when you tap "Use my current location".</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record voice messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

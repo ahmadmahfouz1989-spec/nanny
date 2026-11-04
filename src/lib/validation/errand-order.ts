@@ -11,6 +11,23 @@ import { TRADES } from "@/lib/validation/maintenance";
 const uuid = z.string().uuid();
 const detail = z.string().trim().max(160, "That's too long").optional();
 
+// A place picked on the map: the point, Google's address and place name,
+// what to do there, and who to ask for. All optional: without a map (no
+// Maps key yet) an order is a district, an area and a landmark as before.
+const point = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+const phone = z
+  .string()
+  .trim()
+  .max(30)
+  .refine((v) => v === "" || /^\+?[0-9 ()-]{6,30}$/.test(v), "Enter a phone number, or leave it empty")
+  .optional();
+const placeText = {
+  address: z.string().trim().max(300).optional(),
+  name: z.string().trim().max(160, "That's too long").optional(),
+  instructions: z.string().trim().max(500, "That's too long").optional(),
+  contactName: z.string().trim().max(80, "That's too long").optional(),
+};
+
 // Services that go from one place to another ask where to.
 export const NEEDS_DROPOFF = ["delivery", "shopping", "moto_taxi"] as const;
 
@@ -20,12 +37,26 @@ export const orderCreateSchema = z
     category: z.enum(["errands", "maintenance"]).default("errands"),
     service: z.enum([...ERRAND_SERVICES, ...TRADES], "Choose a service"),
     description: z.string().trim().min(3, "Tell them a few words about it").max(1000, "That's too long"),
-    pickupDistrictId: uuid,
+    // A district from the list, or a point on the map (the district is then
+    // worked out from it).
+    pickupDistrictId: uuid.optional(),
     pickupAreaId: uuid.nullable().optional(),
     pickupDetail: detail,
     dropoffDistrictId: uuid.nullable().optional(),
     dropoffAreaId: uuid.nullable().optional(),
     dropoffDetail: detail,
+    pickupPoint: point.nullable().optional(),
+    pickupAddress: placeText.address,
+    pickupPlaceName: placeText.name,
+    pickupInstructions: placeText.instructions,
+    pickupContactName: placeText.contactName,
+    pickupContactPhone: phone,
+    dropoffPoint: point.nullable().optional(),
+    dropoffAddress: placeText.address,
+    dropoffPlaceName: placeText.name,
+    dropoffInstructions: placeText.instructions,
+    dropoffContactName: placeText.contactName,
+    dropoffContactPhone: phone,
     timing: z.enum(TIMINGS, "Choose when"),
     scheduledAt: z
       .string()
@@ -46,7 +77,10 @@ export const orderCreateSchema = z
     if (o.category === "errands" && o.photoPaths.length > 0) {
       ctx.addIssue({ code: "custom", path: ["photoPaths"], message: "Photos are for repair jobs" });
     }
-    if ((NEEDS_DROPOFF as readonly string[]).includes(o.service) && !o.dropoffDistrictId) {
+    if (!o.pickupDistrictId && !o.pickupPoint) {
+      ctx.addIssue({ code: "custom", path: ["pickupDistrictId"], message: "Choose where" });
+    }
+    if ((NEEDS_DROPOFF as readonly string[]).includes(o.service) && !o.dropoffDistrictId && !o.dropoffPoint) {
       ctx.addIssue({ code: "custom", path: ["dropoffDistrictId"], message: "Choose where to" });
     }
     if (o.timing === "scheduled" && !o.scheduledAt) {
