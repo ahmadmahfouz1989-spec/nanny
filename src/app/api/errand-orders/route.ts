@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
-import { closeExpiredOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, openMinutesFor } from "@/lib/errand-orders";
+import { advanceOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
 import { ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { orderSummaries } from "@/lib/errand-order-view";
 
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
   const [profiles, jobProfiles] = await Promise.all([myErrandProfiles(db, user.id), myErrandProfiles(db, user.id, "maintenance")]);
 
   if (as === "seeker") {
-    await closeExpiredOrders(db, { seekerUserId: user.id });
+    await advanceOrders(db, { seekerUserId: user.id });
     const { data } = await db
       .from("errand_orders")
       .select("*")
@@ -46,8 +46,8 @@ export async function GET(request: Request) {
     .order("sent_at", { ascending: false })
     .limit(50);
   const receivedIds = (received ?? []).map((r) => r.order_id);
-  // Orders past their time drop out of the list (closed as "no provider").
-  for (const orderId of receivedIds) await closeExpiredOrders(db, { orderId });
+  // Orders past a deadline move on first (a missed reply drops out of the list).
+  await advanceOrders(db, { orderIds: receivedIds });
   const [{ data: open }, { data: assigned }] = await Promise.all([
     receivedIds.length
       ? db.from("errand_orders").select("*").in("id", receivedIds).eq("status", "open")
@@ -160,12 +160,12 @@ export async function POST(request: Request) {
   if (error || !order) return NextResponse.json({ error: error?.message ?? "Could not place the order" }, { status: 400 });
 
   await logOrderEvent(db, order.id, { userId: user.id, role: "seeker" }, "created");
-  const sent = await dispatchOrder(db, { ...order, service: o.service }, { userId: user.id, role: "seeker" });
-  if (sent === 0 && !job) {
-    await db.from("errand_orders").update({ status: "no_provider", status_changed_at: new Date().toISOString(), cancelled_by: "system" }).eq("id", order.id);
-    // No notification: the customer is looking at the answer on screen.
-    await logOrderEvent(db, order.id, { userId: null, role: "system" }, "status", { status: "no_provider" });
-  }
+  const actor = { userId: user.id, role: "seeker" as const };
+  // A delivery goes to its first wave; with nobody to send it to it closes at
+  // once (no notification: the customer is looking at the answer on screen).
+  const sent = job
+    ? await dispatchOrder(db, order, actor)
+    : await nextWaveOrClose(db, order, actor, { quiet: true });
 
   return NextResponse.json({ order: { id: order.id, number: order.number, status: sent === 0 && !job ? "no_provider" : "open", sent } }, { status: 201 });
 }

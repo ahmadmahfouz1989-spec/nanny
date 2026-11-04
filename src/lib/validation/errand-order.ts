@@ -77,8 +77,22 @@ export const quoteSchema = z
 
 export const cancelSchema = z.object({ reason: z.string().trim().max(300).optional() });
 
-export const settingsSchema = z.object({
-  maxRecipients: z.number().int().min(1).max(200),
-  openMinutes: z.number().int().min(5).max(1440),
-  quoteOpenMinutes: z.number().int().min(60).max(10080).optional(),
-});
+// The matching settings, as the admin dashboard edits them. Times in
+// seconds, distances in km.
+export const settingsSchema = z
+  .object({
+    maxRecipients: z.number().int().min(1).max(200),
+    openMinutes: z.number().int().min(5).max(1440),
+    quoteOpenMinutes: z.number().int().min(60).max(10080).optional(),
+    waveSize: z.number().int().min(1, "At least 1 provider per wave").max(50),
+    responseSeconds: z.number().int().min(30, "At least 30 seconds to answer").max(3600),
+    chooseSeconds: z.number().int().min(30, "At least 30 seconds to choose").max(3600),
+    confirmSeconds: z.number().int().min(30, "At least 30 seconds to confirm").max(3600),
+    initialRadiusKm: z.number().positive().max(300),
+    radiusStepKm: z.number().positive().max(300),
+    maxRadiusKm: z.number().positive().max(300),
+    maxActiveOrders: z.number().int().min(1).max(10),
+  })
+  .refine((s) => s.maxRadiusKm >= s.initialRadiusKm, { path: ["maxRadiusKm"], message: "The widest radius must be at least the starting radius" });
+
+export type SettingsInput = z.infer<typeof settingsSchema>;

@@ -21,6 +21,38 @@ const nextStage = (status: string, category: string) => {
   const i = stages.indexOf(status);
   return i >= 0 && i < stages.length - 1 ? stages[i + 1]! : null;
 };
+/**
+ * Seconds left until `deadline`, counted on the server's clock (`serverNow`
+ * from the last load) so a phone with the wrong time still shows the right
+ * countdown. Re-renders every second; null without a deadline.
+ */
+function useSecondsLeft(deadline: string | null | undefined, serverNow: string) {
+  // Time left when the order was loaded, then counted down locally; every
+  // reload (each poll) starts again from the server's figure.
+  const key = `${deadline}|${serverNow}`;
+  const atLoad = deadline ? Math.max(0, Math.round((Date.parse(deadline) - Date.parse(serverNow)) / 1000)) : null;
+  const [elapsed, setElapsed] = useState({ key: "", seconds: 0 });
+  useEffect(() => {
+    if (!deadline) return;
+    const startedAt = Date.now();
+    const timer = setInterval(() => setElapsed({ key, seconds: Math.floor((Date.now() - startedAt) / 1000) }), 1000);
+    return () => clearInterval(timer);
+  }, [deadline, key]);
+  if (atLoad === null) return null;
+  return Math.max(0, atLoad - (elapsed.key === key ? elapsed.seconds : 0));
+}
+
+const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+
+/** "1:42", left-to-right even on Arabic pages. */
+function Countdown({ seconds }: { seconds: number }) {
+  return (
+    <bdi dir="ltr" className="font-semibold tabular-nums">
+      {clock(seconds)}
+    </bdi>
+  );
+}
+
 const CANCELLABLE = new Set(["open", "reserved", "accepted", "on_the_way", "arrived"]);
 const DROPPABLE = new Set(["accepted", "on_the_way", "arrived"]);
 
@@ -206,6 +238,10 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   const format = useFormatter();
   const job = order.category === "maintenance";
   const [sort, setSort] = useState<"price" | "rating" | "time">("price");
+  const m = order.matching;
+  const waveLeft = useSecondsLeft(order.status === "open" && !m?.chooseUntil ? m?.waveUntil : null, order.serverNow);
+  const chooseLeft = useSecondsLeft(order.status === "open" ? m?.chooseUntil : null, order.serverNow);
+  const confirmLeft = useSecondsLeft(order.status === "reserved" ? m?.confirmUntil : null, order.serverNow);
   const offers = useMemo(() => {
     const list = order.offers.filter((o) => o.status === "offered" || o.status === "selected");
     const key: Record<typeof sort, (o: OrderOffer) => number> = {
@@ -254,10 +290,33 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
             </label>
           )}
         </div>
-        {offers.length === 0 ? (
-          <p className="text-sm text-muted">
-            {!job ? t("waitingOffers", { count: order.counts.sent }) : order.counts.sent > 0 ? t("waitingQuotes", { count: order.counts.sent }) : t("findingPros")}
+        {m && offers.length > 0 && chooseLeft !== null && (
+          <p className="rounded-xl bg-primary-soft px-3 py-2 text-sm text-ink">
+            {t.rich("chooseWithin", { time: () => <Countdown seconds={chooseLeft} /> })}
           </p>
+        )}
+        {m && offers.length > 0 && chooseLeft === null && waveLeft !== null && waveLeft > 0 && (
+          <p className="text-sm text-muted">{t.rich("moreOffersFor", { time: () => <Countdown seconds={waveLeft} /> })}</p>
+        )}
+        {offers.length === 0 ? (
+          m ? (
+            <div className="flex flex-col gap-1 text-sm text-muted">
+              <p>
+                {order.counts.waiting > 0
+                  ? m.radiusKm !== null
+                    ? t("askingNearest", { count: order.counts.waiting, km: m.radiusKm })
+                    : t("waitingOffers", { count: order.counts.waiting })
+                  : t("searchingMore")}
+              </p>
+              {waveLeft !== null && waveLeft > 0 && order.counts.waiting > 0 && (
+                <p>{t.rich("nextWaveIn", { time: () => <Countdown seconds={waveLeft} /> })}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-sm text-muted">
+              {order.counts.sent > 0 ? t("waitingQuotes", { count: order.counts.sent }) : t("findingPros")}
+            </p>
+          )
         ) : (
           offers.map((o) => (
             <div key={o.recipientId} className={ui.card + " flex items-center gap-3 p-4"}>
@@ -303,6 +362,9 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
       <div className="flex flex-col gap-3">
         <div className={ui.card + " flex flex-col items-start gap-3 p-4"}>
           <p className="text-sm text-ink">{t("waitingConfirm", { name: order.provider?.name ?? "" })}</p>
+          {confirmLeft !== null && (
+            <p className="text-sm text-muted">{t.rich("confirmLeftSeeker", { time: () => <Countdown seconds={confirmLeft} /> })}</p>
+          )}
           <button type="button" disabled={busy} className={ui.buttonSecondary} onClick={() => act("change")}>
             {job ? t("chooseAnotherQuote") : t("chooseAnother")}
           </button>
@@ -344,11 +406,18 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
   const [visitAt, setVisitAt] = useState(localInput(mine?.visitAt));
   const [note, setNote] = useState(mine?.note ?? "");
   const priceText = (min: number, max: number | null | undefined) => (max ? t("priceRange", { min, max }) : t("price", { price: min }));
+  const respondLeft = useSecondsLeft(mine?.respondBy, order.serverNow);
+  const confirmLeft = useSecondsLeft(order.assignedToMe && order.status === "reserved" ? order.matching?.confirmUntil : null, order.serverNow);
 
   if (order.assignedToMe && order.status === "reserved") {
     return (
       <div className={ui.card + " flex flex-col gap-3 p-4"}>
         <p className="text-sm text-ink">{t("chosenConfirm")}</p>
+        {confirmLeft !== null && (
+          <p className="rounded-xl bg-primary-soft px-3 py-2 text-sm text-ink">
+            {t.rich("confirmWithin", { time: () => <Countdown seconds={confirmLeft} /> })}
+          </p>
+        )}
         {mine?.priceUsd !== null && mine?.priceUsd !== undefined && (
           <p className="text-sm text-muted">
             {job ? t("yourQuote") : t("yourOffer")}: <bdi dir="ltr">{priceText(mine.priceUsd, mine.priceMaxUsd)}</bdi> ·{" "}
@@ -386,6 +455,8 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
     return <PersonCard title={t("customer")} person={order.customer} matchId={order.matchId} />;
   }
 
+  if (mine?.status === "expired") return <p className="text-sm text-muted">{t("timeUp")}</p>;
+  if (mine?.status === "offer_expired") return <p className="text-sm text-muted">{t("offerLapsed")}</p>;
   if (order.status !== "open" || !mine || mine.status === "not_selected" || mine.status === "refused") {
     return <p className="text-sm text-muted">{job ? t("notSelectedJob") : t("notSelected")}</p>;
   }
@@ -408,6 +479,11 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
     <div className={ui.card + " flex flex-col gap-3 p-4"}>
       <h2 className="font-semibold text-ink">{job ? t("yourQuote") : t("yourOffer")}</h2>
       {mine.distanceKm !== null && <p className="text-sm text-muted">{t("kmAway", { km: mine.distanceKm })}</p>}
+      {respondLeft !== null && (
+        <p className="rounded-xl bg-primary-soft px-3 py-2 text-sm text-ink">
+          {t.rich("answerWithin", { time: () => <Countdown seconds={respondLeft} /> })}
+        </p>
+      )}
       {mine.status === "declined" && <p className="text-sm text-muted">{t("declined")}</p>}
       {job ? (
         <>

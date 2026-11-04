@@ -32,6 +32,24 @@ export type OrderOffer = OrderPerson & {
   status: RecipientRow["status"];
   respondedAt: string | null;
   rank: number;
+  /** Which wave of the search reached them (1 = the first). */
+  wave: number;
+};
+
+/**
+ * Where a delivery is in its matching. The deadlines are what the
+ * countdowns show; `serverNow` lets the screen count from the server's
+ * clock rather than the phone's.
+ */
+export type OrderMatching = {
+  wave: number;
+  radiusKm: number | null;
+  /** The current wave's providers answer by then. */
+  waveUntil: string | null;
+  /** The customer chooses an offer by then. */
+  chooseUntil: string | null;
+  /** The chosen provider confirms by then. */
+  confirmUntil: string | null;
 };
 
 export type OrderView = {
@@ -63,7 +81,10 @@ export type OrderView = {
   provider: OrderPerson | null;
   /** Seeker: the offers made. Admin: every provider it was sent to. Provider: empty. */
   offers: OrderOffer[];
-  counts: { sent: number; offered: number; declined: number; waiting: number };
+  counts: { sent: number; offered: number; declined: number; waiting: number; noResponse: number };
+  /** Timers for a delivery; null for a repair request (no timers). */
+  matching: OrderMatching | null;
+  serverNow: string;
   /** Provider only: their own answer. */
   mine: {
     recipientId: string;
@@ -74,6 +95,8 @@ export type OrderView = {
     visitAt: string | null;
     note: string | null;
     distanceKm: number | null;
+    /** While their answer is awaited: when their time to answer runs out. */
+    respondBy: string | null;
   } | null;
   /** When each stage was reached, for the timeline. */
   timeline: { status: string; at: string }[];
@@ -156,9 +179,11 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
       status: r.status,
       respondedAt: r.responded_at,
       rank: r.rank,
+      wave: r.wave,
     };
   });
 
+  const delivery = order.category !== "maintenance";
   const mineRow = viewer === "provider" ? all.find((r) => r.provider_user_id === viewerUserId) : undefined;
   const timeline = (events ?? [])
     .filter((e) => e.type === "status" || e.type === "created")
@@ -197,7 +222,19 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
       offered: all.filter((r) => r.status === "offered" || r.status === "selected").length,
       declined: all.filter((r) => r.status === "declined" || r.status === "withdrawn").length,
       waiting: all.filter((r) => r.status === "sent").length,
+      noResponse: all.filter((r) => r.status === "expired").length,
     },
+    matching: delivery
+      ? {
+          wave: order.wave,
+          radiusKm: order.radius_km !== null ? Number(order.radius_km) : null,
+          waveUntil: order.wave_until,
+          chooseUntil: order.choose_until,
+          // A provider only learns their own confirmation deadline.
+          confirmUntil: viewer !== "provider" || order.provider_user_id === viewerUserId ? order.confirm_until : null,
+        }
+      : null,
+    serverNow: new Date().toISOString(),
     mine: mineRow
       ? {
           recipientId: mineRow.id,
@@ -208,6 +245,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
           visitAt: mineRow.visit_at,
           note: mineRow.note,
           distanceKm: mineRow.distance_km,
+          respondBy: delivery && order.status === "open" && mineRow.status === "sent" && !order.choose_until ? order.wave_until : null,
         }
       : null,
     timeline,

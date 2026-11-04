@@ -11,9 +11,10 @@ import type { OrderSummary, OrderView } from "@/lib/errand-order-view";
 const STATUSES = ["open", "reserved", "accepted", "on_the_way", "arrived", "picked_up", "delivered", "completed", "cancelled", "no_provider"];
 
 /**
- * Delivery & Errands orders for admins: every order, who it went to and
- * what each provider answered, its full history, a hand on the controls
- * (send to more providers, reopen, cancel), and the matching settings.
+ * Delivery & Errands orders for admins: every order, who it went to (in
+ * which wave) and what each provider answered, its full history, a hand on
+ * the controls (next wave now, search further, restart, cancel), and the
+ * matching settings.
  */
 export default function AdminOrdersPage() {
   const t = useTranslations("Admin");
@@ -52,7 +53,7 @@ export default function AdminOrdersPage() {
     };
   }, [openId, reload]);
 
-  async function act(action: "resend" | "reopen" | "cancel") {
+  async function act(action: "resend" | "widen" | "reopen" | "cancel") {
     if (!openId) return;
     setBusy(true);
     setError(null);
@@ -67,6 +68,11 @@ export default function AdminOrdersPage() {
     setReload((n) => n + 1);
   }
 
+  const eventWave = (detail: unknown) => {
+    const d = (detail ?? {}) as { wave?: number; count?: number; radius_km?: number; widened_from_km?: number; reason?: string };
+    const radius = d.radius_km !== undefined ? ` · ${d.widened_from_km !== undefined ? `${d.widened_from_km}→` : ""}${d.radius_km} km` : "";
+    return `#${d.wave ?? "?"} (${d.count ?? 0})${radius}${d.reason ? ` · ${d.reason}` : ""}`;
+  };
   const when = (iso: string) => format.dateTime(new Date(iso), { dateStyle: "short", timeStyle: "short" });
 
   return (
@@ -116,11 +122,29 @@ export default function AdminOrdersPage() {
                   {to("customer")}: {detail.customer?.name ?? "—"}
                   {detail.provider ? ` · ${to("yourProvider")}: ${detail.provider.name}` : ""}
                 </p>
+                {detail.matching && (
+                  <p className="text-sm text-muted">
+                    {t("matchingLine", { wave: detail.matching.wave, km: detail.matching.radiusKm ?? "—" })}
+                    {detail.status === "open" && detail.matching.chooseUntil
+                      ? ` · ${t("choosingUntil", { time: format.dateTime(new Date(detail.matching.chooseUntil), { timeStyle: "medium" }) })}`
+                      : detail.status === "open" && detail.matching.waveUntil
+                        ? ` · ${t("waveUntil", { time: format.dateTime(new Date(detail.matching.waveUntil), { timeStyle: "medium" }) })}`
+                        : ""}
+                    {detail.status === "reserved" && detail.matching.confirmUntil
+                      ? ` · ${t("confirmUntil", { time: format.dateTime(new Date(detail.matching.confirmUntil), { timeStyle: "medium" }) })}`
+                      : ""}
+                  </p>
+                )}
                 {error && <p className="text-sm text-danger">{error}</p>}
                 <div className="flex flex-wrap gap-2">
                   {detail.status === "open" && (
                     <button type="button" disabled={busy} className={ui.buttonSecondary} onClick={() => act("resend")}>
-                      {t("resend")}
+                      {detail.matching ? t("nextWaveNow") : t("resend")}
+                    </button>
+                  )}
+                  {detail.status === "open" && detail.matching && (
+                    <button type="button" disabled={busy} className={ui.buttonSecondary} onClick={() => act("widen")}>
+                      {t("widenSearch")}
                     </button>
                   )}
                   {(detail.status === "no_provider" || detail.status === "reserved") && (
@@ -142,6 +166,7 @@ export default function AdminOrdersPage() {
                       {detail.offers.map((r) => (
                         <tr key={r.recipientId} className="border-b border-border last:border-0">
                           <td className="py-1.5 pe-2 text-muted tabular-nums">{r.rank}</td>
+                          {detail.matching && <td className="py-1.5 pe-2 text-xs text-muted">{t("waveN", { wave: r.wave })}</td>}
                           <td className="py-1.5 pe-2 text-ink">{r.name}</td>
                           <td className="py-1.5 pe-2 text-muted tabular-nums">{r.distanceKm !== null ? `${r.distanceKm} km` : ""}</td>
                           <td className="py-1.5 pe-2">{t(`rec_${r.status}` as "rec_sent")}</td>
@@ -168,6 +193,8 @@ export default function AdminOrdersPage() {
                           {e.actorRole} · {e.type}
                           {e.type === "status" ? ` → ${String((e.detail as { status?: string })?.status ?? "")}` : ""}
                           {e.type === "dispatched" ? ` (${String((e.detail as { count?: number })?.count ?? 0)})` : ""}
+                          {e.type === "wave_sent" ? ` ${eventWave(e.detail)}` : ""}
+                          {e.type === "no_response" ? ` (${String((e.detail as { providers?: unknown[] })?.providers?.length ?? 0)})` : ""}
                         </span>
                       </li>
                     ))}
@@ -182,14 +209,59 @@ export default function AdminOrdersPage() {
   );
 }
 
+type Settings = {
+  maxRecipients: number;
+  openMinutes: number;
+  quoteOpenMinutes: number;
+  waveSize: number;
+  responseSeconds: number;
+  chooseSeconds: number;
+  confirmSeconds: number;
+  initialRadiusKm: number;
+  radiusStepKm: number;
+  maxRadiusKm: number;
+  maxActiveOrders: number;
+};
+
+// Each setting: its label key, limits and step. Grouped as the dashboard shows them.
+const SETTING_GROUPS: { title: string; fields: { key: keyof Settings; label: string; min: number; max: number; step?: number }[] }[] = [
+  {
+    title: "settingsWaves",
+    fields: [
+      { key: "waveSize", label: "waveSize", min: 1, max: 50 },
+      { key: "responseSeconds", label: "responseSeconds", min: 30, max: 3600 },
+      { key: "chooseSeconds", label: "chooseSeconds", min: 30, max: 3600 },
+      { key: "confirmSeconds", label: "confirmSeconds", min: 30, max: 3600 },
+    ],
+  },
+  {
+    title: "settingsRadius",
+    fields: [
+      { key: "initialRadiusKm", label: "initialRadiusKm", min: 0.5, max: 300, step: 0.5 },
+      { key: "radiusStepKm", label: "radiusStepKm", min: 0.5, max: 300, step: 0.5 },
+      { key: "maxRadiusKm", label: "maxRadiusKm", min: 0.5, max: 300, step: 0.5 },
+    ],
+  },
+  {
+    title: "settingsLimits",
+    fields: [
+      { key: "maxRecipients", label: "maxRecipients", min: 1, max: 200 },
+      { key: "openMinutes", label: "openMinutes", min: 5, max: 1440 },
+      { key: "maxActiveOrders", label: "maxActiveOrders", min: 1, max: 10 },
+      { key: "quoteOpenMinutes", label: "quoteOpenMinutes", min: 60, max: 10080 },
+    ],
+  },
+];
+
 function SettingsCard() {
   const t = useTranslations("Admin");
-  const [values, setValues] = useState<{ maxRecipients: number; openMinutes: number; quoteOpenMinutes: number } | null>(null);
+  const [values, setValues] = useState<Settings | null>(null);
   const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    getJson<{ settings: { maxRecipients: number; openMinutes: number; quoteOpenMinutes: number } }>("/api/admin/errand-settings").then((b) => active && setValues(b?.settings ?? null));
+    getJson<{ settings: Settings }>("/api/admin/errand-settings").then((b) => active && setValues(b?.settings ?? null));
     return () => {
       active = false;
     };
@@ -198,68 +270,54 @@ function SettingsCard() {
   async function save() {
     if (!values) return;
     setState("saving");
+    setError(null);
     const res = await request("/api/admin/errand-settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(values),
     });
+    const body = await res?.json().catch(() => null);
+    if (!res?.ok && typeof body?.error === "string") setError(body.error);
     setState(res?.ok ? "saved" : "error");
   }
 
   if (!values) return null;
   return (
-    <div className={ui.card + " flex flex-col gap-3 p-4"}>
-      <h2 className="font-semibold text-ink">{t("ordersSettings")}</h2>
-      <div className="grid gap-3 sm:grid-cols-3">
-        <label className="flex flex-col gap-1">
-          <span className={ui.label}>{t("maxRecipients")}</span>
-          <input
-            type="number"
-            min={1}
-            max={200}
-            className={ui.input}
-            value={values.maxRecipients}
-            onChange={(e) => {
-              setState("idle");
-              setValues({ ...values, maxRecipients: Number(e.target.value) });
-            }}
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className={ui.label}>{t("openMinutes")}</span>
-          <input
-            type="number"
-            min={5}
-            max={1440}
-            className={ui.input}
-            value={values.openMinutes}
-            onChange={(e) => {
-              setState("idle");
-              setValues({ ...values, openMinutes: Number(e.target.value) });
-            }}
-          />
-        </label>
-        <label className="flex flex-col gap-1">
-          <span className={ui.label}>{t("quoteOpenMinutes")}</span>
-          <input
-            type="number"
-            min={60}
-            max={10080}
-            className={ui.input}
-            value={values.quoteOpenMinutes}
-            onChange={(e) => {
-              setState("idle");
-              setValues({ ...values, quoteOpenMinutes: Number(e.target.value) });
-            }}
-          />
-        </label>
+    <div className={ui.card + " flex flex-col gap-4 p-4"}>
+      <div>
+        <h2 className="font-semibold text-ink">{t("ordersSettings")}</h2>
+        <p className="mt-1 text-sm text-muted">{t("settingsHint")}</p>
       </div>
+      {SETTING_GROUPS.map((group) => (
+        <section key={group.title} className="flex flex-col gap-2">
+          <h3 className={ui.eyebrow}>{t(group.title as "settingsWaves")}</h3>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {group.fields.map((f) => (
+              <label key={f.key} className="flex flex-col gap-1">
+                <span className={ui.label}>{t(f.label as "waveSize")}</span>
+                <input
+                  type="number"
+                  min={f.min}
+                  max={f.max}
+                  step={f.step ?? 1}
+                  className={ui.input}
+                  value={values[f.key]}
+                  onChange={(e) => {
+                    setState("idle");
+                    setValues({ ...values, [f.key]: Number(e.target.value) });
+                  }}
+                />
+              </label>
+            ))}
+          </div>
+        </section>
+      ))}
       <div className="flex items-center gap-3">
         <button type="button" className={ui.buttonPrimary} disabled={state === "saving"} onClick={save}>
           {t("save")}
         </button>
         {state === "saved" && <span className="text-sm text-success">{t("saved")}</span>}
-        {state === "error" && <span className="text-sm text-danger">✕</span>}
+        {state === "error" && <span className="text-sm text-danger">{error ?? "✕"}</span>}
       </div>
     </div>
   );

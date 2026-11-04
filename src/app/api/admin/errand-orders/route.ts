@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
-import { closeExpiredOrders, ORDER_STATUSES } from "@/lib/errand-orders";
+import { advanceOrders, ORDER_STATUSES } from "@/lib/errand-orders";
 import { orderSummaries } from "@/lib/errand-order-view";
 
 /** Every order and quote request, newest first; `?status=` and `?category=` narrow it, `?number=` finds one by its Order ID. */
@@ -11,7 +11,7 @@ export async function GET(request: Request) {
   if (!(await requireAdmin(supabase))) return NextResponse.json({ error: "Admin access required" }, { status: 403 });
 
   const db = createAdminClient();
-  await closeExpiredOrders(db);
+  await advanceOrders(db);
   const params = new URL(request.url).searchParams;
   const status = params.get("status");
   const number = Number(params.get("number"));

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
-import { closeExpiredOrders } from "@/lib/errand-orders";
+import { advancedOrder } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 
 /**
@@ -17,8 +17,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
   const db = createAdminClient();
-  await closeExpiredOrders(db, { orderId: id });
-  const { data: order } = await db.from("errand_orders").select("*").eq("id", id).maybeSingle();
+  // Moves it on first if a deadline has passed (a wave's time, the choice, the confirmation).
+  const order = await advancedOrder(db, id);
   if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
 
   if (order.seeker_user_id === user.id) return NextResponse.json({ order: await orderView(db, order, "seeker", user.id) });

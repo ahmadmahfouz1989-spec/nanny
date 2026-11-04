@@ -1,15 +1,23 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { dispatchOrder, eligibleProviders, closeExpiredOrders, myErrandProfiles } from "@/lib/errand-orders";
+import { advanceOrders, DEFAULT_SETTINGS, dispatchOrder, eligibleProviders, myErrandProfiles, nextWaveOrClose } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
 import { ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
 
-// Delivery & Errands orders, Phase 1: who receives an order and in what
-// order, offers, choosing, confirming, the stages, dropping out, and that
-// no client can read the tables directly.
+// Delivery & Errands orders: who receives an order and in what order,
+// waves and timers, offers, choosing, confirming, the stages, dropping
+// out, and that no client can read the tables directly.
 
-afterAll(cleanupUsers);
+/** Sets the matching settings for a block of tests (back to the defaults afterwards). */
+async function useSettings(values: Partial<typeof DEFAULT_SETTINGS>) {
+  await admin.from("errand_settings").update({ ...DEFAULT_SETTINGS, ...values }).eq("id", true);
+}
+
+afterAll(async () => {
+  await useSettings({});
+  await cleanupUsers();
+});
 
 async function district(code: string) {
   const { data } = await admin.from("locations").select("id, parent_location_id").eq("code", code).single();
@@ -31,13 +39,13 @@ async function provider(tag: string, home: typeof beirut, opts: { services?: str
   return { user, profileId: id };
 }
 
-async function placeOrder(seeker: TestUser, seekerProfileId: string, pickup: typeof beirut) {
+async function placeOrder(seeker: TestUser, seekerProfileId: string, pickup: typeof beirut, service = "delivery") {
   const { data } = await admin
     .from("errand_orders")
     .insert({
       seeker_user_id: seeker.id,
       seeker_profile_id: seekerProfileId,
-      service: "delivery",
+      service,
       description: "A small parcel",
       pickup_district_id: pickup.id,
       dropoff_district_id: pickup.id,
@@ -58,6 +66,9 @@ describe("errand orders", () => {
   let covering: Awaited<ReturnType<typeof provider>>;
 
   beforeAll(async () => {
+    // One wave reaching everyone, as far as needed: these tests are about
+    // offers and stages, not waves.
+    await useSettings({ wave_size: 50, initial_radius_km: 300, max_radius_km: 300 });
     [beirut, baabda, tripoli] = await Promise.all([district("LB11"), district("LB32"), district("LB56")]);
     customer = await createUser("order-customer");
     customerProfile = await createProfile(customer, "errands", "seeker", { errandService: "delivery", districtId: beirut.id });
@@ -98,7 +109,7 @@ describe("errand orders", () => {
 
   it("runs an order from offer to completed", async () => {
     const order = await placeOrder(customer, customerProfile, beirut);
-    expect(await dispatchOrder(admin, { ...order, service: "delivery" }, { userId: customer.id, role: "seeker" })).toBeGreaterThanOrEqual(2);
+    expect(await dispatchOrder(admin, order, { userId: customer.id, role: "seeker" })).toBeGreaterThanOrEqual(2);
 
     const asNear = { userId: near.user.id, role: "provider" as const };
     const asCustomer = { userId: customer.id, role: "seeker" as const };
@@ -142,7 +153,7 @@ describe("errand orders", () => {
 
   it("goes back out to others when the chosen provider refuses", async () => {
     const order = await placeOrder(customer, customerProfile, beirut);
-    await dispatchOrder(admin, { ...order, service: "delivery" }, { userId: customer.id, role: "seeker" });
+    await dispatchOrder(admin, order, { userId: customer.id, role: "seeker" });
     const asCovering = { userId: covering.user.id, role: "provider" as const };
     await providerAction(admin, await fresh(order.id), asCovering, "offer", { priceUsd: 8, etaMinutes: 45 });
     const { offers } = await orderView(admin, await fresh(order.id), "seeker", customer.id);
@@ -156,7 +167,7 @@ describe("errand orders", () => {
   it("closes an order past its time as no provider, and an admin can reopen it", async () => {
     const order = await placeOrder(customer, customerProfile, beirut);
     await admin.from("errand_orders").update({ open_until: new Date(Date.now() - 1000).toISOString() }).eq("id", order.id);
-    expect(await closeExpiredOrders(admin, { orderId: order.id })).toEqual([order.id]);
+    expect(await advanceOrders(admin, { orderId: order.id })).toBe(1);
     expect((await fresh(order.id)).status).toBe("no_provider");
     const reopened = await adminAction(admin, await fresh(order.id), { userId: customer.id, role: "admin" }, "reopen", {});
     expect(reopened.ok).toBe(true);
@@ -167,6 +178,170 @@ describe("errand orders", () => {
       const { data } = await customer.client.from(table).select("*");
       expect(data ?? []).toEqual([]);
     }
+  });
+});
+
+describe("waves and timers", () => {
+  let customer: TestUser;
+  let customerProfile: string;
+  let first: Awaited<ReturnType<typeof provider>>;
+  let second: Awaited<ReturnType<typeof provider>>;
+  let further: Awaited<ReturnType<typeof provider>>;
+  const asCustomer = () => ({ userId: customer.id, role: "seeker" as const });
+  const asProvider = (p: { user: TestUser }) => ({ userId: p.user.id, role: "provider" as const });
+  const past = () => new Date(Date.now() - 1000).toISOString();
+
+  async function recipients(orderId: string) {
+    const { data } = await admin.from("errand_order_recipients").select("*").eq("order_id", orderId).order("rank");
+    return data ?? [];
+  }
+  const statusOf = async (orderId: string, p: { profileId: string }) =>
+    (await recipients(orderId)).find((r) => r.provider_profile_id === p.profileId)?.status;
+
+  async function start() {
+    // "queue" so only this block's providers are eligible.
+    const order = await placeOrder(customer, customerProfile, beirut, "queue");
+    await nextWaveOrClose(admin, order, asCustomer());
+    return fresh(order.id);
+  }
+
+  beforeAll(async () => {
+    await useSettings({ wave_size: 2, response_seconds: 60, choose_seconds: 60, confirm_seconds: 60, initial_radius_km: 1, radius_step_km: 1, max_radius_km: 60 });
+    [beirut, baabda, tripoli] = await Promise.all([district("LB11"), district("LB32"), district("LB56")]);
+    customer = await createUser("wave-customer");
+    customerProfile = await createProfile(customer, "errands", "seeker", { errandService: "queue", districtId: beirut.id });
+    first = await provider("wave-first", beirut, { services: ["queue"] });
+    second = await provider("wave-second", beirut, { services: ["queue"] });
+    // Lives in Baabda, covers Beirut: only reached once the radius widens.
+    further = await provider("wave-further", baabda, { services: ["queue"], cover: [beirut.id] });
+  });
+
+  it("sends the first wave to the nearest providers, with a deadline", async () => {
+    const order = await start();
+    expect(order.wave).toBe(1);
+    expect(Number(order.radius_km)).toBe(1);
+    expect(Date.parse(order.wave_until!)).toBeGreaterThan(Date.now() + 50_000);
+    const sent = await recipients(order.id);
+    expect(sent.map((r) => r.provider_profile_id).sort()).toEqual([first.profileId, second.profileId].sort());
+    expect(sent.every((r) => r.wave === 1)).toBe(true);
+    const seen = await orderView(admin, order, "provider", first.user.id);
+    expect(seen.mine?.respondBy).toBe(order.wave_until);
+  });
+
+  it("asks the next nearest when nobody answers in time, widening the search", async () => {
+    const order = await start();
+    await admin.from("errand_orders").update({ wave_until: past() }).eq("id", order.id);
+    await advanceOrders(admin, { orderId: order.id });
+    const after = await fresh(order.id);
+    expect(after.wave).toBe(2);
+    const sent = await recipients(order.id);
+    const far = sent.find((r) => r.provider_profile_id === further.profileId)!;
+    expect(far.wave).toBe(2);
+    // Widened one step at a time until Baabda was inside.
+    expect(Number(after.radius_km)).toBeGreaterThanOrEqual(Number(far.distance_km));
+    expect(Number(after.radius_km)).toBeLessThan(Number(far.distance_km) + 1);
+    expect(await statusOf(order.id, first)).toBe("expired");
+    expect(await statusOf(order.id, second)).toBe("expired");
+    const { data: events } = await admin.from("errand_order_events").select("type").eq("order_id", order.id);
+    expect(events!.map((e) => e.type)).toEqual(expect.arrayContaining(["wave_sent", "no_response"]));
+    // A provider whose time ran out can't offer any more.
+    expect((await providerAction(admin, after, asProvider(first), "offer", { priceUsd: 5, etaMinutes: 20 })).ok).toBe(false);
+  });
+
+  it("moves on at once when everyone in the wave declines", async () => {
+    const order = await start();
+    await providerAction(admin, await fresh(order.id), asProvider(first), "decline", {});
+    expect((await fresh(order.id)).wave).toBe(1);
+    await providerAction(admin, await fresh(order.id), asProvider(second), "decline", {});
+    expect((await fresh(order.id)).wave).toBe(2);
+  });
+
+  it("gives the customer a time to choose once offers are in; unchosen offers lapse and the search carries on", async () => {
+    const order = await start();
+    await providerAction(admin, await fresh(order.id), asProvider(first), "offer", { priceUsd: 6, etaMinutes: 30 });
+    // Still waiting on the second provider: no choosing window yet.
+    expect((await fresh(order.id)).choose_until).toBeNull();
+    await admin.from("errand_orders").update({ wave_until: past() }).eq("id", order.id);
+    await advanceOrders(admin, { orderId: order.id });
+    const choosing = await fresh(order.id);
+    expect(choosing.choose_until).not.toBeNull();
+    expect(choosing.wave).toBe(1);
+    expect(await statusOf(order.id, second)).toBe("expired");
+
+    await admin.from("errand_orders").update({ choose_until: past() }).eq("id", order.id);
+    await advanceOrders(admin, { orderId: order.id });
+    const after = await fresh(order.id);
+    expect(after.choose_until).toBeNull();
+    expect(after.wave).toBe(2);
+    expect(await statusOf(order.id, first)).toBe("offer_expired");
+  });
+
+  it("starts the choosing time as soon as everyone has answered", async () => {
+    const order = await start();
+    await providerAction(admin, await fresh(order.id), asProvider(first), "offer", { priceUsd: 6, etaMinutes: 30 });
+    await providerAction(admin, await fresh(order.id), asProvider(second), "decline", {});
+    expect((await fresh(order.id)).choose_until).not.toBeNull();
+  });
+
+  it("lets the reservation lapse when the chosen provider doesn't confirm in time", async () => {
+    const order = await start();
+    await providerAction(admin, await fresh(order.id), asProvider(first), "offer", { priceUsd: 6, etaMinutes: 30 });
+    await providerAction(admin, await fresh(order.id), asProvider(second), "offer", { priceUsd: 7, etaMinutes: 20 });
+    const { offers } = await orderView(admin, await fresh(order.id), "seeker", customer.id);
+    const pick = offers.find((o) => o.profileId === first.profileId)!;
+    expect((await seekerAction(admin, await fresh(order.id), asCustomer(), "select", { recipientId: pick.recipientId })).ok).toBe(true);
+    const reserved = await fresh(order.id);
+    expect(reserved.status).toBe("reserved");
+    expect(reserved.confirm_until).not.toBeNull();
+    // Other providers no longer can offer while it's reserved.
+    expect((await providerAction(admin, reserved, asProvider(second), "offer", { priceUsd: 3, etaMinutes: 20 })).ok).toBe(false);
+
+    await admin.from("errand_orders").update({ confirm_until: past() }).eq("id", order.id);
+    await advanceOrders(admin, { orderId: order.id });
+    const after = await fresh(order.id);
+    expect(after.status).toBe("open");
+    expect(after.provider_profile_id).toBeNull();
+    expect(await statusOf(order.id, first)).toBe("refused");
+    // The other offer still stands, with a fresh time to choose it.
+    expect(await statusOf(order.id, second)).toBe("offered");
+    expect(after.choose_until).not.toBeNull();
+    // Too late for the first provider to confirm now.
+    expect((await providerAction(admin, after, asProvider(first), "confirm", {})).ok).toBe(false);
+  });
+
+  it("lets an admin send the next wave now, or search further", async () => {
+    const order = await start();
+    const asAdmin = { userId: customer.id, role: "admin" as const };
+    expect((await adminAction(admin, await fresh(order.id), asAdmin, "widen", {})).ok).toBe(true);
+    const after = await fresh(order.id);
+    expect(after.wave).toBe(2);
+    expect(Number(after.radius_km)).toBeGreaterThan(1);
+    expect(await statusOf(order.id, further)).toBe("sent");
+    // Nobody else is left to ask.
+    expect((await adminAction(admin, await fresh(order.id), asAdmin, "resend", {})).ok).toBe(false);
+  });
+
+  it("closes as no provider when nobody is left to ask", async () => {
+    const order = await placeOrder(customer, customerProfile, tripoli, "queue");
+    expect(await nextWaveOrClose(admin, order, asCustomer(), { quiet: true })).toBe(0);
+    expect((await fresh(order.id)).status).toBe("no_provider");
+  });
+
+  it("limits how many orders a rider has at once, as the admin sets it", async () => {
+    const inProgress = async () => {
+      const order = await placeOrder(customer, customerProfile, beirut, "queue");
+      return admin
+        .from("errand_orders")
+        .update({ status: "accepted", provider_profile_id: second.profileId, provider_user_id: second.user.id })
+        .eq("id", order.id);
+    };
+    expect((await inProgress()).error).toBeNull();
+    // One at a time: the second is refused.
+    expect((await inProgress()).error?.code).toBe("23505");
+    await useSettings({ wave_size: 2, max_active_orders: 2 });
+    expect((await inProgress()).error).toBeNull();
+    expect((await inProgress()).error?.code).toBe("23505");
+    await admin.from("errand_orders").update({ status: "cancelled" }).eq("provider_profile_id", second.profileId);
   });
 });
 
@@ -242,7 +417,7 @@ describe("repair quotes (Home Maintenance)", () => {
 
   it("goes to tradespeople of that trade in the area, with no Available switch", async () => {
     const job = await placeJob("plumber", beirut);
-    expect(await dispatchOrder(admin, { ...job, service: "plumber" }, asCustomer())).toBeGreaterThanOrEqual(1);
+    expect(await dispatchOrder(admin, job, asCustomer())).toBeGreaterThanOrEqual(1);
     const { data: sent } = await admin.from("errand_order_recipients").select("provider_profile_id").eq("order_id", job.id);
     const ids = (sent ?? []).map((r) => r.provider_profile_id);
     expect(ids).toContain(local.profileId);
@@ -251,7 +426,7 @@ describe("repair quotes (Home Maintenance)", () => {
 
   it("takes a quote with a range and a visit time, and runs the job to completed", async () => {
     const job = await placeJob("plumber", beirut);
-    await dispatchOrder(admin, { ...job, service: "plumber" }, asCustomer());
+    await dispatchOrder(admin, job, asCustomer());
     const asPro = { userId: local.user.id, role: "provider" as const };
 
     // A quote needs a visit time, and the range must make sense.
@@ -281,7 +456,7 @@ describe("repair quotes (Home Maintenance)", () => {
     const visitAt = new Date(Date.now() + 3600_000).toISOString();
     for (let i = 0; i < 2; i++) {
       const job = await placeJob("plumber", beirut);
-      await dispatchOrder(admin, { ...job, service: "plumber" }, asCustomer());
+      await dispatchOrder(admin, job, asCustomer());
       expect((await providerAction(admin, await fresh(job.id), asPro, "offer", { priceUsd: 15, visitAt })).ok).toBe(true);
       const { offers } = await orderView(admin, await fresh(job.id), "seeker", customer.id);
       const mine = offers.find((o) => o.profileId === local.profileId)!;

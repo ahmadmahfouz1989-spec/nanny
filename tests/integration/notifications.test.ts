@@ -71,7 +71,7 @@ const replies = await import("@/app/api/posts/[id]/replies/route");
 const like = await import("@/app/api/posts/[id]/like/route");
 const moderation = await import("@/app/api/admin/profiles/[id]/moderation/route");
 const orderActions = await import("@/app/api/errand-orders/[id]/[action]/route");
-const { dispatchOrder } = await import("@/lib/errand-orders");
+const { dispatchOrder, DEFAULT_SETTINGS } = await import("@/lib/errand-orders");
 
 afterAll(cleanupUsers);
 
@@ -262,6 +262,14 @@ describe("profile review", () => {
 });
 
 describe("orders", () => {
+  // Every eligible provider in one wave: this is about the notifications.
+  beforeAll(async () => {
+    await admin.from("errand_settings").update({ ...DEFAULT_SETTINGS, wave_size: 50, initial_radius_km: 300, max_radius_km: 300 }).eq("id", true);
+  });
+  afterAll(async () => {
+    await admin.from("errand_settings").update(DEFAULT_SETTINGS).eq("id", true);
+  });
+
   it("tell the provider about a new order, then the customer about the offer, each stage, and completion", async () => {
     const { data: order } = await admin
       .from("errand_orders")

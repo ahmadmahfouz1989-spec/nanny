@@ -3,15 +3,17 @@ import { notify } from "@/lib/push";
 import { containsContactInfo } from "@/lib/content-filter";
 import { cancelSchema, offerSchema, quoteSchema } from "@/lib/validation/errand-order";
 import {
-  BUSY_STATUSES,
+  activeOrderCounts,
   dispatchOrder,
   ensureConversation,
   errandSettings,
   logOrderEvent,
   nextProviderStatus,
+  nextWaveOrClose,
   openMinutesFor,
+  reopenOrder,
+  tickOrder,
   type OrderCategory,
-  type OrderService,
   type OrderStatus,
 } from "@/lib/errand-orders";
 import type { Tables, TablesUpdate } from "@/lib/supabase/database.types";
@@ -27,7 +29,7 @@ export type ActionResult = { ok: true; orderId?: string } | { ok: false; status:
 
 export const SEEKER_ACTIONS = ["select", "change", "complete", "cancel", "retry"] as const;
 export const PROVIDER_ACTIONS = ["offer", "decline", "withdraw", "confirm", "refuse", "advance", "cancel"] as const;
-export const ADMIN_ACTIONS = ["resend", "reopen", "cancel"] as const;
+export const ADMIN_ACTIONS = ["resend", "widen", "reopen", "cancel"] as const;
 
 const fail = (status: number, error: string, code?: string): ActionResult => ({ ok: false, status, error, code });
 const now = () => new Date().toISOString();
@@ -50,34 +52,29 @@ async function move(db: Admin, order: OrderRow, from: OrderStatus[], to: OrderSt
 }
 
 /**
- * After a provider declines or withdraws: if nobody is left who might
- * still offer, try more providers; if there are none, close it as
- * "no provider" and tell the customer.
+ * After a provider answers (offers, declines or withdraws): a delivery
+ * moves on at once if everyone in the wave has now answered -- to the
+ * customer's choice if offers are in, else to the next wave. A repair
+ * request with nobody left who might still quote asks more tradespeople.
  */
-async function topUpOrClose(db: Admin, order: OrderRow) {
+async function afterAnswer(db: Admin, order: OrderRow) {
+  const { data: current } = await db.from("errand_orders").select("*").eq("id", order.id).maybeSingle();
+  if (!current || current.status !== "open") return;
+  if (current.category !== "maintenance") {
+    await tickOrder(db, current);
+    return;
+  }
   const { data: rows } = await db.from("errand_order_recipients").select("status").eq("order_id", order.id);
   if ((rows ?? []).some((r) => r.status === "sent" || r.status === "offered")) return;
-  const sent = await dispatchOrder(db, { ...order, service: order.service as OrderService }, { userId: null, role: "system" });
-  if (sent > 0) return;
-  if (await move(db, order, ["open"], "no_provider", { cancelled_by: "system" })) {
-    await logOrderEvent(db, order.id, { userId: null, role: "system" }, "status", { status: "no_provider" });
-    await notify({ user_id: order.seeker_user_id, type: "errand_no_provider", payload: payload(order) });
-  }
+  await nextWaveOrClose(db, current);
 }
 
-/** Back to open for offers, without the provider who dropped out; more providers are tried if needed. */
-async function reopen(db: Admin, order: OrderRow, from: OrderStatus[], actor: Actor | { userId: null; role: "system" }) {
-  const settings = await errandSettings(db);
-  const ok = await move(db, order, from, "open", {
-    provider_profile_id: null,
-    provider_user_id: null,
-    selected_recipient_id: null,
-    open_until: new Date(Date.now() + openMinutesFor(settings, order.category) * 60_000).toISOString(),
-  });
-  if (!ok) return false;
-  await logOrderEvent(db, order.id, actor, "status", { status: "open" });
-  await topUpOrClose(db, { ...order, status: "open" });
-  return true;
+const reopen = (db: Admin, order: OrderRow, from: OrderStatus[], actor: Actor) => reopenOrder(db, order, from, actor);
+
+/** A rider at their limit of orders in progress (errand_settings.max_active_orders). */
+async function atOrderLimit(db: Admin, profileId: string) {
+  const [settings, load] = await Promise.all([errandSettings(db), activeOrderCounts(db, [profileId])]);
+  return (load.get(profileId) ?? 0) >= settings.max_active_orders;
 }
 
 async function myRecipient(db: Admin, order: OrderRow, userId: string) {
@@ -93,15 +90,23 @@ export async function seekerAction(db: Admin, order: OrderRow, actor: Actor, act
       const recipientId = typeof b.recipientId === "string" ? b.recipientId : "";
       const { data: r } = await db.from("errand_order_recipients").select("*").eq("id", recipientId).eq("order_id", order.id).maybeSingle();
       if (!r || r.status !== "offered") return fail(409, "That offer is no longer available");
+      // A rider has a limited time to confirm; a tradesperson doesn't.
+      const settings = await errandSettings(db);
       const ok = await move(db, order, ["open"], "reserved", {
         provider_profile_id: r.provider_profile_id,
         provider_user_id: r.provider_user_id,
         selected_recipient_id: r.id,
+        choose_until: null,
+        confirm_until: order.category === "maintenance" ? null : new Date(Date.now() + settings.confirm_seconds * 1000).toISOString(),
       });
       if (!ok) return fail(409, "This order changed. Refresh and try again.");
       await db.from("errand_order_recipients").update({ status: "selected" }).eq("id", r.id);
       await logOrderEvent(db, order.id, actor, "status", { status: "reserved", provider_profile_id: r.provider_profile_id, price_usd: r.price_usd });
-      await notify({ user_id: r.provider_user_id, type: "errand_selected", payload: payload(order) });
+      await notify({
+        user_id: r.provider_user_id,
+        type: "errand_selected",
+        payload: payload(order, order.category === "maintenance" ? {} : { confirm_seconds: settings.confirm_seconds }),
+      });
       return { ok: true };
     }
     case "change": {
@@ -160,11 +165,8 @@ export async function seekerAction(db: Admin, order: OrderRow, actor: Actor, act
         .single();
       if (error || !copy) return fail(400, error?.message ?? "Could not try again");
       await logOrderEvent(db, copy.id, actor, "created", { retry_of: order.number });
-      const sent = await dispatchOrder(db, { ...copy, service: copy.service as OrderService }, actor);
-      if (sent === 0) {
-        await move(db, copy, ["open"], "no_provider", { cancelled_by: "system" });
-        await logOrderEvent(db, copy.id, { userId: null, role: "system" }, "status", { status: "no_provider" });
-      }
+      // The customer is looking at the answer: no notification if nobody's there.
+      await nextWaveOrClose(db, copy, actor, { quiet: true });
       return { ok: true, orderId: copy.id };
     }
   }
@@ -189,14 +191,7 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
       if (offer.note && containsContactInfo(offer.note)) {
         return fail(400, "Please remove phone numbers, emails, or social handles. You can share them in chat once confirmed.");
       }
-      if (!job) {
-        const { count } = await db
-          .from("errand_orders")
-          .select("id", { count: "exact", head: true })
-          .eq("provider_profile_id", mine.provider_profile_id)
-          .in("status", [...BUSY_STATUSES]);
-        if ((count ?? 0) > 0) return fail(409, "Finish your current order first", "busy");
-      }
+      if (!job && (await atOrderLimit(db, mine.provider_profile_id))) return fail(409, "Finish your current order first", "busy");
       const first = mine.status !== "offered";
       await db
         .from("errand_order_recipients")
@@ -218,6 +213,7 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
         visit_at: offer.visitAt ?? null,
       });
       if (first) await notify({ user_id: order.seeker_user_id, type: "errand_offer", payload: payload(order) });
+      await afterAnswer(db, order);
       return { ok: true };
     }
     case "decline":
@@ -230,7 +226,7 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
         .update({ status: action === "decline" ? "declined" : "withdrawn", responded_at: now() })
         .eq("id", mine.id);
       await logOrderEvent(db, order.id, actor, action === "decline" ? "declined" : "withdrawn", { provider_profile_id: mine.provider_profile_id });
-      await topUpOrClose(db, order);
+      await afterAnswer(db, order);
       return { ok: true };
     }
     case "confirm": {
@@ -239,7 +235,7 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
       // provider, even if two customers picked them at the same moment.
       const { data, error } = await db
         .from("errand_orders")
-        .update({ status: "accepted", status_changed_at: now() })
+        .update({ status: "accepted", status_changed_at: now(), confirm_until: null })
         .eq("id", order.id)
         .eq("status", "reserved")
         .select("id");
@@ -253,9 +249,9 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
         .in("status", ["sent", "offered"]);
       const matchId = await ensureConversation(db, order.seeker_profile_id, order.provider_profile_id!, order.category as OrderCategory);
       if (matchId) await db.from("errand_orders").update({ generic_match_id: matchId }).eq("id", order.id);
-      // A rider's other open offers stand down while they're busy; a
-      // tradesperson can take several jobs.
-      if (mine && order.category !== "maintenance") {
+      // A rider's other open offers stand down once they're at their limit
+      // of orders in progress; a tradesperson can take several jobs.
+      if (mine && order.category !== "maintenance" && (await atOrderLimit(db, mine.provider_profile_id))) {
         await db
           .from("errand_order_recipients")
           .update({ status: "withdrawn", responded_at: now() })
@@ -299,9 +295,13 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
 
 export async function adminAction(db: Admin, order: OrderRow, actor: Actor, action: string, body: unknown): Promise<ActionResult> {
   switch (action) {
-    case "resend": {
+    case "resend":
+    case "widen": {
+      // Send the next wave now, without waiting for the timer; "widen"
+      // first reaches one radius step further out.
       if (order.status !== "open") return fail(409, "Only an open order can be sent to more providers");
-      const sent = await dispatchOrder(db, { ...order, service: order.service as OrderService }, actor);
+      const sent = await dispatchOrder(db, order, actor, { widen: action === "widen" });
+      if (sent > 0) await logOrderEvent(db, order.id, actor, action === "widen" ? "admin_widened" : "admin_resent");
       return sent > 0 ? { ok: true } : fail(409, "No other eligible provider is available right now");
     }
     case "reopen": {
