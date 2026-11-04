@@ -539,8 +539,16 @@ export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
   }
 
   if (order.choose_until) {
-    if (!isPast(order.choose_until)) return;
-    // The customer didn't choose in time: those offers lapse.
+    if (!isPast(order.choose_until)) {
+      // Still choosing -- unless every offer has since been withdrawn.
+      const { count } = await db
+        .from("errand_order_recipients")
+        .select("id", { count: "exact", head: true })
+        .eq("order_id", order.id)
+        .eq("status", "offered");
+      if ((count ?? 0) > 0) return;
+    }
+    // The customer didn't choose in time (or nothing is left to choose): those offers lapse.
     await db.from("errand_order_recipients").update({ status: "offer_expired" }).eq("order_id", order.id).eq("status", "offered");
     await db.from("errand_order_recipients").update({ status: "expired" }).eq("order_id", order.id).eq("status", "sent");
     const { data: won } = await db

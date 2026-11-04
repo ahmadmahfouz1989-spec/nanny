@@ -343,6 +343,37 @@ describe("waves and timers", () => {
     expect((await inProgress()).error?.code).toBe("23505");
     await admin.from("errand_orders").update({ status: "cancelled" }).eq("provider_profile_id", second.profileId);
   });
+
+  it("carries on at once when every offer is withdrawn while the customer is choosing", async () => {
+    await useSettings({ wave_size: 2, response_seconds: 60, choose_seconds: 60, confirm_seconds: 60, initial_radius_km: 1, radius_step_km: 1, max_radius_km: 60 });
+    const order = await start();
+    await providerAction(admin, await fresh(order.id), asProvider(first), "offer", { priceUsd: 6, etaMinutes: 30 });
+    await providerAction(admin, await fresh(order.id), asProvider(second), "decline", {});
+    expect((await fresh(order.id)).choose_until).not.toBeNull();
+    await providerAction(admin, await fresh(order.id), asProvider(first), "withdraw", {});
+    const after = await fresh(order.id);
+    expect(after.choose_until).toBeNull();
+    expect(after.wave).toBe(2);
+  });
+
+  it("takes a rider who confirms another order out of the requests still waiting on them", async () => {
+    const waiting = await start();
+    // The other rider has answered; the order now waits only on `first`.
+    await providerAction(admin, await fresh(waiting.id), asProvider(second), "decline", {});
+    expect((await fresh(waiting.id)).wave).toBe(1);
+
+    const other = await start();
+    await providerAction(admin, await fresh(other.id), asProvider(first), "offer", { priceUsd: 5, etaMinutes: 15 });
+    const { offers } = await orderView(admin, await fresh(other.id), "seeker", customer.id);
+    const pick = offers.find((o) => o.profileId === first.profileId)!;
+    await seekerAction(admin, await fresh(other.id), asCustomer(), "select", { recipientId: pick.recipientId });
+    expect((await providerAction(admin, await fresh(other.id), asProvider(first), "confirm", {})).ok).toBe(true);
+
+    expect(await statusOf(waiting.id, first)).toBe("withdrawn");
+    // No 2-minute wait: the next wave went out straight away.
+    expect((await fresh(waiting.id)).wave).toBe(2);
+    await admin.from("errand_orders").update({ status: "cancelled" }).eq("id", other.id);
+  });
 });
 
 describe("repair quotes (Home Maintenance)", () => {

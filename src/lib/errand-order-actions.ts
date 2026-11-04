@@ -249,15 +249,22 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
         .in("status", ["sent", "offered"]);
       const matchId = await ensureConversation(db, order.seeker_profile_id, order.provider_profile_id!, order.category as OrderCategory);
       if (matchId) await db.from("errand_orders").update({ generic_match_id: matchId }).eq("id", order.id);
-      // A rider's other open offers stand down once they're at their limit
-      // of orders in progress; a tradesperson can take several jobs.
+      // Once a rider is at their limit of orders in progress, they leave
+      // every other order they were asked about -- offers and unanswered
+      // requests alike -- and those orders move on at once instead of
+      // waiting out the timer. A tradesperson can take several jobs.
       if (mine && order.category !== "maintenance" && (await atOrderLimit(db, mine.provider_profile_id))) {
-        await db
+        const { data: left } = await db
           .from("errand_order_recipients")
           .update({ status: "withdrawn", responded_at: now() })
           .eq("provider_profile_id", mine.provider_profile_id)
-          .eq("status", "offered")
-          .neq("order_id", order.id);
+          .in("status", ["sent", "offered"])
+          .neq("order_id", order.id)
+          .select("order_id");
+        for (const orderId of [...new Set((left ?? []).map((r) => r.order_id))]) {
+          await logOrderEvent(db, orderId, { userId: null, role: "system" }, "busy_elsewhere", { provider_profile_id: mine.provider_profile_id });
+          await afterAnswer(db, { id: orderId } as OrderRow);
+        }
       }
       await notify({ user_id: order.seeker_user_id, type: "errand_confirmed", payload: payload(order) });
       return { ok: true };
