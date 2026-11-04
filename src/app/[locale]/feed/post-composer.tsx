@@ -73,7 +73,7 @@ export default function PostComposer({
         <textarea
           id={POST_COMPOSER_INPUT_ID}
           dir="auto"
-          className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted focus:outline-none"
+          className="w-full resize-none border-none bg-transparent text-[15px] text-ink placeholder:text-muted/65 focus:outline-none"
           rows={2}
           maxLength={500}
           placeholder={t(kind === "looking_for" ? "placeholderNeed" : "placeholderOffer")}

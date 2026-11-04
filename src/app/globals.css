@@ -92,6 +92,28 @@ button:not(:disabled),
   --font-brand: var(--font-cairo);
 }
 
+/* `@theme inline` bakes the English fonts into the utilities
+   (.font-sans { font-family: var(--font-inter) }), so the variables above
+   never reach them -- and Inter has no Arabic, so Arabic body text fell
+   back to the system font while only headings were in Cairo. Unlayered,
+   so it wins over the utilities. The ouiKnow wordmark keeps its own font. */
+:root[dir="rtl"] :is(.font-sans, .font-display) {
+  font-family: var(--font-cairo), system-ui, sans-serif;
+}
+
+/* English display text is never lighter than 500 (Plus Jakarta is only
+   loaded from 500), so a heading with no weight of its own still reads as
+   a heading. Arabic headings get the same: semibold unless they say. */
+:root[dir="rtl"] :is(h1, h2, h3, h4, .font-display):not([class*="font-medium"], [class*="font-semibold"], [class*="font-bold"], [class*="font-extrabold"], [class*="font-black"]) {
+  font-weight: 600;
+}
+
+/* Cairo's semibold is lighter than Plus Jakarta's: a semibold page or
+   section title would look weaker in Arabic than in English. */
+:root[dir="rtl"] :is(h1, h2).font-semibold {
+  font-weight: 700;
+}
+
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --background: #1b1712;
@@ -172,8 +194,17 @@ button:not(:disabled),
   h3,
   h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    /* Slightly tight, as display type should be -- but -0.02em also
+       squeezed the spaces until "Your profile" read "Yourprofile". */
+    letter-spacing: -0.012em;
+    word-spacing: 0.06em;
     text-wrap: balance;
+  }
+
+  /* Arabic letters join: tracking pulls them apart or cramps them. */
+  :root[dir="rtl"] :is(h1, h2, h3, h4) {
+    letter-spacing: 0;
+    word-spacing: normal;
   }
 
   p {
@@ -379,5 +410,11 @@ html[data-chrome="hidden"] .app-chrome-top {
   select,
   textarea {
     font-size: 16px;
+  }
+
+  /* The drag-to-resize corner is useless under a finger and pokes out of
+     the rounded corner as a stray dot. */
+  textarea {
+    resize: none;
   }
 }

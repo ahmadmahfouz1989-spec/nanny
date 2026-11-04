@@ -1,9 +1,11 @@
 export const ui = {
+  // Text boxes: a border that holds its own on the cream page, a hint of
+  // lift, and a placeholder light enough not to pass for an answer.
   input:
-    "w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-ink placeholder:text-muted transition-colors focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 disabled:opacity-50",
+    "w-full rounded-xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-ink shadow-xs placeholder:text-muted/65 transition-[border-color,box-shadow] hover:border-muted/45 focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 disabled:opacity-50",
   select:
-    "w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm text-ink transition-colors focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 disabled:opacity-50",
-  label: "text-sm font-medium text-ink/80",
+    "w-full rounded-xl border border-border-strong bg-surface px-4 py-2.5 text-sm text-ink shadow-xs transition-[border-color,box-shadow] hover:border-muted/45 focus:outline-none focus:border-primary focus:ring-[3px] focus:ring-primary/15 disabled:opacity-50",
+  label: "text-sm font-medium text-ink/85",
   card: "rounded-2xl border border-border bg-surface shadow-sm",
   // Card that reacts to hover — for grids of clickable things.
   cardHover:

@@ -42,7 +42,9 @@ const baloo = Baloo_2({
 const cairo = Cairo({
   variable: "--font-cairo",
   subsets: ["arabic", "latin"],
-  weight: ["600", "700", "800"],
+  // 400/500 too: Arabic pages set all body text in Cairo, and without
+  // them labels, hints and placeholders fell back to the system font.
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 export function generateStaticParams() {

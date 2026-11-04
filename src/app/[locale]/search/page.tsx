@@ -46,7 +46,7 @@ export default async function SearchPage({
   return (
     <AppShell active="feed">
       <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-4 sm:px-6 sm:py-8">
-        <form role="search" action={`/${locale}/search`} className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm focus-within:border-primary/50">
+        <form role="search" action={`/${locale}/search`} className="flex items-center gap-3 rounded-2xl border border-border-strong bg-surface px-4 py-3 shadow-sm transition-colors focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15">
           <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
           <input
             type="search"
@@ -56,7 +56,7 @@ export default async function SearchPage({
             aria-label={t("placeholder")}
             enterKeyHint="search"
             autoFocus={!query}
-            className="min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-muted outline-none [&::-webkit-search-cancel-button]:hidden"
+            className="min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-muted/65 outline-none [&::-webkit-search-cancel-button]:hidden"
           />
           {all && <input type="hidden" name="all" value="1" />}
         </form>

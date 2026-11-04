@@ -29,7 +29,7 @@ export default function ServiceSearch({ services }: { services: SearchableServic
           e.preventDefault();
           if (q) router.push(`/search?${new URLSearchParams({ q: query.trim() })}`);
         }}
-        className="flex items-center gap-3 rounded-2xl border border-border bg-surface px-4 py-3 shadow-sm focus-within:border-primary/50"
+        className="flex items-center gap-3 rounded-2xl border border-border-strong bg-surface px-4 py-3 shadow-sm transition-colors focus-within:border-primary focus-within:ring-[3px] focus-within:ring-primary/15"
       >
         <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
         <input
@@ -39,7 +39,7 @@ export default function ServiceSearch({ services }: { services: SearchableServic
           placeholder={t("search")}
           aria-label={t("searchLabel")}
           enterKeyHint="search"
-          className="min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-muted outline-none [&::-webkit-search-cancel-button]:hidden"
+          className="min-w-0 flex-1 bg-transparent text-[15px] text-ink placeholder:text-muted/65 outline-none [&::-webkit-search-cancel-button]:hidden"
         />
       </form>
       {q && (

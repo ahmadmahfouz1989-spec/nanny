@@ -157,7 +157,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 placeholder={t("heroSearchPlaceholder")}
                 aria-label={t("heroSearchPlaceholder")}
                 enterKeyHint="search"
-                className="min-w-0 flex-1 bg-transparent py-2 text-[15px] outline-none placeholder:text-muted"
+                className="min-w-0 flex-1 bg-transparent py-2 text-[15px] outline-none placeholder:text-muted/65"
               />
               <button type="submit" className={ui.buttonPrimary + " shrink-0 px-5!"}>
                 {t("heroSearch")}
