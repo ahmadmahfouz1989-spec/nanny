@@ -267,6 +267,14 @@ describe("waves and timers", () => {
     expect(choosing.choose_until).not.toBeNull();
     expect(choosing.wave).toBe(1);
     expect(await statusOf(order.id, second)).toBe("expired");
+    // The customer is nudged to choose before the offers lapse.
+    const { data: nudges } = await admin
+      .from("notifications")
+      .select("payload")
+      .eq("user_id", customer.id)
+      .eq("type", "errand_status")
+      .contains("payload", { order_id: order.id, status: "choose" });
+    expect(nudges).toHaveLength(1);
 
     await admin.from("errand_orders").update({ choose_until: past() }).eq("id", order.id);
     await advanceOrders(admin, { orderId: order.id });

@@ -5,7 +5,7 @@ import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson, request } from "@/lib/request";
-import { OrderStatusBadge, placeLabel, useServiceLabel } from "@/components/orders/order-bits";
+import { OrderStatusBadge, placeLabel, useServiceLabel, useStatusLabel } from "@/components/orders/order-bits";
 import type { OrderSummary, OrderView } from "@/lib/errand-order-view";
 
 const STATUSES = ["open", "reserved", "accepted", "on_the_way", "arrived", "picked_up", "delivered", "completed", "cancelled", "no_provider"];
@@ -68,11 +68,7 @@ export default function AdminOrdersPage() {
     setReload((n) => n + 1);
   }
 
-  const eventWave = (detail: unknown) => {
-    const d = (detail ?? {}) as { wave?: number; count?: number; radius_km?: number; widened_from_km?: number; reason?: string };
-    const radius = d.radius_km !== undefined ? ` · ${d.widened_from_km !== undefined ? `${d.widened_from_km}→` : ""}${d.radius_km} km` : "";
-    return `#${d.wave ?? "?"} (${d.count ?? 0})${radius}${d.reason ? ` · ${d.reason}` : ""}`;
-  };
+  const describe = useEventText();
   const when = (iso: string) => format.dateTime(new Date(iso), { dateStyle: "short", timeStyle: "short" });
 
   return (
@@ -189,13 +185,7 @@ export default function AdminOrdersPage() {
                     {detail.events?.map((e, i) => (
                       <li key={i} className="flex gap-3">
                         <span className="shrink-0 text-muted tabular-nums">{when(e.at)}</span>
-                        <span className="text-ink">
-                          {e.actorRole} · {e.type}
-                          {e.type === "status" ? ` → ${String((e.detail as { status?: string })?.status ?? "")}` : ""}
-                          {e.type === "dispatched" ? ` (${String((e.detail as { count?: number })?.count ?? 0)})` : ""}
-                          {e.type === "wave_sent" ? ` ${eventWave(e.detail)}` : ""}
-                          {e.type === "no_response" ? ` (${String((e.detail as { providers?: unknown[] })?.providers?.length ?? 0)})` : ""}
-                        </span>
+                        <span className="text-ink">{describe(e, detail)}</span>
                       </li>
                     ))}
                   </ol>
@@ -207,6 +197,96 @@ export default function AdminOrdersPage() {
       </div>
     </div>
   );
+}
+
+type EventDetail = {
+  status?: string;
+  reason?: string | null;
+  retry_of?: number;
+  wave?: number;
+  count?: number;
+  radius_km?: number;
+  widened_from_km?: number;
+  providers?: (string | { profile_id: string })[];
+  provider_profile_id?: string;
+  price_usd?: number;
+  price_max_usd?: number | null;
+  eta_minutes?: number | null;
+  visit_at?: string | null;
+  until?: string;
+};
+
+/**
+ * One line of an order's history in plain words ("Wave 2: search widened
+ * from 5 to 25 km, sent to 1 provider", "Karim Haddad didn't confirm in
+ * time"), naming providers from the order's recipient list.
+ */
+function useEventText() {
+  const t = useTranslations("Admin");
+  const statusLabel = useStatusLabel();
+  const format = useFormatter();
+  return (e: NonNullable<OrderView["events"]>[number], order: OrderView) => {
+    const d = (e.detail ?? {}) as EventDetail;
+    const names = new Map(order.offers.map((o) => [o.profileId, o.name]));
+    const nameOf = (id?: string) => (id && names.get(id)) || (e.actorRole === "provider" ? order.provider?.name : undefined) || t("ev_actor_provider");
+    const actor = t(`ev_actor_${e.actorRole}` as "ev_actor_seeker");
+    const when = d.visit_at ? format.dateTime(new Date(d.visit_at), { dateStyle: "short", timeStyle: "short" }) : "";
+    const price = () =>
+      "$" + d.price_usd + (d.price_max_usd ? "–" + d.price_max_usd : "") + (d.eta_minutes ? " · " + d.eta_minutes + " min" : when ? " · " + when : "");
+    switch (e.type) {
+      case "created":
+        return d.retry_of ? t("ev_created_retry", { number: d.retry_of }) : t("ev_created");
+      case "wave_sent":
+        if (d.reason === "max_recipients") return t("ev_wave_cap");
+        if (!d.count) return t("ev_wave_none", { wave: d.wave ?? 0, km: d.radius_km ?? 0 });
+        return d.widened_from_km !== undefined
+          ? t("ev_wave_widened", { wave: d.wave ?? 0, from: d.widened_from_km, km: d.radius_km ?? 0, count: d.count })
+          : t("ev_wave", { wave: d.wave ?? 0, km: d.radius_km ?? 0, count: d.count });
+      case "dispatched":
+        return t("ev_dispatched", { count: d.count ?? 0 });
+      case "no_response":
+        return t("ev_no_response", { names: (d.providers ?? []).map((p) => nameOf(typeof p === "string" ? p : p.profile_id)).join(", ") });
+      case "offered":
+        return t("ev_offered", { name: nameOf(d.provider_profile_id), price: price() });
+      case "offer_changed":
+        return t("ev_offer_changed", { name: nameOf(d.provider_profile_id), price: price() });
+      case "declined":
+        return t("ev_declined", { name: nameOf(d.provider_profile_id) });
+      case "withdrawn":
+        return t("ev_withdrawn", { name: nameOf(d.provider_profile_id) });
+      case "choosing":
+        return t("ev_choosing", { time: d.until ? format.dateTime(new Date(d.until), { timeStyle: "medium" }) : "" });
+      case "offers_expired":
+        return t("ev_offers_expired");
+      case "confirm_timeout":
+        return t("ev_confirm_timeout", { name: nameOf(d.provider_profile_id) });
+      case "provider_dropped":
+        return t("ev_provider_dropped", { name: nameOf(d.provider_profile_id) }) + (d.reason ? " — " + d.reason : "");
+      case "busy_elsewhere":
+        return t("ev_busy_elsewhere", { name: nameOf(d.provider_profile_id) });
+      case "admin_resent":
+        return t("ev_admin_resent");
+      case "admin_widened":
+        return t("ev_admin_widened");
+      case "status":
+        switch (d.status) {
+          case "reserved":
+            return t("ev_reserved", { name: nameOf(d.provider_profile_id) });
+          case "open":
+            return t("ev_reopened");
+          case "no_provider":
+            return t("ev_no_provider");
+          case "cancelled":
+            return t("ev_cancelled", { who: actor }) + (d.reason ? " — " + d.reason : "");
+          default:
+            return t("ev_stage", {
+              who: e.actorRole === "provider" ? nameOf(d.provider_profile_id) : actor,
+              status: statusLabel(d.status ?? "", order.category),
+            });
+        }
+    }
+    return actor + " · " + e.type;
+  };
 }
 
 type Settings = {

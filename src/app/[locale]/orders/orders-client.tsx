@@ -5,13 +5,23 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
-import { AVAILABILITY_DOT, OrderStatusBadge, placeLabel, useOrderTitle, useServiceLabel } from "@/components/orders/order-bits";
+import {
+  AVAILABILITY_DOT,
+  Countdown,
+  OrderStatusBadge,
+  placeLabel,
+  useDistanceLabel,
+  useOrderTitle,
+  useSecondsLeft,
+  useServiceLabel,
+} from "@/components/orders/order-bits";
 import type { OrderSummary } from "@/lib/errand-order-view";
 
-type Incoming = OrderSummary & { myStatus: string; myPriceUsd: number | null; distanceKm: number | null };
+type Incoming = OrderSummary & { myStatus: string; myPriceUsd: number | null; distanceKm: number | null; respondBy: string | null };
 type Availability = { status: "available" | "busy" | "offline" | "suspended"; availableNow: boolean } | null;
 type Mine = { canOrder: boolean; orders: OrderSummary[] };
 type ProviderLists = {
+  serverNow?: string;
   provider: { rider?: boolean; tradesperson?: boolean } | null;
   incoming: Incoming[];
   assigned: OrderSummary[];
@@ -88,7 +98,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
             {o.dropoffDistrict ? ` → ${placeLabel(o.dropoffDistrict, locale)}` : ""}
           </p>
         </div>
-        <OrderStatusBadge status={o.status} category={o.category} />
+        <OrderStatusBadge status={o.status} category={o.category} choosing={o.choosing} />
       </div>
       {extra}
     </Link>
@@ -191,13 +201,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
               <p className="py-6 text-center text-sm text-muted">{provider.provider?.rider ? t("noIncoming") : t("noIncomingJobs")}</p>
             ) : (
               provider.incoming.map((o) =>
-                row(
-                  o,
-                  <p className="mt-2 text-sm text-ink/80">
-                    {o.distanceKm !== null ? t("kmAway", { km: o.distanceKm }) : ""}
-                    {o.myStatus === "offered" && o.myPriceUsd !== null ? ` · ${t("yourOffer")}: ${t("price", { price: o.myPriceUsd })}` : ""}
-                  </p>,
-                ),
+                row(o, <IncomingLine order={o} serverNow={provider.serverNow ?? new Date().toISOString()} />),
               )
             )}
           </section>
@@ -209,6 +213,24 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
             </section>
           )}
         </div>
+      )}
+    </div>
+  );
+}
+
+/** Under a request: how far, the rider's offer, and how long they have left to answer. */
+function IncomingLine({ order: o, serverNow }: { order: Incoming; serverNow: string }) {
+  const t = useTranslations("Orders");
+  const distance = useDistanceLabel();
+  const left = useSecondsLeft(o.respondBy, serverNow);
+  return (
+    <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm">
+      <p className="text-ink/80">
+        {o.distanceKm !== null ? distance(o.distanceKm) : ""}
+        {o.myStatus === "offered" && o.myPriceUsd !== null ? ` · ${t("yourOffer")}: ${t("price", { price: o.myPriceUsd })}` : ""}
+      </p>
+      {left !== null && left > 0 && (
+        <p className="rounded-full bg-primary-soft px-3 py-1 text-ink">{t.rich("answerWithin", { time: () => <Countdown seconds={left} /> })}</p>
       )}
     </div>
   );

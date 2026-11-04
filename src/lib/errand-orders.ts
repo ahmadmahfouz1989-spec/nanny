@@ -592,7 +592,14 @@ export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
       .eq("wave", order.wave)
       .is("choose_until", null)
       .select("id");
-    if (started?.length) await logOrderEvent(db, order.id, SYSTEM, "choosing", { until });
+    if (started?.length) {
+      await logOrderEvent(db, order.id, SYSTEM, "choosing", { until });
+      // A nudge when the wave's time ran out (the offers lapse if they don't
+      // pick one) -- not right after an answer, which already notified them.
+      if (isPast(order.wave_until)) {
+        await notify({ user_id: order.seeker_user_id, type: "errand_status", payload: orderPayload(order, { status: "choose" }) });
+      }
+    }
     return;
   }
 

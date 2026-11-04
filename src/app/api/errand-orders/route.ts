@@ -57,9 +57,18 @@ export async function GET(request: Request) {
 
   const incoming = (await orderSummaries(db, open ?? [])).map((o) => {
     const r = (received ?? []).find((x) => x.order_id === o.id);
-    return { ...o, myStatus: r?.status ?? "sent", myPriceUsd: r?.price_usd ?? null, distanceKm: r?.distance_km ?? null };
+    const myStatus = r?.status ?? "sent";
+    return {
+      ...o,
+      myStatus,
+      myPriceUsd: r?.price_usd ?? null,
+      distanceKm: r?.distance_km ?? null,
+      // A delivery still waiting on their answer: when their time runs out.
+      respondBy: myStatus === "sent" && !o.choosing ? o.waveUntil : null,
+    };
   });
   return NextResponse.json({
+    serverNow: new Date().toISOString(),
     provider: {
       profileId: (profiles.provider ?? jobProfiles.provider)!.id,
       // Only riders have the Available switch.

@@ -287,6 +287,10 @@ export async function orderSummaries(db: Admin, orders: OrderRow[]) {
       scheduledAt: o.scheduled_at,
       offers: mine.filter((r) => r.status === "offered" || r.status === "selected").length,
       sent: mine.length,
+      /** Offers are in and the customer is picking one. */
+      choosing: o.status === "open" && !!o.choose_until,
+      /** The current wave's answers are due then (deliveries only). */
+      waveUntil: o.category === "maintenance" ? null : o.wave_until,
     };
   });
 }

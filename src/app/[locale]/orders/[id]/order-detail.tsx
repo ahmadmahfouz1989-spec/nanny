@@ -6,7 +6,16 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
-import { OrderStatusBadge, placeLabel, useOrderTitle, useServiceLabel, useStatusLabel } from "@/components/orders/order-bits";
+import {
+  Countdown,
+  OrderStatusBadge,
+  placeLabel,
+  useDistanceLabel,
+  useOrderTitle,
+  useSecondsLeft,
+  useServiceLabel,
+  useStatusLabel,
+} from "@/components/orders/order-bits";
 import type { OrderOffer, OrderPerson, OrderPlace, OrderView } from "@/lib/errand-order-view";
 
 // One order, live: polled every few seconds so offers and each stage
@@ -21,38 +30,6 @@ const nextStage = (status: string, category: string) => {
   const i = stages.indexOf(status);
   return i >= 0 && i < stages.length - 1 ? stages[i + 1]! : null;
 };
-/**
- * Seconds left until `deadline`, counted on the server's clock (`serverNow`
- * from the last load) so a phone with the wrong time still shows the right
- * countdown. Re-renders every second; null without a deadline.
- */
-function useSecondsLeft(deadline: string | null | undefined, serverNow: string) {
-  // Time left when the order was loaded, then counted down locally; every
-  // reload (each poll) starts again from the server's figure.
-  const key = `${deadline}|${serverNow}`;
-  const atLoad = deadline ? Math.max(0, Math.round((Date.parse(deadline) - Date.parse(serverNow)) / 1000)) : null;
-  const [elapsed, setElapsed] = useState({ key: "", seconds: 0 });
-  useEffect(() => {
-    if (!deadline) return;
-    const startedAt = Date.now();
-    const timer = setInterval(() => setElapsed({ key, seconds: Math.floor((Date.now() - startedAt) / 1000) }), 1000);
-    return () => clearInterval(timer);
-  }, [deadline, key]);
-  if (atLoad === null) return null;
-  return Math.max(0, atLoad - (elapsed.key === key ? elapsed.seconds : 0));
-}
-
-const clock = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
-
-/** "1:42", left-to-right even on Arabic pages. */
-function Countdown({ seconds }: { seconds: number }) {
-  return (
-    <bdi dir="ltr" className="font-semibold tabular-nums">
-      {clock(seconds)}
-    </bdi>
-  );
-}
-
 const CANCELLABLE = new Set(["open", "reserved", "accepted", "on_the_way", "arrived"]);
 const DROPPABLE = new Set(["accepted", "on_the_way", "arrived"]);
 
@@ -156,7 +133,11 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
             <p className="text-sm text-muted">{serviceLabel(order.service, order.category)}</p>
             <h1 className="text-2xl font-bold text-ink">{orderTitle(order.number, order.category)}</h1>
           </div>
-          <OrderStatusBadge status={order.status} category={order.category} />
+          <OrderStatusBadge
+            status={order.status}
+            category={order.category}
+            choosing={order.viewer === "seeker" && !!order.matching?.chooseUntil && order.offers.some((o) => o.status === "offered")}
+          />
         </div>
       </div>
 
@@ -175,12 +156,13 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
             ))}
           </div>
         )}
+        {/* "From … / To …" for a trip; just "Where" for a task in one place. */}
         <p className="text-sm text-muted">
-          {order.category === "maintenance" ? t("where") : t("pickup")}: {place(order.pickup)}
+          {order.dropoff ? t("from") : t("where")}: {place(order.pickup)}
         </p>
         {order.dropoff && (
           <p className="text-sm text-muted">
-            {t("dropoff")}: {place(order.dropoff)}
+            {t("to")}: {place(order.dropoff)}
           </p>
         )}
         <p className="text-sm text-muted">
@@ -237,6 +219,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   const t = useTranslations("Orders");
   const format = useFormatter();
   const job = order.category === "maintenance";
+  const distance = useDistanceLabel();
   const [sort, setSort] = useState<"price" | "rating" | "time">("price");
   const m = order.matching;
   const waveLeft = useSecondsLeft(order.status === "open" && !m?.chooseUntil ? m?.waveUntil : null, order.serverNow);
@@ -325,7 +308,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
                 <p className="truncate font-semibold text-ink">{o.name}</p>
                 <p className="text-xs text-muted">
                   {o.rating.average !== null ? `★ ${o.rating.average} (${o.rating.count})` : t("noRating")}
-                  {o.distanceKm !== null ? ` · ${t("kmAway", { km: o.distanceKm })}` : ""}
+                  {o.distanceKm !== null ? ` · ${distance(o.distanceKm)}` : ""}
                 </p>
                 {o.note && (
                   <p dir="auto" className="mt-1 text-sm text-ink/80">
@@ -399,6 +382,7 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
   const t = useTranslations("Orders");
   const format = useFormatter();
   const job = order.category === "maintenance";
+  const distance = useDistanceLabel();
   const mine = order.mine;
   const [price, setPrice] = useState(mine?.priceUsd ? String(mine.priceUsd) : "");
   const [priceMax, setPriceMax] = useState(mine?.priceMaxUsd ? String(mine.priceMaxUsd) : "");
@@ -478,7 +462,7 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
   return (
     <div className={ui.card + " flex flex-col gap-3 p-4"}>
       <h2 className="font-semibold text-ink">{job ? t("yourQuote") : t("yourOffer")}</h2>
-      {mine.distanceKm !== null && <p className="text-sm text-muted">{t("kmAway", { km: mine.distanceKm })}</p>}
+      {mine.distanceKm !== null && <p className="text-sm text-muted">{distance(mine.distanceKm)}</p>}
       {respondLeft !== null && (
         <p className="rounded-xl bg-primary-soft px-3 py-2 text-sm text-ink">
           {t.rich("answerWithin", { time: () => <Countdown seconds={respondLeft} /> })}
