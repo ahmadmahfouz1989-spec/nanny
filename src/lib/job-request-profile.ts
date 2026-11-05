@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { refreshSearchText } from "@/lib/search-text";
+import { refreshUserSearchText } from "@/lib/search-text";
 import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -58,6 +58,10 @@ async function ensureRequestProfile(db: Admin, userId: string, job: JobRequest, 
 
   let name = job.fullName?.trim() || (existing && existing.status !== "draft" ? existing.full_name : "");
   if (!name) {
+    const { data: account } = await db.from("users").select("full_name").eq("id", userId).single();
+    name = account?.full_name ?? "";
+  }
+  if (!name) {
     const { data: other } = await db
       .from("generic_profiles")
       .select("full_name")
@@ -88,7 +92,7 @@ async function ensureRequestProfile(db: Admin, userId: string, job: JobRequest, 
         .single();
   if (error || !saved) throw new Error(`${kind.slug} request profile: ${error?.message}`);
 
-  await refreshSearchText([saved.id]);
+  await refreshUserSearchText(userId);
   await notifyAdminsOfPendingReview(name, `${kind.slug}_seeker`, category!, "seeker");
   return { ok: true, profileId: saved.id };
 }

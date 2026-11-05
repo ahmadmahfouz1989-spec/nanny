@@ -12,7 +12,8 @@ import { beautyProviderSchema, beautySeekerSchema } from "@/lib/validation/beaut
 import { carProviderSchema, carSeekerSchema } from "@/lib/validation/car";
 import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
-import { refreshSearchText } from "@/lib/search-text";
+import { refreshUserSearchText } from "@/lib/search-text";
+import { mustVerifyPhone } from "@/lib/phone-gate";
 import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
 import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 import { asAttributes } from "@/lib/attributes";
@@ -87,6 +88,9 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
 
   if (!user) {
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+  }
+  if (mode === "create" && (await mustVerifyPhone(createAdminClient(), user))) {
+    return NextResponse.json({ error: "phone_required" }, { status: 403 });
   }
 
   const body = await request.json().catch(() => null);
@@ -252,7 +256,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   }
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
-  await Promise.all([recomputeGenericMatchesForProfile(data.id), refreshSearchText([data.id])]);
+  await Promise.all([recomputeGenericMatchesForProfile(data.id), refreshUserSearchText(user.id)]);
   await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
   // The first submit (not an edit): a request posted, or a provider applying.
   if (!before || before.status === "draft") {

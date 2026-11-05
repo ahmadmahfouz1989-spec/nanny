@@ -1,4 +1,6 @@
 import { redirect } from "@/i18n/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { mustVerifyPhone } from "@/lib/phone-gate";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import { ERRAND_SERVICES, type ErrandService } from "@/lib/validation/errands";
@@ -57,9 +59,11 @@ export default async function NewOrderPage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect({ href: "/login", locale });
+  if (await mustVerifyPhone(createAdminClient(), user!)) redirect({ href: `/verify-phone?next=/orders/new`, locale });
 
   const prefill = from === "request" ? await prefillFromRequest(supabase, user!.id) : null;
   // The name is only asked for when none of their profiles has one yet.
+  const { data: account } = await supabase.from("users").select("full_name").eq("id", user!.id).single();
   const { data: named } = await supabase
     .from("generic_profiles")
     .select("full_name")
@@ -70,7 +74,7 @@ export default async function NewOrderPage({
 
   return (
     <AppShell active="errands">
-      <NewOrderForm prefill={prefill} needsName={!named} userId={user!.id} />
+      <NewOrderForm prefill={prefill} needsName={!named && !account?.full_name} userId={user!.id} />
     </AppShell>
   );
 }

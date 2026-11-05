@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import PushNotificationsCard from "@/components/push-notifications-card";
 import DeleteAccountCard from "@/components/delete-account-card";
+import AccountDetailsCard from "@/components/account-details-card";
 import SettingsRows from "@/components/settings-rows";
 import { ChevronIcon, DocumentIcon, WhatsAppIcon } from "@/components/home-icons";
 import { SUPPORT_WHATSAPP } from "@/lib/support";
@@ -17,7 +18,7 @@ export default async function SettingsPage() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { data: account } = await supabase.from("users").select("email, phone").eq("id", user!.id).single();
+  const { data: account } = await supabase.from("users").select("email, phone, full_name").eq("id", user!.id).single();
 
   const row = "flex items-center gap-3 px-5 py-4 text-[15px] text-ink transition-colors hover:bg-surface-sunken";
   const label = "text-xs font-medium uppercase tracking-wide text-muted mb-2 px-1";
@@ -57,6 +58,7 @@ export default async function SettingsPage() {
         </div>
 
         <p className={label}>{t("account")}</p>
+        <AccountDetailsCard name={account?.full_name ?? null} email={account?.email ?? null} phone={account?.phone && user!.phone_confirmed_at ? account.phone : null} />
         {account?.email ? (
           <DeleteAccountCard identifier={account.email} kind="email" />
         ) : account?.phone ? (

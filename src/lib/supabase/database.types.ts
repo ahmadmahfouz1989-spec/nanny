@@ -938,14 +938,14 @@ isOneToOne: false
                   ]
                 },"users": {
                   Row: {
-                    "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"id": string,"last_login_at": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
+                    "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"full_name": string | null,"id": string,"last_login_at": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"id": string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id": string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"id"?: string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id"?: string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     

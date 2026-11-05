@@ -542,7 +542,8 @@
       "roleSeekerDescription": "A mechanic, a garage, a battery or a flat tyre, towing and more — get matched with people near you.",
       "roleProviderTitle": "I fix, tow or look after cars",
       "roleProviderDescription": "A mobile mechanic, a garage or a company — create a profile so drivers near you can find you."
-    }
+    },
+    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere, and those profiles are reviewed again."
   },
   "NursingProviderOnboarding": {
     "createTitle": "Create your nursing profile",
@@ -1164,8 +1165,7 @@
     "invalidNumber": "Enter a valid phone number.",
     "sendFailed": "Couldn't send the code. Check the number and try again.",
     "tooManyCodes": "Too many codes requested. Please wait a minute and try again.",
-    "wrongCode": "That code isn't right. Check it and try again.",
-    "codeExpired": "That code has expired. Tap \"Resend code\" for a new one.",
+    "wrongCode": "That code is wrong or has expired. Check it, or tap \"Resend code\".",
     "suspended": "This account has been suspended.",
     "termsNote": "By continuing you agree to the <terms>Terms of Service</terms>."
   },
@@ -2616,5 +2616,21 @@
     "samePlace": "Pickup and drop-off are the same spot. Check them before sending.",
     "navigateToPickup": "Navigate to pickup",
     "navigateToDropoff": "Navigate to drop-off"
+  },
+  "AccountDetails": {
+    "name": "Your name",
+    "nameHint": "Shown on all your profiles. Changing it changes it everywhere, and your profiles are reviewed again.",
+    "nameInvalid": "Enter your name (2 to 80 letters).",
+    "nameSaved": "Saved on all your profiles.",
+    "saveFailed": "Couldn't save. Please try again.",
+    "save": "Save",
+    "saving": "Saving…",
+    "email": "Email",
+    "phone": "WhatsApp number",
+    "addPhone": "Add your number",
+    "addPhoneWhy": "Add your number so signing in with WhatsApp opens this same account.",
+    "phoneTaken": "This number is already on another ouiKnow account. Sign in with WhatsApp to use that account.",
+    "verifyTitle": "Confirm your number",
+    "verifyBody": "Each person has one ouiKnow account for every service. Your number is what keeps it that way."
   }
 }

@@ -1,5 +1,7 @@
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { mustVerifyPhone } from "@/lib/phone-gate";
 import { asAttributes } from "@/lib/attributes";
 import { isCategorySlug } from "@/lib/category-slugs";
 import AppShell from "@/components/app-shell";
@@ -39,12 +41,20 @@ export default async function CategoryOnboardingPage({
       .select("id, role, full_name, profile_photo_url, location_id, attributes, status")
       .eq("user_id", user!.id)
       .eq("category_id", category!.id),
-    supabase.from("users").select("contact_phone").eq("id", user!.id).single(),
+    supabase.from("users").select("contact_phone, full_name").eq("id", user!.id).single(),
   ]);
 
   const accountContactPhone = userRow?.contact_phone ?? null;
+  // The name belongs to the account: every form shows the same one, so
+  // saving one profile with an older name can't rename the others.
+  const accountName = userRow?.full_name ?? null;
+  const started = (profiles ?? []).some((p) => p.status !== "draft");
+  if (!started && (await mustVerifyPhone(createAdminClient(), user!))) {
+    redirect({ href: `/verify-phone?next=/categories/${slug}/onboarding${role ? `?role=${role}` : ""}`, locale });
+  }
   const withContact = (p: NonNullable<typeof profiles>[number], role: "seeker" | "provider") => ({
     ...p,
+    full_name: accountName ?? p.full_name,
     role,
     attributes: asAttributes(p.attributes),
     contact_phone: accountContactPhone,
@@ -81,6 +91,7 @@ export default async function CategoryOnboardingPage({
       // phone already saved via another category, and would submit this
       // form's blank field as a real update, wiping it out account-wide.
       accountContactPhone={accountContactPhone}
+      nameIsShared={!!accountName}
     />
     </AppShell>
   );

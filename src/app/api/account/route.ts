@@ -2,10 +2,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { deleteUserAccount } from "@/lib/account-deletion";
+import { refreshUserSearchText } from "@/lib/search-text";
+import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
 
 // `confirmEmail` is the original field name, kept for old clients.
 const bodySchema = z.object({ confirm: z.string().trim().optional(), confirmEmail: z.string().trim().optional() });
+
+const nameSchema = z.object({ fullName: z.string().trim().min(2).max(80) });
 
 const digits = (s: string) => s.replace(/\D/g, "");
 
@@ -49,4 +54,38 @@ export async function DELETE(request: Request) {
   }
 
   return NextResponse.json({ status: "deleted" });
+}
+
+/**
+ * Changes the account's name. A database trigger copies it to every profile
+ * and sends those back for review, like any other edit to a profile.
+ */
+export async function PATCH(request: Request) {
+  const supabase = await createClient();
+  const user = await requireActiveUser(supabase);
+  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  const parsed = nameSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return NextResponse.json({ error: "invalid_name" }, { status: 400 });
+  const { fullName } = parsed.data;
+
+  const db = createAdminClient();
+  const { data: current } = await db.from("users").select("full_name").eq("id", user.id).single();
+  if (current?.full_name === fullName) return NextResponse.json({ ok: true });
+
+  const { error } = await db.from("users").update({ full_name: fullName }).eq("id", user.id);
+  if (error) return NextResponse.json({ error: "save_failed" }, { status: 500 });
+
+  await refreshUserSearchText(user.id);
+  const { data: profile } = await db
+    .from("generic_profiles")
+    .select("role, categories(slug, name_en, name_ar)")
+    .eq("user_id", user.id)
+    .neq("status", "draft")
+    .limit(1)
+    .maybeSingle();
+  if (profile?.categories) {
+    await notifyAdminsOfPendingReview(fullName, `${profile.categories.slug}_${profile.role}`, profile.categories, profile.role as "seeker" | "provider");
+  }
+  return NextResponse.json({ ok: true });
 }

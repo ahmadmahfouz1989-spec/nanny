@@ -1,4 +1,6 @@
 import { redirect } from "@/i18n/navigation";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { mustVerifyPhone } from "@/lib/phone-gate";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
 import { TRADES, type Trade } from "@/lib/validation/maintenance";
@@ -24,8 +26,10 @@ export default async function NewQuotePage({
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect({ href: `/login?next=/${locale}/quotes/new`, locale });
+  if (await mustVerifyPhone(createAdminClient(), user!)) redirect({ href: `/verify-phone?next=/quotes/new`, locale });
 
   // The name is only asked for when none of their profiles has one yet.
+  const { data: account } = await supabase.from("users").select("full_name").eq("id", user!.id).single();
   const { data: named } = await supabase
     .from("generic_profiles")
     .select("full_name")
@@ -38,7 +42,7 @@ export default async function NewQuotePage({
 
   return (
     <AppShell active="maintenance">
-      <QuoteForm needsName={!named} initialTrade={initialTrade} />
+      <QuoteForm needsName={!named && !account?.full_name} initialTrade={initialTrade} />
     </AppShell>
   );
 }

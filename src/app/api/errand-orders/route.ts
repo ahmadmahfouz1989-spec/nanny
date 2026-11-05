@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
+import { mustVerifyPhone } from "@/lib/phone-gate";
 import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
 import { advanceOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
@@ -94,6 +95,8 @@ export async function POST(request: Request) {
   const supabase = await createClient();
   const user = await requireActiveUser(supabase);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+
+  if (await mustVerifyPhone(createAdminClient(), user)) return NextResponse.json({ error: "phone_required" }, { status: 403 });
 
   const parsed = orderCreateSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });

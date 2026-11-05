@@ -48,6 +48,12 @@ export async function refreshSearchText(profileIds: string[]) {
   }
 }
 
+/** All of one person's profiles: their name is shared, so a new one touches every profile's search text. */
+export async function refreshUserSearchText(userId: string) {
+  const { data } = await createAdminClient().from("generic_profiles").select("id").eq("user_id", userId).neq("status", "draft");
+  await refreshSearchText((data ?? []).map((p) => p.id));
+}
+
 /**
  * Fills in search_text for any profile in a category that doesn't have it
  * yet (profiles saved before it existed). Cheap no-op once they all do.

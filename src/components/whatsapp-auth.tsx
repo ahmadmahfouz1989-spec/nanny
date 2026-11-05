@@ -10,8 +10,8 @@ import { internationalNumber } from "@/lib/phone";
 
 // Most users are in Lebanon; the rest of the list covers where the
 // diaspora and foreign workers commonly have numbers.
-const COUNTRY_CODES = ["961", "971", "966", "974", "965", "973", "968", "962", "20", "33", "49", "44", "1", "61", "63", "94", "251", "234", "880", "977", "91"];
-const RESEND_AFTER_SECONDS = 30;
+export const COUNTRY_CODES = ["961", "971", "966", "974", "965", "973", "968", "962", "20", "33", "49", "44", "1", "61", "63", "94", "251", "234", "880", "977", "91"];
+export const RESEND_AFTER_SECONDS = 30;
 
 function WhatsAppIcon({ className = "" }: { className?: string }) {
   return (
@@ -92,7 +92,8 @@ function WhatsAppAuthPanel({ mode, next = null }: { mode: "login" | "signup"; ne
     const { error } = await supabase.auth.verifyOtp({ phone: `+${phone}`, token: code, type: "sms" });
     if (error) {
       setBusy(false);
-      setError(/expired/i.test(error.message) ? t("codeExpired") : t("wrongCode"));
+      // Supabase says the same thing for a wrong code and an expired one.
+      setError(t("wrongCode"));
       return;
     }
 

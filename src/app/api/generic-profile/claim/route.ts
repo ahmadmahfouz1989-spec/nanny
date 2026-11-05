@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { mustVerifyPhone } from "@/lib/phone-gate";
 
 const bodySchema = z.object({
   categorySlug: z.string().min(1),
@@ -44,6 +45,9 @@ export async function POST(request: Request) {
   }
 
   const db = createAdminClient();
+  if (await mustVerifyPhone(db, user)) {
+    return NextResponse.json({ error: "phone_required" }, { status: 403 });
+  }
 
   const { data: existing } = await db
     .from("generic_profiles")
@@ -69,6 +73,7 @@ export async function POST(request: Request) {
     .order("updated_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  const { data: account } = await db.from("users").select("full_name").eq("id", user.id).single();
   const earlierAttributes = (earlier?.attributes ?? {}) as Record<string, unknown>;
   const carried: Record<string, string> = {};
   for (const key of ["districtId", "areaId", "locationDetail"]) {
@@ -82,7 +87,7 @@ export async function POST(request: Request) {
       user_id: user.id,
       category_id: category.id,
       role,
-      full_name: earlier?.full_name?.trim() || DRAFT_NAME,
+      full_name: account?.full_name || earlier?.full_name?.trim() || DRAFT_NAME,
       location_id: earlier?.location_id ?? null,
       attributes: carried,
       status: "draft",

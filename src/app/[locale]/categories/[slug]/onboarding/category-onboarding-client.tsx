@@ -53,6 +53,7 @@ export default function CategoryOnboardingClient({
   seekerProfile,
   providerProfile,
   accountContactPhone,
+  nameIsShared,
   initialRole,
   startRole = null,
 }: {
@@ -64,6 +65,8 @@ export default function CategoryOnboardingClient({
   seekerProfile: ExistingProfile;
   providerProfile: ExistingProfile;
   accountContactPhone: string | null;
+  // The account already has a name, so the form's name field changes it everywhere.
+  nameIsShared?: boolean;
   // Set when arriving from a specific dashboard tab's Edit link -- takes
   // priority over the provider-first default below, which otherwise has
   // no way to know which of the two an Edit click actually meant.
@@ -174,11 +177,21 @@ export default function CategoryOnboardingClient({
 
   if (chosenRole === "provider" && forms) {
     const ProviderForm = forms.provider;
-    return <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={submitted(provider) ? undefined : () => changeRole("provider")} />;
+    return (
+      <>
+        {nameIsShared && <p className="mx-auto max-w-2xl px-6 pt-5 text-xs text-muted">{t("nameIsShared")}</p>}
+        <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={submitted(provider) ? undefined : () => changeRole("provider")} />
+      </>
+    );
   }
   if (chosenRole === "seeker" && forms) {
     const SeekerForm = forms.seeker;
-    return <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={submitted(seeker) ? undefined : () => changeRole("seeker")} />;
+    return (
+      <>
+        {nameIsShared && <p className="mx-auto max-w-2xl px-6 pt-5 text-xs text-muted">{t("nameIsShared")}</p>}
+        <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={submitted(seeker) ? undefined : () => changeRole("seeker")} />
+      </>
+    );
   }
 
   // Starting a side straight away: no flash of the choice it replaces.

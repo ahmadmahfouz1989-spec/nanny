@@ -54,7 +54,8 @@ export async function createProfile(
   slug: string,
   role: "seeker" | "provider",
   attributes: Record<string, Json>,
-  { approved = true, fullName = `${slug} ${role}` } = {},
+  // One person, one name: a second name would rename their other profiles.
+  { approved = true, fullName = `Test ${user.id.slice(0, 8)}` } = {},
 ) {
   const { data, error } = await admin
     .from("generic_profiles")
