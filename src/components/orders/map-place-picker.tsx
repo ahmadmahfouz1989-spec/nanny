@@ -44,7 +44,10 @@ export default function MapPlacePicker({ kind, value, onChange }: { kind: "picku
   async function addressOf(point: { lat: number; lng: number }) {
     try {
       const { results } = (await geocoder.current?.geocode({ location: point })) ?? { results: [] };
-      return results[0]?.formatted_address ?? "";
+      // Google's first answer is often a plus code ("VGP9+MX5, Beirut"): take
+      // the first real address or place name instead.
+      const readable = results.find((r) => !r.types.includes("plus_code") && !/^[23456789CFGHJMPQRVWX]{4,8}\+[23456789CFGHJMPQRVWX]{2,3}\b/.test(r.formatted_address));
+      return readable?.formatted_address ?? "";
     } catch {
       return "";
     }
@@ -206,7 +209,8 @@ export default function MapPlacePicker({ kind, value, onChange }: { kind: "picku
         <span className={ui.label}>{pickup ? t("shopName") : t("placeName")}</span>
         <input dir="auto" maxLength={160} className={ui.input} value={value.name} onChange={(e) => update({ name: e.target.value })} placeholder={pickup ? t("shopNamePlaceholder") : t("placeNamePlaceholder")} />
       </label>
-      <div className="grid grid-cols-2 gap-3">
+      {/* items-end: a label wrapping to two lines doesn't push its box out of line. */}
+      <div className="grid grid-cols-2 items-end gap-3">
         <label className="flex flex-col gap-1">
           <span className={ui.label}>{pickup ? t("contactName") : t("recipientName")}</span>
           <input dir="auto" maxLength={80} autoComplete="off" className={ui.input} value={value.contactName} onChange={(e) => update({ contactName: e.target.value })} />
