@@ -30,6 +30,58 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"broadcast_recipients": {
+                  Row: {
+                    "attempted_at": string | null,"broadcast_id": string,"created_at": string,"devices_failed": number,"devices_sent": number,"push_status": string,"read_at": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "attempted_at"?: string | null,"broadcast_id": string,"created_at"?: string,"devices_failed"?: number,"devices_sent"?: number,"push_status"?: string,"read_at"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "attempted_at"?: string | null,"broadcast_id"?: string,"created_at"?: string,"devices_failed"?: number,"devices_sent"?: number,"push_status"?: string,"read_at"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "broadcast_recipients_broadcast_id_fkey"
+      columns: ["broadcast_id"]
+isOneToOne: false
+      referencedRelation: "broadcasts"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "broadcast_recipients_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"broadcasts": {
+                  Row: {
+                    "audience": string,"body": string,"category_id": string | null,"created_at": string,"created_by": string | null,"finished_at": string | null,"id": string,"request_id": string,"status": string,"title": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audience": string,"body": string,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"request_id": string,"status"?: string,"title": string
+                  }
+                  Update: {
+                    "audience"?: string,"body"?: string,"category_id"?: string | null,"created_at"?: string,"created_by"?: string | null,"finished_at"?: string | null,"id"?: string,"request_id"?: string,"status"?: string,"title"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "broadcasts_category_id_fkey"
+      columns: ["category_id"]
+isOneToOne: false
+      referencedRelation: "categories"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "broadcasts_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"categories": {
                   Row: {
                     "created_at": string,"href": string | null,"icon": string,"id": string,"name_ar": string,"name_en": string,"slug": string,"sort_order": number,"status": string,"tagline_ar": string,"tagline_en": string

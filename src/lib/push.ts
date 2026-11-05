@@ -54,14 +54,32 @@ export async function sendPush(userIds: string[], build: (locale: Locale) => Pus
   await Promise.all([sendWebPush(users, build), sendNativePush(users, build)]);
 }
 
-async function sendWebPush(userIds: string[], build: (locale: Locale) => PushMessage) {
+/** Devices per user: accepted by Apple/Google/the browser, or not. Dead tokens count as neither. */
+export type DeviceCounts = Map<string, { sent: number; failed: number }>;
+
+function count(counts: DeviceCounts | undefined, userId: string, result: "sent" | "failed") {
+  if (!counts) return;
+  const c = counts.get(userId) ?? { sent: 0, failed: 0 };
+  c[result]++;
+  counts.set(userId, c);
+}
+
+/** sendPush that says what happened per person, for callers keeping a log. Same sending, same token clean-up. */
+export async function sendPushCounted(userIds: string[], build: (locale: Locale) => PushMessage): Promise<DeviceCounts> {
+  const counts: DeviceCounts = new Map();
+  const users = [...new Set(userIds)];
+  await Promise.all([sendWebPush(users, build, counts), sendNativePush(users, build, counts)]);
+  return counts;
+}
+
+async function sendWebPush(userIds: string[], build: (locale: Locale) => PushMessage, counts?: DeviceCounts) {
   if (!pushEnabled()) return;
   try {
     webpush.setVapidDetails(subject, publicKey!, privateKey!);
     const admin = createAdminClient();
     const { data: subs } = await admin
       .from("push_subscriptions")
-      .select("id, endpoint, p256dh, auth, locale")
+      .select("id, user_id, endpoint, p256dh, auth, locale")
       .in("user_id", userIds);
 
     const gone: string[] = [];
@@ -74,12 +92,16 @@ async function sendWebPush(userIds: string[], build: (locale: Locale) => PushMes
             JSON.stringify(build(locale)),
             { TTL: 60 * 60 * 24, urgency: "high" },
           );
+          count(counts, s.user_id, "sent");
         } catch (err) {
           // 404/410: the browser dropped this subscription (app uninstalled,
           // permission revoked) -- forget it so we stop sending.
           const status = (err as { statusCode?: number }).statusCode;
           if (status === 404 || status === 410) gone.push(s.id);
-          else console.error("[push] send failed:", status ?? err);
+          else {
+            console.error("[push] send failed:", status ?? err);
+            count(counts, s.user_id, "failed");
+          }
         }
       }),
     );
@@ -90,13 +112,15 @@ async function sendWebPush(userIds: string[], build: (locale: Locale) => PushMes
   }
 }
 
-async function sendNativePush(userIds: string[], build: (locale: Locale) => PushMessage) {
-  if (!apnsEnabled() && !fcmEnabled()) return;
+async function sendNativePush(userIds: string[], build: (locale: Locale) => PushMessage, counts?: DeviceCounts) {
+  // With a log to keep, go on: a phone that can't be reached because its side
+  // isn't set up comes back as failed, not as having no phone.
+  if (!counts && !apnsEnabled() && !fcmEnabled()) return;
   try {
     const admin = createAdminClient();
     const { data: rows } = await admin
       .from("native_push_tokens")
-      .select("id, token, platform, locale")
+      .select("id, user_id, token, platform, locale")
       .in("user_id", userIds);
 
     // One send per platform and language, so each batch shares its text.
@@ -111,7 +135,10 @@ async function sendNativePush(userIds: string[], build: (locale: Locale) => Push
         const [platform, locale] = key.split(":") as ["ios" | "android", Locale];
         const send = platform === "ios" ? sendApns : sendFcm;
         const results = await send(batch.map((r) => r.token), build(locale));
-        results.forEach((result, i) => result === "gone" && gone.push(batch[i].id));
+        results.forEach((result, i) => {
+          if (result === "gone") gone.push(batch[i].id);
+          else count(counts, batch[i].user_id, result);
+        });
       }),
     );
 

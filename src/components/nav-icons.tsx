@@ -27,6 +27,15 @@ export function FeedIcon({ className = "" }: { className?: string }) {
   );
 }
 
+export function MegaphoneIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 10v4a1 1 0 0 0 1 1h3l9 4V5L8 9H5a1 1 0 0 0-1 1Z" />
+      <path d="M8 15l1.5 4.5h2.5L11 16.3M20 10.5v3" />
+    </svg>
+  );
+}
+
 export function ChatIcon({ className = "" }: { className?: string }) {
   return (
     <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth={1.8}>

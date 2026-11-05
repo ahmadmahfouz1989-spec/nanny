@@ -60,6 +60,9 @@ export function notificationHref(n: NotificationLike): string {
   if (isProviderApproval(n)) return `/u/${n.payload!.profile_id as string}?share=1`;
   const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
   const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
+  if (n.type === "announcement") {
+    return typeof n.payload?.broadcast_id === "string" ? `/announcements/${n.payload.broadcast_id}` : "/announcements";
+  }
   if (ORDER_TYPES.has(n.type)) {
     const orderId = typeof n.payload?.order_id === "string" ? n.payload.order_id : null;
     return orderId ? `/orders/${orderId}` : "/orders";
@@ -124,6 +127,7 @@ const PER_CATEGORY = new Set(["new_match", "profile_approved", "profile_rejected
 export function notificationLabel(n: NotificationLike, t: Translate, categoryName?: (slug: string) => string | null): string {
   const slug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
   const category = slug && categoryName ? categoryName(slug) : null;
+  if (n.type === "announcement" && typeof n.payload?.title === "string") return n.payload.title;
   if (isRiderApproval(n)) return t("profile_approved_rider");
   if (isProviderApproval(n) && category) return t("profile_approved_share", { category });
   if (category && PER_CATEGORY.has(n.type)) return t(`${n.type}_in`, { category });
@@ -163,6 +167,7 @@ const ACTIONS: Record<string, string> = {
   errand_status: "actionOrder",
   errand_cancelled: "actionOrder",
   errand_no_provider: "actionOrder",
+  announcement: "actionAnnouncement",
 };
 
 export function notificationAction(n: NotificationLike, t: Translate): string | null {

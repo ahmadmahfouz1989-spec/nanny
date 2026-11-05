@@ -8,7 +8,7 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import ThemeSwitcher from "@/components/theme-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
-import { AdminIcon, BoxIcon, ChatIcon, FeedIcon, FlagIcon, GridIcon, PhotoIcon, UsersIcon } from "@/components/nav-icons";
+import { AdminIcon, BoxIcon, ChatIcon, FeedIcon, FlagIcon, GridIcon, MegaphoneIcon, PhotoIcon, UsersIcon } from "@/components/nav-icons";
 import { ToastProvider } from "@/components/toast-provider";
 
 type NavItem = {
@@ -62,6 +62,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     { href: "/admin/orders", label: t("navOrders"), Icon: BoxIcon },
     { href: "/admin/users", label: t("navUsers"), Icon: UsersIcon },
     { href: "/admin/feed", label: t("navFeed"), Icon: FeedIcon },
+    { href: "/admin/broadcasts", label: t("navBroadcast"), Icon: MegaphoneIcon },
   ];
 
   const badge = (count: number | undefined) =>
