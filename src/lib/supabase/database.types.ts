@@ -916,6 +916,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"saved_places": {
+                  Row: {
+                    "address": string | null,"id": string,"kind": string,"lat": number,"lng": number,"name": string | null,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "address"?: string | null,"id"?: string,"kind": string,"lat": number,"lng": number,"name"?: string | null,"updated_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "address"?: string | null,"id"?: string,"kind"?: string,"lat"?: number,"lng"?: number,"name"?: string | null,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "saved_places_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"users": {
                   Row: {
                     "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"id": string,"last_login_at": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string

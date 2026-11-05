@@ -55,7 +55,8 @@ export default function PullToRefresh() {
       return false;
     }
     function onStart(e: TouchEvent) {
-      const inDialog = !!(e.target as Element | null)?.closest?.("dialog");
+      // A dialog, or a map (dragging down on it moves the map, not the page).
+      const inDialog = !!(e.target as Element | null)?.closest?.("dialog, [data-no-pull]");
       startY =
         main!.scrollTop <= 0 && e.touches.length === 1 && !inDialog && !insideScrolledBox(e.target)
           ? e.touches[0].clientY

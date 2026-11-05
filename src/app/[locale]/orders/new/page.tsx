@@ -70,7 +70,7 @@ export default async function NewOrderPage({
 
   return (
     <AppShell active="errands">
-      <NewOrderForm prefill={prefill} needsName={!named} />
+      <NewOrderForm prefill={prefill} needsName={!named} userId={user!.id} />
     </AppShell>
   );
 }

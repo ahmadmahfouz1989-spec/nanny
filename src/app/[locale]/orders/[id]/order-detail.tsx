@@ -164,7 +164,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       </div>
 
       {/* From and To (or Where), with the map and directions. */}
-      <OrderPlaces pickup={order.pickup} dropoff={order.dropoff} route={order.route} job={order.category === "maintenance"} />
+      <OrderPlaces pickup={order.pickup} dropoff={order.dropoff} route={order.route} job={order.category === "maintenance"} rider={order.viewer === "provider"} />
 
       {error && <p className="text-sm text-danger">{error}</p>}
 

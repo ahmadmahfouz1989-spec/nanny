@@ -12,13 +12,15 @@ import type { OrderPlace, OrderRoute } from "@/lib/errand-order-view";
 const PICKUP_COLOUR = "#ee4f26";
 const DROPOFF_COLOUR = "#1f8577";
 
+const directionsTo = (p: { lat: number; lng: number }) => `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}&travelmode=driving`;
+
 /**
  * An order's places: From and To, each with its name, address (or only
  * its area, before a rider confirms), instructions and contact, a small
  * map with both pins when Maps is set up, the distance between them, and
  * "Open in Google Maps" for directions from pickup to drop-off.
  */
-export default function OrderPlaces({ pickup, dropoff, route, job = false }: { pickup: OrderPlace; dropoff: OrderPlace | null; route: OrderRoute; job?: boolean }) {
+export default function OrderPlaces({ pickup, dropoff, route, job = false, rider = false }: { pickup: OrderPlace; dropoff: OrderPlace | null; route: OrderRoute; job?: boolean; rider?: boolean }) {
   const t = useTranslations("PlacePicker");
   const showMap = mapsEnabled() && !!pickup.point;
   return (
@@ -28,12 +30,25 @@ export default function OrderPlaces({ pickup, dropoff, route, job = false }: { p
       {dropoff && <PlaceBlock place={dropoff} label={t("to")} colour={DROPOFF_COLOUR} />}
       {(route.km !== null || route.mapsUrl) && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <p className="text-sm text-muted">{route.km !== null && dropoff ? t(route.approximate ? "distanceAbout" : "distance", { km: route.km }) : ""}</p>
-          {route.mapsUrl && (
-            <a href={route.mapsUrl} target="_blank" rel="noreferrer" className={ui.buttonSecondary + " px-4! py-2! text-sm"}>
-              {t("openInMaps")}
-            </a>
-          )}
+          <p className="text-sm text-muted">{route.km !== null && dropoff ? t("distanceAbout", { km: route.km }) : ""}</p>
+          <div className="flex flex-wrap gap-2">
+            {/* For the rider, directions from where they are now. An area isn't a destination. */}
+            {rider && dropoff && pickup.point && (
+              <a href={directionsTo(pickup.point)} target="_blank" rel="noreferrer" className={ui.buttonSecondary + " px-4! py-2! text-sm"}>
+                {t("navigateToPickup")}
+              </a>
+            )}
+            {rider && dropoff?.point && !dropoff.approximate && (
+              <a href={directionsTo(dropoff.point)} target="_blank" rel="noreferrer" className={ui.buttonSecondary + " px-4! py-2! text-sm"}>
+                {t("navigateToDropoff")}
+              </a>
+            )}
+            {route.mapsUrl && (
+              <a href={route.mapsUrl} target="_blank" rel="noreferrer" className={ui.buttonSecondary + " px-4! py-2! text-sm"}>
+                {t("openInMaps")}
+              </a>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -98,7 +113,7 @@ function RouteMap({ pickup, dropoff }: { pickup: OrderPlace; dropoff: OrderPlace
         const { Map, Circle } = (await gm.importLibrary("maps")) as google.maps.MapsLibrary;
         const { Marker } = (await gm.importLibrary("marker")) as google.maps.MarkerLibrary;
         if (!active || !el.current || !pickup.point) return;
-        const map = new Map(el.current, { center: pickup.point, zoom: 14, disableDefaultUI: true, clickableIcons: false, gestureHandling: "cooperative" });
+        const map = new Map(el.current, { center: pickup.point, zoom: 14, disableDefaultUI: true, clickableIcons: false, keyboardShortcuts: false, gestureHandling: "cooperative" });
         const dot = (colour: string) => ({ path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: colour, fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 });
         new Marker({ map, position: pickup.point, icon: dot(PICKUP_COLOUR) });
         const bounds = new gm.LatLngBounds(pickup.point);

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { advanceOrders, DEFAULT_SETTINGS, dispatchOrder, eligibleProviders, myErrandProfiles, nextWaveOrClose } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 import { placeOfPoint } from "@/lib/nearest-place";
+import { rememberRecentPlaces, savedPlaces } from "@/lib/saved-places";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
@@ -230,6 +231,40 @@ describe("errand orders", () => {
       const { data } = await customer.client.from(table).select("*");
       expect(data ?? []).toEqual([]);
     }
+  });
+});
+
+describe("saved places", () => {
+  it("keeps a customer's recent places, without repeats or contact details, and only for them", async () => {
+    const someone = await createUser("places-owner");
+    const other = await createUser("places-other");
+    const shop = { point: { lat: 33.8966, lng: 35.4823 }, address: "Hamra Street", name: "Pharmacy Mazen" };
+    const home = { point: { lat: 33.8869, lng: 35.5203 }, address: "Sassine Square" };
+    await rememberRecentPlaces(admin, someone.id, [shop, home]);
+    // The same shop again (a few metres off) doesn't add a second one.
+    await rememberRecentPlaces(admin, someone.id, [{ ...shop, point: { lat: 33.89661, lng: 35.48231 } }]);
+    let mine = await savedPlaces(admin, someone.id);
+    expect(mine.filter((p) => p.kind === "recent")).toHaveLength(2);
+    expect(mine.some((p) => p.name === "Pharmacy Mazen")).toBe(true);
+    expect(await savedPlaces(admin, other.id)).toEqual([]);
+
+    // Only the last 5.
+    for (let i = 0; i < 7; i++) await rememberRecentPlaces(admin, someone.id, [{ point: { lat: 33 + i / 10, lng: 35.5 }, address: `Place ${i}` }]);
+    mine = await savedPlaces(admin, someone.id);
+    expect(mine.filter((p) => p.kind === "recent")).toHaveLength(5);
+
+    // Home comes first and isn't repeated as a recent place.
+    await admin.from("saved_places").insert({ user_id: someone.id, kind: "home", lat: 34.5, lng: 35.9, address: "My home" });
+    await rememberRecentPlaces(admin, someone.id, [{ point: { lat: 34.5, lng: 35.9 }, address: "My home" }]);
+    mine = await savedPlaces(admin, someone.id);
+    expect(mine[0]!.kind).toBe("home");
+    expect(mine.filter((p) => p.address === "My home")).toHaveLength(1);
+
+    // One Home per person, and no client can read the table.
+    const { error } = await admin.from("saved_places").insert({ user_id: someone.id, kind: "home", lat: 34, lng: 35 });
+    expect(error?.code).toBe("23505");
+    const { data } = await someone.client.from("saved_places").select("*");
+    expect(data ?? []).toEqual([]);
   });
 });
 

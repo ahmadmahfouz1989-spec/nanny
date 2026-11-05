@@ -6,6 +6,7 @@ import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
 import { advanceOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
 import { placeOfPoint } from "@/lib/nearest-place";
+import { rememberRecentPlaces } from "@/lib/saved-places";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { orderSummaries } from "@/lib/errand-order-view";
 
@@ -213,6 +214,13 @@ export async function POST(request: Request) {
   if (error || !order) return NextResponse.json({ error: error?.message ?? "Could not place the order" }, { status: 400 });
 
   await logOrderEvent(db, order.id, { userId: user.id, role: "seeker" }, "created");
+  // One tap next time: the places of this order (never its contact details).
+  if (!job) {
+    await rememberRecentPlaces(db, user.id, [
+      { point: o.pickupPoint, address: o.pickupAddress, name: o.pickupPlaceName },
+      { point: o.dropoffPoint, address: o.dropoffAddress, name: o.dropoffPlaceName },
+    ]);
+  }
   const actor = { userId: user.id, role: "seeker" as const };
   // A delivery goes to its first wave; with nobody to send it to it closes at
   // once (no notification: the customer is looking at the answer on screen).
