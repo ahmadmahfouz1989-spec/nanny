@@ -301,6 +301,7 @@ type Settings = {
   radiusStepKm: number;
   maxRadiusKm: number;
   maxActiveOrders: number;
+  nearbyFallbackKm: number;
 };
 
 // Each setting: its label key, limits and step. Grouped as the dashboard shows them.
@@ -320,6 +321,7 @@ const SETTING_GROUPS: { title: string; fields: { key: keyof Settings; label: str
       { key: "initialRadiusKm", label: "initialRadiusKm", min: 0.5, max: 300, step: 0.5 },
       { key: "radiusStepKm", label: "radiusStepKm", min: 0.5, max: 300, step: 0.5 },
       { key: "maxRadiusKm", label: "maxRadiusKm", min: 0.5, max: 300, step: 0.5 },
+      { key: "nearbyFallbackKm", label: "nearbyFallbackKm", min: 0, max: 300, step: 0.5 },
     ],
   },
   {

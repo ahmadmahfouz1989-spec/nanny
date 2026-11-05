@@ -10,6 +10,7 @@ import MatchCard, { type Match } from "./match-card";
 import MatchFilters from "./match-filters";
 import { ui } from "@/lib/ui";
 import { Link } from "@/i18n/navigation";
+import { ridersWorkFromOrders } from "@/lib/orders-only";
 import VerifiedCheck from "@/components/verified-check";
 
 const PAGE_SIZE = 20;
@@ -172,6 +173,21 @@ export default function GenericResults({
     setMinYearsExperience("");
     setSearchInput("");
     setSearch("");
+  }
+
+  if (ridersWorkFromOrders(categorySlug, role ?? myRole) && !targetMatchId) {
+    return (
+      <div className="max-w-2xl w-full mx-auto px-6 py-8">
+        {header}
+        <section className={ui.card + " mt-4 flex flex-col items-start gap-3 p-5"}>
+          <h1 className="font-display text-xl font-bold">{t("ridersTitle")}</h1>
+          <p className="text-sm text-muted">{t("ridersBody")}</p>
+          <Link href="/orders?tab=provider" className={ui.buttonPrimary}>
+            {t("ridersOpen")}
+          </Link>
+        </section>
+      </div>
+    );
   }
 
   return (

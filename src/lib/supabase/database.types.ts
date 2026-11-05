@@ -230,14 +230,14 @@ isOneToOne: false
                   ]
                 },"errand_settings": {
                   Row: {
-                    "choose_seconds": number,"confirm_seconds": number,"id": boolean,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
+                    "choose_seconds": number,"confirm_seconds": number,"id": boolean,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Update: {
-                    "choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Relationships: [
                     {

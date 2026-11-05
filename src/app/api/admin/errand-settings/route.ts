@@ -17,6 +17,7 @@ const toInput = (s: ErrandSettings): Required<SettingsInput> => ({
   radiusStepKm: s.radius_step_km,
   maxRadiusKm: s.max_radius_km,
   maxActiveOrders: s.max_active_orders,
+  nearbyFallbackKm: s.nearby_fallback_km,
 });
 
 /** The Delivery & Errands (and repair quotes) matching settings, changed without a code deploy. */
@@ -48,6 +49,7 @@ export async function PUT(request: Request) {
       radius_step_km: v.radiusStepKm,
       max_radius_km: v.maxRadiusKm,
       max_active_orders: v.maxActiveOrders,
+      nearby_fallback_km: v.nearbyFallbackKm,
       updated_at: new Date().toISOString(),
       updated_by: admin.userId,
     })

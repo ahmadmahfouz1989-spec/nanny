@@ -87,6 +87,8 @@ export type OrderView = {
   scheduledAt: string | null;
   budgetUsd: number | null;
   status: OrderStatus;
+  /** How many providers were ever asked: none means nobody heard about it. */
+  sentTo: number;
   statusChangedAt: string;
   createdAt: string;
   openUntil: string;
@@ -276,6 +278,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     scheduledAt: order.scheduled_at,
     budgetUsd: order.budget_usd,
     status: order.status as OrderStatus,
+    sentTo: all.length,
     statusChangedAt: order.status_changed_at,
     createdAt: order.created_at,
     openUntil: order.open_until,

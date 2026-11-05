@@ -126,6 +126,7 @@ export const settingsSchema = z
     radiusStepKm: z.number().positive().max(300),
     maxRadiusKm: z.number().positive().max(300),
     maxActiveOrders: z.number().int().min(1).max(10),
+    nearbyFallbackKm: z.number().min(0).max(300),
   })
   .refine((s) => s.maxRadiusKm >= s.initialRadiusKm, { path: ["maxRadiusKm"], message: "The widest radius must be at least the starting radius" });
 

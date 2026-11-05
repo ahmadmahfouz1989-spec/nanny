@@ -801,7 +801,10 @@
     "emptyWiden": "Add areas or days",
     "retry": "Try again",
     "whyMatch": "Why this match",
-    "safetyTip": "Stay safe: agree on the work, the hours and the price here in the chat first. Share your exact address only once you've agreed, and report anyone who asks for money up front."
+    "safetyTip": "Stay safe: agree on the work, the hours and the price here in the chat first. Share your exact address only once you've agreed, and report anyone who asks for money up front.",
+    "ridersTitle": "Delivery requests arrive in Orders",
+    "ridersBody": "Turn on Available when you're working. When someone nearby places an order, you'll be notified and can send your offer, with the map and the places.",
+    "ridersOpen": "Open my orders"
   },
   "Featured": {
     "title": "Get Verified",
@@ -1111,7 +1114,8 @@
     "broadcastRecipient_sending": "Sending",
     "broadcastRecipient_sent": "Sent",
     "broadcastRecipient_no_device": "No device",
-    "broadcastRecipient_failed": "Failed"
+    "broadcastRecipient_failed": "Failed",
+    "nearbyFallbackKm": "Nobody covering the district: ask riders within (km, 0 = off)"
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",
@@ -2422,7 +2426,6 @@
     "status_completed": "Completed",
     "status_cancelled": "Cancelled",
     "status_no_provider": "No provider available",
-    "noProviderTitle": "No Provider Available at the moment. Please try again later.",
     "tryAgain": "Try again",
     "offers": "Offers",
     "waitingOffers": "Sent to {count, plural, one {# provider} other {# providers}} near you. Offers appear here as they come in.",
@@ -2542,7 +2545,12 @@
     "mapWhere": "Where",
     "mapPrivacyHint": "Riders asked see the pickup and the drop-off's area. The exact drop-off and contact numbers go only to the rider who confirms.",
     "describeNeed": "Tell providers what you need (at least 3 characters).",
-    "whatNeededRidePlaceholder": "e.g. One passenger with a small bag"
+    "whatNeededRidePlaceholder": "e.g. One passenger with a small bag",
+    "noProviderNobodyTitle": "This request wasn't sent to anyone.",
+    "noProviderNobodyBody": "No provider near this pickup is available right now, so nobody was contacted. Try again in a little while, or message a provider directly.",
+    "noProviderAskedTitle": "{count, plural, one {We asked 1 provider, but they couldn't take it.} other {We asked # providers, but none could take it.}}",
+    "noProviderAskedBody": "Try again in a little while, or message a provider directly.",
+    "noProviderSeeProviders": "See providers"
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

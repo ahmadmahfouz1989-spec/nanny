@@ -229,10 +229,16 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   if (order.status === "no_provider") {
     return (
       <div className={ui.card + " flex flex-col items-start gap-3 p-4"}>
-        <p className="font-medium text-ink">{t("noProviderTitle")}</p>
-        <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("retry")}>
-          {t("tryAgain")}
-        </button>
+        <p className="font-medium text-ink">{order.sentTo === 0 ? t("noProviderNobodyTitle") : t("noProviderAskedTitle", { count: order.sentTo })}</p>
+        <p className="text-sm text-muted">{order.sentTo === 0 ? t("noProviderNobodyBody") : t("noProviderAskedBody")}</p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("retry")}>
+            {t("tryAgain")}
+          </button>
+          <Link href={`/browse/${order.category}`} className={ui.buttonSecondary}>
+            {t("noProviderSeeProviders")}
+          </Link>
+        </div>
       </div>
     );
   }

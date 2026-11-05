@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withPlaceNames } from "@/lib/place-names";
 import { createClient } from "@/lib/supabase/server";
+import { ridersWorkFromOrders } from "@/lib/orders-only";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser } from "@/lib/ratings";
@@ -64,6 +65,10 @@ export async function GET(request: Request) {
   // notification's target card, returned on its own even when the
   // viewer's current filters or page would hide it.
   const matchId = searchParams.get("matchId");
+  // An old notification's link (matchId) still opens that one card.
+  if (ridersWorkFromOrders(categorySlug, myProfile.role) && !matchId) {
+    return NextResponse.json({ myRole: myProfile.role, results: [], total: 0 });
+  }
   const minYears = Number(searchParams.get("minYearsExperience"));
   const words = searchWords(searchParams.get("q")?.slice(0, 100) ?? "");
   const page = matchId ? 1 : Math.max(1, Number(searchParams.get("page") ?? 1));
