@@ -6,7 +6,9 @@
 export const MAX_RECORDING_SECONDS = 120;
 export const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_AUDIO_TYPES = ["audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg"];
-export const AUDIO_MIME_CANDIDATES = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4"];
+// MP4 first: every phone plays it back. Newer iPhones can record WebM too but
+// may not play it, and a voice note has to play on the other person's phone.
+export const AUDIO_MIME_CANDIDATES = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm"];
 export const SIGNED_URL_TTL_SECONDS = 3600;
 
 // A voice note still needs *something* in the not-null, 1-2000-char body

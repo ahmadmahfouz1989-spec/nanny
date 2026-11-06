@@ -1,5 +1,6 @@
 "use client";
 
+import VoiceNotePlayer from "./voice-note-player";
 import { useTranslations } from "next-intl";
 
 export type ChatMessageData = {
@@ -41,7 +42,7 @@ export default function ChatMessage({
       >
         {m.audio_path ? (
           m.audioUrl ? (
-            <audio controls preload="metadata" src={m.audioUrl} className="h-9 w-56 max-w-full" />
+            <VoiceNotePlayer src={m.audioUrl} durationSeconds={m.audio_duration_seconds} own={own} />
           ) : (
             <span className="text-xs opacity-80 px-1.5">{t("voiceNoteLoading")}</span>
           )
