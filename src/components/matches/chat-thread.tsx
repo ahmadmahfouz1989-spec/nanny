@@ -390,7 +390,7 @@ export default function ChatThread({
   const full = variant === "full";
 
   return (
-    <div className={full ? "flex flex-col h-full" : "mt-4 rounded-xl border border-border bg-background"}>
+    <div className={full ? "flex flex-1 min-h-0 flex-col" : "mt-4 rounded-xl border border-border bg-background"}>
       {!full && (
         <p className="px-3 py-2 text-xs font-semibold uppercase tracking-wide text-muted border-b border-border">
           {t("chatTitle")}
