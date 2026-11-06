@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Webhook } from "standardwebhooks";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendEmail, signupConfirmationEmail, passwordRecoveryEmail, genericAuthEmail } from "@/lib/email";
+import { sendEmail, signupConfirmationEmail, passwordRecoveryEmail, genericAuthEmail, addEmailConfirmationEmail } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
 
 // Configured as Supabase's "Send Email" Auth Hook — once enabled, Supabase
@@ -13,7 +13,8 @@ import { getPublicOrigin } from "@/lib/site-url";
 const hookSecret = (process.env.SUPABASE_AUTH_HOOK_SECRET ?? "").replace("v1,whsec_", "");
 
 interface HookPayload {
-  user: { email: string };
+  // A WhatsApp account adding an email has none yet: the address is in new_email.
+  user: { id: string; email?: string; new_email?: string };
   email_data: {
     /** The 6-digit code (same one-time token as token_hash, typed instead of clicked). */
     token?: string;
@@ -53,31 +54,40 @@ export async function POST(request: Request) {
   // token and logs the user in — so clicking the link works even when it's
   // opened on a different device from the one that signed up.
   // A confirmed sign-up starts at the welcome question.
-  const dest = email_action_type === "recovery" ? "/reset-password" : "/welcome";
+  const dest = email_action_type === "recovery" ? "/reset-password" : email_action_type === "email_change" ? "/settings" : "/welcome";
+  const addingEmail = email_action_type === "email_change" && !user.email;
+  const recipient = addingEmail ? user.new_email : user.email;
+  if (!recipient) {
+    console.error(`[email-hook] no recipient for action=${email_action_type}`);
+    return NextResponse.json({ error: { http_code: 400, message: "No email address to send to" } }, { status: 400 });
+  }
+
   const verifyUrl = `${origin}/auth/confirm?token_hash=${token_hash}&type=${email_action_type}&next=${encodeURIComponent(dest)}`;
 
   // Never log the code, token_hash or the full verifyUrl -- either one is a live,
   // unexpired credential (signup confirmation or password recovery) that
   // verifyOtp() accepts on its own, so anyone with log access could use it
   // to complete the flow as that user.
-  console.log(`[email-hook] action=${email_action_type} recipient=${user.email}`);
+  console.log(`[email-hook] action=${email_action_type} recipient=${recipient}`);
 
   const admin = createAdminClient();
   const { data: existing } = await admin
     .from("users")
     .select("preferred_language")
-    .eq("email", user.email)
+    .eq("id", user.id)
     .maybeSingle();
   const lang = existing?.preferred_language;
 
   const { subject, html } =
-    email_action_type === "signup"
-      ? signupConfirmationEmail(lang, verifyUrl, token)
-      : email_action_type === "recovery"
+    addingEmail
+      ? addEmailConfirmationEmail(lang, verifyUrl, token)
+      : email_action_type === "signup"
+        ? signupConfirmationEmail(lang, verifyUrl, token)
+        : email_action_type === "recovery"
         ? passwordRecoveryEmail(lang, verifyUrl)
-        : genericAuthEmail(lang, email_action_type, verifyUrl);
+          : genericAuthEmail(lang, email_action_type, verifyUrl);
 
-  const delivered = await sendEmail(user.email, subject, html);
+  const delivered = await sendEmail(recipient, subject, html);
 
   if (!delivered) {
     // Supabase's documented Auth Hook error shape: a non-2xx response here
@@ -86,7 +96,7 @@ export async function POST(request: Request) {
     // call succeeding while the user never receives anything. This only
     // covers auth (signup/recovery) email -- activity emails elsewhere in
     // the app already treat a failed send as best-effort by design.
-    console.error(`[email-hook] delivery failed for action=${email_action_type} recipient=${user.email}`);
+    console.error(`[email-hook] delivery failed for action=${email_action_type} recipient=${recipient}`);
     return NextResponse.json(
       { error: { http_code: 500, message: "Failed to send authentication email" } },
       { status: 500 },

@@ -137,6 +137,23 @@ describe("one account, one identity", () => {
       expect((await admin.from("users").select("email").eq("id", user.id).single()).data!.email).toBe(email);
     });
 
+    it("an email added to a phone account reaches users only once it's confirmed", async () => {
+      const phone = `9613${digits8()}`;
+      const { data: made, error } = await admin.auth.admin.createUser({ phone, phone_confirm: true });
+      expect(error).toBeNull();
+      const id = made.user!.id;
+      const email = `added-${digits8()}@test.local`;
+      // Two steps, the way Supabase Auth confirms an email change.
+      await admin.auth.admin.updateUserById(id, { email, email_confirm: false });
+      expect((await admin.from("users").select("email").eq("id", id).single()).data!.email).toBeNull();
+      await admin.auth.admin.updateUserById(id, { email_confirm: true });
+      const { data } = await admin.from("users").select("email, email_verified_at, phone").eq("id", id).single();
+      expect(data!.email).toBe(email);
+      expect(data!.email_verified_at).not.toBeNull();
+      expect(data!.phone).toBe(phone);
+      await admin.auth.admin.deleteUser(id);
+    });
+
     it("the owner still can't write their own phone, email or verification", async () => {
       const user = await createUser("identity-guard");
       for (const change of [{ phone: "96170000000" }, { email: "x@test.local" }, { phone_verified_at: new Date().toISOString() }]) {

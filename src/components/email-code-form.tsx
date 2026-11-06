@@ -9,7 +9,8 @@ import { ui } from "@/lib/ui";
 
 const RESEND_WAIT_S = 30;
 // Must match Supabase's "Email OTP length" (Auth settings); 6 unless set.
-const CODE_LENGTH = Number(process.env.NEXT_PUBLIC_EMAIL_OTP_LENGTH) || 6;
+export const EMAIL_CODE_LENGTH = Number(process.env.NEXT_PUBLIC_EMAIL_OTP_LENGTH) || 6;
+const CODE_LENGTH = EMAIL_CODE_LENGTH;
 
 /**
  * "Enter the 6-digit code we emailed you" -- finishing an email sign-up

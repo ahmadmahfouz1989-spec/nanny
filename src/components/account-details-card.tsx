@@ -6,6 +6,7 @@ import { useRouter } from "@/i18n/navigation";
 import { request } from "@/lib/request";
 import { ui } from "@/lib/ui";
 import AddPhoneForm from "@/components/add-phone-form";
+import AddEmailForm from "@/components/add-email-form";
 import { WHATSAPP_AUTH_ENABLED } from "@/components/whatsapp-auth";
 
 /** The one set of personal details behind all of someone's profiles. */
@@ -16,6 +17,7 @@ export default function AccountDetailsCard({ name, email, phone }: { name: strin
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const [addingPhone, setAddingPhone] = useState(false);
+  const [addingEmail, setAddingEmail] = useState(false);
 
   const trimmed = value.trim();
   const changed = trimmed !== (name ?? "");
@@ -62,14 +64,28 @@ export default function AccountDetailsCard({ name, email, phone }: { name: strin
         {message && <p className={`mt-2 rounded-lg px-3 py-2 text-sm ${message.ok ? "bg-surface-sunken text-ink" : "bg-danger-soft text-danger"}`}>{message.text}</p>}
       </form>
 
-      {email && (
-        <div>
-          <p className={label}>{t("email")}</p>
+      <div id="email">
+        <p className={label}>{t("email")}</p>
+        {email ? (
           <p className="text-[15px] text-ink break-all">
             <bdi dir="ltr">{email}</bdi>
           </p>
-        </div>
-      )}
+        ) : addingEmail ? (
+          <AddEmailForm
+            onDone={() => {
+              setAddingEmail(false);
+              router.refresh();
+            }}
+          />
+        ) : (
+          <>
+            <p className="text-xs text-muted">{t("addEmailWhy")}</p>
+            <button type="button" onClick={() => setAddingEmail(true)} className={ui.buttonSecondary + " mt-2"}>
+              {t("addEmail")}
+            </button>
+          </>
+        )}
+      </div>
 
       {(phone || WHATSAPP_AUTH_ENABLED) && (
         <div id="phone">

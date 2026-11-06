@@ -258,6 +258,19 @@ export function signupConfirmationEmail(lang: Lang, confirmUrl: string, code?: s
   };
 }
 
+export function addEmailConfirmationEmail(lang: Lang, confirmUrl: string, code?: string) {
+  const safeCode = code && /^\d{4,10}$/.test(code) ? code : null;
+  const codeBlock = safeCode ? `<p style="font-size:28px;font-weight:700;letter-spacing:6px">${safeCode}</p>` : "";
+  return {
+    subject: safeCode ? pick(lang, `${safeCode} is your ouiKnow code`, `${safeCode} هو رمزك على ouiKnow`) : pick(lang, "Confirm your email", "أكّد بريدك الإلكتروني"),
+    html: pick(
+      lang,
+      `<p>Someone asked to add this email to an ouiKnow account.</p>${codeBlock}<p>Type this code in Settings to confirm it, or use the button below.</p><p><a href="${confirmUrl}">Confirm email</a></p><p>If this wasn't you, ignore this email and nothing will change.</p>`,
+      `<p>طلب أحدهم إضافة هذا البريد إلى حساب على ouiKnow.</p>${codeBlock}<p>اكتب هذا الرمز في الإعدادات لتأكيده، أو استخدم الزر أدناه.</p><p><a href="${confirmUrl}">تأكيد البريد الإلكتروني</a></p><p>إذا لم تكن أنت، تجاهل هذا البريد ولن يتغيّر شيء.</p>`,
+    ),
+  };
+}
+
 export function passwordRecoveryEmail(lang: Lang, resetUrl: string) {
   return {
     subject: pick(lang, "Reset your password", "إعادة تعيين كلمة المرور"),
