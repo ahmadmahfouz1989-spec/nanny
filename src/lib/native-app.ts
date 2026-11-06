@@ -14,14 +14,14 @@ type PushPlugin = {
   requestPermissions(): Promise<{ receive: PermissionState }>;
   register(): Promise<void>;
   unregister(): Promise<void>;
-  addListener(event: "registration", cb: (t: { value: string }) => void): Promise<Listener>;
-  addListener(event: "registrationError", cb: (e: unknown) => void): Promise<Listener>;
+  addListener(event: "registration", cb: (t: { value: string }) => void): Listener | Promise<Listener>;
+  addListener(event: "registrationError", cb: (e: unknown) => void): Listener | Promise<Listener>;
   addListener(
     event: "pushNotificationActionPerformed",
     cb: (a: { notification: { data?: Record<string, unknown> } }) => void,
-  ): Promise<Listener>;
+  ): Listener | Promise<Listener>;
 };
-type AppPlugin = { addListener(event: "appUrlOpen", cb: (e: { url: string }) => void): Promise<Listener> };
+type AppPlugin = { addListener(event: "appUrlOpen", cb: (e: { url: string }) => void): Listener | Promise<Listener> };
 type BrowserPlugin = { open(o: { url: string }): Promise<void>; close(): Promise<void> };
 type HapticsPlugin = {
   impact(o: { style: "LIGHT" | "MEDIUM" | "HEAVY" }): Promise<void>;
@@ -136,10 +136,11 @@ export async function enableNativePush(locale: string): Promise<PermissionState 
   if (receive !== "granted") return receive;
 
   const token = await new Promise<string | null>((resolve) => {
-    const listeners: Promise<Listener>[] = [];
+    // Capacitor's bridge hands back the listener itself, not a promise of it.
+    const listeners: (Listener | Promise<Listener>)[] = [];
     const done = (value: string | null) => {
-      listeners.forEach((l) => l.then((h) => h.remove()).catch(() => {}));
       resolve(value);
+      listeners.forEach((l) => void Promise.resolve(l).then((h) => h.remove()).catch(() => {}));
     };
     listeners.push(push.addListener("registration", (t) => done(t.value)));
     listeners.push(push.addListener("registrationError", () => done(null)));

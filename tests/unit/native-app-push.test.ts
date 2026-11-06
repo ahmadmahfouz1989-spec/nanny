@@ -9,7 +9,9 @@ function setup({ saveStatus = () => 200 }: { saveStatus?: () => number } = {}) {
   const push = {
     checkPermissions: async () => ({ receive: "granted" }),
     requestPermissions: async () => ({ receive: "granted" }),
-    addListener: async (event: string, cb: (t: { value: string }) => void) => {
+    // Like Capacitor's real bridge (native-bridge.js, cap.addListener): a plain
+    // object, not a promise. The bridge doesn't catch what a callback throws.
+    addListener: (event: string, cb: (t: { value: string }) => void) => {
       listeners.set(event, cb);
       return { remove: async () => {} };
     },
