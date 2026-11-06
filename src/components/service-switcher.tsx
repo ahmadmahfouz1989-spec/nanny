@@ -1,14 +1,14 @@
 import { getLocale, getTranslations } from "next-intl/server";
-import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
-import CategoryIcon from "@/components/category-icon";
+import ServiceChips from "@/components/service-chips";
 
 /**
  * The services you're in, as chips at the top of Matches, so the tab
  * says which service it's showing and switching to another is one tap
  * (not a trip through the menu). The current one is highlighted; "Add"
  * leads to the rest. Nothing is shown when you're only in one service and
- * it's this one -- the page title already names it.
+ * it's this one -- the page title already names it. Also on a service's
+ * browse page, so looking at a new one never loses your way back.
  */
 export default async function ServiceSwitcher({ current }: { current: string }) {
   const supabase = await createClient();
@@ -29,33 +29,15 @@ export default async function ServiceSwitcher({ current }: { current: string }) 
     .map((p) => p.categories)
     .filter((c): c is NonNullable<typeof c> => !!c && !seen.has(c.slug) && !!seen.add(c.slug))
     .sort((a, b) => a.sort_order - b.sort_order);
-  if (services.length < 2) return null;
+  // Just the one, and you're in it: the page title already names it.
+  if (services.length === 0 || (services.length === 1 && services[0].slug === current)) return null;
 
   return (
-    <nav aria-label={t("yourServices")} className="-mx-6 mb-5 flex gap-2 overflow-x-auto px-6 pb-1 [scrollbar-width:none]">
-      {services.map((c) => {
-        const active = c.slug === current;
-        return (
-          <Link
-            key={c.slug}
-            href={`/categories/${c.slug}/dashboard`}
-            replace
-            aria-current={active ? "page" : undefined}
-            className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-medium transition-colors ${
-              active ? "border-ink bg-ink text-background" : "border-border bg-surface text-ink/80 hover:border-border-strong"
-            }`}
-          >
-            <CategoryIcon name={c.icon} className="h-4 w-4" />
-            {locale === "ar" ? c.name_ar : c.name_en}
-          </Link>
-        );
-      })}
-      <Link
-        href="/categories"
-        className="flex shrink-0 items-center gap-1 rounded-full border border-dashed border-border-strong px-3.5 py-2 text-sm font-medium text-muted hover:text-ink"
-      >
-        + {t("addService")}
-      </Link>
-    </nav>
+    <ServiceChips
+      current={current}
+      label={t("yourServices")}
+      addLabel={t("addService")}
+      services={services.map((c) => ({ slug: c.slug, icon: c.icon, name: locale === "ar" ? c.name_ar : c.name_en }))}
+    />
   );
 }

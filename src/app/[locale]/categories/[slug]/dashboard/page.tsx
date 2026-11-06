@@ -9,6 +9,8 @@ import { ui } from "@/lib/ui";
 import { isCategorySlug } from "@/lib/category-slugs";
 import RememberCategory from "@/components/remember-category";
 import { REGION_COOKIE } from "@/lib/region";
+import RoleBar from "@/components/role-bar";
+import { lastRoleCookie } from "@/lib/last-category";
 import ServiceSwitcher from "@/components/service-switcher";
 import OrdersEntry, { JobsEntry } from "@/components/orders/orders-entry";
 import ShareProfileButton from "@/components/share-profile-button";
@@ -55,7 +57,9 @@ export default async function CategoryDashboardPage({
   // /api/generic-profile/claim) -- treat it the same as no profile at all,
   // not as something actually submitted and awaiting review.
   const myProfiles = (profiles ?? []).filter((p) => p.status !== "draft");
-  const region = (await cookies()).get(REGION_COOKIE)?.value ?? "";
+  const cookieStore = await cookies();
+  const region = cookieStore.get(REGION_COOKIE)?.value ?? "";
+  const rememberedRole = cookieStore.get(lastRoleCookie(slug))?.value;
   const categoryName = locale === "ar" ? category.name_ar : category.name_en;
   // Delivery & Errands also has orders: ask for one, get offers nearby.
   // An approved provider here: a nudge to share their profile, where they
@@ -75,12 +79,14 @@ export default async function CategoryDashboardPage({
   ) : null;
 
   // Home Maintenance has quotes: describe a job, get prices from pros nearby.
+  const entry = slug === "errands" ? <OrdersEntry /> : slug === "maintenance" ? <JobsEntry /> : null;
+  const onlyRole = myProfiles.length === 1 ? (myProfiles[0]!.role as "seeker" | "provider") : null;
   const switcher = (
-    <div className="flex flex-col gap-3">
+    <div className="mb-4 flex flex-col gap-3">
       <ServiceSwitcher current={slug} />
-      {slug === "errands" && <OrdersEntry />}
-      {slug === "maintenance" && <JobsEntry />}
-      {shareNudge}
+      {onlyRole && <RoleBar slug={slug} active={onlyRole} roles={[onlyRole]} />}
+      {entry}
+      {onlyRole === "provider" && shareNudge}
     </div>
   );
 
@@ -119,12 +125,16 @@ export default async function CategoryDashboardPage({
         <RememberCategory slug={slug} />
         <CategoryDashboardTabs
           categorySlug={slug}
-          profiles={myProfiles.map((p) => ({ role: p.role as "seeker" | "provider", moderationStatus: p.moderation_status }))}
+          key={slug}
+          profiles={[...myProfiles].sort((a, b) => a.role.localeCompare(b.role)).map((p) => ({ role: p.role as "seeker" | "provider", moderationStatus: p.moderation_status }))}
+          initialRole={rememberedRole === "seeker" || rememberedRole === "provider" ? rememberedRole : null}
           targetMatchId={targetMatchId}
           targetRole={targetRole}
           initialGovernorateId={region}
           categoryName={categoryName}
-          header={switcher}
+          header={<ServiceSwitcher current={slug} />}
+          extras={entry}
+          providerExtras={shareNudge}
         />
       </AppShell>
     );

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import GenericResults from "@/components/matches/generic-results";
+import RoleBar from "@/components/role-bar";
+import { lastRole, rememberRole } from "@/lib/last-category";
 import { ui } from "@/lib/ui";
 import { MATCH_TARGET_EVENT, type MatchTargetDetail } from "@/lib/match-target";
 
@@ -26,14 +28,22 @@ export default function CategoryDashboardTabs({
   profiles,
   targetMatchId = null,
   targetRole = null,
+  initialRole = null,
   initialGovernorateId = "",
   categoryName,
   header,
+  extras,
+  providerExtras,
 }: {
   categorySlug: string;
   categoryName?: string;
   // Shown above everything (the service switcher).
   header?: React.ReactNode;
+  // Under the role tabs: for this service, and for the provider side only.
+  extras?: React.ReactNode;
+  providerExtras?: React.ReactNode;
+  // The side last looked at, read from its cookie on the server.
+  initialRole?: "seeker" | "provider" | null;
   initialGovernorateId?: string;
   profiles: ProfileSummary[];
   // From a match notification: the match to land on, and which of this
@@ -42,7 +52,8 @@ export default function CategoryDashboardTabs({
   targetRole?: "seeker" | "provider" | null;
 }) {
   const t = useTranslations("Dashboard");
-  const [activeRole, setActiveRole] = useState(targetRole ?? profiles[0]!.role);
+  // Going back shows a saved copy of this page: the cookie is fresher than its prop.
+  const [activeRole, setActiveRole] = useState(() => targetRole ?? (typeof document !== "undefined" ? lastRole(categorySlug) : null) ?? initialRole ?? profiles[0]!.role);
 
   // A notification clicked while already here only changes these props on
   // the same mounted component -- follow it to the right tab (adjusting
@@ -64,18 +75,20 @@ export default function CategoryDashboardTabs({
   }, [targetMatchId, targetRole]);
   const active = profiles.find((p) => p.role === activeRole) ?? profiles[0]!;
 
-  const tabBar = (
-    <div className="flex items-center gap-1 rounded-xl bg-surface-sunken p-1 mb-4">
-      {profiles.map((p) => (
-        <button
-          key={p.role}
-          type="button"
-          onClick={() => setActiveRole(p.role)}
-          className={ui.toggleTab(p.role === active.role)}
-        >
-          {p.role === "provider" ? t("roleProvider") : t("roleSeeker")}
-        </button>
-      ))}
+  const top = (
+    <div className="mb-4 flex flex-col gap-3">
+      {header}
+      <RoleBar
+        slug={categorySlug}
+        active={active.role}
+        roles={profiles.map((p) => p.role)}
+        onSwitch={(role) => {
+          setActiveRole(role);
+          rememberRole(categorySlug, role);
+        }}
+      />
+      {extras}
+      {active.role === "provider" && providerExtras}
     </div>
   );
 
@@ -86,8 +99,7 @@ export default function CategoryDashboardTabs({
     return (
       <>
         <div className="max-w-2xl w-full mx-auto px-6 pt-8">
-          {header}
-          {tabBar}
+          {top}
         </div>
         {/* Keyed by role: GenericResults owns its own filter state
             (governorate/day/minYearsExperience), and switching tabs must
@@ -109,8 +121,7 @@ export default function CategoryDashboardTabs({
 
   return (
     <div className="max-w-lg w-full mx-auto px-6 py-8">
-      {header}
-      {tabBar}
+      {top}
       <div className={ui.card + " overflow-hidden"}>
         <div
           className={`flex items-center justify-between px-6 py-4 ${

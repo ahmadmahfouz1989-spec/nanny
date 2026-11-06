@@ -6,6 +6,7 @@ import { Link, redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import AppShell from "@/components/app-shell";
+import ServiceSwitcher from "@/components/service-switcher";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import RatingStars from "@/components/matches/rating-stars";
 import { isCategorySlug } from "@/lib/category-slugs";
@@ -102,7 +103,8 @@ export default async function BrowsePage({ params, searchParams }: Props) {
 
   return (
     <AppShell active={slug as never}>
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-4 py-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 px-6 py-6">
+        <ServiceSwitcher current={slug} />
         <div>
           <h1 className="font-display text-2xl font-bold text-ink">{t("title", { service: name })}</h1>
           <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
