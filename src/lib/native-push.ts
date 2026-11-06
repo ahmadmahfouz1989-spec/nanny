@@ -95,7 +95,11 @@ export async function sendApns(tokens: string[], message: NativeMessage): Promis
                   return body;
                 }
               })();
-              if (status === 410 || reason === "BadDeviceToken" || reason === "Unregistered") return resolve("gone");
+              if (status === 410 || reason === "BadDeviceToken" || reason === "Unregistered") {
+                // BadDeviceToken is also a build run from Xcode, whose tokens only work on the sandbox.
+                console.warn("[native-push] apns token dropped:", status, reason);
+                return resolve("gone");
+              }
               console.error("[native-push] apns send failed:", status, reason);
               resolve("failed");
             });

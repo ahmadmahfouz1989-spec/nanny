@@ -250,7 +250,7 @@ export default async function AppShell({
 
             <InstallPrompt />
             <PushSync />
-            <PushPrompt />
+            {user && <PushPrompt />}
 
             <main id={APP_MAIN_ID} className="flex-1 min-w-0 h-dvh overflow-y-auto overflow-x-hidden pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
               {/* No entrance animation here: sliding every page in made moving

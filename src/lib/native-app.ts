@@ -191,8 +191,29 @@ export async function enableNativePush(locale: string): Promise<PermissionState 
   return receive;
 }
 
+// Signing in and out don't reload the page, so this outlives both.
+let registeredLocale: string | null = null;
+
+/**
+ * Keeps this install's token on the signed-in account. Pages call it freely:
+ * it runs once per launch and language, and tries again on the next page if
+ * the token didn't get saved.
+ */
+export function registerNativePushOnce(locale: string) {
+  if (registeredLocale === locale || nativePushOptedOut()) return;
+  registeredLocale = locale;
+  const retry = () => {
+    if (registeredLocale === locale) registeredLocale = null;
+  };
+  enableNativePush(locale).then(() => {
+    if (!storedToken()) retry();
+  }, retry);
+}
+
 /** Takes this install off the account (sign-out, or the Profile switch). */
 export async function disableNativePush() {
+  // The next account signing in on this phone needs it saved again.
+  registeredLocale = null;
   const token = storedToken();
   if (!token) return;
   await fetch("/api/push/native", {

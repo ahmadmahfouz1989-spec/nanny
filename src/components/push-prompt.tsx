@@ -3,11 +3,8 @@
 import { useEffect } from "react";
 import { useLocale } from "next-intl";
 import { enablePush, pushSupport } from "@/lib/push-client";
-import { enableNativePush, isNativeApp, nativePushOptedOut } from "@/lib/native-app";
+import { isNativeApp, registerNativePushOnce } from "@/lib/native-app";
 
-// AppShell (and so this) mounts again on every page: register once per
-// launch, and again only if the app language changes.
-let nativeRegisteredLocale: string | null = null;
 
 function isStandalone() {
   return (
@@ -35,9 +32,8 @@ export default function PushPrompt() {
 
   useEffect(() => {
     if (isNativeApp()) {
-      if (nativeRegisteredLocale === locale || nativePushOptedOut()) return;
-      nativeRegisteredLocale = locale;
-      enableNativePush(locale).catch(() => {});
+      // AppShell (and so this) mounts again on every page.
+      registerNativePushOnce(locale);
       return;
     }
     if (pushSupport() !== "supported" || !isStandalone() || Notification.permission !== "default") return;
