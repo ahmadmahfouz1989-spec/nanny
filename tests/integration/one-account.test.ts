@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { admin, categoryId, cleanupUsers, createUser, type TestUser } from "./helpers";
+import { removeProfilePhotoIfUnused } from "@/lib/storage-cleanup";
 
 // One account, one identity: the name lives on the account and every
 // profile keeps a copy; a verified phone added later reaches users.
@@ -76,6 +77,28 @@ describe("one account, one identity", () => {
       await admin.from("generic_profiles").update({ moderation_status: "approved" }).eq("id", draft);
       await admin.from("users").update({ full_name: "Maya Nassar" }).eq("id", user.id);
       expect((await profile(draft)).moderation_status).toBe("approved");
+    });
+  });
+
+  describe("a photo shared between profiles", () => {
+    it("is only deleted once no profile shows it", async () => {
+      const user = await createUser("identity-photo");
+      const path = `${user.id}/${digits8()}.png`;
+      const { error } = await admin.storage.from("generic-photos").upload(path, new Blob(["x"], { type: "image/png" }), { contentType: "image/png" });
+      expect(error).toBeNull();
+      const url = admin.storage.from("generic-photos").getPublicUrl(path).data.publicUrl;
+      const first = await makeProfile(user, "tutoring", "provider", "Rima Khoury");
+      const second = await makeProfile(user, "nursing", "provider", "Rima Khoury");
+      await admin.from("generic_profiles").update({ profile_photo_url: url }).in("id", [first, second]);
+      const exists = async () => ((await admin.storage.from("generic-photos").list(user.id)).data ?? []).some((f) => path.endsWith(f.name));
+
+      await admin.from("generic_profiles").update({ profile_photo_url: null }).eq("id", first);
+      await removeProfilePhotoIfUnused(admin, url, user.id);
+      expect(await exists()).toBe(true);
+
+      await admin.from("generic_profiles").update({ profile_photo_url: null }).eq("id", second);
+      await removeProfilePhotoIfUnused(admin, url, user.id);
+      expect(await exists()).toBe(false);
     });
   });
 

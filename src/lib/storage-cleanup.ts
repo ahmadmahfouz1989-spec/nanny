@@ -1,3 +1,6 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/lib/supabase/database.types";
+
 /**
  * Extracts the object path from a Supabase Storage public URL for a given
  * bucket, e.g. ".../storage/v1/object/public/nanny-photos/abc/123.jpg" ->
@@ -43,4 +46,18 @@ export function ownProfilePhotoObject(url: string, ownerId: string): { bucket: s
     if (path) return { bucket, path };
   }
   return null;
+}
+
+/**
+ * Removes a replaced or rejected profile photo's file, unless another profile
+ * still shows it: a new profile can start with the photo from an earlier one.
+ * Call it after the row stopped pointing at the file. If the check fails the
+ * file stays: a stray file is better than a broken photo. Never throws.
+ */
+export async function removeProfilePhotoIfUnused(db: SupabaseClient<Database>, url: string, ownerId: string) {
+  const object = ownProfilePhotoObject(url, ownerId);
+  if (!object) return;
+  const { count, error } = await db.from("generic_profiles").select("id", { count: "exact", head: true }).eq("profile_photo_url", url);
+  if (error || count !== 0) return;
+  await db.storage.from(object.bucket).remove([object.path]).catch(() => {});
 }

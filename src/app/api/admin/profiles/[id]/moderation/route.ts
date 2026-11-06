@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
-import { ownProfilePhotoObject } from "@/lib/storage-cleanup";
+import { removeProfilePhotoIfUnused } from "@/lib/storage-cleanup";
 import { notify } from "@/lib/push";
 import { WORK_BUCKET, workPhotoPaths } from "@/lib/work";
 
@@ -109,8 +109,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       // Only ever delete a path under this profile's own owner folder, in
       // whichever photo bucket it lives. Best-effort: a storage hiccup here
       // shouldn't fail a moderation decision that already succeeded.
-      const photo = ownProfilePhotoObject(row.profile_photo_url, row.user_id);
-      if (photo) await db.storage.from(photo.bucket).remove([photo.path]).catch(() => {});
+      await removeProfilePhotoIfUnused(db, row.profile_photo_url, row.user_id);
     }
 
     await notify({

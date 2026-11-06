@@ -171,6 +171,11 @@ export default function CategoryOnboardingClient({
   }, []);
 
   const forms = FORMS[categorySlug];
+  // A new profile that started with details from another one: say so, so they check them.
+  const carriedNote = (p: ExistingProfile) =>
+    !!p && p.status === "draft" && (!!p.location_id || !!p.profile_photo_url || Object.keys(p.attributes ?? {}).length > 0) ? (
+      <p className="mx-auto max-w-2xl px-6 pt-3 text-xs text-muted">{t("carriedOver")}</p>
+    ) : null;
   // Going back to the choice is for someone still deciding; on a request or
   // profile already submitted it reads like switching sides, which it isn't.
   const submitted = (p: ExistingProfile | null) => !!p && p.status !== "draft";
@@ -180,6 +185,7 @@ export default function CategoryOnboardingClient({
     return (
       <>
         {nameIsShared && <p className="mx-auto max-w-2xl px-6 pt-5 text-xs text-muted">{t("nameIsShared")}</p>}
+        {carriedNote(provider)}
         <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={submitted(provider) ? undefined : () => changeRole("provider")} />
       </>
     );
@@ -189,6 +195,7 @@ export default function CategoryOnboardingClient({
     return (
       <>
         {nameIsShared && <p className="mx-auto max-w-2xl px-6 pt-5 text-xs text-muted">{t("nameIsShared")}</p>}
+        {carriedNote(seeker)}
         <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={submitted(seeker) ? undefined : () => changeRole("seeker")} />
       </>
     );

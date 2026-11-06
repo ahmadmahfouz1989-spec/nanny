@@ -15,7 +15,7 @@ import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recomp
 import { refreshUserSearchText } from "@/lib/search-text";
 import { mustVerifyPhone } from "@/lib/phone-gate";
 import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
-import { ownProfilePhotoObject, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
+import { removeProfilePhotoIfUnused, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 import { asAttributes } from "@/lib/attributes";
 import type { Json } from "@/lib/supabase/database.types";
 import { reportMetaEvent } from "@/lib/meta-capi";
@@ -251,8 +251,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   if (profilePhotoUrl !== undefined && previousPhotoUrl) {
     // Only ever delete a path under this user's own folder -- same guard as
     // /api/profile/photo. Best-effort: never fails a save that succeeded.
-    const previous = ownProfilePhotoObject(previousPhotoUrl, user.id);
-    if (previous) await db.storage.from(previous.bucket).remove([previous.path]).catch(() => {});
+    await removeProfilePhotoIfUnused(db, previousPhotoUrl, user.id);
   }
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);

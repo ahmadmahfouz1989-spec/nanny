@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mustVerifyPhone } from "@/lib/phone-gate";
+import { carryOver } from "@/lib/profile-carryover";
 
 const bodySchema = z.object({
   categorySlug: z.string().min(1),
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
   const { data: existing } = await db
     .from("generic_profiles")
-    .select("id, role, full_name, location_id, attributes, status, moderation_status")
+    .select("id, role, full_name, profile_photo_url, location_id, attributes, status, moderation_status")
     .eq("user_id", user.id)
     .eq("category_id", category.id)
     .eq("role", role)
@@ -63,23 +64,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ profile: existing });
   }
 
-  // Someone starting in a second service has already told us their name
-  // and where they are: start from those rather than asking again.
+  // Someone starting in a second service has already told us who they are
+  // and where: start from that rather than asking again.
   const { data: earlier } = await db
     .from("generic_profiles")
-    .select("full_name, location_id, attributes")
+    .select("role, full_name, location_id, profile_photo_url, attributes")
     .eq("user_id", user.id)
     .neq("status", "draft")
-    .order("updated_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .order("updated_at", { ascending: false });
   const { data: account } = await db.from("users").select("full_name").eq("id", user.id).single();
-  const earlierAttributes = (earlier?.attributes ?? {}) as Record<string, unknown>;
-  const carried: Record<string, string> = {};
-  for (const key of ["districtId", "areaId", "locationDetail"]) {
-    const value = earlierAttributes[key];
-    if (typeof value === "string" && value) carried[key] = value;
-  }
+  const carried = carryOver(earlier ?? [], role);
 
   const { data: created, error } = await db
     .from("generic_profiles")
@@ -87,12 +81,13 @@ export async function POST(request: Request) {
       user_id: user.id,
       category_id: category.id,
       role,
-      full_name: account?.full_name || earlier?.full_name?.trim() || DRAFT_NAME,
-      location_id: earlier?.location_id ?? null,
-      attributes: carried,
+      full_name: account?.full_name || earlier?.[0]?.full_name?.trim() || DRAFT_NAME,
+      location_id: carried.location_id,
+      profile_photo_url: carried.profile_photo_url,
+      attributes: carried.attributes,
       status: "draft",
     })
-    .select("id, role, full_name, location_id, attributes, status, moderation_status")
+    .select("id, role, full_name, profile_photo_url, location_id, attributes, status, moderation_status")
     .single();
 
   if (error) {
@@ -101,7 +96,7 @@ export async function POST(request: Request) {
     if (error.code === "23505") {
       const { data: raced } = await db
         .from("generic_profiles")
-        .select("id, role, full_name, location_id, attributes, status, moderation_status")
+        .select("id, role, full_name, profile_photo_url, location_id, attributes, status, moderation_status")
         .eq("user_id", user.id)
         .eq("category_id", category.id)
         .eq("role", role)

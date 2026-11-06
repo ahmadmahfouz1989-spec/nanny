@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
-import { ownProfilePhotoObject } from "@/lib/storage-cleanup";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { removeProfilePhotoIfUnused } from "@/lib/storage-cleanup";
 
 const MAX_BYTES = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -86,8 +87,7 @@ export async function POST(request: Request) {
 
   // Only remove the old file once the profile actually points at the new
   // one, and only ever a path under this user's own folder.
-  const previous = own.profile_photo_url ? ownProfilePhotoObject(own.profile_photo_url, user.id) : null;
-  if (previous) await supabase.storage.from(previous.bucket).remove([previous.path]).catch(() => {});
+  if (own.profile_photo_url) await removeProfilePhotoIfUnused(createAdminClient(), own.profile_photo_url, user.id);
 
   return NextResponse.json({ url: publicUrl.publicUrl });
 }

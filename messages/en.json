@@ -545,7 +545,8 @@
       "roleProviderTitle": "I fix, tow or look after cars",
       "roleProviderDescription": "A mobile mechanic, a garage or a company — create a profile so drivers near you can find you."
     },
-    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere, and those profiles are reviewed again."
+    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere, and those profiles are reviewed again.",
+    "carriedOver": "We filled in what you've already told us on your other profiles. Check it and add the rest."
   },
   "NursingProviderOnboarding": {
     "createTitle": "Create your nursing profile",
