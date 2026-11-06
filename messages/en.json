@@ -119,12 +119,6 @@
     "actionAnnouncement": "Read the message"
   },
   "Push": {
-    "title": "Push notifications",
-    "description": "Get notified on this device about new messages, matches and replies, even when ouiKnow is closed.",
-    "blocked": "Notifications are blocked for ouiKnow. Allow them in your browser or phone settings, then come back here.",
-    "needsInstall": "On iPhone, add ouiKnow to your home screen first (Share → Add to Home Screen), then turn notifications on from the installed app.",
-    "unsupported": "This browser doesn't support push notifications.",
-    "error": "Couldn't change notifications — please try again.",
     "someone": "Someone",
     "voiceMessage": "🎤 Voice message"
   },
@@ -319,7 +313,7 @@
     "noProfileNeedBody": "Describe what you need and get matched with people near you.",
     "noProfileOffer": "I offer help",
     "noProfileOfferBody": "Show what you do so people near you can find you.",
-    "noProfileSettings": "Account, language and notifications are in Settings",
+    "noProfileSettings": "Account and language are in Settings",
     "titleInRequest": "{category}: your request",
     "yourRequest": "Your request",
     "descriptionPendingRequest": "We check every request before people see it. You'll get a notification when it's live — your matches will then appear here.",
@@ -1326,7 +1320,7 @@
     "saved": "Saved",
     "savedHint": "People you saved",
     "settings": "Settings & Help",
-    "settingsHint": "Notifications, language, help",
+    "settingsHint": "Language, help",
     "postRequest": "Post on Home",
     "postRequestHint": "Need a service? Tell us what you're looking for!",
     "contactWhatsapp": "Contact us on WhatsApp",

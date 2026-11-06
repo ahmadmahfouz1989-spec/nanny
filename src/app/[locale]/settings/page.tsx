@@ -2,7 +2,6 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import AppShell from "@/components/app-shell";
-import PushNotificationsCard from "@/components/push-notifications-card";
 import DeleteAccountCard from "@/components/delete-account-card";
 import AccountDetailsCard from "@/components/account-details-card";
 import SettingsRows from "@/components/settings-rows";
@@ -27,8 +26,6 @@ export default async function SettingsPage() {
     <AppShell active="profile">
       <div className="max-w-lg w-full mx-auto px-6 py-8">
         <h1 className="font-display text-2xl font-bold mb-6">{t("title")}</h1>
-
-        <PushNotificationsCard />
 
         <p className={label}>{t("appearance")}</p>
         <div className={ui.card + " mb-5 overflow-hidden"}>

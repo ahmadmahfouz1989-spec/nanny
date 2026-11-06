@@ -70,13 +70,4 @@ describe("keeping the iPhone's push token on the account", () => {
     await settle();
     expect(saved).toEqual(["phone-token"]);
   });
-
-  it("leaves it off for someone who turned it off", async () => {
-    const { saved } = setup();
-    const { registerNativePushOnce, setNativePushOptOut } = await import("@/lib/native-app");
-    setNativePushOptOut(true);
-    registerNativePushOnce("en");
-    await settle();
-    expect(saved).toEqual([]);
-  });
 });

@@ -112,26 +112,6 @@ export function haptic(kind: "light" | "medium" | "success" = "light") {
 // -- push -------------------------------------------------------------------
 
 const TOKEN_KEY = "native-push-token";
-// Set when someone turns push off on the Profile card, so launches stop
-// turning it back on. Signing out doesn't set it.
-const OPT_OUT_KEY = "native-push-off";
-
-export function nativePushOptedOut() {
-  try {
-    return localStorage.getItem(OPT_OUT_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-export function setNativePushOptOut(off: boolean) {
-  try {
-    if (off) localStorage.setItem(OPT_OUT_KEY, "1");
-    else localStorage.removeItem(OPT_OUT_KEY);
-  } catch {
-    // ignore
-  }
-}
 
 function storedToken() {
   try {
@@ -139,16 +119,6 @@ function storedToken() {
   } catch {
     return null;
   }
-}
-
-export async function nativePushPermission(): Promise<PermissionState | null> {
-  const push = capacitor()?.Plugins.PushNotifications;
-  return push ? (await push.checkPermissions()).receive : null;
-}
-
-/** On when the OS allows it and this install's token is on the account. */
-export async function nativePushOn() {
-  return (await nativePushPermission()) === "granted" && !!storedToken();
 }
 
 /**
@@ -200,7 +170,7 @@ let registeredLocale: string | null = null;
  * the token didn't get saved.
  */
 export function registerNativePushOnce(locale: string) {
-  if (registeredLocale === locale || nativePushOptedOut()) return;
+  if (registeredLocale === locale) return;
   registeredLocale = locale;
   const retry = () => {
     if (registeredLocale === locale) registeredLocale = null;
@@ -210,7 +180,7 @@ export function registerNativePushOnce(locale: string) {
   }, retry);
 }
 
-/** Takes this install off the account (sign-out, or the Profile switch). */
+/** Takes this install off the account when signing out. */
 export async function disableNativePush() {
   // The next account signing in on this phone needs it saved again.
   registeredLocale = null;

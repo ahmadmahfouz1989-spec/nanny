@@ -18,13 +18,12 @@ function isStandalone() {
  *
  * In the iOS/Android apps: once per launch, asks if undecided (the apps
  * need no tap) and re-registers, which also keeps the token on the
- * signed-in account and current language -- unless push was turned off on
- * the Profile card.
+ * signed-in account and current language. Turning them off is the phone's
+ * own Settings switch.
  *
  * In a home-screen web app: browsers -- iOS strictly -- only show the
  * system dialog from a user gesture, so it asks on the first tap anywhere.
- * Only while the permission is undecided; once allowed or blocked, the
- * Profile card is the place to change it. Closing the dialog without
+ * Only while the permission is undecided. Closing the dialog without
  * choosing asks again on the next launch.
  */
 export default function PushPrompt() {
