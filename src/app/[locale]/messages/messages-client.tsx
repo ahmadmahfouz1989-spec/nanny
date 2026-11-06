@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import ChatThread from "@/components/matches/chat-thread";
+import { useChatViewport } from "@/components/matches/use-chat-viewport";
 import ConversationHeader from "@/components/matches/conversation-header";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ConnectIllustration from "@/components/illustrations/connect-illustration";
@@ -143,6 +144,7 @@ export default function MessagesClient() {
       delete document.documentElement.dataset.chat;
     };
   }, [chatOpen]);
+  useChatViewport(chatOpen);
   const selectedIndex = conversations?.findIndex((c) => c.matchId === selected) ?? -1;
 
   return (

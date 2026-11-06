@@ -377,9 +377,23 @@ html[data-chrome="hidden"] .app-chrome-top {
   html[data-chat="open"] .app-chrome-bottom {
     display: none;
   }
+  html[data-chat="open"],
+  html[data-chat="open"] body {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+  /* Exactly the visible area, however the keyboard moves it (use-chat-viewport.ts). */
   html[data-chat="open"] #app-main {
+    position: fixed;
+    inset-inline: 0;
+    top: var(--chat-top, 0);
+    height: var(--chat-height, 100dvh);
     padding-top: env(safe-area-inset-top);
     padding-bottom: env(safe-area-inset-bottom);
+  }
+  /* The keyboard covers the home bar, so there's nothing to leave room for. */
+  html[data-chat="open"][data-keyboard="open"] #app-main {
+    padding-bottom: 0;
   }
 }
 

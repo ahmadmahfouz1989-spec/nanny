@@ -285,6 +285,17 @@ export default function ChatThread({
     typingChannelRef.current?.send({ type: "broadcast", event: "typing", payload: { userId: userIdRef.current } });
   }
 
+  // The list shrinks when the keyboard opens: stay on the newest message.
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (isNearBottomRef.current) el.scrollTop = el.scrollHeight;
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   function handleScroll() {
     const el = listRef.current;
     if (!el) return;
