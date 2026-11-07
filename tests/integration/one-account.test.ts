@@ -46,18 +46,16 @@ describe("one account, one identity", () => {
       expect((await profile(tutoring)).moderation_status).toBe("approved");
     });
 
-    it("a new account name reaches every profile and sends it back for review", async () => {
+    it("a new account name reaches every profile and sends only the provider's back for review", async () => {
       await admin.from("users").update({ full_name: "Maya S. Saade" }).eq("id", user.id);
-      for (const id of [tutoring, nursing]) {
-        expect(await profile(id)).toEqual({ full_name: "Maya S. Saade", moderation_status: "pending" });
-      }
+      expect(await profile(tutoring)).toEqual({ full_name: "Maya S. Saade", moderation_status: "pending" });
+      expect(await profile(nursing)).toEqual({ full_name: "Maya S. Saade", moderation_status: "approved" });
     });
 
     it("a name saved on one profile reaches the account and the others", async () => {
-      await approve(nursing);
       await admin.from("generic_profiles").update({ full_name: "Maya Haddad" }).eq("id", tutoring);
       expect(await accountName(user.id)).toBe("Maya Haddad");
-      expect(await profile(nursing)).toEqual({ full_name: "Maya Haddad", moderation_status: "pending" });
+      expect(await profile(nursing)).toEqual({ full_name: "Maya Haddad", moderation_status: "approved" });
     });
 
     it("the owner can rename their account, but not with an empty name", async () => {

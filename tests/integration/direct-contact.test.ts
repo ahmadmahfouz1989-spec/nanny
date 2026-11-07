@@ -23,10 +23,10 @@ describe("message a provider without a request first", () => {
       .select("full_name, role, status, moderation_status, attributes")
       .eq("user_id", visitor.id)
       .single();
-    expect(request).toMatchObject({ full_name: "Maya Visitor", role: "seeker", status: "active", moderation_status: "pending" });
+    expect(request).toMatchObject({ full_name: "Maya Visitor", role: "seeker", status: "active", moderation_status: "approved" });
     expect((request!.attributes as { quickContact?: boolean }).quickContact).toBe(true);
 
-    // Writing works while the short request waits for review, and the nanny can answer.
+    // The short request is live straight away, and the nanny can answer.
     expect((await visitor.client.from("generic_messages").insert({ match_id: matchId, sender_id: visitor.id, body: "Hello!" })).error).toBeNull();
     expect((await nanny.client.from("generic_messages").insert({ match_id: matchId, sender_id: nanny.id, body: "Hi Maya" })).error).toBeNull();
 

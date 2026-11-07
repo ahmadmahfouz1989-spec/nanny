@@ -44,18 +44,19 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: true, headline: next });
   }
 
-  // Clearing it shows nothing new, so only a new headline needs review.
+  // Clearing it shows nothing new, so only a provider's new headline needs review.
+  const review = Boolean(next) && profile.role === "provider";
   const { error } = await db
     .from("generic_profiles")
-    .update(next ? { headline: next, moderation_status: "pending" } : { headline: null })
+    .update(review ? { headline: next, moderation_status: "pending" } : { headline: next })
     .eq("id", profileId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 
-  if (next && profile.categories) {
+  if (review && profile.categories) {
     const role = profile.role as "seeker" | "provider";
     await notifyAdminsOfPendingReview(profile.full_name, `${profile.categories.slug}_${role}`, profile.categories, role);
   }
-  return NextResponse.json({ ok: true, headline: next, moderationStatus: next ? "pending" : undefined });
+  return NextResponse.json({ ok: true, headline: next, moderationStatus: review ? "pending" : undefined });
 }

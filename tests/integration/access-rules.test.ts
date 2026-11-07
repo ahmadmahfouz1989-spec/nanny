@@ -35,6 +35,15 @@ describe("profile moderation and visibility", () => {
     expect(data!.moderation_status).toBe("pending");
   });
 
+  it("a provider's direct edit can't keep an approved status, a customer's can", async () => {
+    const [provider, customer] = await Promise.all([createUser("guard-provider"), createUser("guard-customer")]);
+    const profile = await createProfile(provider, "nanny", "provider", NANNY_PROVIDER);
+    expect((await provider.client.from("generic_profiles").update({ full_name: "Edited Name" }).eq("id", profile)).error).not.toBeNull();
+    const request = await createProfile(customer, "nanny", "seeker", NANNY_SEEKER);
+    expect((await customer.client.from("generic_profiles").update({ full_name: "Edited Name" }).eq("id", request)).error).toBeNull();
+    expect((await customer.client.from("generic_profiles").update({ role: "provider" }).eq("id", request)).error).not.toBeNull();
+  });
+
   it("a profile in review is visible to its owner only", async () => {
     const { data: own } = await owner.client.from("generic_profiles").select("id").eq("id", pendingId);
     expect(own).toHaveLength(1);

@@ -1,6 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { refreshUserSearchText } from "@/lib/search-text";
-import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
+import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import type { Json } from "@/lib/supabase/database.types";
 
 type Admin = ReturnType<typeof createAdminClient>;
@@ -37,8 +37,8 @@ type RequestKind = {
 /**
  * The request profile an order belongs to, made from the order itself.
  * Placing an order (or asking for quotes) *is* the request: someone without
- * a profile in that service gets one made from it (pending review, like
- * any new profile -- the order doesn't wait for that), and a draft or
+ * a profile in that service gets one made from it (live straight away,
+ * like any customer request), and a draft or
  * paused one is filled in and switched on. An existing live request is
  * left as it is. The name comes from the form when given, otherwise from
  * the person's other profiles; with neither, the form asks for it.
@@ -80,7 +80,7 @@ async function ensureRequestProfile(db: Admin, userId: string, job: JobRequest, 
     location_id: district?.parent_location_id ?? null,
     attributes: kind.attributes(job),
     status: "active",
-    moderation_status: "pending",
+    moderation_status: "approved",
   };
 
   const { data: saved, error } = existing
@@ -92,8 +92,7 @@ async function ensureRequestProfile(db: Admin, userId: string, job: JobRequest, 
         .single();
   if (error || !saved) throw new Error(`${kind.slug} request profile: ${error?.message}`);
 
-  await refreshUserSearchText(userId);
-  await notifyAdminsOfPendingReview(name, `${kind.slug}_seeker`, category!, "seeker");
+  await Promise.all([refreshUserSearchText(userId), recomputeGenericMatchesForProfile(saved.id)]);
   return { ok: true, profileId: saved.id };
 }
 

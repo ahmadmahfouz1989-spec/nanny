@@ -222,10 +222,8 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     }
   }
 
-  // status stays "active" and moderation resets to "pending" on every
-  // save, including edits -- same convention as update_parent_profile /
-  // update_nanny_profile, which always re-queues a resubmission for
-  // review regardless of the profile's prior moderation state.
+  // status stays "active". A customer's request goes live straight away; a
+  // provider's profile goes back to review on every save, including edits.
   const payload = {
     user_id: user.id,
     category_id: category.id,
@@ -234,7 +232,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     location_id: locationId,
     attributes,
     status: "active",
-    moderation_status: "pending",
+    moderation_status: role === "seeker" ? "approved" : "pending",
     ...(profilePhotoUrl !== undefined && { profile_photo_url: profilePhotoUrl }),
   };
 
@@ -256,7 +254,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
   await Promise.all([recomputeGenericMatchesForProfile(data.id), refreshUserSearchText(user.id)]);
-  await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
+  if (role === "provider") await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
   // The first submit (not an edit): a request posted, or a provider applying.
   if (!before || before.status === "draft") {
     await reportMetaEvent(role === "seeker" ? "Lead" : "SubmitApplication", {

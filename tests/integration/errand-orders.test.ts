@@ -289,7 +289,7 @@ describe("ordering without filling in a request first", () => {
       .select("full_name, role, status, moderation_status, attributes, categories(slug)")
       .eq("id", (made as { profileId: string }).profileId)
       .single();
-    expect(profile).toMatchObject({ full_name: "Maya Saade", role: "seeker", status: "active", moderation_status: "pending", categories: { slug: "errands" } });
+    expect(profile).toMatchObject({ full_name: "Maya Saade", role: "seeker", status: "active", moderation_status: "approved", categories: { slug: "errands" } });
     expect(profile!.attributes).toMatchObject({ errandService: "delivery", jobDescription: "A folder of documents", districtId: beirut.id, pickupPlace: "Hamra", dropoffPlace: "Sassine" });
     // It counts as their request: they can order (and are seen) as a customer.
     expect((await myErrandProfiles(admin, newcomer.id)).seeker?.id).toBe((made as { profileId: string }).profileId);
@@ -552,7 +552,7 @@ describe("repair quotes (Home Maintenance)", () => {
     await tradesperson("job-electrician-beirut", beirut, ["electrician"]);
   });
 
-  it("makes the customer's maintenance request from the job, pending review, and needs a name when there's none", async () => {
+  it("makes the customer's maintenance request from the job, live straight away, and needs a name when there's none", async () => {
     const stranger = await createUser("job-noname");
     const missing = await ensureJobRequestProfile(admin, stranger.id, {
       service: "plumber",
@@ -569,7 +569,7 @@ describe("repair quotes (Home Maintenance)", () => {
       .eq("user_id", customer.id)
       .eq("role", "seeker")
       .single();
-    expect(profile).toMatchObject({ full_name: "Job Customer", status: "active", moderation_status: "pending", categories: { slug: "maintenance" } });
+    expect(profile).toMatchObject({ full_name: "Job Customer", status: "active", moderation_status: "approved", categories: { slug: "maintenance" } });
     expect((profile!.attributes as { tradesNeeded: string[] }).tradesNeeded).toEqual(["plumber"]);
   });
 

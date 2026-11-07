@@ -539,7 +539,7 @@
       "roleProviderTitle": "I fix, tow or look after cars",
       "roleProviderDescription": "A mobile mechanic, a garage or a company — create a profile so drivers near you can find you."
     },
-    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere, and those profiles are reviewed again.",
+    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere, and any provider profiles are reviewed again.",
     "carriedOver": "We filled in what you've already told us on your other profiles. Check it and add the rest."
   },
   "NursingProviderOnboarding": {
@@ -940,7 +940,7 @@
     "reportedLabel": "Reported",
     "adminBadge": "Admin",
     "overviewDescription": "Activity across the marketplace, and what's waiting on you.",
-    "profilesDescription": "New and edited profiles wait here until you approve or reject them. Nothing goes live without review.",
+    "profilesDescription": "New and edited provider profiles wait here until you approve or reject them. Customer requests go live straight away; take one down from Approved if needed.",
     "directoryDescription": "Every approved profile. Open one to review it again or take it down.",
     "usersDescription": "Find an account by email or phone to verify, suspend or delete it.",
     "reportsDescription": "Open reports from users. Review the conversation, then resolve or dismiss.",
@@ -2675,7 +2675,7 @@
   },
   "AccountDetails": {
     "name": "Your name",
-    "nameHint": "Shown on all your profiles. Changing it changes it everywhere, and your profiles are reviewed again.",
+    "nameHint": "Shown on all your profiles. Changing it changes it everywhere, and any provider profiles are reviewed again.",
     "nameInvalid": "Enter your name (2 to 80 letters).",
     "nameSaved": "Saved on all your profiles.",
     "saveFailed": "Couldn't save. Please try again.",

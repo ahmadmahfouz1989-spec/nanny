@@ -58,7 +58,7 @@ export async function DELETE(request: Request) {
 
 /**
  * Changes the account's name. A database trigger copies it to every profile
- * and sends those back for review, like any other edit to a profile.
+ * and sends provider profiles back for review, like any other edit to them.
  */
 export async function PATCH(request: Request) {
   const supabase = await createClient();
@@ -81,6 +81,7 @@ export async function PATCH(request: Request) {
     .from("generic_profiles")
     .select("role, categories(slug, name_en, name_ar)")
     .eq("user_id", user.id)
+    .eq("role", "provider")
     .neq("status", "draft")
     .limit(1)
     .maybeSingle();

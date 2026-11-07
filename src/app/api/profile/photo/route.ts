@@ -48,7 +48,7 @@ export async function POST(request: Request) {
 
   const { data: own } = await supabase
     .from("generic_profiles")
-    .select("id, profile_photo_url")
+    .select("id, role, profile_photo_url")
     .eq("id", genericProfileId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -73,10 +73,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: publicUrl.publicUrl });
   }
 
-  const { error: updateError } = await supabase
-    .from("generic_profiles")
-    .update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" })
-    .eq("id", own.id);
+  // A provider's new photo goes back to review. A customer's request stays as
+  // it is, which only the service role may write (protect_moderation_status).
+  const { error: updateError } =
+    own.role === "provider"
+      ? await supabase.from("generic_profiles").update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" }).eq("id", own.id)
+      : await createAdminClient().from("generic_profiles").update({ profile_photo_url: publicUrl.publicUrl }).eq("id", own.id);
 
   if (updateError) {
     // The upload succeeded but the profile doesn't point at it -- remove the

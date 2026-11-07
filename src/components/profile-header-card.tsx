@@ -48,7 +48,7 @@ export default function ProfileHeaderCard({
   const tNanny = useTranslations("NannyOnboarding");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photoUrl, setPhotoUrl] = useState(initialPhotoUrl);
-  // A new photo goes back to admin review, same as nanny/parent.
+  // A provider's new photo goes back to admin review.
   const [status, setStatus] = useState(moderationStatus);
   const [uploading, setUploading] = useState(false);
   const [photoError, setPhotoError] = useState<string | null>(null);
@@ -72,7 +72,7 @@ export default function ProfileHeaderCard({
       }
       const body = await res.json();
       setPhotoUrl(body.url);
-      setStatus("pending");
+      if (role === "provider") setStatus("pending");
     } catch {
       setPhotoError(t("photoUpdateError"));
     } finally {

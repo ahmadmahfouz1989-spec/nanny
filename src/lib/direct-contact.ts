@@ -1,6 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { refreshSearchText } from "@/lib/search-text";
-import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import type { Json } from "@/lib/supabase/database.types";
 
@@ -68,7 +67,7 @@ export async function startDirectContact(
     for (const key of ["districtId", "areaId"]) {
       if (typeof earlier[key] === "string") attributes[key] = earlier[key] as string;
     }
-    const row = { full_name: name, location_id: other?.location_id ?? null, attributes, status: "active", moderation_status: "pending" };
+    const row = { full_name: name, location_id: other?.location_id ?? null, attributes, status: "active", moderation_status: "approved" };
     const { data: saved, error } = existing
       ? await db.from("generic_profiles").update(row).eq("id", existing.id).select("id").single()
       : await db
@@ -79,7 +78,6 @@ export async function startDirectContact(
     if (error || !saved) throw new Error(`direct contact profile: ${error?.message}`);
     seekerId = saved.id;
     await Promise.all([refreshSearchText([saved.id]), recomputeGenericMatchesForProfile(saved.id)]);
-    if (provider.categories) await notifyAdminsOfPendingReview(name, `${provider.categories.slug}_seeker`, provider.categories, "seeker");
   }
 
   // Usually made by the recompute above; created here when scoring left it out.
