@@ -174,6 +174,8 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         <ProviderPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
       )}
 
+      {order.viewer === "seeker" && order.asked.length > 0 && <AskedList order={order} />}
+
       {stagesFor(order.category).includes(order.status) && <Timeline order={order} />}
     </div>
   );
@@ -185,6 +187,39 @@ type PartProps = {
   act: (action: string, body?: Record<string, unknown>) => Promise<boolean>;
   confirmBox: (kind: "cancel" | "drop") => React.ReactNode;
 };
+
+/**
+ * Who the order went to and what each did: opened by itself when nobody
+ * could take it, so the customer can message one of them directly.
+ */
+function AskedList({ order }: { order: OrderView }) {
+  const t = useTranslations("Orders");
+  return (
+    <details open={order.status === "no_provider"} className={ui.card + " group p-4"}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        {t("askedTitle", { count: order.asked.length })}
+        <span aria-hidden className="text-muted transition-transform group-open:rotate-180">⌄</span>
+      </summary>
+      <ul className="mt-3 flex flex-col divide-y divide-border">
+        {order.asked.map((p) => (
+          <li key={p.profileId}>
+            <Link href={`/u/${p.profileId}`} className="flex items-center gap-3 py-2.5">
+              <Avatar photoUrl={p.photoUrl} size={40} />
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium text-ink">{p.name}</span>
+                <span className="block text-xs text-muted">
+                  {t(`asked_${p.status}`)}
+                  {p.distanceKm !== null ? ` · ${t("askedKm", { km: p.distanceKm })}` : ""}
+                </span>
+              </span>
+              <span aria-hidden className="text-muted rtl:rotate-180">›</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </details>
+  );
+}
 
 function PersonCard({ title, person, matchId }: { title: string; person: OrderPerson | null; matchId: string | null }) {
   const t = useTranslations("Orders");

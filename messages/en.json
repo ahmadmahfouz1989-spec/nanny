@@ -2555,7 +2555,18 @@
     "noProviderNobodyBody": "No provider near this pickup is available right now, so nobody was contacted. Try again in a little while, or message a provider directly.",
     "noProviderAskedTitle": "{count, plural, one {We asked 1 provider, but they couldn't take it.} other {We asked # providers, but none could take it.}}",
     "noProviderAskedBody": "Try again in a little while, or message a provider directly.",
-    "noProviderSeeProviders": "See providers"
+    "noProviderSeeProviders": "See providers",
+    "askedTitle": "{count, plural, one {Sent to 1 provider} other {Sent to # providers}}",
+    "askedKm": "{km} km away",
+    "asked_sent": "Hasn't answered yet",
+    "asked_offered": "Sent an offer",
+    "asked_declined": "Said no",
+    "asked_expired": "Didn't answer in time",
+    "asked_offer_expired": "Sent an offer",
+    "asked_selected": "You chose them",
+    "asked_not_selected": "Sent an offer",
+    "asked_withdrawn": "Took their offer back",
+    "asked_refused": "Didn't confirm"
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

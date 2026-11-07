@@ -54,6 +54,9 @@ export type OrderOffer = OrderPerson & {
   wave: number;
 };
 
+/** Someone the order was sent to, and what they did with it. */
+export type OrderAsked = OrderPerson & { status: RecipientRow["status"]; distanceKm: number | null; wave: number };
+
 /**
  * Where a delivery is in its matching. The deadlines are what the
  * countdowns show; `serverNow` lets the screen count from the server's
@@ -102,6 +105,8 @@ export type OrderView = {
   provider: OrderPerson | null;
   /** Seeker: the offers made. Admin: every provider it was sent to. Provider: empty. */
   offers: OrderOffer[];
+  /** Seeker and admin: everyone it was sent to, nearest first. Provider: empty. */
+  asked: OrderAsked[];
   counts: { sent: number; offered: number; declined: number; waiting: number; noResponse: number };
   /** Timers for a delivery; null for a repair request (no timers). */
   matching: OrderMatching | null;
@@ -293,6 +298,21 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     customer: viewer === "provider" && order.provider_user_id !== viewerUserId ? null : strip(persons.get(order.seeker_profile_id ?? "")),
     provider: viewer === "provider" && order.provider_user_id !== viewerUserId ? null : strip(persons.get(order.provider_profile_id ?? "")),
     offers,
+    asked:
+      viewer === "provider"
+        ? []
+        : all.map((r) => {
+            const person = persons.get(r.provider_profile_id);
+            return {
+              profileId: r.provider_profile_id,
+              name: person?.name ?? "",
+              photoUrl: person?.photoUrl ?? null,
+              rating: person?.rating ?? { average: null, count: 0 },
+              status: r.status,
+              distanceKm: r.distance_km !== null ? Number(r.distance_km) : null,
+              wave: r.wave,
+            };
+          }),
     counts: {
       sent: all.length,
       offered: all.filter((r) => r.status === "offered" || r.status === "selected").length,

@@ -2555,7 +2555,18 @@
     "noProviderNobodyBody": "ما في مقدّم خدمة متاح قريب من مكان الاستلام هلّق، فما تواصلنا مع حدا. جرّب كمان شوي، أو راسل مقدّم خدمة مباشرة.",
     "noProviderAskedTitle": "{count, plural, one {سألنا مقدّم خدمة واحد، بس ما قدر ياخد الطلب.} other {سألنا # من مقدّمي الخدمة، بس ما حدا قدر ياخد الطلب.}}",
     "noProviderAskedBody": "جرّب كمان شوي، أو راسل مقدّم خدمة مباشرة.",
-    "noProviderSeeProviders": "شوف مقدّمي الخدمة"
+    "noProviderSeeProviders": "شوف مقدّمي الخدمة",
+    "askedTitle": "{count, plural, one {انبعت لمقدّم خدمة واحد} other {انبعت لـ # من مقدّمي الخدمة}}",
+    "askedKm": "على بعد {km} كم",
+    "asked_sent": "بعد ما ردّ",
+    "asked_offered": "بعت عرض",
+    "asked_declined": "اعتذر",
+    "asked_expired": "ما ردّ بالوقت",
+    "asked_offer_expired": "بعت عرض",
+    "asked_selected": "اخترته",
+    "asked_not_selected": "بعت عرض",
+    "asked_withdrawn": "سحب عرضه",
+    "asked_refused": "ما أكّد"
   },
   "PublicProfile": {
     "serviceIn": "{service} في {place}",
