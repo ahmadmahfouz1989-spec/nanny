@@ -18,7 +18,7 @@ import {
 import type { OrderSummary } from "@/lib/errand-order-view";
 
 type Incoming = OrderSummary & { myStatus: string; myPriceUsd: number | null; distanceKm: number | null; respondBy: string | null };
-type Availability = { status: "available" | "busy" | "offline" | "suspended"; availableNow: boolean } | null;
+type Availability = { status: "available" | "busy" | "offline" | "suspended"; availableNow: boolean; needsArea?: boolean } | null;
 type Mine = { canOrder: boolean; orders: OrderSummary[] };
 type ProviderLists = {
   serverNow?: string;
@@ -159,6 +159,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
 
       {shownTab === "provider" && provider && (
         <div className="flex flex-col gap-4">
+          {availability?.needsArea && provider.provider?.rider && <NeedsAreaCard />}
           {availability && provider.provider?.rider && (
             <div className={ui.card + " flex items-center justify-between gap-3 p-4"}>
               <div className="min-w-0">
@@ -222,5 +223,17 @@ function IncomingLine({ order: o, serverNow }: { order: Incoming; serverNow: str
         <p className="rounded-full bg-primary-soft px-3 py-1 text-ink">{t.rich("answerWithin", { time: () => <Countdown seconds={left} /> })}</p>
       )}
     </div>
+  );
+}
+
+/** A rider with no district saved gets no requests: say so, and where to fix it. */
+export function NeedsAreaCard() {
+  const t = useTranslations("Orders");
+  return (
+    <Link href="/categories/errands/onboarding?role=provider" className="flex flex-col gap-1 rounded-2xl border border-warning/40 bg-warning-soft p-4">
+      <span className="font-semibold text-warning">{t("needsAreaTitle")}</span>
+      <span className="text-sm text-ink">{t("needsAreaBody")}</span>
+      <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} →</span>
+    </Link>
   );
 }

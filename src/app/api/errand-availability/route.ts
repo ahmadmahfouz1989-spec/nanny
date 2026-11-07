@@ -15,14 +15,18 @@ import { activeOrderCounts, errandSettings, myErrandProfiles } from "@/lib/erran
 async function state(db: ReturnType<typeof createAdminClient>, userId: string) {
   const { provider } = await myErrandProfiles(db, userId);
   if (!provider) return null;
-  const [load, settings, { data: user }] = await Promise.all([
+  const [load, settings, { data: user }, { data: profile }] = await Promise.all([
     activeOrderCounts(db, [provider.id]),
     errandSettings(db),
     db.from("users").select("status").eq("id", userId).single(),
+    db.from("generic_profiles").select("attributes").eq("id", provider.id).single(),
   ]);
   const busy = (load.get(provider.id) ?? 0) >= settings.max_active_orders;
   const status = user?.status === "suspended" ? "suspended" : busy ? "busy" : provider.available_now ? "available" : "offline";
-  return { profileId: provider.id, availableNow: provider.available_now, status };
+  // Requests go only to riders with a district (see findProviders): one saved
+  // before districts were asked for gets none until they add it.
+  const needsArea = typeof (profile?.attributes as { districtId?: unknown } | null)?.districtId !== "string";
+  return { profileId: provider.id, availableNow: provider.available_now, status, needsArea };
 }
 
 export async function GET() {

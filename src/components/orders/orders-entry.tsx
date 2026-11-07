@@ -20,7 +20,7 @@ export default async function OrdersEntry() {
     user && category
       ? await supabase
           .from("generic_profiles")
-          .select("available_now")
+          .select("available_now, attributes")
           .eq("user_id", user.id)
           .eq("category_id", category.id)
           .eq("role", "provider")
@@ -29,6 +29,17 @@ export default async function OrdersEntry() {
           .limit(1)
           .maybeSingle()
       : { data: null };
+
+  // Saved before districts were asked for: no request can reach them yet.
+  if (rider && typeof (rider.attributes as { districtId?: unknown } | null)?.districtId !== "string") {
+    return (
+      <Link href="/categories/errands/onboarding?role=provider" className="flex flex-col gap-1 rounded-2xl border border-warning/40 bg-warning-soft p-4">
+        <span className="font-semibold text-warning">{t("needsAreaTitle")}</span>
+        <span className="text-sm text-ink">{t("needsAreaBody")}</span>
+        <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} →</span>
+      </Link>
+    );
+  }
 
   if (rider) {
     const offline = !rider.available_now;
