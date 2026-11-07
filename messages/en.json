@@ -119,6 +119,12 @@
     "actionAnnouncement": "Read the message"
   },
   "Push": {
+    "title": "Push notifications",
+    "description": "Get notified in this browser about new messages, matches and replies, even when ouiKnow is closed.",
+    "blocked": "Notifications are blocked for ouiKnow. Allow them in your browser settings, then come back here.",
+    "needsInstall": "On iPhone, get the ouiKnow app from the App Store for notifications, or add this site to your home screen (Share → Add to Home Screen) and turn them on there.",
+    "unsupported": "This browser doesn't support push notifications.",
+    "error": "Couldn't change notifications — please try again.",
     "someone": "Someone",
     "voiceMessage": "🎤 Voice message"
   },
