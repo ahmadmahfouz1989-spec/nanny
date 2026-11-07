@@ -11,7 +11,18 @@ type Named = { name_en: string; name_ar: string };
 type Broadcast = { id: string; title: string; body: string; audience: string; status: string; created_at: string; stale: boolean; categories: Named | null; totals: Totals };
 type Category = Named & { id: string };
 type Channels = { ios: boolean; android: boolean; web: boolean };
-type Provider = { user_id: string; name: string; categories_en: string[]; categories_ar: string[] };
+type Provider = {
+  user_id: string;
+  name: string;
+  photo_url: string | null;
+  email: string | null;
+  phone: string | null;
+  place_en: string | null;
+  place_ar: string | null;
+  categories_en: string[];
+  categories_ar: string[];
+  devices: number;
+};
 type Recipient = { user_id: string; name: string; push_status: string; devices_sent: number; devices_failed: number; read_at: string | null };
 type AudienceKind = "all_providers" | "category" | "selected";
 
@@ -215,7 +226,7 @@ export default function AdminBroadcastsPage() {
               }}
             />
             {found.length > 0 && (
-              <div className="max-h-56 overflow-y-auto rounded-xl border border-border">
+              <div className="max-h-80 overflow-y-auto rounded-xl border border-border">
                 {found.map((p) => {
                   const on = picked.some((x) => x.user_id === p.user_id);
                   return (
@@ -228,9 +239,27 @@ export default function AdminBroadcastsPage() {
                         changed();
                       }}
                     >
-                      <span className="min-w-0">
+                      {p.photo_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={p.photo_url} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
+                      ) : (
+                        <span aria-hidden className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-surface-sunken font-semibold text-muted">
+                          {p.name.trim().charAt(0).toUpperCase()}
+                        </span>
+                      )}
+                      <span className="min-w-0 flex-1">
                         <span className="block truncate text-ink">{p.name}</span>
-                        <span className="block truncate text-xs text-muted">{(locale === "ar" ? p.categories_ar : p.categories_en).join(" · ")}</span>
+                        <span className="block truncate text-xs text-muted">
+                          {[(locale === "ar" ? p.categories_ar : p.categories_en).join(" · "), locale === "ar" ? p.place_ar : p.place_en].filter(Boolean).join(" · ")}
+                        </span>
+                        {(p.email || p.phone) && (
+                          <bdi dir="ltr" className="block truncate text-xs text-muted">
+                            {[p.email, p.phone].filter(Boolean).join(" · ")}
+                          </bdi>
+                        )}
+                        <span className={"block text-xs " + (p.devices > 0 ? "text-success" : "text-warning")}>
+                          {p.devices > 0 ? t("broadcastHasDevice", { count: p.devices }) : t("broadcastNoDeviceHint")}
+                        </span>
                       </span>
                       <span className="shrink-0 text-xs font-semibold text-primary">{on ? t("broadcastRemove") : t("broadcastAdd")}</span>
                     </button>
