@@ -2,7 +2,7 @@ import { afterAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { browseProviders } from "@/lib/public-browse";
 import { search } from "@/lib/search";
-import { admin, cleanupUsers, createProfile, createUser, NANNY_PROVIDER, NANNY_SEEKER } from "./helpers";
+import { admin, cleanupUsers, createProfile, createUser, governorateId, NANNY_PROVIDER, NANNY_SEEKER } from "./helpers";
 
 // search() reads the categories through the request's own client (cookies),
 // which a test has no request for; the list itself is public.
@@ -61,6 +61,22 @@ describe("browsing without an account", () => {
     expect(results.offering.map((p) => p.fullName)).toContain("Zzvisitor Tutor");
     expect(results.seeking).toEqual([]);
     expect(results.posts).toEqual([]);
+  });
+
+  it("finds a name anywhere in Lebanon, first, while other words stay in the area", async () => {
+    const elsewhere = await governorateId();
+    const { data: area } = await admin.from("locations").select("id").eq("level", "governorate").neq("id", elsewhere).limit(1).single();
+    const [named, arabic, mention, far] = await Promise.all([createUser("name-far"), createUser("name-ar"), createUser("name-mention"), createUser("text-far")]);
+    await createProfile(named, "tutoring", "provider", {}, { fullName: "Zzrana Khoury" });
+    await createProfile(arabic, "tutoring", "provider", {}, { fullName: "زآية خوري" });
+    const nearby = await createProfile(mention, "tutoring", "provider", { shortIntro: "Taught with Zzrana" }, { fullName: "Other Teacher" });
+    await admin.from("generic_profiles").update({ location_id: area!.id }).eq("id", nearby);
+    await createProfile(far, "tutoring", "provider", { shortIntro: "Zzfarword" }, { fullName: "Far Teacher" });
+
+    expect((await search("zzrana", area!.id, null, "en")).offering.map((p) => p.fullName)).toEqual(["Zzrana Khoury", "Other Teacher"]);
+    expect((await search("khoury zzrana", area!.id, null, "en")).offering.map((p) => p.fullName)).toEqual(["Zzrana Khoury"]);
+    expect((await search("زاية", area!.id, null, "en")).offering.map((p) => p.fullName)).toEqual(["زآية خوري"]);
+    expect((await search("Zzfarword", area!.id, null, "en")).offering).toEqual([]);
   });
 
   it("gives a visitor's own database access no profiles or posts", async () => {

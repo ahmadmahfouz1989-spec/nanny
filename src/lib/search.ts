@@ -57,7 +57,9 @@ function about(a: Record<string, unknown>): string | null {
  * description, so "nurse" finds nurses whose profile never says the word,
  * and "plumber Jounieh" finds plumbers who mention Jounieh. `region`
  * narrows profiles to a governorate or a district -- where they live or
- * one they also cover. Never the viewer's own profiles.
+ * one they also cover. Someone's name is found anywhere in Lebanon and comes
+ * first, since a person being looked up by name may be outside the area.
+ * Never the viewer's own profiles.
  * Runs as the viewer, so the usual visibility rules apply (approved,
  * active, not suspended).
  *
@@ -85,15 +87,27 @@ export async function search(query: string, region: string | null, userId: strin
     categories.map((c) => [c.id, normalizeForSearch([c.name_en, c.name_ar, c.tagline_en, c.tagline_ar].join(" "))]),
   );
 
-  const people = (role: "seeker" | "provider") => {
-    let q = supabase
+  const visibleProfiles = (role: "seeker" | "provider") => {
+    const q = supabase
       .from("generic_profiles")
       .select("id, user_id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
       .eq("role", role)
       .eq("status", "active")
       .eq("moderation_status", "approved")
       .in("category_id", categories.map((c) => c.id));
-    q = visitor ? q.eq("public_page", true) : q.neq("user_id", userId);
+    return visitor ? q.eq("public_page", true) : q.neq("user_id", userId);
+  };
+
+  const named = (role: "seeker" | "provider") => {
+    let q = visibleProfiles(role);
+    // The name is what comes before search_text's first separator, already
+    // normalised like the words, so "اية" finds "آية".
+    for (const w of words) q = q.filter("search_text", "match", `^[^\\x01]*${w}`);
+    return q.order("created_at", { ascending: false }).limit(SEARCH_LIMIT);
+  };
+
+  const people = (role: "seeker" | "provider") => {
+    let q = visibleProfiles(role);
     for (const w of words) {
       // The word, or the word its everyday synonyms are stored under.
       const alts = searchAlternatives(w).map(safeWord).filter(Boolean);
@@ -120,14 +134,19 @@ export async function search(query: string, region: string | null, userId: strin
   }
 
   const none = Promise.resolve({ data: [] as never[] });
-  const [{ data: providersRaw }, { data: seekersRaw }, { data: posts }] = await Promise.all([
+  const [{ data: namedProviders }, { data: namedSeekers }, { data: providersRaw }, { data: seekersRaw }, { data: posts }] = await Promise.all([
+    named("provider"),
+    visitor ? none : named("seeker"),
     people("provider"),
     visitor ? none : people("seeker"),
     visitor ? none : postQuery.order("created_at", { ascending: false }).limit(SEARCH_LIMIT),
   ]);
   // The database's own rule hides suspended accounts from signed-in
   // viewers; read on the server for a visitor, it's done here.
-  let shownProviders = providersRaw ?? [];
+  const nameMatches = new Set([...(namedProviders ?? []), ...(namedSeekers ?? [])].map((p) => p.id));
+  const namesFirst = <T extends { id: string }>(byName: T[] | null, others: T[] | null) =>
+    [...(byName ?? []), ...(others ?? []).filter((p) => !nameMatches.has(p.id))].slice(0, SEARCH_LIMIT);
+  let shownProviders = namesFirst(namedProviders, providersRaw);
   if (visitor && shownProviders.length) {
     const { data: suspended } = await supabase
       .from("users")
@@ -137,7 +156,7 @@ export async function search(query: string, region: string | null, userId: strin
     const out = new Set((suspended ?? []).map((u) => u.id));
     shownProviders = shownProviders.filter((p) => !out.has(p.user_id));
   }
-  const [providers, seekers] = await Promise.all([withPlaceNames(shownProviders), withPlaceNames(seekersRaw ?? [])]);
+  const [providers, seekers] = await Promise.all([withPlaceNames(shownProviders), withPlaceNames(namesFirst(namedSeekers, seekersRaw))]);
 
   const byId = new Map(categories.map((c) => [c.id, c]));
   const verified = await featuredUserIds([...(providers ?? []), ...(seekers ?? [])].map((p) => p.user_id));
@@ -156,9 +175,17 @@ export async function search(query: string, region: string | null, userId: strin
       verified: verified.has(p.user_id),
     };
   };
-  // Verified people first, then profiles with a photo: they're the ones people tap.
+  // The name typed first; then verified people, then profiles with a photo:
+  // they're the ones people tap.
   const ranked = (rows: typeof providers) =>
-    (rows ?? []).map(toPerson).sort((a, b) => Number(b.verified) - Number(a.verified) || Number(!!b.photoUrl) - Number(!!a.photoUrl));
+    (rows ?? [])
+      .map(toPerson)
+      .sort(
+        (a, b) =>
+          Number(nameMatches.has(b.id)) - Number(nameMatches.has(a.id)) ||
+          Number(b.verified) - Number(a.verified) ||
+          Number(!!b.photoUrl) - Number(!!a.photoUrl),
+      );
 
   const authors = await resolvePostAuthors(posts ?? []);
   return {
