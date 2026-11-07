@@ -11,7 +11,7 @@ const bodySchema = z.object({
 });
 
 /**
- * Finishes an email sign-up with the 6-digit code from the confirmation
+ * Finishes an email sign-up with the code from the confirmation
  * email -- the same one-time token the email's link carries, typed in
  * instead of clicked, so signing up in the app never leaves it for the
  * browser. Like /auth/confirm, it signs the person in here and marks the

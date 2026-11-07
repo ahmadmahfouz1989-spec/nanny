@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
-import { EMAIL_CODE_LENGTH } from "@/components/email-code-form";
+import { EMAIL_CODE_MAX, EMAIL_CODE_MIN } from "@/components/email-code-form";
 
 // Supabase's own wait between emails to one address is a minute by default.
 const RESEND_AFTER_SECONDS = 60;
@@ -58,7 +58,7 @@ export default function AddEmailForm({ onDone }: { onDone: () => void }) {
 
   async function submitCode(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || code.length !== EMAIL_CODE_LENGTH) return;
+    if (!email || code.length < EMAIL_CODE_MIN) return;
     setBusy(true);
     setError(null);
     const { error } = await createClient().auth.verifyOtp({ email, token: code, type: "email_change" });
@@ -102,16 +102,16 @@ export default function AddEmailForm({ onDone }: { onDone: () => void }) {
         inputMode="numeric"
         autoComplete="one-time-code"
         aria-label={t("emailCodeLabel")}
-        maxLength={EMAIL_CODE_LENGTH}
-        placeholder={"•".repeat(EMAIL_CODE_LENGTH)}
+        maxLength={EMAIL_CODE_MAX}
+        placeholder={t("emailCodeLabel")}
         value={code}
-        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, EMAIL_CODE_LENGTH))}
-        className={ui.input + " text-center text-lg tracking-[0.4em]"}
+        onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, EMAIL_CODE_MAX))}
+        className={ui.input + " text-center text-lg tracking-[0.3em] placeholder:text-base placeholder:tracking-normal"}
         dir="ltr"
         autoFocus
       />
       {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
-      <button type="submit" disabled={busy || code.length !== EMAIL_CODE_LENGTH} className={ui.buttonPrimary + " w-full"}>
+      <button type="submit" disabled={busy || code.length < EMAIL_CODE_MIN} className={ui.buttonPrimary + " w-full"}>
         {busy ? t("emailChecking") : t("emailConfirm")}
       </button>
       <div className="flex items-center justify-between text-xs">

@@ -8,12 +8,13 @@ import { request } from "@/lib/request";
 import { ui } from "@/lib/ui";
 
 const RESEND_WAIT_S = 30;
-// Must match Supabase's "Email OTP length" (Auth settings); 6 unless set.
-export const EMAIL_CODE_LENGTH = Number(process.env.NEXT_PUBLIC_EMAIL_OTP_LENGTH) || 6;
-const CODE_LENGTH = EMAIL_CODE_LENGTH;
+// Supabase's "Email OTP length" setting decides the code's length, so the
+// field takes any length it allows, same as /api/auth/verify-code.
+export const EMAIL_CODE_MIN = 6;
+export const EMAIL_CODE_MAX = 10;
 
 /**
- * "Enter the 6-digit code we emailed you" -- finishing an email sign-up
+ * "Enter the code we emailed you" -- finishing an email sign-up
  * without leaving the app (the email's link would open the browser and
  * sign in there instead). Used right after sign-up, and from login when
  * the account's email was never confirmed. Sends you on to `next`.
@@ -35,7 +36,7 @@ export default function EmailCodeForm({ email, next = "/welcome" }: { email: str
   }, [wait]);
 
   async function verify(value: string) {
-    if (checking || value.length !== CODE_LENGTH) return;
+    if (checking || value.length < EMAIL_CODE_MIN) return;
     setChecking(true);
     setError(null);
     const res = await request("/api/auth/verify-code", {
@@ -76,7 +77,7 @@ export default function EmailCodeForm({ email, next = "/welcome" }: { email: str
       </div>
       <h1 className="font-display text-2xl font-semibold mb-2">{t("codeTitle")}</h1>
       <p className="text-muted text-sm mb-5">
-        {t.rich("codeBody", { email, digits: CODE_LENGTH, mark: (chunks) => <span className="text-ink">{chunks}</span> })}
+        {t.rich("codeBody", { email, mark: (chunks) => <span className="text-ink">{chunks}</span> })}
       </p>
       <form
         onSubmit={(e) => {
@@ -91,21 +92,23 @@ export default function EmailCodeForm({ email, next = "/welcome" }: { email: str
           inputMode="numeric"
           autoComplete="one-time-code"
           pattern="[0-9]*"
-          maxLength={CODE_LENGTH}
-          aria-label={t("codeLabel", { digits: CODE_LENGTH })}
-          placeholder={"•".repeat(CODE_LENGTH)}
+          maxLength={EMAIL_CODE_MAX}
+          aria-label={t("codeLabel")}
+          placeholder={t("codeLabel")}
           value={code}
           onChange={(e) => {
-            const digits = e.target.value.replace(/\D/g, "").slice(0, CODE_LENGTH);
+            const digits = e.target.value.replace(/\D/g, "").slice(0, EMAIL_CODE_MAX);
+            // Pasted, or filled in from the email by the phone: the whole code
+            // arrived at once, so no button press is needed. Typed digits wait
+            // for the button, since the field can't know the last one.
+            const arrivedWhole = digits.length - code.length > 1;
             setCode(digits);
-            // Six digits typed (or pasted, or filled in from the email by
-            // the phone) is the whole job -- no button press needed.
-            if (digits.length === CODE_LENGTH) void verify(digits);
+            if (arrivedWhole) void verify(digits);
           }}
-          className={ui.input + " text-center font-display text-2xl tracking-[0.5em] py-3!"}
+          className={ui.input + " text-center font-display text-2xl tracking-[0.3em] placeholder:font-sans placeholder:text-base placeholder:tracking-normal py-3!"}
         />
         {error && <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>}
-        <button type="submit" disabled={checking || code.length !== CODE_LENGTH} className={ui.buttonPrimary + " w-full"}>
+        <button type="submit" disabled={checking || code.length < EMAIL_CODE_MIN} className={ui.buttonPrimary + " w-full"}>
           {checking ? t("codeChecking") : t("codeContinue")}
         </button>
       </form>

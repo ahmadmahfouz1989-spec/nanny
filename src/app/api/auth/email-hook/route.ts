@@ -16,7 +16,7 @@ interface HookPayload {
   // A WhatsApp account adding an email has none yet: the address is in new_email.
   user: { id: string; email?: string; new_email?: string };
   email_data: {
-    /** The 6-digit code (same one-time token as token_hash, typed instead of clicked). */
+    /** The code (same one-time token as token_hash, typed instead of clicked). */
     token?: string;
     token_hash: string;
     redirect_to: string;
