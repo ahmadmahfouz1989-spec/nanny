@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
-import { DEFAULT_SETTINGS, nextWaveOrClose } from "@/lib/errand-orders";
+import { admin, cleanupUsers, createProfile, createUser, parkProviders, type TestUser } from "./helpers";
+import { DEFAULT_SETTINGS, eligibleProviders, nextWaveOrClose } from "@/lib/errand-orders";
 import { orderView } from "@/lib/errand-order-view";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 
@@ -23,7 +23,7 @@ describe("riders near the pickup", () => {
     await admin.from("generic_profiles").update({ location_id: home.parent_location_id, available_now: opts.available ?? true }).eq("id", id);
     return id;
   }
-  const parkAll = () => admin.from("generic_profiles").update({ available_now: false }).eq("available_now", true);
+  const parkAll = () => parkProviders();
 
   async function order() {
     const { data } = await admin
@@ -82,15 +82,23 @@ describe("riders near the pickup", () => {
     await parkAll();
   });
 
-  it("too far, not available, wrong service: still not asked, and the customer is told nobody was", async () => {
+  it("too far, wrong service: still not asked, and the customer is told nobody was", async () => {
     await rider("nearby-far", tripoli);
-    await rider("nearby-off", beirut, { available: false });
     await rider("nearby-service", beirut, { services: ["queue"] });
     const o = await order();
     expect(await nextWaveOrClose(admin, o, asCustomer(customer), { quiet: true })).toBe(0);
     expect(await status(o.id)).toBe("no_provider");
     const fresh = (await admin.from("errand_orders").select("*").eq("id", o.id).single()).data!;
     expect((await orderView(admin, fresh, "seeker", customer.id)).sentTo).toBe(0);
+    await parkAll();
+  });
+
+  it("a rider switched to Offline is still asked, after the Available ones", async () => {
+    const off = await rider("nearby-offline", baabda, { available: false });
+    const on = await rider("nearby-online", baabda);
+    const asked = { service: "delivery" as const, pickupDistrictId: baabda.id, pickupAreaId: null, seekerUserId: customer.id, pickupPoint: CHIYAH };
+    const order = (await eligibleProviders(admin, asked, { limit: 10, maxActive: 1 })).map((c) => c.profileId);
+    expect(order).toEqual([on, off]);
     await parkAll();
   });
 

@@ -93,6 +93,16 @@ export const NANNY_PROVIDER = {
   experience: [{ ageGroup: "toddler", yearsExperience: 2 }],
 };
 
+/**
+ * Takes every rider and tradesperson already in the database out of
+ * dispatch (paused), so a test's orders reach only the providers it makes.
+ * Switching them Offline no longer does: requests reach Offline riders too.
+ */
+export async function parkProviders() {
+  const ids = await Promise.all(["errands", "maintenance"].map(categoryId));
+  await admin.from("generic_profiles").update({ status: "paused" }).eq("role", "provider").eq("status", "active").in("category_id", ids);
+}
+
 /** The scored match between two profiles (the pair is unique). */
 export async function matchBetween(seekerProfileId: string, providerProfileId: string): Promise<string> {
   const { data, error } = await admin

@@ -187,6 +187,11 @@ export async function activeOrderCounts(db: Admin, profileIds: string[]): Promis
 
 /** A rider who lets every request run out counts as this much further away. */
 const MISS_PENALTY_KM = 5;
+/**
+ * Requests reach riders who are switched to Offline too; they just come
+ * after the ones who said they're working (counted this much further away).
+ */
+const OFFLINE_PENALTY_KM = 2;
 
 /** Where each of these riders' phones was, if it was recent enough. */
 export async function freshRiderPoints(db: Admin, profileIds: string[], freshMinutes: number): Promise<Map<string, Point>> {
@@ -226,8 +231,9 @@ async function missRates(db: Admin, profileIds: string[]): Promise<Map<string, n
 
 /**
  * Providers who can take this order right now, nearest first: approved,
- * active, switched to available, not suspended, offering the service, and
- * not busy (fewer orders in progress than errand_settings.max_active_orders).
+ * active, not suspended, offering the service, and not busy (fewer orders
+ * in progress than errand_settings.max_active_orders). Riders switched to
+ * Offline are included, after the Available ones at the same distance.
  *
  * A rider is close enough when they cover the pickup district (their own or
  * one they ticked), or when their phone -- shared while the app is open and
@@ -273,13 +279,12 @@ export async function eligibleProviders(
 
   let query = db
     .from("generic_profiles")
-    .select("id, user_id, location_id, attributes")
+    .select("id, user_id, location_id, attributes, available_now")
     .eq("category_id", categoryId)
     .eq("role", "provider")
     .eq("status", "active")
     .eq("moderation_status", "approved")
     .neq("user_id", order.seekerUserId);
-  if (!jobs) query = query.eq("available_now", true);
   if (options.only) query = query.eq("id", options.only);
   const { data: providers } = await query;
 
@@ -337,7 +342,8 @@ export async function eligibleProviders(
     const home = points.get(attr(p, "areaId") ?? "") ?? points.get(attr(p, "districtId") ?? "") ?? points.get(p.location_id ?? "");
     const at = live.get(p.id) ?? home ?? null;
     const km = pickupPoint && at ? distanceKm(pickupPoint, at) : null;
-    return { profileId: p.id, userId: p.user_id, distanceKm: km, point: at ? { lat: at.lat, lon: at.lon } : null, live: live.has(p.id), rank: km === null ? Infinity : km + (misses.get(p.id) ?? 0) * MISS_PENALTY_KM };
+    const penalty = (misses.get(p.id) ?? 0) * MISS_PENALTY_KM + (!jobs && !p.available_now ? OFFLINE_PENALTY_KM : 0);
+    return { profileId: p.id, userId: p.user_id, distanceKm: km, point: at ? { lat: at.lat, lon: at.lon } : null, live: live.has(p.id), rank: km === null ? Infinity : km + penalty };
   });
   // Unknown distances last; ties broken by id so the order is stable.
   ranked.sort((a, b) => a.rank - b.rank || a.profileId.localeCompare(b.profileId));

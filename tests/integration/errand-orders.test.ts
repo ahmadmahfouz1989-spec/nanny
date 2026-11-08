@@ -5,7 +5,7 @@ import { placeOfPoint } from "@/lib/nearest-place";
 import { rememberRecentPlaces, savedPlaces } from "@/lib/saved-places";
 import { adminAction, providerAction, seekerAction } from "@/lib/errand-order-actions";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
-import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
+import { admin, cleanupUsers, createProfile, createUser, type TestUser, parkProviders } from "./helpers";
 
 // Delivery & Errands orders: who receives an order and in what order,
 // waves and timers, offers, choosing, confirming, the stages, dropping
@@ -68,6 +68,7 @@ describe("errand orders", () => {
   let covering: Awaited<ReturnType<typeof provider>>;
 
   beforeAll(async () => {
+    await parkProviders();
     // One wave reaching everyone, as far as needed: these tests are about
     // offers and stages, not waves.
     await useSettings({ wave_size: 50, initial_radius_km: 300, max_radius_km: 300 });

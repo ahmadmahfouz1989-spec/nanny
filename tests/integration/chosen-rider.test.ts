@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { admin, cleanupUsers, createProfile, createUser, type TestUser } from "./helpers";
+import { admin, cleanupUsers, createProfile, createUser, type TestUser, parkProviders } from "./helpers";
 import { eligibleProviders, nextWaveOrClose } from "@/lib/errand-orders";
 
 // A customer sends a delivery to one rider they picked: it reaches that
@@ -42,6 +42,7 @@ describe("sending an order to a rider you choose", () => {
   const row = async (id: string) => (await admin.from("errand_orders").select("*").eq("id", id).single()).data!;
 
   beforeAll(async () => {
+    await parkProviders();
     [baabda, tripoli] = await Promise.all([place("LB32"), place("LB56")]);
     customer = await createUser("chosen-customer");
     request = await createProfile(customer, "errands", "seeker", { errandService: "delivery", districtId: baabda.id });
@@ -68,16 +69,25 @@ describe("sending an order to a rider you choose", () => {
     expect(await askedIn(o.id)).toEqual([noDistrict]);
   });
 
-  it("a chosen rider who went offline gets nothing, and the picker leaves them out", async () => {
+  it("a chosen rider who is switched to Offline still gets it, and is in the picker", async () => {
     const off = await rider("chosen-off", { districtId: baabda.id }, baabda.parent_location_id);
     await admin.from("generic_profiles").update({ available_now: false }).eq("id", off);
     const asked = { service: "delivery" as const, pickupDistrictId: baabda.id, pickupAreaId: null, seekerUserId: customer.id };
-    expect(await eligibleProviders(admin, asked, { limit: 1, only: off })).toEqual([]);
+    expect((await eligibleProviders(admin, asked, { limit: 1, only: off })).map((c) => c.profileId)).toEqual([off]);
     const list = (await eligibleProviders(admin, asked, { limit: 500, anywhere: true })).map((c) => c.profileId);
     expect(list).toContain(covering);
-    expect(list).not.toContain(off);
+    expect(list).toContain(off);
 
     const o = await order(off);
+    expect(await nextWaveOrClose(admin, o, asCustomer(customer), { quiet: true })).toBe(1);
+    expect(await askedIn(o.id)).toEqual([off]);
+  });
+
+  it("a suspended chosen rider gets nothing", async () => {
+    const gone = await rider("chosen-suspended", { districtId: baabda.id }, baabda.parent_location_id);
+    const { data: p } = await admin.from("generic_profiles").select("user_id").eq("id", gone).single();
+    await admin.from("users").update({ status: "suspended" }).eq("id", p!.user_id);
+    const o = await order(gone);
     expect(await nextWaveOrClose(admin, o, asCustomer(customer), { quiet: true })).toBe(0);
     expect((await row(o.id)).status).toBe("no_provider");
   });
