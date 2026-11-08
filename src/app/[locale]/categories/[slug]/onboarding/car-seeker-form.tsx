@@ -5,6 +5,7 @@ import { initialFullName } from "@/lib/draft-profile";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import AccountBasicsLine from "@/components/onboarding/account-basics-line";
 import { useFormDraft } from "@/components/onboarding/use-form-draft";
 import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
@@ -390,11 +391,7 @@ export default function CarSeekerForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section4Title")}</SectionHeading>
-        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
-        <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
-        <FieldError field="contactPhone" errors={fieldErrors} />
-        <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
+<AccountBasicsLine />
       </div>
     </EditShell>
   );

@@ -2798,7 +2798,10 @@
     "emailTaken": "This email is already on another ouiKnow account. Sign in with email to use that account.",
     "emailTooMany": "Too many codes requested. Please wait a minute and try again.",
     "emailSendFailed": "Couldn't send the code. Check the email and try again.",
-    "emailWrongCode": "That code is wrong or has expired. Check the latest email, or tap \"Resend code\"."
+    "emailWrongCode": "That code is wrong or has expired. Check the latest email, or tap \"Resend code\".",
+    "aboutYouTitle": "Phone, nationality and photo",
+    "aboutYouHint": "Used on all your profiles.",
+    "aboutYouEdit": "Edit"
   },
   "Announcements": {
     "title": "Announcements",
@@ -2812,5 +2815,27 @@
     "body": "The link may be old, or the page was moved.",
     "home": "Go home",
     "services": "Browse services"
+  },
+  "AboutYou": {
+    "title": "About you",
+    "subtitle": "Once, for every service: each profile you create uses these, and asks only what that service needs.",
+    "name": "Your full name",
+    "phone": "Phone number",
+    "phoneHint": "Only the ouiKnow team sees it. Never shown to other people, never used to log in.",
+    "nationality": "Nationality",
+    "addPhoto": "Add a photo",
+    "changePhoto": "Change photo",
+    "uploading": "Uploading…",
+    "photoHint": "Optional. A clear photo of your face gets more replies.",
+    "photoSize": "That photo is too large (5 MB at most).",
+    "photoType": "Use a JPG, PNG or WebP photo.",
+    "photoFailed": "The photo didn't upload. Try again.",
+    "nameMissing": "Enter your full name.",
+    "phoneMissing": "Enter a phone number, like +961 3 123 456.",
+    "nationalityMissing": "Choose your nationality.",
+    "saveFailed": "Couldn't save. Try again.",
+    "saving": "Saving…",
+    "continue": "Continue",
+    "edit": "Edit"
   }
 }

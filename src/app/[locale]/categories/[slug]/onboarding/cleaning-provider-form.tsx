@@ -5,13 +5,12 @@ import { initialFullName } from "@/lib/draft-profile";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import AccountBasicsLine from "@/components/onboarding/account-basics-line";
 import { useFormDraft } from "@/components/onboarding/use-form-draft";
-import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
+import FieldLabel from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
-import GenericPhotoField from "@/components/onboarding/generic-photo-field";
 import LocationPicker from "@/components/onboarding/location-picker";
 import DistrictCoverage from "@/components/onboarding/district-coverage";
-import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import CleaningServiceIcon from "@/components/cleaning-service-icon";
 import IdDocumentField from "@/components/onboarding/id-document-field";
@@ -165,7 +164,7 @@ export default function CleaningProviderForm({
   const [form, setForm] = useState(initialProfile ? stateFromExisting(initialProfile) : initialState);
   // Answers kept on the phone until saved or cancelled (see useFormDraft).
   const draft = useFormDraft(`form-draft:${categorySlug}:provider:${initialProfile?.id ?? "new"}`, form, setForm);
-  const [photoUrl, setPhotoUrl] = useState(initialProfile?.profile_photo_url ?? null);
+  const [photoUrl] = useState(initialProfile?.profile_photo_url ?? null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the fields are fixed.
@@ -279,25 +278,21 @@ export default function CleaningProviderForm({
             </button>
           ))}
         </div>
+        <AccountBasicsLine />
         <input
           className={ui.input}
           placeholder={business ? t("businessNamePlaceholder") : t("namePlaceholder")}
           value={form.fullName}
           onChange={(e) => update("fullName", e.target.value)}
         />
-        <FieldError field="fullName" errors={fieldErrors} />
         {business && (
           <>
             <FieldLabel field="teamSize" errors={fieldErrors}>{t("teamSize")}</FieldLabel>
             <input type="number" inputMode="numeric" min={2} max={100} className={ui.input} value={form.teamSize} onChange={(e) => update("teamSize", e.target.value)} />
           </>
         )}
-        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
-        <FieldError field="contactPhone" errors={fieldErrors} />
-        <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
           <>
-            <GenericPhotoField profileId={initialProfile.id} value={photoUrl} onChange={setPhotoUrl} onError={setError} />
             {business && <p className="-mt-1 text-xs text-muted">{t("logoHint")}</p>}
           </>
         )}
@@ -321,8 +316,6 @@ export default function CleaningProviderForm({
         />
         {form.providerType === "individual" && (
           <>
-            <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
-            <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
           </>
         )}
         <FieldLabel field="languageIds" errors={fieldErrors} optional>{t("languages")}</FieldLabel>

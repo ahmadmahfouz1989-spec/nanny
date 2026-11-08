@@ -72,7 +72,7 @@ export async function POST(request: Request) {
     .eq("user_id", user.id)
     .neq("status", "draft")
     .order("updated_at", { ascending: false });
-  const { data: account } = await db.from("users").select("full_name").eq("id", user.id).single();
+  const { data: account } = await db.from("users").select("full_name, nationality, photo_url").eq("id", user.id).single();
   const carried = carryOver(earlier ?? [], role);
 
   const { data: created, error } = await db
@@ -83,8 +83,9 @@ export async function POST(request: Request) {
       role,
       full_name: account?.full_name || earlier?.[0]?.full_name?.trim() || DRAFT_NAME,
       location_id: carried.location_id,
-      profile_photo_url: carried.profile_photo_url,
-      attributes: carried.attributes,
+      // The account's photo and nationality ("About you") come first.
+      profile_photo_url: account?.photo_url ?? carried.profile_photo_url,
+      attributes: { ...(carried.attributes as Record<string, unknown>), ...(account?.nationality ? { nationality: account.nationality } : {}) } as typeof carried.attributes,
       status: "draft",
     })
     .select("id, role, full_name, profile_photo_url, location_id, attributes, status, moderation_status")

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { request } from "@/lib/request";
 import { ui } from "@/lib/ui";
 import AddPhoneForm from "@/components/add-phone-form";
@@ -63,6 +63,15 @@ export default function AccountDetailsCard({ name, email, phone }: { name: strin
         <p className="mt-1.5 text-xs text-muted">{t("nameHint")}</p>
         {message && <p className={`mt-2 rounded-lg px-3 py-2 text-sm ${message.ok ? "bg-surface-sunken text-ink" : "bg-danger-soft text-danger"}`}>{message.text}</p>}
       </form>
+
+      {/* Phone, nationality and photo: the rest of "About you", shared by every profile. */}
+      <Link href="/welcome/about-you?next=/settings" className="flex items-center justify-between gap-3 rounded-xl bg-surface-sunken px-4 py-3">
+        <span className="min-w-0">
+          <span className="block text-sm font-medium text-ink">{t("aboutYouTitle")}</span>
+          <span className="block text-xs text-muted">{t("aboutYouHint")}</span>
+        </span>
+        <span className="shrink-0 text-sm font-semibold text-primary">{t("aboutYouEdit")}</span>
+      </Link>
 
       <div id="email">
         <p className={label}>{t("email")}</p>

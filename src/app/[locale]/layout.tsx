@@ -8,6 +8,8 @@ import { notFound } from "next/navigation";
 import { routing } from "@/i18n/routing";
 import ServiceWorkerRegister from "@/components/service-worker-register";
 import NativeAppBridge from "@/components/native-app-bridge";
+import LanguageChooser from "@/components/language-chooser";
+import { LANGUAGE_ASK_SCRIPT } from "@/lib/language-ask";
 import MetaPixel from "@/components/meta-pixel";
 import "../globals.css";
 
@@ -107,13 +109,19 @@ export default async function LocaleLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
         </Script>
+        <Script id="lang-ask" strategy="beforeInteractive">
+          {LANGUAGE_ASK_SCRIPT}
+        </Script>
         <ServiceWorkerRegister />
         <NativeAppBridge />
         {/* Reads the search query, which needs a Suspense boundary. */}
         <Suspense fallback={null}>
           <MetaPixel />
         </Suspense>
-        <NextIntlClientProvider>{children}</NextIntlClientProvider>
+        <NextIntlClientProvider>
+          {children}
+          <LanguageChooser />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

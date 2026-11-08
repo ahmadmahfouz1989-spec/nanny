@@ -1,16 +1,15 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { initialFullName } from "@/lib/draft-profile";
-import Image from "next/image";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import EditShell from "@/components/onboarding/edit-shell";
+import AccountBasicsLine from "@/components/onboarding/account-basics-line";
 import { useFormDraft } from "@/components/onboarding/use-form-draft";
-import FieldLabel, { FieldError } from "@/components/onboarding/field-label";
+import FieldLabel from "@/components/onboarding/field-label";
 import SectionHeading from "@/components/onboarding/section-heading";
 import LocationPicker from "@/components/onboarding/location-picker";
-import NationalitySelect from "@/components/onboarding/nationality-select";
 import LanguageSelect from "@/components/onboarding/language-select";
 import { AGE_GROUPS, DAYS } from "@/lib/validation/profile";
 import { nannySeekerSchema } from "@/lib/validation/nanny";
@@ -122,7 +121,6 @@ export default function NannySeekerForm({
   const tLive = useTranslations("LiveArrangementOptions");
   const tDays = useTranslations("Days");
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   // The row always exists by now (claimed as a draft when the role was
   // picked), so saving is always an update; a draft still reads as
   // "create" to the user.
@@ -135,37 +133,12 @@ export default function NannySeekerForm({
   // Set by the first failed save; from then on errors update live as the
   // fields are fixed.
   const [showErrors, setShowErrors] = useState(false);
-  const [uploading, setUploading] = useState(false);
+  const uploading = false;
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
   }
 
-  async function handlePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setUploading(true);
-    setError(null);
-    const formData = new FormData();
-    formData.append("file", file);
-    // Staged against this profile: the file is uploaded now, but the
-    // profile only points at it once Save sends profilePhotoUrl below, so
-    // Cancel leaves the saved profile untouched.
-    if (initialProfile) formData.append("genericProfileId", initialProfile.id);
-    formData.append("stage", "true");
-
-    const res = await request("/api/profile/photo", { method: "POST", body: formData });
-    setUploading(false);
-
-    if (!res || !res.ok) {
-      setError(tw("genericError"));
-      return;
-    }
-
-    const body = await res.json();
-    update("profilePhotoUrl", body.url);
-  }
 
   function toggleAgeRange(range: string) {
     update(
@@ -251,62 +224,7 @@ export default function NannySeekerForm({
     <>
       <div className="flex flex-col gap-3">
           {sectionHeading(1)}
-          <input
-            className={ui.input}
-            autoComplete="name"
-            aria-label={t("namePlaceholder")}
-            placeholder={t("namePlaceholder")}
-            value={form.fullName}
-            onChange={(e) => update("fullName", e.target.value)}
-          />
-        <FieldError field="fullName" errors={fieldErrors} />
-          <input
-            type="tel"
-            className={ui.input}
-            autoComplete="tel"
-            aria-label={t("contactPhonePlaceholder")}
-            placeholder={t("contactPhonePlaceholder")}
-            value={form.contactPhone}
-            onChange={(e) => update("contactPhone", e.target.value)}
-          />
-        <FieldError field="contactPhone" errors={fieldErrors} />
-          <p className="text-xs text-muted -mt-2">{t("contactPhoneHint")}</p>
-
-          <div className="flex items-center gap-4">
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted overflow-hidden hover:border-primary/50 transition-colors"
-            >
-              {form.profilePhotoUrl ? (
-                <Image
-                  src={form.profilePhotoUrl}
-                  alt=""
-                  width={64}
-                  height={64}
-                  unoptimized
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                </svg>
-              )}
-            </button>
-            <div className="text-sm">
-              <button type="button" onClick={() => fileInputRef.current?.click()} className={ui.link}>
-                {form.profilePhotoUrl ? t("changePhoto") : t("uploadPhoto")}
-              </button>
-              <p className="text-xs text-muted mt-0.5">{uploading ? t("uploading") : t("photoHint")}</p>
-            </div>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handlePhotoChange}
-              className="hidden"
-            />
-          </div>
+          <AccountBasicsLine />
 
           <LocationPicker
             governorateId={form.locationId}
@@ -318,8 +236,6 @@ export default function NannySeekerForm({
             onDetail={(v) => update("locationDetail", v)}
             errors={fieldErrors}
           />
-          <FieldLabel field="nationality" errors={fieldErrors}>{t("nationality")}</FieldLabel>
-          <NationalitySelect value={form.nationality} onChange={(v) => update("nationality", v)} />
       </div>
 
       <div className="flex flex-col gap-3">

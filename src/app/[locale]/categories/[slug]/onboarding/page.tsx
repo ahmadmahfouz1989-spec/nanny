@@ -1,4 +1,5 @@
 import { redirect } from "@/i18n/navigation";
+import { accountBasics, aboutYouHref } from "@/lib/account-basics";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mustVerifyPhone } from "@/lib/phone-gate";
@@ -35,6 +36,13 @@ export default async function CategoryOnboardingPage({
     redirect({ href: "/categories", locale });
   }
 
+  // Name, phone, nationality and photo are asked once ("About you"), not here.
+  const basics = await accountBasics(createAdminClient(), user!.id);
+  if (!basics.complete) {
+    redirect({ href: aboutYouHref(`/categories/${slug}/onboarding${role ? `?role=${role}` : ""}`), locale });
+    return;
+  }
+
   const [{ data: profiles }, { data: userRow }] = await Promise.all([
     supabase
       .from("generic_profiles")
@@ -52,12 +60,14 @@ export default async function CategoryOnboardingPage({
   if (!started && (await mustVerifyPhone(createAdminClient(), user!))) {
     redirect({ href: `/verify-phone?next=/categories/${slug}/onboarding${role ? `?role=${role}` : ""}`, locale });
   }
+  // The account's basics fill every profile: the form doesn't ask them.
   const withContact = (p: NonNullable<typeof profiles>[number], role: "seeker" | "provider") => ({
     ...p,
     full_name: accountName ?? p.full_name,
     role,
-    attributes: asAttributes(p.attributes),
-    contact_phone: accountContactPhone,
+    profile_photo_url: basics.photoUrl ?? p.profile_photo_url,
+    attributes: { ...asAttributes(p.attributes), nationality: basics.nationality },
+    contact_phone: basics.contactPhone ?? accountContactPhone,
   });
   const seekerProfile = (profiles ?? []).find((p) => p.role === "seeker");
   const providerProfile = (profiles ?? []).find((p) => p.role === "provider");
@@ -91,7 +101,6 @@ export default async function CategoryOnboardingPage({
       // phone already saved via another category, and would submit this
       // form's blank field as a real update, wiping it out account-wide.
       accountContactPhone={accountContactPhone}
-      nameIsShared={!!accountName}
     />
     </AppShell>
   );

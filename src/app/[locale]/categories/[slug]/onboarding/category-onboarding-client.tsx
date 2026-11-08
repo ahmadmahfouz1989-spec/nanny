@@ -53,7 +53,6 @@ export default function CategoryOnboardingClient({
   seekerProfile,
   providerProfile,
   accountContactPhone,
-  nameIsShared,
   initialRole,
   startRole = null,
 }: {
@@ -65,8 +64,6 @@ export default function CategoryOnboardingClient({
   seekerProfile: ExistingProfile;
   providerProfile: ExistingProfile;
   accountContactPhone: string | null;
-  // The account already has a name, so the form's name field changes it everywhere.
-  nameIsShared?: boolean;
   // Set when arriving from a specific dashboard tab's Edit link -- takes
   // priority over the provider-first default below, which otherwise has
   // no way to know which of the two an Edit click actually meant.
@@ -171,9 +168,11 @@ export default function CategoryOnboardingClient({
   }, []);
 
   const forms = FORMS[categorySlug];
-  // A new profile that started with details from another one: say so, so they check them.
+  // A new profile that started with details from another one: say so, so
+  // they check them. The account's own basics (photo, nationality) don't
+  // count -- every profile starts with those.
   const carriedNote = (p: ExistingProfile) =>
-    !!p && p.status === "draft" && (!!p.location_id || !!p.profile_photo_url || Object.keys(p.attributes ?? {}).length > 0) ? (
+    !!p && p.status === "draft" && (!!p.location_id || Object.keys(p.attributes ?? {}).some((k) => k !== "nationality")) ? (
       <p className="mx-auto max-w-2xl px-6 pt-3 text-xs text-muted">{t("carriedOver")}</p>
     ) : null;
   // Going back to the choice is for someone still deciding; on a request or
@@ -184,7 +183,6 @@ export default function CategoryOnboardingClient({
     const ProviderForm = forms.provider;
     return (
       <>
-        {nameIsShared && <p className="mx-auto max-w-2xl px-6 pt-5 text-xs text-muted">{t("nameIsShared")}</p>}
         {carriedNote(provider)}
         <ProviderForm categorySlug={categorySlug} initialProfile={provider} onBack={submitted(provider) ? undefined : () => changeRole("provider")} />
       </>
@@ -194,7 +192,6 @@ export default function CategoryOnboardingClient({
     const SeekerForm = forms.seeker;
     return (
       <>
-        {nameIsShared && <p className="mx-auto max-w-2xl px-6 pt-5 text-xs text-muted">{t("nameIsShared")}</p>}
         {carriedNote(seeker)}
         <SeekerForm categorySlug={categorySlug} initialProfile={seeker} onBack={submitted(seeker) ? undefined : () => changeRole("seeker")} />
       </>

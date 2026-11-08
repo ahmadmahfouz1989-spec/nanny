@@ -447,3 +447,15 @@ html[data-chrome="hidden"] .app-chrome-top {
     resize: none;
   }
 }
+
+/* First open: "English or العربية?" (components/language-chooser.tsx). Shown
+   only when the head script marked the page; the page under it can't scroll. */
+.lang-ask {
+  display: none;
+}
+:root[data-lang-ask] .lang-ask {
+  display: flex;
+}
+:root[data-lang-ask] body {
+  overflow: hidden;
+}

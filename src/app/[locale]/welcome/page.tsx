@@ -1,4 +1,6 @@
 import { getTranslations } from "next-intl/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { accountBasics, aboutYouHref } from "@/lib/account-basics";
 import { redirect } from "@/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getCategories } from "@/lib/categories";
@@ -19,6 +21,11 @@ export default async function WelcomePage({ params }: { params: Promise<{ locale
   } = await supabase.auth.getUser();
   if (!user) {
     redirect({ href: "/login", locale });
+    return;
+  }
+  // First the basics, asked once for every service.
+  if (!(await accountBasics(createAdminClient(), user.id)).complete) {
+    redirect({ href: aboutYouHref("/welcome"), locale });
     return;
   }
   const { count } = await supabase
