@@ -18,6 +18,9 @@ const toInput = (s: ErrandSettings): Required<SettingsInput> => ({
   maxRadiusKm: s.max_radius_km,
   maxActiveOrders: s.max_active_orders,
   nearbyFallbackKm: s.nearby_fallback_km,
+  autoOfflineAfterMisses: s.auto_offline_after_misses,
+  locationFreshMinutes: s.location_fresh_minutes,
+  travelTimeCandidates: s.travel_time_candidates,
 });
 
 /** The Delivery & Errands (and repair quotes) matching settings, changed without a code deploy. */
@@ -50,6 +53,9 @@ export async function PUT(request: Request) {
       max_radius_km: v.maxRadiusKm,
       max_active_orders: v.maxActiveOrders,
       nearby_fallback_km: v.nearbyFallbackKm,
+      ...(v.autoOfflineAfterMisses !== undefined ? { auto_offline_after_misses: v.autoOfflineAfterMisses } : {}),
+      ...(v.locationFreshMinutes !== undefined ? { location_fresh_minutes: v.locationFreshMinutes } : {}),
+      ...(v.travelTimeCandidates !== undefined ? { travel_time_candidates: v.travelTimeCandidates } : {}),
       updated_at: new Date().toISOString(),
       updated_by: admin.userId,
     })

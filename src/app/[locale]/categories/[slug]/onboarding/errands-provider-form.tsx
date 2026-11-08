@@ -15,7 +15,7 @@ import NationalitySelect from "@/components/onboarding/nationality-select";
 import ErrandServiceIcon from "@/components/errand-service-icon";
 import IdDocumentField from "@/components/onboarding/id-document-field";
 import { DAYS } from "@/lib/validation/profile";
-import { ERRAND_SERVICES, PRICING, VEHICLES, errandProviderSchema, type ErrandService } from "@/lib/validation/errands";
+import { DEFAULT_RIDER_RANGE_KM, ERRAND_SERVICES, PRICING, RIDER_RANGES_KM, VEHICLES, errandProviderSchema, type ErrandService } from "@/lib/validation/errands";
 import { ui } from "@/lib/ui";
 import { fieldErrorsFor, requiredProgress, scrollToFirstError } from "@/lib/form-errors";
 import { request } from "@/lib/request";
@@ -38,6 +38,7 @@ type FormState = {
   startTime: string;
   endTime: string;
   takesUrgentJobs: boolean;
+  maxDistanceKm: number;
   vehicle: Vehicle | "";
   pricing: Pricing | "";
   priceNote: string;
@@ -66,6 +67,7 @@ const initialState: FormState = {
   startTime: "08:00",
   endTime: "20:00",
   takesUrgentJobs: false,
+  maxDistanceKm: DEFAULT_RIDER_RANGE_KM,
   vehicle: "",
   pricing: "",
   priceNote: "",
@@ -109,6 +111,7 @@ function stateFromExisting(p: ExistingProfile): FormState {
     startTime: availability.startTime ?? "08:00",
     endTime: availability.endTime ?? "20:00",
     takesUrgentJobs: !!a.takesUrgentJobs,
+    maxDistanceKm: typeof a.maxDistanceKm === "number" ? a.maxDistanceKm : DEFAULT_RIDER_RANGE_KM,
     vehicle: (a.vehicle as Vehicle) ?? "",
     pricing: (a.pricing as Pricing) ?? "",
     priceNote: (a.priceNote as string) ?? "",
@@ -201,6 +204,7 @@ export default function ErrandsProviderForm({
     serviceAreaIds: form.serviceAreaIds.filter((id) => id !== form.locationId),
     availability: { days: form.availabilityDays, startTime: form.startTime, endTime: form.endTime },
     takesUrgentJobs: form.takesUrgentJobs,
+    maxDistanceKm: form.maxDistanceKm,
     vehicle: form.vehicle || undefined,
     pricing: form.pricing || undefined,
     priceNote: form.priceNote.trim() || undefined,
@@ -383,6 +387,17 @@ export default function ErrandsProviderForm({
         </div>
 
         {check("takesUrgentJobs", t("takesUrgentJobs"))}
+
+        {/* With their location shared, orders this close to where they are reach them. */}
+        <FieldLabel>{t("maxDistance")}</FieldLabel>
+        <div className="flex flex-wrap gap-2">
+          {RIDER_RANGES_KM.map((km) => (
+            <button type="button" key={km} onClick={() => update("maxDistanceKm", km)} aria-pressed={form.maxDistanceKm === km} className={ui.pill(form.maxDistanceKm === km)}>
+              {t("maxDistanceKm", { km })}
+            </button>
+          ))}
+        </div>
+        <p className="-mt-1 text-xs text-muted">{t("maxDistanceHint")}</p>
       </div>
 
       <div className="flex flex-col gap-3">

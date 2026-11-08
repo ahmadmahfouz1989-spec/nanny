@@ -55,8 +55,11 @@ function isProviderApproval(n: NotificationLike) {
   return n.type === "profile_approved" && n.payload?.role === "provider" && typeof n.payload?.profile_id === "string" && !isRiderApproval(n);
 }
 
+/** A rider switched Offline for letting requests run out. */
+const isAutoOffline = (n: NotificationLike) => n.type === "errand_status" && n.payload?.status === "auto_offline";
+
 export function notificationHref(n: NotificationLike): string {
-  if (isRiderApproval(n)) return "/orders?tab=provider";
+  if (isRiderApproval(n) || isAutoOffline(n)) return "/orders?tab=provider";
   if (isProviderApproval(n)) return `/u/${n.payload!.profile_id as string}?share=1`;
   const matchId = typeof n.payload?.generic_match_id === "string" ? n.payload.generic_match_id : null;
   const categorySlug = typeof n.payload?.category_slug === "string" ? n.payload.category_slug : null;
@@ -177,6 +180,6 @@ const ACTIONS: Record<string, string> = {
 };
 
 export function notificationAction(n: NotificationLike, t: Translate): string | null {
-  const key = isRiderApproval(n) ? "actionGoAvailable" : isProviderApproval(n) ? "actionShare" : ACTIONS[n.type];
+  const key = isRiderApproval(n) || isAutoOffline(n) ? "actionGoAvailable" : isProviderApproval(n) ? "actionShare" : ACTIONS[n.type];
   return key ? t(key) : null;
 }

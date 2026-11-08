@@ -228,16 +228,28 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"errand_settings": {
+                },"rider_locations": {
                   Row: {
-                    "choose_seconds": number,"confirm_seconds": number,"id": boolean,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
+                    "lat": number,"lng": number,"located_at": string,"profile_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "lat": number,"lng": number,"located_at"?: string,"profile_id": string
                   }
                   Update: {
-                    "choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "lat"?: number,"lng"?: number,"located_at"?: string,"profile_id"?: string
+                  }
+                  Relationships: []
+                },"errand_settings": {
+                  Row: {
+                    "auto_offline_after_misses": number,"choose_seconds": number,"confirm_seconds": number,"id": boolean,"location_fresh_minutes": number,"travel_time_candidates": number,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auto_offline_after_misses"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                  }
+                  Update: {
+                    "auto_offline_after_misses"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Relationships: [
                     {

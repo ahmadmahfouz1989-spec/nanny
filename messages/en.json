@@ -117,7 +117,8 @@
     "errand_status_choose": "Offers are in for order #{number} — choose one now",
     "announcements": "Announcements from ouiKnow",
     "actionAnnouncement": "Read the message",
-    "profile_edited_live": "{name} edited their live profile. Check the change"
+    "profile_edited_live": "{name} edited their live profile. Check the change",
+    "errand_status_auto_offline": "You missed several requests in a row, so you're Offline now. Switch back on when you're ready"
   },
   "Push": {
     "title": "Push notifications",
@@ -1126,7 +1127,10 @@
     "broadcastRecipient_sent": "Sent",
     "broadcastRecipient_no_device": "No device",
     "broadcastRecipient_failed": "Failed",
-    "nearbyFallbackKm": "Nobody covering the district: ask riders within (km, 0 = off)"
+    "nearbyFallbackKm": "Nobody covering the district: ask riders within (km, 0 = off)",
+    "autoOfflineAfterMisses": "Switch a rider Offline after this many missed requests in a row (0 = never)",
+    "locationFreshMinutes": "Use a rider's shared location for this long (minutes)",
+    "travelTimeCandidates": "Check road travel time for the nearest (riders, 0 = off)"
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",
@@ -1463,7 +1467,10 @@
     "section1Title": "You and your area",
     "section2Title": "What you do",
     "section3Title": "Where and when you work",
-    "section4Title": "Prices and about you"
+    "section4Title": "Prices and about you",
+    "maxDistance": "How far will you go for an order?",
+    "maxDistanceKm": "{km} km",
+    "maxDistanceHint": "Counted from where you are when you share your location on the Orders page."
   },
   "ErrandsSeekerOnboarding": {
     "pickTitle": "What service do you need?",
@@ -2393,7 +2400,7 @@
     "needRequestProfile": "To order, first fill in your short Delivery & Errands request — it takes a minute.",
     "prefilledHint": "We filled this in from your request — check the places and send it.",
     "needsAreaTitle": "You're not getting delivery requests",
-    "needsAreaBody": "Your profile has no district yet, and requests go to riders by district. Add yours and the ones you cover.",
+    "needsAreaBody": "Your profile has no district yet. Add yours, or share your location on the Orders page while you're Available, so requests can reach you.",
     "needsAreaAction": "Add my district",
     "entryOfflineTitle": "You're Offline — no orders reach you",
     "entryOfflineHint": "Switch to Available to get delivery requests near you.",
@@ -2592,7 +2599,17 @@
     "entryPendingHint": "Our team is checking your profile. Delivery requests reach you as soon as it's approved.",
     "unavailableTitle": "This order isn't available",
     "unavailableBody": "It may have been removed, or it belongs to someone else.",
-    "chooseTrade": "Choose which pro you need."
+    "chooseTrade": "Choose which pro you need.",
+    "locationTitle": "Get orders near where you are",
+    "locationBody": "Share your location while you're Available and ouiKnow is open (app or website), and orders near you reach you first. It's rounded to about 500 m, only our system uses it, and it stops when you go Offline.",
+    "locationShare": "Share my location",
+    "locationAsking": "Getting your location…",
+    "locationDenied": "Location is blocked. Allow it for ouiKnow in your phone's settings, then try again.",
+    "locationFailed": "Couldn't get your location. Check that location is on and try again.",
+    "locationOn": "📍 Using your location: orders near you reach you first.",
+    "locationStop": "Stop sharing",
+    "reachSome": "{count, plural, one {1 rider is} other {# riders are}} available near this pickup.",
+    "reachNone": "No rider is available near this pickup right now. You can still send it, and we'll tell you if nobody takes it. Or choose a rider below."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

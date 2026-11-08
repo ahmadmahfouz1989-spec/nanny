@@ -308,6 +308,9 @@ type Settings = {
   maxRadiusKm: number;
   maxActiveOrders: number;
   nearbyFallbackKm: number;
+  autoOfflineAfterMisses: number;
+  locationFreshMinutes: number;
+  travelTimeCandidates: number;
 };
 
 // Each setting: its label key, limits and step. Grouped as the dashboard shows them.
@@ -328,6 +331,8 @@ const SETTING_GROUPS: { title: string; fields: { key: keyof Settings; label: str
       { key: "radiusStepKm", label: "radiusStepKm", min: 0.5, max: 300, step: 0.5 },
       { key: "maxRadiusKm", label: "maxRadiusKm", min: 0.5, max: 300, step: 0.5 },
       { key: "nearbyFallbackKm", label: "nearbyFallbackKm", min: 0, max: 300, step: 0.5 },
+      { key: "locationFreshMinutes", label: "locationFreshMinutes", min: 1, max: 240 },
+      { key: "travelTimeCandidates", label: "travelTimeCandidates", min: 0, max: 25 },
     ],
   },
   {
@@ -336,6 +341,7 @@ const SETTING_GROUPS: { title: string; fields: { key: keyof Settings; label: str
       { key: "maxRecipients", label: "maxRecipients", min: 1, max: 200 },
       { key: "openMinutes", label: "openMinutes", min: 5, max: 1440 },
       { key: "maxActiveOrders", label: "maxActiveOrders", min: 1, max: 10 },
+      { key: "autoOfflineAfterMisses", label: "autoOfflineAfterMisses", min: 0, max: 50 },
       { key: "quoteOpenMinutes", label: "quoteOpenMinutes", min: 60, max: 10080 },
     ],
   },

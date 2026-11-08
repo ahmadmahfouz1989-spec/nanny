@@ -1,7 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { placeOf, placeScore } from "@/lib/matching/place";
 import { notify } from "@/lib/push";
-import type { ErrandService } from "@/lib/validation/errands";
+import { quickestByRoad } from "@/lib/travel-time";
+import { DEFAULT_RIDER_RANGE_KM, type ErrandService } from "@/lib/validation/errands";
 import type { Trade } from "@/lib/validation/maintenance";
 import type { Tables } from "@/lib/supabase/database.types";
 
@@ -83,6 +84,12 @@ export type ErrandSettings = {
   max_active_orders: number;
   /** No rider covering the pickup can take it: ask available riders this close. 0 = don't. */
   nearby_fallback_km: number;
+  /** A rider who lets this many requests in a row run out goes Offline. 0 = never. */
+  auto_offline_after_misses: number;
+  /** How old a rider's shared position may be and still be used, in minutes. */
+  location_fresh_minutes: number;
+  /** How many of the nearest riders get a road travel time before a wave is picked. 0 = off. */
+  travel_time_candidates: number;
 };
 
 export const DEFAULT_SETTINGS: ErrandSettings = {
@@ -98,6 +105,9 @@ export const DEFAULT_SETTINGS: ErrandSettings = {
   max_radius_km: 30,
   max_active_orders: 1,
   nearby_fallback_km: 10,
+  auto_offline_after_misses: 3,
+  location_fresh_minutes: 20,
+  travel_time_candidates: 6,
 };
 
 export async function errandSettings(db: Admin): Promise<ErrandSettings> {
@@ -146,7 +156,15 @@ export async function categoryIdOf(db: Admin, slug: OrderCategory): Promise<stri
 
 export const errandsCategoryId = (db: Admin) => categoryIdOf(db, "errands");
 
-export type Candidate = { profileId: string; userId: string; distanceKm: number | null };
+export type Candidate = {
+  profileId: string;
+  userId: string;
+  distanceKm: number | null;
+  /** Where the distance was measured from: their phone, or their area's centre. */
+  point?: { lat: number; lon: number } | null;
+  /** The distance is from where their phone was a few minutes ago. */
+  live?: boolean;
+};
 
 /** Orders in progress for each of these rider profiles. */
 export async function activeOrderCounts(db: Admin, profileIds: string[]): Promise<Map<string, number>> {
@@ -164,20 +182,60 @@ export async function activeOrderCounts(db: Admin, profileIds: string[]): Promis
   return out;
 }
 
+/** A rider who lets every request run out counts as this much further away. */
+const MISS_PENALTY_KM = 5;
+
+/** Where each of these riders' phones was, if it was recent enough. */
+export async function freshRiderPoints(db: Admin, profileIds: string[], freshMinutes: number): Promise<Map<string, Point>> {
+  const out = new Map<string, Point>();
+  if (profileIds.length === 0) return out;
+  const since = new Date(Date.now() - freshMinutes * 60_000).toISOString();
+  const { data } = await db.from("rider_locations").select("profile_id, lat, lng").in("profile_id", profileIds).gte("located_at", since);
+  for (const row of data ?? []) out.set(row.profile_id, { lat: row.lat, lon: row.lng });
+  return out;
+}
+
+/**
+ * How often each rider lets a request run out, 0 to 1, over their last
+ * month of requests (unknown below 3 answered-or-missed requests: 0).
+ */
+async function missRates(db: Admin, profileIds: string[]): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (profileIds.length === 0) return out;
+  const since = new Date(Date.now() - 30 * 86_400_000).toISOString();
+  const { data } = await db
+    .from("errand_order_recipients")
+    .select("provider_profile_id, status")
+    .in("provider_profile_id", profileIds)
+    .neq("status", "sent")
+    .gte("sent_at", since)
+    .limit(5000);
+  const tally = new Map<string, { missed: number; all: number }>();
+  for (const row of data ?? []) {
+    const t = tally.get(row.provider_profile_id) ?? { missed: 0, all: 0 };
+    t.all++;
+    if (row.status === "expired") t.missed++;
+    tally.set(row.provider_profile_id, t);
+  }
+  for (const [id, t] of tally) if (t.all >= 3) out.set(id, t.missed / t.all);
+  return out;
+}
+
 /**
  * Providers who can take this order right now, nearest first: approved,
- * active, switched to available, not suspended, offering the service,
- * covering the pickup district (or, for older profiles, its governorate),
- * and not busy (fewer orders in progress than errand_settings.
- * max_active_orders). Distance runs from the pickup area (or its district)
- * to the provider's own area (or district, or governorate) -- the centres
- * of those places, since nobody shares a live location.
+ * active, switched to available, not suspended, offering the service, and
+ * not busy (fewer orders in progress than errand_settings.max_active_orders).
+ *
+ * A rider is close enough when they cover the pickup district (their own or
+ * one they ticked), or when their phone -- shared while the app is open and
+ * they're Available -- was within their own range of the pickup in the last
+ * errand_settings.location_fresh_minutes. Distance runs from that live
+ * position when there is one, else from the centre of their area (or
+ * district, or governorate). Riders who let most requests run out are
+ * ranked as if they were further away.
  *
  * With `nearbyKm`, coverage gives way to distance: available riders that
  * close, for when nobody covering the district can take the order.
- *
- * With `anywhere`, coverage doesn't count at all (the riders a customer
- * can pick from); `only` is that one picked rider, if they can take it.
  *
  * A repair job instead goes to tradespeople of that trade anywhere in the
  * governorate (nearest first): there are fewer of them, they travel, and
@@ -195,7 +253,7 @@ export async function eligibleProviders(
     pickupPoint?: { lat: number; lng: number } | null;
   },
   // nearbyKm: everyone that close instead of everyone covering the district.
-  options: { exclude?: string[]; limit: number; maxActive?: number; nearbyKm?: number; anywhere?: boolean; only?: string },
+  options: { exclude?: string[]; limit: number; maxActive?: number; nearbyKm?: number; anywhere?: boolean; only?: string; freshMinutes?: number },
 ): Promise<Candidate[]> {
   const jobs = order.category === "maintenance";
   const categoryId = await categoryIdOf(db, jobs ? "maintenance" : "errands");
@@ -223,23 +281,34 @@ export async function eligibleProviders(
   const { data: providers } = await query;
 
   const exclude = new Set(options.exclude ?? []);
-  const offering = (providers ?? []).filter((p) => {
+  const offeringService = (providers ?? []).filter((p) => {
     if (exclude.has(p.id)) return false;
     const a = (p.attributes ?? {}) as Record<string, unknown>;
     const offered = jobs ? a.trades : a.errandServices;
-    const services = Array.isArray(offered) ? offered : [];
-    if (!services.includes(order.service)) return false;
+    return (Array.isArray(offered) ? offered : []).includes(order.service);
+  });
+  if (offeringService.length === 0) return [];
+
+  // Where riders are now (deliveries only: tradespeople don't share it).
+  const live = jobs ? new Map<string, Point>() : await freshRiderPoints(db, offeringService.map((p) => p.id), options.freshMinutes ?? DEFAULT_SETTINGS.location_fresh_minutes);
+  const rangeOf = (a: Record<string, unknown>) => (typeof a.maxDistanceKm === "number" && a.maxDistanceKm > 0 ? a.maxDistanceKm : DEFAULT_RIDER_RANGE_KM);
+
+  const offering = offeringService.filter((p) => {
+    const a = (p.attributes ?? {}) as Record<string, unknown>;
     const seekerPlace = { governorateId: pickupGovernorate, districtId: order.pickupDistrictId };
     // 1 = works in that district; 0.5 = same governorate but not that
     // district -- not "covering" it, so a delivery isn't sent; a repair job is.
     const score = placeScore(seekerPlace, placeOf(p as { location_id: string | null; attributes: Record<string, unknown> }));
-    const a2 = a as { districtId?: unknown };
     if (jobs) return score > 0;
     // Picked by the customer: where they work doesn't matter.
     if (options.anywhere || options.only) return true;
-    // Who is really close is decided by distance below, from a rider's own area.
-    if (options.nearbyKm !== undefined) return typeof a2.districtId === "string";
-    return typeof a2.districtId === "string" ? score === 1 : score > 0;
+    const hasDistrict = typeof a.districtId === "string";
+    const here = live.get(p.id);
+    // Who is really close is decided by distance below.
+    if (options.nearbyKm !== undefined) return hasDistrict || !!here;
+    const covers = hasDistrict ? score === 1 : score > 0;
+    const inRange = !!here && !!pickupPoint && distanceKm(pickupPoint, here) <= rangeOf(a);
+    return covers || inRange;
   });
   if (offering.length === 0) return [];
 
@@ -257,16 +326,21 @@ export async function eligibleProviders(
     const v = ((p.attributes ?? {}) as Record<string, unknown>)[key];
     return typeof v === "string" ? v : null;
   };
-  const points = await pointsById(db, free.flatMap((p) => [attr(p, "areaId"), attr(p, "districtId"), p.location_id]));
+  const [points, misses] = await Promise.all([
+    pointsById(db, free.flatMap((p) => [attr(p, "areaId"), attr(p, "districtId"), p.location_id])),
+    jobs ? Promise.resolve(new Map<string, number>()) : missRates(db, free.map((p) => p.id)),
+  ]);
   const ranked = free.map((p) => {
     const home = points.get(attr(p, "areaId") ?? "") ?? points.get(attr(p, "districtId") ?? "") ?? points.get(p.location_id ?? "");
-    return { profileId: p.id, userId: p.user_id, distanceKm: pickupPoint && home ? distanceKm(pickupPoint, home) : null };
+    const at = live.get(p.id) ?? home ?? null;
+    const km = pickupPoint && at ? distanceKm(pickupPoint, at) : null;
+    return { profileId: p.id, userId: p.user_id, distanceKm: km, point: at ? { lat: at.lat, lon: at.lon } : null, live: live.has(p.id), rank: km === null ? Infinity : km + (misses.get(p.id) ?? 0) * MISS_PENALTY_KM };
   });
   // Unknown distances last; ties broken by id so the order is stable.
-  ranked.sort((a, b) => (a.distanceKm ?? Infinity) - (b.distanceKm ?? Infinity) || a.profileId.localeCompare(b.profileId));
+  ranked.sort((a, b) => a.rank - b.rank || a.profileId.localeCompare(b.profileId));
   const reach = options.nearbyKm;
   const within = reach === undefined ? ranked : ranked.filter((r) => r.distanceKm !== null && r.distanceKm <= reach);
-  return within.slice(0, options.limit);
+  return within.slice(0, options.limit).map((c) => ({ profileId: c.profileId, userId: c.userId, distanceKm: c.distanceKm, point: c.point, live: c.live }));
 }
 
 export type OrderActor = { userId: string | null; role: "seeker" | "provider" | "admin" | "system" };
@@ -376,7 +450,12 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
     seekerUserId: order.seeker_user_id,
     pickupPoint: order.pickup_lat !== null && order.pickup_lng !== null ? { lat: order.pickup_lat, lng: order.pickup_lng } : null,
   };
-  const reach = { exclude: (already ?? []).map((r) => r.provider_profile_id), limit: Infinity, maxActive: settings.max_active_orders };
+  const reach = {
+    exclude: (already ?? []).map((r) => r.provider_profile_id),
+    limit: Infinity,
+    maxActive: settings.max_active_orders,
+    freshMinutes: settings.location_fresh_minutes,
+  };
   const chosen = order.chosen_provider_profile_id;
   const candidates = chosen ? [] : await eligibleProviders(db, asked, reach);
 
@@ -388,7 +467,11 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
   while (radius < max && candidates.length > 0 && !candidates.some((c) => inside(c, radius))) {
     radius = Math.min(max, round1(radius + settings.radius_step_km));
   }
-  let batch = candidates.filter((c) => inside(c, radius)).slice(0, Math.min(settings.wave_size, room));
+  const size = Math.min(settings.wave_size, room);
+  const pickupAt = asked.pickupPoint ? { lat: asked.pickupPoint.lat, lon: asked.pickupPoint.lng } : null;
+  // Among the nearest few inside the radius, the quickest by road go first.
+  let road = await quickestByRoad(candidates.filter((c) => inside(c, radius)), size, pickupAt, settings.travel_time_candidates);
+  let batch = road.picked;
   // Nobody covering the district is left: available riders close to the
   // pickup, even across a district line, before telling the customer no.
   const nearby = batch.length === 0 && settings.nearby_fallback_km > 0 && !chosen;
@@ -397,7 +480,8 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
     // (a later wave), it ends; Try again sends a copy to everyone.
     batch = order.wave === 0 ? await eligibleProviders(db, asked, { ...reach, limit: 1, only: chosen }) : [];
   } else if (nearby) {
-    batch = (await eligibleProviders(db, asked, { ...reach, nearbyKm: settings.nearby_fallback_km })).slice(0, Math.min(settings.wave_size, room));
+    road = await quickestByRoad(await eligibleProviders(db, asked, { ...reach, nearbyKm: settings.nearby_fallback_km }), size, pickupAt, settings.travel_time_candidates);
+    batch = road.picked;
   }
   if (batch.length === 0) {
     await logOrderEvent(db, order.id, actor, "wave_sent", { wave, count: 0, radius_km: radius });
@@ -436,7 +520,12 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
     ...(nearby ? { nearby_km: settings.nearby_fallback_km } : {}),
     ...(chosen ? { chosen: true } : {}),
     ...(before !== null && radius > before ? { widened_from_km: before } : {}),
-    providers: batch.map((c) => ({ profile_id: c.profileId, distance_km: c.distanceKm })),
+    providers: batch.map((c) => ({
+      profile_id: c.profileId,
+      distance_km: c.distanceKm,
+      ...(c.live ? { live: true } : {}),
+      ...(road.minutes.has(c) ? { drive_minutes: road.minutes.get(c)! } : {}),
+    })),
   });
   await notify(
     batch.map((c) => ({
@@ -484,6 +573,49 @@ export async function nextWaveOrClose(db: Admin, order: OrderRow, actor: OrderAc
 }
 
 const isPast = (iso: string | null) => iso !== null && Date.parse(iso) <= Date.now();
+
+/**
+ * Riders who just let a request run out: one who has now missed
+ * errand_settings.auto_offline_after_misses in a row since they last went
+ * Available is switched Offline and told why, so customers stop waiting on
+ * someone who isn't looking. Answering anything (an offer or "Not for me")
+ * breaks the run; switching back on starts a new one.
+ */
+export async function offlineUnresponsive(db: Admin, profileIds: string[], order: OrderRow): Promise<string[]> {
+  const settings = await errandSettings(db);
+  const limit = settings.auto_offline_after_misses;
+  if (limit <= 0 || profileIds.length === 0) return [];
+  const { data: riders } = await db
+    .from("generic_profiles")
+    .select("id, user_id, available_now, available_changed_at")
+    .in("id", profileIds)
+    .eq("available_now", true);
+  const switched: string[] = [];
+  for (const rider of riders ?? []) {
+    let recent = db
+      .from("errand_order_recipients")
+      .select("status")
+      .eq("provider_profile_id", rider.id)
+      .neq("status", "sent")
+      .order("sent_at", { ascending: false })
+      .limit(limit);
+    if (rider.available_changed_at) recent = recent.gte("sent_at", rider.available_changed_at);
+    const { data: rows } = await recent;
+    if ((rows ?? []).length < limit || !(rows ?? []).every((r) => r.status === "expired")) continue;
+    const { data: off } = await db
+      .from("generic_profiles")
+      .update({ available_now: false, available_changed_at: new Date().toISOString() })
+      .eq("id", rider.id)
+      .eq("available_now", true)
+      .select("id");
+    if (!off?.length) continue;
+    switched.push(rider.id);
+    await db.from("rider_locations").delete().eq("profile_id", rider.id);
+    await logOrderEvent(db, order.id, SYSTEM, "rider_auto_offline", { provider_profile_id: rider.id, missed: limit });
+    await notify({ user_id: rider.user_id, type: "errand_status", payload: { status: "auto_offline", missed: limit, category_slug: "errands" } });
+  }
+  return switched;
+}
 
 async function fresh(db: Admin, id: string) {
   const { data } = await db.from("errand_orders").select("*").eq("id", id).maybeSingle();
@@ -620,6 +752,7 @@ export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
       .select("provider_profile_id");
     if (lapsed?.length) {
       await logOrderEvent(db, order.id, SYSTEM, "no_response", { wave: order.wave, providers: lapsed.map((r) => r.provider_profile_id) });
+      await offlineUnresponsive(db, lapsed.map((r) => r.provider_profile_id), order);
     }
   }
 

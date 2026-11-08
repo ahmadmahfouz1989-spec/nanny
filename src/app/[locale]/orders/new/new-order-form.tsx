@@ -143,6 +143,23 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       gone = true;
     };
   }, [pickRider, pickupKey, service, ridersTick]);
+  // How many riders this would reach right now, said before they send it.
+  const [reach, setReach] = useState<{ key: string; count: number } | null>(null);
+  useEffect(() => {
+    if (!pickupKey) return;
+    let gone = false;
+    const key = `${service}&${pickupKey}`;
+    fetch(`/api/errand-orders/riders?reach=1&service=${service}&${pickupKey}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { count?: number } | null) => {
+        if (!gone && typeof d?.count === "number") setReach({ key, count: d.count });
+      })
+      .catch(() => {});
+    return () => {
+      gone = true;
+    };
+  }, [service, pickupKey]);
+  const reachCount = reach && pickupKey && reach.key === `${service}&${pickupKey}` ? reach.count : null;
   const chosenRider = pickRider ? (riders ?? []).find((r) => r.profileId === riderId) ?? null : null;
 
   /** Takes the person to what's still needed, and says so there. */
@@ -367,6 +384,16 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         <span className={ui.label}>{t("budget")}</span>
         <input type="number" min={0} max={10000} step="0.5" inputMode="decimal" className={ui.input} value={budget} onChange={(e) => setBudget(e.target.value)} />
       </label>
+
+      {reachCount !== null &&
+        (reachCount > 0 ? (
+          <p className="flex items-center gap-2 text-sm font-medium text-ink">
+            <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full bg-success" />
+            {t("reachSome", { count: reachCount })}
+          </p>
+        ) : (
+          <p className="rounded-2xl bg-warning-soft px-4 py-3 text-sm text-ink">{t("reachNone")}</p>
+        ))}
 
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("sendTo")}</span>

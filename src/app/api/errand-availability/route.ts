@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
-import { activeOrderCounts, errandSettings, myErrandProfiles } from "@/lib/errand-orders";
+import { activeOrderCounts, errandSettings, freshRiderPoints, myErrandProfiles } from "@/lib/errand-orders";
 
 /**
  * A Delivery & Errands provider's status: available (green), busy
@@ -23,10 +23,11 @@ async function state(db: ReturnType<typeof createAdminClient>, userId: string) {
   ]);
   const busy = (load.get(provider.id) ?? 0) >= settings.max_active_orders;
   const status = user?.status === "suspended" ? "suspended" : busy ? "busy" : provider.available_now ? "available" : "offline";
-  // Requests go only to riders with a district (see findProviders): one saved
-  // before districts were asked for gets none until they add it.
+  // Their phone's position, shared a few minutes ago: orders near it reach them.
+  const located = (await freshRiderPoints(db, [provider.id], settings.location_fresh_minutes)).has(provider.id);
+  // Without a district, only a shared position brings them requests.
   const needsArea = typeof (profile?.attributes as { districtId?: unknown } | null)?.districtId !== "string";
-  return { profileId: provider.id, availableNow: provider.available_now, status, needsArea };
+  return { profileId: provider.id, availableNow: provider.available_now, status, needsArea, located };
 }
 
 export async function GET() {
@@ -50,5 +51,7 @@ export async function PUT(request: Request) {
     .from("generic_profiles")
     .update({ available_now: parsed.data.available, available_changed_at: new Date().toISOString() })
     .eq("id", provider.id);
+  // Offline: where they are is nobody's business any more.
+  if (!parsed.data.available) await db.from("rider_locations").delete().eq("profile_id", provider.id);
   return NextResponse.json({ availability: await state(db, user.id) });
 }

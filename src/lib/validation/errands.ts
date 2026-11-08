@@ -36,6 +36,11 @@ const ALWAYS = { when: () => true };
 // Services that move something (or someone) across town need a way to get there.
 const NEEDS_VEHICLE: readonly ErrandService[] = ["delivery", "shopping", "moto_taxi"];
 
+/** "How far will you go?" choices, in km. */
+export const RIDER_RANGES_KM = [3, 5, 10, 15, 20, 30] as const;
+/** How far a rider goes from where they are, unless they choose. */
+export const DEFAULT_RIDER_RANGE_KM = 10;
+
 export const errandProviderSchema = z
   .object({
     fullName: z.string().min(2, "Enter your full name").max(80, "Name is too long"),
@@ -54,6 +59,8 @@ export const errandProviderSchema = z
       endTime: z.string().regex(/^\d{2}:\d{2}$/),
     }),
     takesUrgentJobs: z.boolean(),
+    // How far from where they are (their shared position) orders may come from.
+    maxDistanceKm: z.number().refine((n) => (RIDER_RANGES_KM as readonly number[]).includes(n), "Choose how far you go").optional(),
     vehicle: z.enum(VEHICLES).optional(),
     pricing: z.enum(PRICING, "Choose how you charge"),
     priceNote: z.string().trim().max(120, "That's too long").optional(),

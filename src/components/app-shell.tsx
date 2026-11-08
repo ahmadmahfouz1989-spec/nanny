@@ -17,6 +17,7 @@ import { ClipboardIcon, GearIcon } from "@/components/home-icons";
 import PullToRefresh from "@/components/shell/pull-to-refresh";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
+import RiderLocation from "@/components/orders/rider-location";
 import InstallPrompt from "@/components/install-prompt";
 import PushSync from "@/components/push-sync";
 import PushPrompt from "@/components/push-prompt";
@@ -64,7 +65,7 @@ export default async function AppShell({
     data: { user },
   } = await supabase.auth.getUser();
   const { data: profiles } = user
-    ? await supabase.from("generic_profiles").select("id, role, status, full_name, profile_photo_url, categories(slug), locations(name_en, name_ar)").eq("user_id", user.id).neq("status", "draft")
+    ? await supabase.from("generic_profiles").select("id, role, status, moderation_status, available_now, full_name, profile_photo_url, categories(slug), locations(name_en, name_ar)").eq("user_id", user.id).neq("status", "draft")
     : { data: null };
   const mySlugs = new Set((profiles ?? []).map((p) => p.categories?.slug));
   const sidebarCategories = CATEGORY_NAV.filter((c) => c.slug === active || mySlugs.has(c.slug));
@@ -90,6 +91,8 @@ export default async function AppShell({
   });
   // Deliveries and repair jobs live in Orders: a link of its own, not three taps away.
   const hasOrders = mySlugs.has("errands") || mySlugs.has("maintenance");
+  // An approved rider: their phone's position (if they agreed) helps send them nearby orders.
+  const rider = (profiles ?? []).find((p) => p.categories?.slug === "errands" && p.role === "provider" && p.moderation_status === "approved");
   const photoProfile = (profiles ?? []).find((p) => p.profile_photo_url) ?? profiles?.[0];
   const { data: account } = user
     ? await supabase.from("users").select("email_verified_at, phone_verified_at").eq("id", user.id).maybeSingle()
@@ -233,6 +236,7 @@ export default async function AppShell({
             </aside>
 
             <MobileHeader me={me} services={services} region={region} orders={hasOrders} />
+            {rider && <RiderLocation available={!!rider.available_now} />}
             <HideOnScroll />
             <PullToRefresh />
 

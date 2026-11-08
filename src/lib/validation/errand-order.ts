@@ -132,6 +132,9 @@ export const settingsSchema = z
     maxRadiusKm: z.number().positive().max(300),
     maxActiveOrders: z.number().int().min(1).max(10),
     nearbyFallbackKm: z.number().min(0).max(300),
+    autoOfflineAfterMisses: z.number().int().min(0).max(50).optional(),
+    locationFreshMinutes: z.number().int().min(1).max(240).optional(),
+    travelTimeCandidates: z.number().int().min(0).max(25).optional(),
   })
   .refine((s) => s.maxRadiusKm >= s.initialRadiusKm, { path: ["maxRadiusKm"], message: "The widest radius must be at least the starting radius" });
 

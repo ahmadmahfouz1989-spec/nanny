@@ -98,7 +98,7 @@ export const TERMS: Record<"en" | "ar", LegalDoc> = {
 export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
   en: {
     title: "Privacy Policy",
-    updated: "Last updated: October 2026",
+    updated: "Last updated: November 2026",
     intro: "This explains what ouiKnow collects when you use the website or the app, who can see it, and how to delete it.",
     credits: TERMS.en.credits,
     sections: [
@@ -112,7 +112,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "3. What is collected automatically",
-        body: "When you sign in we record the time, your IP address and the approximate country and city it points to (looked up through ipapi.co), to protect accounts from misuse. We count how often a profile is viewed, without telling its owner who viewed it. If you turn on notifications, we keep your device's notification token. On the website only, the Meta Pixel and our server report visits and actions such as signing up to Meta to measure ad results, with your email and phone hashed (see the Terms); the iOS and Android apps don't use it and don't track you across other apps or websites.",
+        body: "When you sign in we record the time, your IP address and the approximate country and city it points to (looked up through ipapi.co), to protect accounts from misuse. We count how often a profile is viewed, without telling its owner who viewed it. If you turn on notifications, we keep your device's notification token. If you deliver with ouiKnow and choose to share your location, we keep where your phone was, rounded to about 500 m, while you're Available and ouiKnow is open, to send you nearby orders; it's never shown to anyone and it's deleted when you go Offline. On the website only, the Meta Pixel and our server report visits and actions such as signing up to Meta to measure ad results, with your email and phone hashed (see the Terms); the iOS and Android apps don't use it and don't track you across other apps or websites.",
       },
       {
         heading: "4. How it is used",
@@ -134,7 +134,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
   },
   ar: {
     title: "سياسة الخصوصية",
-    updated: "آخر تحديث: تشرين الأول ٢٠٢٦",
+    updated: "آخر تحديث: تشرين الثاني ٢٠٢٦",
     intro: "توضّح هذه السياسة ما تجمعه ouiKnow عند استخدامك للموقع أو التطبيق، ومن يمكنه رؤيته، وكيف تحذفه.",
     credits: TERMS.ar.credits,
     sections: [
@@ -148,7 +148,7 @@ export const PRIVACY: Record<"en" | "ar", LegalDoc> = {
       },
       {
         heading: "٣. ما يُجمع تلقائياً",
-        body: "عند تسجيل الدخول نسجّل الوقت وعنوان IP والبلد والمدينة التقريبيين المرتبطين به (عبر خدمة ipapi.co)، لحماية الحسابات من سوء الاستخدام. نحصي عدد مرات مشاهدة الملف من دون أن نخبر صاحبه من شاهده. إذا فعّلت الإشعارات، نحتفظ برمز الإشعارات الخاص بجهازك. على الموقع فقط، تُبلغ أداة Meta Pixel وخادمنا Meta بالزيارات وبإجراءات مثل إنشاء حساب لقياس نتائج الإعلانات، مع تشفير بريدك الإلكتروني ورقم هاتفك (راجع الشروط)؛ أمّا تطبيقا iOS وأندرويد فلا يستخدمانها ولا يتتبّعانك عبر التطبيقات أو المواقع الأخرى.",
+        body: "عند تسجيل الدخول نسجّل الوقت وعنوان IP والبلد والمدينة التقريبيين المرتبطين به (عبر خدمة ipapi.co)، لحماية الحسابات من سوء الاستخدام. نحصي عدد مرات مشاهدة الملف من دون أن نخبر صاحبه من شاهده. إذا فعّلت الإشعارات، نحتفظ برمز الإشعارات الخاص بجهازك. إذا كنت تقدّم خدمة التوصيل واخترت مشاركة موقعك، نحتفظ بموقع هاتفك التقريبي (حوالي ٥٠٠ متر) طالما أنت متاح وouiKnow مفتوح، لنرسل إليك الطلبات القريبة؛ لا يظهر لأي أحد، ويُحذف عندما تصبح غير متاح. على الموقع فقط، تُبلغ أداة Meta Pixel وخادمنا Meta بالزيارات وبإجراءات مثل إنشاء حساب لقياس نتائج الإعلانات، مع تشفير بريدك الإلكتروني ورقم هاتفك (راجع الشروط)؛ أمّا تطبيقا iOS وأندرويد فلا يستخدمانها ولا يتتبّعانك عبر التطبيقات أو المواقع الأخرى.",
       },
       {
         heading: "٤. كيف نستخدمه",

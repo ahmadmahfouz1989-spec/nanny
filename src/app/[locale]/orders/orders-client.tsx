@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
+import { RIDER_AVAILABILITY_EVENT, setSharing, shareLocationOnce, stopSharing, type ShareResult } from "@/lib/rider-location";
 import {
   AVAILABILITY_DOT,
   Countdown,
@@ -18,7 +19,7 @@ import {
 import type { OrderSummary } from "@/lib/errand-order-view";
 
 type Incoming = OrderSummary & { myStatus: string; myPriceUsd: number | null; distanceKm: number | null; respondBy: string | null };
-type Availability = { status: "available" | "busy" | "offline" | "suspended"; availableNow: boolean; needsArea?: boolean } | null;
+type Availability = { status: "available" | "busy" | "offline" | "suspended"; availableNow: boolean; needsArea?: boolean; located?: boolean } | null;
 type Mine = { canOrder: boolean; orders: OrderSummary[] };
 type ProviderLists = {
   serverNow?: string;
@@ -81,7 +82,11 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
       body: JSON.stringify({ available: !availability.availableNow }),
     });
     const body = await res?.json().catch(() => null);
-    if (body?.availability) setAvailability(body.availability);
+    if (body?.availability) {
+      setAvailability(body.availability);
+      // The app frame starts or stops sending where the phone is.
+      window.dispatchEvent(new CustomEvent(RIDER_AVAILABILITY_EVENT, { detail: !!body.availability.availableNow }));
+    }
     setSwitching(false);
   }
 
@@ -164,7 +169,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
 
       {shownTab === "provider" && provider && (
         <div className="flex flex-col gap-4">
-          {availability?.needsArea && provider.provider?.rider && <NeedsAreaCard />}
+          {availability?.needsArea && !availability.located && provider.provider?.rider && <NeedsAreaCard />}
           {availability && provider.provider?.rider && (
             <div className={ui.card + " flex items-center justify-between gap-3 p-4"}>
               <div className="min-w-0">
@@ -181,6 +186,9 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
                 </button>
               )}
             </div>
+          )}
+          {availability?.availableNow && provider.provider?.rider && (
+            <LocationRow located={!!availability.located} onShared={() => setAvailability((a) => (a ? { ...a, located: true } : a))} />
           )}
 
           {provider.assigned.filter((o) => LIVE.has(o.status)).length > 0 && (
@@ -232,6 +240,58 @@ function IncomingLine({ order: o, serverNow }: { order: Incoming; serverNow: str
 }
 
 /** A rider with no district saved gets no requests: say so, and where to fix it. */
+/**
+ * Whether orders are being matched to where the rider's phone is, and the
+ * one tap that turns it on. Turning it off stops it at once.
+ */
+function LocationRow({ located, onShared }: { located: boolean; onShared: () => void }) {
+  const t = useTranslations("Orders");
+  const [state, setState] = useState<"idle" | "asking" | ShareResult>("idle");
+  const [on, setOn] = useState(located);
+  if (located && !on) setOn(true);
+
+  async function share() {
+    setState("asking");
+    const result = await shareLocationOnce();
+    setState(result);
+    if (result === "ok") {
+      setSharing(true);
+      setOn(true);
+      onShared();
+    }
+  }
+
+  if (on) {
+    return (
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-secondary-soft/60 px-4 py-3">
+        <p className="text-sm text-ink">{t("locationOn")}</p>
+        <button
+          type="button"
+          className={ui.link + " text-sm"}
+          onClick={() => {
+            stopSharing();
+            setOn(false);
+            setState("idle");
+          }}
+        >
+          {t("locationStop")}
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className={ui.card + " flex flex-col gap-2 p-4"}>
+      <p className="font-semibold text-ink">{t("locationTitle")}</p>
+      <p className="text-sm text-muted">{t("locationBody")}</p>
+      {state === "denied" && <p className="text-sm text-danger">{t("locationDenied")}</p>}
+      {state === "unavailable" && <p className="text-sm text-danger">{t("locationFailed")}</p>}
+      <button type="button" onClick={share} disabled={state === "asking"} className={ui.buttonPrimary + " self-start"}>
+        {state === "asking" ? t("locationAsking") : t("locationShare")}
+      </button>
+    </div>
+  );
+}
+
 export function NeedsAreaCard() {
   const t = useTranslations("Orders");
   return (
