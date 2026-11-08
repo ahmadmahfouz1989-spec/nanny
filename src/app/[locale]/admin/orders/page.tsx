@@ -311,6 +311,7 @@ type Settings = {
   autoOfflineAfterMisses: number;
   locationFreshMinutes: number;
   travelTimeCandidates: number;
+  travelTimeDailyLimit: number;
 };
 
 // Each setting: its label key, limits and step. Grouped as the dashboard shows them.
@@ -333,6 +334,7 @@ const SETTING_GROUPS: { title: string; fields: { key: keyof Settings; label: str
       { key: "nearbyFallbackKm", label: "nearbyFallbackKm", min: 0, max: 300, step: 0.5 },
       { key: "locationFreshMinutes", label: "locationFreshMinutes", min: 1, max: 240 },
       { key: "travelTimeCandidates", label: "travelTimeCandidates", min: 0, max: 25 },
+      { key: "travelTimeDailyLimit", label: "travelTimeDailyLimit", min: 0, max: 100000 },
     ],
   },
   {

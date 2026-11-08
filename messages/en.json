@@ -1136,7 +1136,8 @@
     "nearbyFallbackKm": "Nobody covering the district: ask riders within (km, 0 = off)",
     "autoOfflineAfterMisses": "Switch a rider Offline after this many missed requests in a row (0 = never)",
     "locationFreshMinutes": "Use a rider's shared location for this long (minutes)",
-    "travelTimeCandidates": "Check road travel time for the nearest (riders, 0 = off)"
+    "travelTimeCandidates": "Check road travel time for the nearest (riders, 0 = off)",
+    "travelTimeDailyLimit": "Most road-time lookups per day (0 = none; about $10 per 1,000)"
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",

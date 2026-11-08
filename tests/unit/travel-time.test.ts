@@ -50,6 +50,17 @@ describe("quickest by road", () => {
     expect(picked.map((r) => r.id)).toEqual(["near-but-over-the-mountain", "second"]);
   });
 
+  it("doesn't ask Google once the day's cap is used up", async () => {
+    vi.stubEnv("GOOGLE_MAPS_SERVER_KEY", "test-key");
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    const book = vi.fn(async () => false);
+    const { picked } = await quickestByRoad(riders, 2, pickup, 6, book);
+    expect(book).toHaveBeenCalledWith(3);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(picked.map((r) => r.id)).toEqual(["near-but-over-the-mountain", "second"]);
+  });
+
   it("doesn't ask when everyone fits in the wave", async () => {
     vi.stubEnv("GOOGLE_MAPS_SERVER_KEY", "test-key");
     const fetchMock = vi.fn();

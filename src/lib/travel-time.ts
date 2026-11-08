@@ -57,10 +57,13 @@ export async function quickestByRoad<T extends { point?: LatLng | null }>(
   size: number,
   destination: LatLng | null,
   candidates: number,
+  /** Reserves this many elements against the daily cap; false = over it, don't ask Google. */
+  book: (elements: number) => Promise<boolean> = async () => true,
 ): Promise<{ picked: T[]; minutes: Map<T, number> }> {
   const minutes = new Map<T, number>();
   if (!destination || candidates <= 0 || list.length <= size || !travelTimesEnabled()) return { picked: list.slice(0, size), minutes };
   const pool = list.slice(0, Math.max(candidates, size)).filter((c) => c.point);
+  if (pool.length === 0 || !(await book(pool.length))) return { picked: list.slice(0, size), minutes };
   const times = await roadMinutes(pool.map((c) => c.point!), destination);
   if (!times) return { picked: list.slice(0, size), minutes };
   pool.forEach((c, i) => {

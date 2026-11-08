@@ -90,6 +90,8 @@ export type ErrandSettings = {
   location_fresh_minutes: number;
   /** How many of the nearest riders get a road travel time before a wave is picked. 0 = off. */
   travel_time_candidates: number;
+  /** Most road-time elements a day (Beirut time); past it, straight lines. 0 = none. */
+  travel_time_daily_limit: number;
 };
 
 export const DEFAULT_SETTINGS: ErrandSettings = {
@@ -108,6 +110,7 @@ export const DEFAULT_SETTINGS: ErrandSettings = {
   auto_offline_after_misses: 3,
   location_fresh_minutes: 20,
   travel_time_candidates: 6,
+  travel_time_daily_limit: 500,
 };
 
 export async function errandSettings(db: Admin): Promise<ErrandSettings> {
@@ -470,7 +473,10 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
   const size = Math.min(settings.wave_size, room);
   const pickupAt = asked.pickupPoint ? { lat: asked.pickupPoint.lat, lon: asked.pickupPoint.lng } : null;
   // Among the nearest few inside the radius, the quickest by road go first.
-  let road = await quickestByRoad(candidates.filter((c) => inside(c, radius)), size, pickupAt, settings.travel_time_candidates);
+  // Each lookup is booked against the day's cap first; past it, straight lines.
+  const book = async (elements: number) =>
+    (await db.rpc("use_travel_time", { p_elements: elements, p_limit: settings.travel_time_daily_limit })).data === true;
+  let road = await quickestByRoad(candidates.filter((c) => inside(c, radius)), size, pickupAt, settings.travel_time_candidates, book);
   let batch = road.picked;
   // Nobody covering the district is left: available riders close to the
   // pickup, even across a district line, before telling the customer no.
@@ -480,7 +486,7 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
     // (a later wave), it ends; Try again sends a copy to everyone.
     batch = order.wave === 0 ? await eligibleProviders(db, asked, { ...reach, limit: 1, only: chosen }) : [];
   } else if (nearby) {
-    road = await quickestByRoad(await eligibleProviders(db, asked, { ...reach, nearbyKm: settings.nearby_fallback_km }), size, pickupAt, settings.travel_time_candidates);
+    road = await quickestByRoad(await eligibleProviders(db, asked, { ...reach, nearbyKm: settings.nearby_fallback_km }), size, pickupAt, settings.travel_time_candidates, book);
     batch = road.picked;
   }
   if (batch.length === 0) {

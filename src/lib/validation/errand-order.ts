@@ -135,6 +135,7 @@ export const settingsSchema = z
     autoOfflineAfterMisses: z.number().int().min(0).max(50).optional(),
     locationFreshMinutes: z.number().int().min(1).max(240).optional(),
     travelTimeCandidates: z.number().int().min(0).max(25).optional(),
+    travelTimeDailyLimit: z.number().int().min(0).max(100000).optional(),
   })
   .refine((s) => s.maxRadiusKm >= s.initialRadiusKm, { path: ["maxRadiusKm"], message: "The widest radius must be at least the starting radius" });
 

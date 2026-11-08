@@ -228,6 +228,18 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"travel_time_usage": {
+                  Row: {
+                    "day": string,"elements": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "day": string,"elements"?: number
+                  }
+                  Update: {
+                    "day"?: string,"elements"?: number
+                  }
+                  Relationships: []
                 },"rider_locations": {
                   Row: {
                     "lat": number,"lng": number,"located_at": string,"profile_id": string
@@ -242,14 +254,14 @@ isOneToOne: false
                   Relationships: []
                 },"errand_settings": {
                   Row: {
-                    "auto_offline_after_misses": number,"choose_seconds": number,"confirm_seconds": number,"id": boolean,"location_fresh_minutes": number,"travel_time_candidates": number,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
+                    "auto_offline_after_misses": number,"travel_time_daily_limit": number,"choose_seconds": number,"confirm_seconds": number,"id": boolean,"location_fresh_minutes": number,"travel_time_candidates": number,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "auto_offline_after_misses"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "auto_offline_after_misses"?: number,"travel_time_daily_limit"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Update: {
-                    "auto_offline_after_misses"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "auto_offline_after_misses"?: number,"travel_time_daily_limit"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Relationships: [
                     {
@@ -1098,7 +1110,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "account_is_suspended":
+            "use_travel_time":
+{ Args: { "p_elements": number,"p_limit": number }; Returns: boolean
+                           },
+"account_is_suspended":
 { Args: { "check_user_id": string }; Returns: boolean
                            },
 "admin_conversation_stats":

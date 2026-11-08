@@ -21,6 +21,7 @@ const toInput = (s: ErrandSettings): Required<SettingsInput> => ({
   autoOfflineAfterMisses: s.auto_offline_after_misses,
   locationFreshMinutes: s.location_fresh_minutes,
   travelTimeCandidates: s.travel_time_candidates,
+  travelTimeDailyLimit: s.travel_time_daily_limit,
 });
 
 /** The Delivery & Errands (and repair quotes) matching settings, changed without a code deploy. */
@@ -56,6 +57,7 @@ export async function PUT(request: Request) {
       ...(v.autoOfflineAfterMisses !== undefined ? { auto_offline_after_misses: v.autoOfflineAfterMisses } : {}),
       ...(v.locationFreshMinutes !== undefined ? { location_fresh_minutes: v.locationFreshMinutes } : {}),
       ...(v.travelTimeCandidates !== undefined ? { travel_time_candidates: v.travelTimeCandidates } : {}),
+      ...(v.travelTimeDailyLimit !== undefined ? { travel_time_daily_limit: v.travelTimeDailyLimit } : {}),
       updated_at: new Date().toISOString(),
       updated_by: admin.userId,
     })
