@@ -110,11 +110,26 @@ export default async function BrowsePage({ params, searchParams }: Props) {
           <p className="mt-1 text-sm text-muted">{user ? t("subtitleSignedIn") : t("subtitle")}</p>
         </div>
 
-        <div className={ui.card + " flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"}>
-          <p className="text-sm text-ink">{t("ctaText")}</p>
-          <Link href={cta.href} className={ui.buttonPrimary + " shrink-0 text-center"}>
-            {cta.label}
-          </Link>
+        {/* Both ways in, up top: need it, or offer it. (Offering used to be
+            a small link below the whole list, where new providers missed it.) */}
+        <div className={ui.card + " flex flex-col divide-y divide-border"}>
+          <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-ink">{t("ctaText")}</p>
+            <Link href={cta.href} className={ui.buttonPrimary + " shrink-0 text-center"}>
+              {cta.label}
+            </Link>
+          </div>
+          {(!user || !mine?.length) && (
+            <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-ink">{t("offerToo", { service: name })}</p>
+              <Link
+                href={user ? `/categories/${slug}/onboarding?role=provider` : signup(`/categories/${slug}/onboarding?role=provider`)}
+                className={ui.buttonSecondary + " shrink-0 text-center"}
+              >
+                {t("offerLink")}
+              </Link>
+            </div>
+          )}
         </div>
 
         <BrowseFilters
