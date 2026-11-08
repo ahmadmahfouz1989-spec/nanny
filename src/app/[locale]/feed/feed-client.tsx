@@ -59,6 +59,10 @@ export default function FeedClient({
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [caption, setCaption] = useState("");
+  // The post's photos (uploaded already), and whether one is still on its way.
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [photosUploading, setPhotosUploading] = useState(false);
+  const [photosKey, setPhotosKey] = useState(0);
   const [kind, setKind] = useState<"looking_for" | "offering">("looking_for");
   const [posting, setPosting] = useState(false);
   const [composerError, setComposerError] = useState<string | null>(null);
@@ -248,11 +252,15 @@ export default function FeedClient({
   async function submitPost() {
     setComposerError(null);
     if (!caption.trim() || identities === null) return;
+    if (photosUploading) {
+      setComposerError(t("photosStillUploading"));
+      return;
+    }
     setPosting(true);
     const res = await request("/api/posts", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ caption: caption.trim(), kind, postedAs: selectedIdentity }),
+      body: JSON.stringify({ caption: caption.trim(), kind, postedAs: selectedIdentity, photoUrls }),
     });
     const body = (await res?.json().catch(() => ({}))) ?? {};
     setPosting(false);
@@ -263,6 +271,8 @@ export default function FeedClient({
     haptic("success");
     setPosts((prev) => [body.post as Post, ...(prev ?? [])]);
     setCaption("");
+    setPhotoUrls([]);
+    setPhotosKey((k) => k + 1);
   }
 
   async function toggleLike(post: Post) {
@@ -428,6 +438,11 @@ export default function FeedClient({
             error={composerError}
             posting={posting}
             onSubmit={submitPost}
+            onPhotos={(urls, uploading) => {
+              setPhotoUrls(urls);
+              setPhotosUploading(uploading);
+            }}
+            photosKey={photosKey}
           />
         )}
 

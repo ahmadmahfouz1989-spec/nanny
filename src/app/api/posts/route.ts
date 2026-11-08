@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { containsContactInfo } from "@/lib/content-filter";
+import { MAX_POST_PHOTOS, isOwnPostPhoto } from "@/lib/post-photos";
 import { resolvePostAuthors, decoratePosts, POST_FEED_COLUMNS } from "@/lib/posts";
 import { reportMetaEvent } from "@/lib/meta-capi";
 
@@ -19,6 +20,8 @@ const createSchema = z.object({
   // profile" error below rather than a validation dump. See
   // src/lib/post-identities.ts for how the client learns what's eligible.
   postedAs: z.object({ profileId: z.string().uuid() }).nullable().optional(),
+  // Photos already uploaded through /api/post-photos (checked below).
+  photoUrls: z.array(z.string().url().max(500)).max(MAX_POST_PHOTOS).default([]),
 });
 
 export async function GET(request: Request) {
@@ -81,6 +84,10 @@ export async function POST(request: Request) {
     );
   }
 
+  if (parsed.data.photoUrls.some((url) => !isOwnPostPhoto(url, user.id))) {
+    return NextResponse.json({ error: "Add the photos again" }, { status: 400 });
+  }
+
   if (!parsed.data.postedAs) {
     return NextResponse.json({ error: PROFILE_REQUIRED, code: "profile_required" }, { status: 403 });
   }
@@ -89,6 +96,7 @@ export async function POST(request: Request) {
     user_id: user.id,
     kind: parsed.data.kind,
     caption: parsed.data.caption,
+    photo_urls: parsed.data.photoUrls,
   };
 
   {
@@ -112,7 +120,7 @@ export async function POST(request: Request) {
   const { data: post, error } = await supabase
     .from("posts")
     .insert(insertPayload)
-    .select("id, user_id, kind, caption, created_at, posted_as_generic_profile_id")
+    .select("id, user_id, kind, caption, created_at, posted_as_generic_profile_id, photo_urls")
     .single();
 
   if (error) {

@@ -16,6 +16,8 @@ export type Post = {
   replyCount: number;
   featured: boolean;
   isMine: boolean;
+  /** Photos added to the post itself (up to 4). */
+  photo_urls?: string[];
   // A shared work project's photos -- null for ordinary posts, and for
   // viewers who can't see that profile's work.
   work: PostWork | null;

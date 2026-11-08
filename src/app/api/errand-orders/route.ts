@@ -11,7 +11,7 @@ import { rememberRecentPlaces } from "@/lib/saved-places";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { orderSummaries } from "@/lib/errand-order-view";
 
-const CONTACT_ERROR = "Please remove phone numbers, emails, or social handles. You can share them in chat once a provider confirms.";
+const CONTACT_ERROR = "Please remove phone numbers, emails, or social handles from the description. Put a phone number in the contact field instead: only the provider who confirms sees it.";
 
 /**
  * The caller's orders. `?as=seeker` (default): orders they placed.

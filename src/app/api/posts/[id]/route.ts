@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { removePostPhotos } from "@/lib/post-photos";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
 import { decoratePosts, POST_FEED_COLUMNS } from "@/lib/posts";
 
@@ -37,13 +39,14 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   }
 
-  const { error, count } = await supabase.from("posts").delete({ count: "exact" }).eq("id", id);
+  const { data: removed, error } = await supabase.from("posts").delete().eq("id", id).select("user_id, photo_urls");
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
-  if (!count) {
+  if (!removed?.length) {
     return NextResponse.json({ error: "Post not found" }, { status: 404 });
   }
+  await removePostPhotos(createAdminClient(), removed[0]!.user_id, removed[0]!.photo_urls);
 
   return NextResponse.json({ status: "deleted" });
 }

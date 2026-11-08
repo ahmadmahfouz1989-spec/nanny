@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { shrinkImage } from "@/lib/shrink-image";
+import { request } from "@/lib/request";
 import type { PostIdentityOption } from "@/lib/post-identities";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
@@ -22,6 +25,8 @@ export default function PostComposer({
   error,
   posting,
   onSubmit,
+  onPhotos,
+  photosKey,
 }: {
   identities: PostIdentityOption[] | null;
   selectedProfileId: string | null;
@@ -34,6 +39,10 @@ export default function PostComposer({
   error: string | null;
   posting: boolean;
   onSubmit: () => void;
+  /** The uploaded photos' links, and whether any is still uploading. */
+  onPhotos: (urls: string[], uploading: boolean) => void;
+  /** Changes after a post is sent: the photos start over. */
+  photosKey: number;
 }) {
   const t = useTranslations("Feed");
   const locale = useLocale();
@@ -81,6 +90,7 @@ export default function PostComposer({
           value={caption}
           onChange={(e) => onCaption(e.target.value)}
         />
+        <ComposerPhotos key={photosKey} onChange={onPhotos} />
         {error && <p className="text-sm text-danger">{error}</p>}
         <div className="flex items-center justify-end gap-3">
           {/* Which of your profiles the post shows as -- only a choice
@@ -105,6 +115,113 @@ export default function PostComposer({
             {posting ? t("posting") : t("post")}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+const MAX_PHOTOS = 4;
+type PickedPhoto = { id: string; preview: string; url: string | null; failed: boolean };
+
+/**
+ * Photos for a post: up to 4, from the phone's gallery or straight from the
+ * camera. Each is shrunk on the phone, then uploaded at once, so sending the
+ * post is quick; a small preview shows each, with a way to remove it.
+ */
+function ComposerPhotos({ onChange }: { onChange: (urls: string[], uploading: boolean) => void }) {
+  const t = useTranslations("Feed");
+  const [photos, setPhotos] = useState<PickedPhoto[]>([]);
+  const [error, setError] = useState<string | null>(null);
+  const gallery = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
+  const report = useRef(onChange);
+  useEffect(() => {
+    report.current = onChange;
+  });
+
+  useEffect(() => {
+    report.current(
+      photos.filter((p) => p.url).map((p) => p.url!),
+      photos.some((p) => !p.url && !p.failed),
+    );
+  }, [photos]);
+  // Previews are local copies: let them go when the box is reset.
+  useEffect(() => () => photos.forEach((p) => URL.revokeObjectURL(p.preview)), []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function add(files: FileList | null) {
+    setError(null);
+    const room = MAX_PHOTOS - photos.length;
+    const picked = [...(files ?? [])].filter((f) => f.type.startsWith("image/")).slice(0, room);
+    if ((files?.length ?? 0) > room) setError(t("photosMax", { max: MAX_PHOTOS }));
+    for (const file of picked) {
+      const id = crypto.randomUUID();
+      setPhotos((list) => [...list, { id, preview: URL.createObjectURL(file), url: null, failed: false }]);
+      const small = await shrinkImage(file);
+      const form = new FormData();
+      form.append("file", small);
+      const res = await request("/api/post-photos", { method: "POST", body: form });
+      const body = await res?.json().catch(() => null);
+      if (res?.ok && typeof body?.url === "string") {
+        setPhotos((list) => list.map((p) => (p.id === id ? { ...p, url: body.url } : p)));
+      } else {
+        setPhotos((list) => list.map((p) => (p.id === id ? { ...p, failed: true } : p)));
+        setError(body?.code === "type" ? t("photoType") : body?.code === "size" ? t("photoSize") : t("photoFailed"));
+      }
+    }
+  }
+
+  function remove(id: string) {
+    setPhotos((list) => {
+      const gone = list.find((p) => p.id === id);
+      if (gone) URL.revokeObjectURL(gone.preview);
+      return list.filter((p) => p.id !== id);
+    });
+  }
+
+  const full = photos.length >= MAX_PHOTOS;
+  return (
+    <div className="flex flex-col gap-2">
+      {photos.length > 0 && (
+        <div className="grid grid-cols-4 gap-1.5">
+          {photos.map((p) => (
+            <div key={p.id} className="relative aspect-square overflow-hidden rounded-xl bg-surface-sunken">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={p.preview} alt="" className={`h-full w-full object-cover ${p.url ? "" : "opacity-50"}`} />
+              {!p.url && !p.failed && <span className="absolute inset-0 grid place-items-center text-[11px] font-semibold text-ink">{t("photoUploading")}</span>}
+              {p.failed && <span className="absolute inset-0 grid place-items-center bg-danger-soft/80 text-[11px] font-semibold text-danger">{t("photoFailedShort")}</span>}
+              <button
+                type="button"
+                onClick={() => remove(p.id)}
+                aria-label={t("photoRemove")}
+                className="absolute end-1 top-1 grid h-7 w-7 place-items-center rounded-full bg-black/60 text-white"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
+                  <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {error && <p className="text-xs text-danger">{error}</p>}
+      <div className="flex items-center gap-1">
+        <button type="button" disabled={full} onClick={() => gallery.current?.click()} className={ui.buttonGhost + " gap-1.5 px-2.5! py-1.5! text-ink/80"}>
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+            <rect x="3" y="4" width="18" height="16" rx="3" />
+            <circle cx="9" cy="10" r="2" />
+            <path d="M21 16l-5-5-9 9" strokeLinejoin="round" />
+          </svg>
+          {t("addPhoto")}
+        </button>
+        <button type="button" disabled={full} onClick={() => camera.current?.click()} className={ui.buttonGhost + " gap-1.5 px-2.5! py-1.5! text-ink/80"}>
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+            <path d="M4 8h3l2-2.5h6L17 8h3v11H4z" strokeLinejoin="round" />
+            <circle cx="12" cy="13.5" r="3.5" />
+          </svg>
+          {t("takePhoto")}
+        </button>
+        <input ref={gallery} type="file" accept="image/*" multiple hidden onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
+        <input ref={camera} type="file" accept="image/*" capture="environment" hidden onChange={(e) => { void add(e.target.files); e.target.value = ""; }} />
       </div>
     </div>
   );

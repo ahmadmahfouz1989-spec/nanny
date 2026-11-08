@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
 import { Link } from "@/i18n/navigation";
@@ -106,6 +107,8 @@ export default function PostCard({
 
         <p dir="auto" className="text-[15px] text-ink whitespace-pre-wrap">{post.caption}</p>
 
+        {(post.photo_urls?.length ?? 0) > 0 && <PostPhotos urls={post.photo_urls!} label={t("photoOpen")} closeLabel={t("photoClose")} />}
+
         {post.work && <WorkPhotos work={post.work} label={t("workPhotosLabel", { title: post.work.title })} />}
 
         <div className="flex items-center justify-between max-w-[280px] mt-2">
@@ -162,5 +165,65 @@ function WorkPhotos({ work, label }: { work: PostWork; label: string }) {
         </span>
       ))}
     </Link>
+  );
+}
+
+/**
+ * The photos added to a post: one wide, or a grid of up to four. Tapping
+ * one shows it full screen (tap anywhere or press Escape to close; arrows
+ * or the keyboard go through the others).
+ */
+function PostPhotos({ urls, label, closeLabel }: { urls: string[]; label: string; closeLabel: string }) {
+  const [open, setOpen] = useState<number | null>(null);
+  useEffect(() => {
+    if (open === null) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(null);
+      if (e.key === "ArrowRight") setOpen((i) => (i === null ? i : (i + 1) % urls.length));
+      if (e.key === "ArrowLeft") setOpen((i) => (i === null ? i : (i - 1 + urls.length) % urls.length));
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, urls.length]);
+
+  return (
+    <>
+      <div className={`mt-2 grid gap-0.5 overflow-hidden rounded-2xl border border-border ${urls.length > 1 ? "grid-cols-2" : ""}`}>
+        {urls.map((url, i) => (
+          <button
+            key={url}
+            type="button"
+            onClick={() => setOpen(i)}
+            aria-label={label}
+            className={`relative block bg-surface-sunken ${
+              urls.length === 1 ? "aspect-[4/3]" : urls.length === 3 && i === 0 ? "row-span-2 aspect-auto" : "aspect-square"
+            }`}
+          >
+            <Image src={url} alt="" fill unoptimized sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
+          </button>
+        ))}
+      </div>
+      {open !== null && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-50 flex items-center justify-center bg-black/90" onClick={() => setOpen(null)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={urls[open]} alt="" className="max-h-full max-w-full object-contain" />
+          <button
+            type="button"
+            onClick={() => setOpen(null)}
+            aria-label={closeLabel}
+            className="absolute end-4 top-[calc(1rem+env(safe-area-inset-top))] grid h-10 w-10 place-items-center rounded-full bg-white/15 text-white"
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden>
+              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+            </svg>
+          </button>
+          {urls.length > 1 && (
+            <span className="absolute bottom-[calc(1.5rem+env(safe-area-inset-bottom))] rounded-full bg-white/15 px-3 py-1 text-sm text-white tabular-nums">
+              {open + 1} / {urls.length}
+            </span>
+          )}
+        </div>
+      )}
+    </>
   );
 }

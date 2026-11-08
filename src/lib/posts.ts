@@ -112,7 +112,7 @@ export async function postEngagement(postIds: string[], userId: string): Promise
   return out;
 }
 
-export const POST_FEED_COLUMNS = "id, user_id, kind, caption, status, created_at, posted_as_generic_profile_id, work_project_id";
+export const POST_FEED_COLUMNS = "id, user_id, kind, caption, status, created_at, posted_as_generic_profile_id, work_project_id, photo_urls";
 
 /**
  * Everything the feed renders per post beyond its own row -- author,

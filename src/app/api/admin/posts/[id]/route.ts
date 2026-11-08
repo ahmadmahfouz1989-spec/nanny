@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { removePostPhotos } from "@/lib/post-photos";
 import { requireAdmin } from "@/lib/admin/auth";
 
 // Moderation delete of any feed post. Service role, since posts_delete only
@@ -15,7 +16,10 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
     return NextResponse.json({ error: "Admin access required" }, { status: 403 });
   }
 
-  const { error, count } = await createAdminClient().from("posts").delete({ count: "exact" }).eq("id", id);
+  const db = createAdminClient();
+  const { data: removed, error } = await db.from("posts").delete().eq("id", id).select("user_id, photo_urls");
+  const count = removed?.length ?? 0;
+  if (removed?.[0]) await removePostPhotos(db, removed[0].user_id, removed[0].photo_urls);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }

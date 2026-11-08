@@ -170,7 +170,19 @@
     "placeholderOffer": "What do you offer? e.g. Babysitting evenings in Jounieh",
     "postingAs": "Posting as",
     "profileRequired": "Create a profile to post, so people can see who they're talking to.",
-    "createProfile": "Create profile"
+    "createProfile": "Create profile",
+    "addPhoto": "Photo",
+    "takePhoto": "Camera",
+    "photoRemove": "Remove photo",
+    "photoUploading": "Uploading…",
+    "photoFailedShort": "Didn't upload",
+    "photoFailed": "A photo didn't upload. Try again.",
+    "photoType": "Use a JPG, PNG or WebP photo.",
+    "photoSize": "That photo is too large (8 MB at most).",
+    "photosMax": "Up to {max} photos per post.",
+    "photosStillUploading": "Wait a moment, a photo is still uploading.",
+    "photoOpen": "See photo",
+    "photoClose": "Close"
   },
   "Home": {
     "badge": "Now live across Lebanon",
@@ -796,7 +808,8 @@
       "new_conversation_limit": "You've started 30 new conversations today. You can start more tomorrow — replies to existing conversations aren't limited.",
       "profile_not_available": "This profile isn't available to message right now.",
       "own_profile_not_ready": "Your profile needs to be submitted (and not rejected) before you can start a conversation.",
-      "conversation_blocked": "This conversation is closed."
+      "conversation_blocked": "This conversation is closed.",
+      "phone_number": "Phone numbers can't be shared in chat. Agree on the details here, and ouiKnow keeps you in touch."
     },
     "starter1": "Hi! Are you available this week?",
     "starter2": "Hello, I saw your profile and I'm interested.",

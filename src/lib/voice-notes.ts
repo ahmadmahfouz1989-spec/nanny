@@ -3,6 +3,13 @@
 // client-side recording UI, so these constants and pure helpers live in
 // one place rather than drifting between two copies.
 
+/**
+ * Recording new voice notes in chat. Off for now (a spoken phone number
+ * can't be caught like a typed one); the code stays, and voice notes
+ * already sent still play. Set to true to bring the mic button back.
+ */
+export const VOICE_NOTES_ENABLED = false;
+
 export const MAX_RECORDING_SECONDS = 120;
 export const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_AUDIO_TYPES = ["audio/webm", "audio/mp4", "audio/ogg", "audio/mpeg"];

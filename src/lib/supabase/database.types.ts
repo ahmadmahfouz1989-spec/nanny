@@ -808,14 +808,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string,"work_project_id": string | null
+                    "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"photo_urls": string[],"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string,"work_project_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string,"work_project_id"?: string | null
+                    "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"photo_urls"?: string[],"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string,"work_project_id"?: string | null
                   }
                   Update: {
-                    "caption"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind"?: string,"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"work_project_id"?: string | null
+                    "caption"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind"?: string,"photo_urls"?: string[],"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"work_project_id"?: string | null
                   }
                   Relationships: [
                     {

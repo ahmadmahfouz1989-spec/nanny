@@ -12,6 +12,7 @@ import {
   type MatchAccess,
 } from "@/lib/matching/match-access";
 import { ratingAggregateForUser } from "@/lib/ratings";
+import { containsPhoneNumber } from "@/lib/content-filter";
 import { sendEmail, newMessageEmail, activityEmailsEnabled } from "@/lib/email";
 import { getPublicOrigin } from "@/lib/site-url";
 import {
@@ -20,6 +21,7 @@ import {
   ALLOWED_AUDIO_TYPES,
   SIGNED_URL_TTL_SECONDS,
   VOICE_NOTE_PLACEHOLDER_BODY,
+  VOICE_NOTES_ENABLED,
 } from "@/lib/voice-notes";
 import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
 import { reportMetaEvent } from "@/lib/meta-capi";
@@ -39,11 +41,16 @@ const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds
 const CONVERSATION_CLOSED = "This conversation is closed";
 
 // Raised by before_generic_message_insert (20261102000003_message_while_in_review.sql).
+// Phone numbers stay out of chat: people agree on the work here, and
+// ouiKnow is how they reach each other (src/lib/content-filter.ts).
+const PHONE_IN_CHAT = "Phone numbers can't be shared in chat. Agree on the details here, and the app keeps you in touch.";
+
 const SEND_REFUSALS: Record<string, { status: number; error: string }> = {
   new_conversation_limit: { status: 429, error: "You've started the maximum number of new conversations for today" },
   profile_not_available: { status: 409, error: "This profile isn't available to message right now" },
   own_profile_not_ready: { status: 409, error: "Finish or resubmit your profile before starting a conversation" },
   conversation_blocked: { status: 403, error: CONVERSATION_CLOSED },
+  phone_number: { status: 400, error: PHONE_IN_CHAT },
 };
 
 /** The response for a refused message insert, using the trigger's reason when there is one. */
@@ -148,6 +155,21 @@ export const messagesPost: Handler = withAccess(async ({ request, supabase, user
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
+  // Their last message here, if it was a moment ago: a number split in two
+  // ("03 612", then "985") is still a number.
+  const { data: last } = await supabase
+    .from("generic_messages")
+    .select("body, created_at")
+    .eq("match_id", access.id)
+    .eq("sender_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const recent = last && Date.now() - Date.parse(last.created_at) < 10 * 60_000 ? last.body : null;
+  if (containsPhoneNumber(parsed.data.body, recent)) {
+    return NextResponse.json({ error: PHONE_IN_CHAT, code: "phone_number" }, { status: 400 });
+  }
+
   const { data, error } = await supabase
     .from("generic_messages")
     .insert({ match_id: access.id, sender_id: userId, body: parsed.data.body })
@@ -167,6 +189,10 @@ export const messagesPost: Handler = withAccess(async ({ request, supabase, user
 });
 
 export const messagesAudioPost: Handler = withAccess(async ({ request, supabase, userId, user, access }) => {
+  // Voice notes are switched off (see VOICE_NOTES_ENABLED): none come in.
+  if (!VOICE_NOTES_ENABLED) {
+    return NextResponse.json({ error: "Voice notes are turned off" }, { status: 403 });
+  }
   if (isBlocked(access.status)) {
     return NextResponse.json({ error: CONVERSATION_CLOSED, code: "conversation_blocked" }, { status: 403 });
   }

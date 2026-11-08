@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
-import { formatAudioDuration } from "@/lib/voice-notes";
+import { VOICE_NOTES_ENABLED, formatAudioDuration } from "@/lib/voice-notes";
 import { ui } from "@/lib/ui";
 
 // Up to about five lines, then the box scrolls.
@@ -102,7 +102,7 @@ export default function ChatComposer({
               }
             }}
           />
-          {draft.trim() ? (
+          {draft.trim() || !VOICE_NOTES_ENABLED ? (
             <button
               type="button"
               onClick={onSend}
