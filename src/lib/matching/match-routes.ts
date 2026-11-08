@@ -37,7 +37,7 @@ type Handler = (request: Request, ctx: Ctx) => Promise<NextResponse>;
 type Authed = { request: Request; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; user: User; access: MatchAccess };
 
 const MESSAGE_PAGE_SIZE = 200;
-const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at";
+const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at, delivered_at";
 const CONVERSATION_CLOSED = "This conversation is closed";
 
 // Raised by before_generic_message_insert (20261102000003_message_while_in_review.sql).

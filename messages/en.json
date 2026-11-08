@@ -833,7 +833,10 @@
     "ridersTitle": "Delivery requests arrive in Orders",
     "ridersBody": "Turn on Available when you're working. When someone nearby places an order, you'll be notified and can send your offer, with the map and the places.",
     "ridersOpen": "Open my orders",
-    "undoNotInterested": "Undo"
+    "undoNotInterested": "Undo",
+    "receipt_sent": "Sent",
+    "receipt_delivered": "Delivered",
+    "receipt_read": "Read"
   },
   "Featured": {
     "title": "Get Verified",

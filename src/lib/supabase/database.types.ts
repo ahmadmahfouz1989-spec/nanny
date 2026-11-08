@@ -370,14 +370,14 @@ isOneToOne: false
                   ]
                 },"generic_messages": {
                   Row: {
-                    "audio_duration_seconds": number | null,"audio_path": string | null,"body": string,"created_at": string,"id": string,"match_id": string,"read_at": string | null,"sender_id": string
+                    "audio_duration_seconds": number | null,"audio_path": string | null,"body": string,"created_at": string,"delivered_at": string | null,"id": string,"match_id": string,"read_at": string | null,"sender_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body": string,"created_at"?: string,"id"?: string,"match_id": string,"read_at"?: string | null,"sender_id": string
+                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body": string,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"match_id": string,"read_at"?: string | null,"sender_id": string
                   }
                   Update: {
-                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body"?: string,"created_at"?: string,"id"?: string,"match_id"?: string,"read_at"?: string | null,"sender_id"?: string
+                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body"?: string,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"match_id"?: string,"read_at"?: string | null,"sender_id"?: string
                   }
                   Relationships: [
                     {
@@ -1110,7 +1110,10 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "use_travel_time":
+            "mark_messages_delivered":
+{ Args: { "p_user": string }; Returns: number
+                           },
+"use_travel_time":
 { Args: { "p_elements": number,"p_limit": number }; Returns: boolean
                            },
 "account_is_suspended":

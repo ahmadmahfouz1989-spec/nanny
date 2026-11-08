@@ -36,6 +36,9 @@ type Message = ChatMessageData;
 // a safety net for a dropped/reconnecting channel, and keeps long-lived
 // voice-note URLs from expiring under an open thread.
 const SAFETY_REFRESH_MS = 30000;
+// While your last message isn't read yet, check more often: the ticks move
+// on even when the live connection has dropped (phones do that).
+const RECEIPT_REFRESH_MS = 8000;
 // Every GET re-signs every voice note, but swapping a still-valid URL on
 // each refresh would reload any <audio> that's mid-playback. Only take the
 // fresh one once the held URL is missing (signing failed earlier) or has
@@ -74,6 +77,11 @@ export default function ChatThread({
   const t = useTranslations("Matches");
   const locale = useLocale();
   const [messages, setMessages] = useState<Message[] | null>(null);
+  // For the timers, which outlive any one render.
+  const messagesRef = useRef<Message[] | null>(null);
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
   const [hasMoreOlder, setHasMoreOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   // Follow new messages only when the reader is already at the bottom --
@@ -178,8 +186,11 @@ export default function ChatThread({
           if (prev.length === merged.length && prev.every((m, i) => m.id === merged[i]?.id)) {
             // Same messages -- but a voice note may have just gained (or
             // renewed) its playable URL, which does need to reach the UI.
-            const urlChanged = prev.some((m, i) => m.audioUrl !== merged[i]?.audioUrl);
-            return urlChanged ? merged : prev;
+            // Or one of yours was delivered or read: the ticks change.
+            const changed = prev.some(
+              (m, i) => m.audioUrl !== merged[i]?.audioUrl || m.read_at !== merged[i]?.read_at || m.delivered_at !== merged[i]?.delivered_at,
+            );
+            return changed ? merged : prev;
           }
           return merged;
         });
@@ -246,6 +257,17 @@ export default function ChatThread({
           if (incoming.sender_id !== userIdRef.current) markRead();
         },
       )
+      // Your message reached them, or they read it: the ticks change at once.
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "generic_messages", filter: `match_id=eq.${matchId}` },
+        (payload) => {
+          const row = payload.new as Message;
+          setMessages((prev) =>
+            prev?.map((m) => (m.id === row.id ? { ...m, read_at: row.read_at ?? null, delivered_at: row.delivered_at ?? null } : m)) ?? prev,
+          );
+        },
+      )
       .subscribe();
 
     const typingChannel = supabase
@@ -260,9 +282,15 @@ export default function ChatThread({
     typingChannelRef.current = typingChannel;
 
     const safetyRefresh = setInterval(refreshMessages, SAFETY_REFRESH_MS);
+    const receiptRefresh = setInterval(() => {
+      const mine = messagesRef.current?.filter((m) => m.sender_id === userIdRef.current);
+      const last = mine?.[mine.length - 1];
+      if (last && !last.read_at && document.visibilityState === "visible") refreshMessages();
+    }, RECEIPT_REFRESH_MS);
 
     return () => {
       clearInterval(safetyRefresh);
+      clearInterval(receiptRefresh);
       supabase.removeChannel(channel);
       supabase.removeChannel(typingChannel);
       typingChannelRef.current = null;

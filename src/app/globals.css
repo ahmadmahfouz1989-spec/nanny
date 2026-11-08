@@ -21,6 +21,8 @@ button:not(:disabled),
   --primary-hover: #b3300e;
   /* Text on an orange fill: white here, dark in dark mode (the orange is light there). */
   --on-primary: #ffffff;
+  /* Chat: the blue ticks of a message that's been read. */
+  --read-tick: #1688c8;
   --primary-soft: #fce4da;
   --secondary: #1f8577;
   --secondary-soft: #dcefeb;
@@ -54,6 +56,7 @@ button:not(:disabled),
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-on-primary: var(--on-primary);
+  --color-read-tick: var(--read-tick);
   --color-primary-soft: var(--primary-soft);
   --color-secondary: var(--secondary);
   --color-secondary-soft: var(--secondary-soft);
@@ -130,6 +133,7 @@ button:not(:disabled),
     --primary: #ff7a4d;
     --primary-hover: #ff9268;
     --on-primary: #1b1712;
+    --read-tick: #53bdeb;
     --primary-soft: #45281c;
     --secondary: #4fc4b0;
     --secondary-soft: #1d3b36;
@@ -165,6 +169,7 @@ button:not(:disabled),
   --primary: #ff7a4d;
   --primary-hover: #ff9268;
   --on-primary: #1b1712;
+  --read-tick: #53bdeb;
   --primary-soft: #45281c;
   --secondary: #4fc4b0;
   --secondary-soft: #1d3b36;

@@ -833,7 +833,10 @@
     "ridersTitle": "طلبات التوصيل بتوصل على الطلبات",
     "ridersBody": "شغّل «متاح» لمّا تكون عم تشتغل. لمّا حدا قريب منك يعمل طلب، بيوصلك إشعار وفيك تبعت عرضك، مع الخريطة والأماكن.",
     "ridersOpen": "افتح طلباتي",
-    "undoNotInterested": "تراجع"
+    "undoNotInterested": "تراجع",
+    "receipt_sent": "انبعتت",
+    "receipt_delivered": "وصلت",
+    "receipt_read": "انقرت"
   },
   "Featured": {
     "title": "خود التوثيق",

@@ -13,6 +13,8 @@ export type ChatMessageData = {
   created_at: string;
   /** Null until the other person has seen it. */
   read_at?: string | null;
+  /** Null until it reached the other person's app or website. */
+  delivered_at?: string | null;
 };
 
 /** One message bubble, optionally preceded by a day divider and followed by its time. */
@@ -55,10 +57,34 @@ export default function ChatMessage({
         )}
       </div>
       {time && (
-        <span className={`text-[11px] text-muted mt-0.5 ${own ? "self-end" : "self-start"}`}>
+        <span className={`mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted ${own ? "self-end" : "self-start"}`}>
           {time}
+          {own && <Ticks message={m} />}
         </span>
       )}
     </div>
+  );
+}
+
+/**
+ * WhatsApp's ticks on your own message: one when it's sent, two grey once
+ * it reached their app or website, two blue once they've read it.
+ */
+function Ticks({ message: m }: { message: ChatMessageData }) {
+  const t = useTranslations("Matches");
+  const state = m.read_at ? "read" : m.delivered_at ? "delivered" : "sent";
+  return (
+    <span role="img" aria-label={t(`receipt_${state}`)} title={t(`receipt_${state}`)} className={state === "read" ? "text-read-tick" : "text-muted"}>
+      {state === "sent" ? (
+        <svg viewBox="0 0 16 11" className="h-[11px] w-[14px]" fill="none" aria-hidden>
+          <path d="M1.5 6l3.2 3.2L11 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      ) : (
+        <svg viewBox="0 0 20 11" className="h-[11px] w-[18px]" fill="none" aria-hidden>
+          <path d="M1.5 6l3.2 3.2L11 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M8.2 8.4l0.8 0.8L15.3 2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </span>
   );
 }
