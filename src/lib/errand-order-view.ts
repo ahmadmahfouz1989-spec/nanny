@@ -148,7 +148,7 @@ function mapsLink(from: { lat: number; lng: number } | null, to: { lat: number; 
   return one ? `https://www.google.com/maps/search/?api=1&query=${mapsPoint(one)}` : null;
 }
 
-async function people(db: Admin, profileIds: (string | null)[]): Promise<Map<string, OrderPerson & { userId: string }>> {
+export async function orderPeople(db: Admin, profileIds: (string | null)[]): Promise<Map<string, OrderPerson & { userId: string }>> {
   const unique = [...new Set(profileIds.filter((id): id is string => !!id))];
   const out = new Map<string, OrderPerson & { userId: string }>();
   if (unique.length === 0) return out;
@@ -187,7 +187,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     placeNames(db, [order.pickup_district_id, order.pickup_area_id, order.dropoff_district_id, order.dropoff_area_id]),
   ]);
   const all = recipients ?? [];
-  const persons = await people(db, [order.seeker_profile_id, order.provider_profile_id, ...all.map((r) => r.provider_profile_id)]);
+  const persons = await orderPeople(db, [order.seeker_profile_id, order.provider_profile_id, ...all.map((r) => r.provider_profile_id)]);
 
   // Who sees the exact places. The customer and admins: everything. A
   // rider asked to quote: the exact pickup (it's usually a shop), but only

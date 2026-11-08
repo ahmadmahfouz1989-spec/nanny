@@ -5,7 +5,7 @@ import { requireActiveUser } from "@/lib/session";
 import { mustVerifyPhone } from "@/lib/phone-gate";
 import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
-import { advanceOrders, dispatchOrder, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
+import { advanceOrders, dispatchOrder, eligibleProviders, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
 import { placeOfPoint } from "@/lib/nearest-place";
 import { rememberRecentPlaces } from "@/lib/saved-places";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
@@ -178,6 +178,23 @@ export async function POST(request: Request) {
   }
 
   const settings = await errandSettings(db);
+  // A rider the customer picked: still able to take it right now?
+  if (o.providerProfileId) {
+    const free = await eligibleProviders(
+      db,
+      {
+        service: o.service,
+        pickupDistrictId: o.pickupDistrictId,
+        pickupAreaId: o.pickupAreaId ?? null,
+        seekerUserId: user.id,
+        pickupPoint: o.pickupPoint ?? null,
+      },
+      { limit: 1, maxActive: settings.max_active_orders, only: o.providerProfileId },
+    );
+    if (free.length === 0) {
+      return NextResponse.json({ error: "That rider can't take orders right now. Pick another one, or send it to the nearest riders.", code: "rider_unavailable" }, { status: 409 });
+    }
+  }
   const { data: order, error } = await db
     .from("errand_orders")
     .insert({
@@ -210,13 +227,14 @@ export async function POST(request: Request) {
       timing: o.timing,
       scheduled_at: o.timing === "scheduled" ? (o.scheduledAt ?? null) : null,
       budget_usd: o.budgetUsd ?? null,
+      ...(o.providerProfileId ? { chosen_provider_profile_id: o.providerProfileId } : {}),
       open_until: new Date(Date.now() + openMinutesFor(settings, o.category) * 60_000).toISOString(),
     })
     .select("*")
     .single();
   if (error || !order) return NextResponse.json({ error: error?.message ?? "Could not place the order" }, { status: 400 });
 
-  await logOrderEvent(db, order.id, { userId: user.id, role: "seeker" }, "created");
+  await logOrderEvent(db, order.id, { userId: user.id, role: "seeker" }, "created", o.providerProfileId ? { chosen_provider_profile_id: o.providerProfileId } : {});
   // One tap next time: the places of this order (never its contact details).
   if (!job) {
     await rememberRecentPlaces(db, user.id, [

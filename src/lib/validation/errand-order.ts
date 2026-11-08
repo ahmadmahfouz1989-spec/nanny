@@ -66,6 +66,8 @@ export const orderCreateSchema = z
     // Photos already uploaded through /api/order-photos (paths in the
     // caller's own folder -- checked by the route).
     photoPaths: z.array(z.string().max(200)).max(3, "Up to 3 photos").default([]),
+    // A delivery sent to one rider the customer picked, not the nearest ones.
+    providerProfileId: uuid.optional(),
     // Only asked when we don't know the customer's name yet.
     fullName: z.string().trim().min(2, "Enter your name").max(80, "Name is too long").optional(),
   })
@@ -73,6 +75,9 @@ export const orderCreateSchema = z
     const trades = TRADES as readonly string[];
     if ((o.category === "maintenance") !== trades.includes(o.service)) {
       ctx.addIssue({ code: "custom", path: ["service"], message: "Choose a service" });
+    }
+    if (o.category === "maintenance" && o.providerProfileId) {
+      ctx.addIssue({ code: "custom", path: ["providerProfileId"], message: "Repair requests go to every tradesperson" });
     }
     if (o.category === "errands" && o.photoPaths.length > 0) {
       ctx.addIssue({ code: "custom", path: ["photoPaths"], message: "Photos are for repair jobs" });

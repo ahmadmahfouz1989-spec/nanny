@@ -11,6 +11,7 @@ import { emptyMapPlace, mapsEnabled, type MapPlace } from "@/lib/google-maps";
 import { straightLineKm } from "@/lib/place-input";
 import { ERRAND_SERVICES, type ErrandService } from "@/lib/validation/errands";
 import { NEEDS_DROPOFF } from "@/lib/validation/errand-order";
+import { Avatar } from "@/app/[locale]/feed/feed-shared";
 
 type Place = { governorateId: string | null; districtId: string | null; areaId: string | null; detail: string };
 const emptyPlace: Place = { governorateId: null, districtId: null, areaId: null, detail: "" };
@@ -39,6 +40,9 @@ type Draft = {
   pickupMap: MapPlace;
   dropoffMap: MapPlace;
 };
+/** A rider the customer can send the order to themselves. */
+type Rider = { profileId: string; name: string; photoUrl: string | null; rating: { average: number | null; count: number }; distanceKm: number | null };
+
 /** Closer than this, both ends are the same spot. */
 const SAME_SPOT_KM = 0.05;
 
@@ -68,6 +72,11 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   const [dropoffMap, setDropoffMap] = useState<MapPlace>(emptyMapPlace);
   const ride = service === "moto_taxi";
   const [missing, setMissing] = useState<Missing | null>(null);
+  // Who gets it: the nearest available riders, or one the customer picks.
+  const [pickRider, setPickRider] = useState(false);
+  const [riders, setRiders] = useState<Rider[] | null>(null);
+  const [riderId, setRiderId] = useState<string | null>(null);
+  const [ridersTick, setRidersTick] = useState(0);
   const sections = useRef<Partial<Record<Missing, HTMLElement | null>>>({});
 
   // What's been filled in survives leaving the page and coming back in the
@@ -111,6 +120,30 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       // Storage can be off: the form still works.
     }
   }, [draftKey, service, description, timing, scheduledAt, budget, fullName, pickup, dropoff, pickupMap, dropoffMap]);
+
+  // Riders free to take this service, nearest to the pickup first.
+  const pickupKey = useMap
+    ? pickupMap.point && `lat=${pickupMap.point.lat}&lng=${pickupMap.point.lng}`
+    : pickup.districtId && `districtId=${pickup.districtId}${pickup.areaId ? `&areaId=${pickup.areaId}` : ""}`;
+  useEffect(() => {
+    if (!pickRider || !pickupKey) return;
+    let gone = false;
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
+    setRiders(null);
+    fetch(`/api/errand-orders/riders?service=${service}&${pickupKey}`)
+      .then((r) => (r.ok ? r.json() : { riders: [] }))
+      .then((d: { riders: Rider[] }) => {
+        if (gone) return;
+        setRiders(d.riders);
+        // Someone picked who can't take this one any more (another service, gone offline).
+        setRiderId((id) => (id && d.riders.some((r) => r.profileId === id) ? id : null));
+      })
+      .catch(() => !gone && setRiders([]));
+    return () => {
+      gone = true;
+    };
+  }, [pickRider, pickupKey, service, ridersTick]);
+  const chosenRider = pickRider ? (riders ?? []).find((r) => r.profileId === riderId) ?? null : null;
 
   /** Takes the person to what's still needed, and says so there. */
   function pointTo(what: Missing) {
@@ -160,6 +193,10 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
           dropoffAreaId: needsDropoff ? dropoff.areaId : null,
           dropoffDetail: needsDropoff ? dropoff.detail.trim() || undefined : undefined,
         };
+    if (pickRider && !chosenRider) {
+      setError(t("pickRider"));
+      return;
+    }
     setSending(true);
     const res = await request("/api/errand-orders", {
       method: "POST",
@@ -172,6 +209,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         scheduledAt: timing === "scheduled" && scheduledAt ? new Date(scheduledAt).toISOString() : undefined,
         budgetUsd: budget ? Number(budget) : undefined,
         fullName: askName ? fullName.trim() : undefined,
+        providerProfileId: chosenRider?.profileId,
       }),
     });
     const body = await res?.json().catch(() => null);
@@ -179,6 +217,11 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
     if (body?.code === "name_required") {
       setAskName(true);
       pointTo("name");
+      return;
+    }
+    if (body?.code === "rider_unavailable") {
+      setError(t("riderUnavailable"));
+      setRidersTick((n) => n + 1);
       return;
     }
     if (!res?.ok || !body?.order) {
@@ -325,9 +368,61 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         <input type="number" min={0} max={10000} step="0.5" inputMode="decimal" className={ui.input} value={budget} onChange={(e) => setBudget(e.target.value)} />
       </label>
 
+      <section className="flex flex-col gap-2">
+        <span className={ui.label}>{t("sendTo")}</span>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className={ui.pill(!pickRider)} onClick={() => {
+              setPickRider(false);
+              setError(null);
+            }}>
+            {t("sendToNearest")}
+          </button>
+          <button type="button" className={ui.pill(pickRider)} onClick={() => setPickRider(true)}>
+            {t("sendToChosen")}
+          </button>
+        </div>
+        {pickRider &&
+          (!pickupKey ? (
+            <p className="text-sm text-muted">{t("ridersNeedPickup")}</p>
+          ) : riders === null ? (
+            <p className="text-sm text-muted">{t("ridersLoading")}</p>
+          ) : riders.length === 0 ? (
+            <p className="text-sm text-muted">{t("ridersNone")}</p>
+          ) : (
+            <>
+              <div role="radiogroup" aria-label={t("sendToChosen")} className="-m-1 flex max-h-80 flex-col gap-2 overflow-y-auto p-1">
+                {riders.map((r) => (
+                  <button
+                    key={r.profileId}
+                    type="button"
+                    role="radio"
+                    aria-checked={riderId === r.profileId}
+                    onClick={() => {
+                      setRiderId(r.profileId);
+                      setError(null);
+                    }}
+                    className={ui.card + " flex items-center gap-3 p-3 text-start" + (riderId === r.profileId ? " ring-2 ring-primary" : "")}
+                  >
+                    <Avatar photoUrl={r.photoUrl} size={40} />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="truncate font-medium text-ink">{r.name}</span>
+                      <span className="text-xs text-muted">
+                        {[r.rating.average !== null ? `★ ${r.rating.average.toFixed(1)} (${r.rating.count})` : null, r.distanceKm !== null ? t("askedKm", { km: r.distanceKm }) : null]
+                          .filter(Boolean)
+                          .join(" · ")}
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted">{t("chosenHint")}</p>
+            </>
+          ))}
+      </section>
+
       {error && <p className="text-sm text-danger">{error}</p>}
       <button type="submit" disabled={sending} className={ui.buttonPrimary}>
-        {sending ? t("placing") : t("placeOrder")}
+        {sending ? t("placing") : chosenRider ? t("placeOrderTo", { name: chosenRider.name }) : t("placeOrder")}
       </button>
     </form>
   );

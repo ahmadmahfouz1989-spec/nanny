@@ -176,6 +176,9 @@ export async function activeOrderCounts(db: Admin, profileIds: string[]): Promis
  * With `nearbyKm`, coverage gives way to distance: available riders that
  * close, for when nobody covering the district can take the order.
  *
+ * With `anywhere`, coverage doesn't count at all (the riders a customer
+ * can pick from); `only` is that one picked rider, if they can take it.
+ *
  * A repair job instead goes to tradespeople of that trade anywhere in the
  * governorate (nearest first): there are fewer of them, they travel, and
  * they have no Available switch or one-job limit.
@@ -192,7 +195,7 @@ export async function eligibleProviders(
     pickupPoint?: { lat: number; lng: number } | null;
   },
   // nearbyKm: everyone that close instead of everyone covering the district.
-  options: { exclude?: string[]; limit: number; maxActive?: number; nearbyKm?: number },
+  options: { exclude?: string[]; limit: number; maxActive?: number; nearbyKm?: number; anywhere?: boolean; only?: string },
 ): Promise<Candidate[]> {
   const jobs = order.category === "maintenance";
   const categoryId = await categoryIdOf(db, jobs ? "maintenance" : "errands");
@@ -216,6 +219,7 @@ export async function eligibleProviders(
     .eq("moderation_status", "approved")
     .neq("user_id", order.seekerUserId);
   if (!jobs) query = query.eq("available_now", true);
+  if (options.only) query = query.eq("id", options.only);
   const { data: providers } = await query;
 
   const exclude = new Set(options.exclude ?? []);
@@ -231,6 +235,8 @@ export async function eligibleProviders(
     const score = placeScore(seekerPlace, placeOf(p as { location_id: string | null; attributes: Record<string, unknown> }));
     const a2 = a as { districtId?: unknown };
     if (jobs) return score > 0;
+    // Picked by the customer: where they work doesn't matter.
+    if (options.anywhere || options.only) return true;
     // Who is really close is decided by distance below, from a rider's own area.
     if (options.nearbyKm !== undefined) return typeof a2.districtId === "string";
     return typeof a2.districtId === "string" ? score === 1 : score > 0;
@@ -371,7 +377,8 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
     pickupPoint: order.pickup_lat !== null && order.pickup_lng !== null ? { lat: order.pickup_lat, lng: order.pickup_lng } : null,
   };
   const reach = { exclude: (already ?? []).map((r) => r.provider_profile_id), limit: Infinity, maxActive: settings.max_active_orders };
-  const candidates = await eligibleProviders(db, asked, reach);
+  const chosen = order.chosen_provider_profile_id;
+  const candidates = chosen ? [] : await eligibleProviders(db, asked, reach);
 
   const max = settings.max_radius_km;
   const before = order.radius_km !== null ? Number(order.radius_km) : null;
@@ -384,8 +391,12 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
   let batch = candidates.filter((c) => inside(c, radius)).slice(0, Math.min(settings.wave_size, room));
   // Nobody covering the district is left: available riders close to the
   // pickup, even across a district line, before telling the customer no.
-  const nearby = batch.length === 0 && settings.nearby_fallback_km > 0;
-  if (nearby) {
+  const nearby = batch.length === 0 && settings.nearby_fallback_km > 0 && !chosen;
+  if (chosen) {
+    // The rider the customer picked, and only them: once they've passed
+    // (a later wave), it ends; Try again sends a copy to everyone.
+    batch = order.wave === 0 ? await eligibleProviders(db, asked, { ...reach, limit: 1, only: chosen }) : [];
+  } else if (nearby) {
     batch = (await eligibleProviders(db, asked, { ...reach, nearbyKm: settings.nearby_fallback_km })).slice(0, Math.min(settings.wave_size, room));
   }
   if (batch.length === 0) {
@@ -423,6 +434,7 @@ async function sendWave(db: Admin, order: OrderRow, actor: OrderActor, options: 
     count: batch.length,
     radius_km: radius,
     ...(nearby ? { nearby_km: settings.nearby_fallback_km } : {}),
+    ...(chosen ? { chosen: true } : {}),
     ...(before !== null && radius > before ? { widened_from_km: before } : {}),
     providers: batch.map((c) => ({ profile_id: c.profileId, distance_km: c.distanceKm })),
   });
