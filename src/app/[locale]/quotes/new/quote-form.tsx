@@ -48,8 +48,18 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    // The button always works and says what's missing, rather than
+    // sitting greyed out with no reason.
     if (!trade) {
-      setError(t("trade"));
+      setError(t("chooseTrade"));
+      return;
+    }
+    if (description.trim().length < 3) {
+      setError(t("describeNeed"));
+      return;
+    }
+    if (needsName && fullName.trim().length < 2) {
+      setError(t("enterYourName"));
       return;
     }
     if (!place.districtId) {
@@ -83,13 +93,11 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
     router.push(`/orders/${body.order.id}`);
   }
 
-  const ready = !!trade && description.trim().length >= 3 && (!needsName || fullName.trim().length >= 2) && !uploading;
-
   return (
     <form onSubmit={submit} className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6">
       <div>
         <Link href="/categories/maintenance/dashboard" className="text-sm text-muted hover:text-ink">
-          ← {t("back")}
+          <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink">{t("quotesTitle")}</h1>
         <p className="mt-1 text-sm text-muted">{t("quotesSubtitle")}</p>
@@ -99,7 +107,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
         <span className={ui.label}>{t("trade")}</span>
         <div className="flex flex-wrap gap-2">
           {TRADES.map((s) => (
-            <button key={s} type="button" className={ui.pill(trade === s)} onClick={() => setTrade(s)}>
+            <button key={s} type="button" aria-pressed={trade === s} className={ui.pill(trade === s)} onClick={() => setTrade(s)}>
               {tTrades(s)}
             </button>
           ))}
@@ -176,10 +184,10 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("jobWhen")}</span>
         <div className="flex gap-2">
-          <button type="button" className={ui.pill(timing === "asap")} onClick={() => setTiming("asap")}>
+          <button type="button" aria-pressed={timing === "asap"} className={ui.pill(timing === "asap")} onClick={() => setTiming("asap")}>
             {t("asap")}
           </button>
-          <button type="button" className={ui.pill(timing === "scheduled")} onClick={() => setTiming("scheduled")}>
+          <button type="button" aria-pressed={timing === "scheduled"} className={ui.pill(timing === "scheduled")} onClick={() => setTiming("scheduled")}>
             {t("jobOnDate")}
           </button>
         </div>
@@ -201,7 +209,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
       )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
-      <button type="submit" disabled={sending || !ready} className={ui.buttonPrimary}>
+      <button type="submit" disabled={sending || uploading} className={ui.buttonPrimary}>
         {sending ? t("placing") : t("sendForQuotes")}
       </button>
     </form>

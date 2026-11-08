@@ -322,7 +322,7 @@ export default function ErrandsSeekerForm({
             <FieldLabel field="passengers" errors={fieldErrors}>{t("passengers")}</FieldLabel>
             <div className="flex gap-2">
               {["1", "2"].map((n) => (
-                <button type="button" key={n} onClick={() => update("passengers", n)} className={ui.pill(form.passengers === n)}>
+                <button type="button" key={n} onClick={() => update("passengers", n)} aria-pressed={form.passengers === n} className={ui.pill(form.passengers === n)}>
                   {n}
                 </button>
               ))}
@@ -336,7 +336,7 @@ export default function ErrandsSeekerForm({
         <FieldLabel field="timing" errors={fieldErrors}>{t("timing")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TIMINGS.map((v) => (
-            <button type="button" key={v} onClick={() => update("timing", v)} className={ui.pill(form.timing === v)}>
+            <button type="button" key={v} onClick={() => update("timing", v)} aria-pressed={form.timing === v} className={ui.pill(form.timing === v)}>
               {tTiming(v)}
             </button>
           ))}
@@ -357,9 +357,9 @@ export default function ErrandsSeekerForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section3Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         <FieldLabel field="notes" errors={fieldErrors} optional>{t("notes")}</FieldLabel>

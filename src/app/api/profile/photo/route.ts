@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { notifyAdminsOfPendingReview, providerStatusAfterEdit } from "@/lib/admin/pending-review";
 import { removeProfilePhotoIfUnused } from "@/lib/storage-cleanup";
 
 const MAX_BYTES = 5 * 1024 * 1024;
@@ -48,7 +49,7 @@ export async function POST(request: Request) {
 
   const { data: own } = await supabase
     .from("generic_profiles")
-    .select("id, role, profile_photo_url")
+    .select("id, role, profile_photo_url, moderation_status, full_name, status, categories(slug, name_en, name_ar)")
     .eq("id", genericProfileId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -73,12 +74,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ url: publicUrl.publicUrl });
   }
 
-  // A provider's new photo goes back to review. A customer's request stays as
-  // it is, which only the service role may write (protect_moderation_status).
-  const { error: updateError } =
-    own.role === "provider"
-      ? await supabase.from("generic_profiles").update({ profile_photo_url: publicUrl.publicUrl, moderation_status: "pending" }).eq("id", own.id)
-      : await createAdminClient().from("generic_profiles").update({ profile_photo_url: publicUrl.publicUrl }).eq("id", own.id);
+  // A live provider stays live with a new photo (admins are told to check
+  // it); a provider not yet approved goes (back) to review. A customer's
+  // request stays as it is. Service role: only it may keep "approved".
+  const status = own.role === "provider" ? providerStatusAfterEdit(own.moderation_status) : null;
+  const { error: updateError } = await createAdminClient()
+    .from("generic_profiles")
+    .update(status ? { profile_photo_url: publicUrl.publicUrl, moderation_status: status } : { profile_photo_url: publicUrl.publicUrl })
+    .eq("id", own.id);
+  if (!updateError && own.role === "provider" && own.status !== "draft" && own.categories) {
+    await notifyAdminsOfPendingReview(own.full_name, `${own.categories.slug}_provider`, own.categories, "provider", { edited: status === "approved" });
+  }
 
   if (updateError) {
     // The upload succeeded but the profile doesn't point at it -- remove the
@@ -91,5 +97,5 @@ export async function POST(request: Request) {
   // one, and only ever a path under this user's own folder.
   if (own.profile_photo_url) await removeProfilePhotoIfUnused(createAdminClient(), own.profile_photo_url, user.id);
 
-  return NextResponse.json({ url: publicUrl.publicUrl });
+  return NextResponse.json({ url: publicUrl.publicUrl, moderationStatus: status ?? undefined });
 }

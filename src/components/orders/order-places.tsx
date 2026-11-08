@@ -26,11 +26,12 @@ export default function OrderPlaces({ pickup, dropoff, route, job = false, rider
   return (
     <div className={ui.card + " flex flex-col gap-3 p-4"}>
       {showMap && <RouteMap pickup={pickup} dropoff={dropoff} />}
-      <PlaceBlock place={pickup} label={job ? t("where") : dropoff ? t("from") : t("where")} colour={PICKUP_COLOUR} />
-      {dropoff && <PlaceBlock place={dropoff} label={t("to")} colour={DROPOFF_COLOUR} />}
+      <PlaceBlock place={pickup} label={job ? t("where") : dropoff ? t("from") : t("where")} colour={PICKUP_COLOUR} rider={rider} />
+      {dropoff && <PlaceBlock place={dropoff} label={t("to")} colour={DROPOFF_COLOUR} rider={rider} />}
       {(route.km !== null || route.mapsUrl) && (
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-          <p className="text-sm text-muted">{route.km !== null && dropoff ? t("distanceAbout", { km: route.km }) : ""}</p>
+          {/* Two places in the same area (no exact points) are "0 km" apart: say nothing. */}
+          <p className="text-sm text-muted">{route.km !== null && route.km >= 0.1 && dropoff ? t("distanceAbout", { km: route.km }) : ""}</p>
           <div className="flex flex-wrap gap-2">
             {/* For the rider, directions from where they are now. An area isn't a destination. */}
             {rider && dropoff && pickup.point && (
@@ -55,7 +56,7 @@ export default function OrderPlaces({ pickup, dropoff, route, job = false, rider
   );
 }
 
-function PlaceBlock({ place, label, colour }: { place: OrderPlace; label: string; colour: string }) {
+function PlaceBlock({ place, label, colour, rider }: { place: OrderPlace; label: string; colour: string; rider: boolean }) {
   const t = useTranslations("PlacePicker");
   const locale = useLocale();
   const area = [placeLabel(place.area, locale), placeLabel(place.district, locale)].filter(Boolean).join(", ");
@@ -94,7 +95,8 @@ function PlaceBlock({ place, label, colour }: { place: OrderPlace; label: string
             )}
           </p>
         )}
-        {place.approximate && <p className="mt-1 text-xs text-muted">{t("approximateHint")}</p>}
+        {/* Only the rider waits for the exact place; the customer typed it. */}
+        {place.approximate && rider && <p className="mt-1 text-xs text-muted">{t("approximateHint")}</p>}
       </div>
     </div>
   );

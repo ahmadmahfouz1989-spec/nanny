@@ -72,7 +72,8 @@ export default function ProfileHeaderCard({
       }
       const body = await res.json();
       setPhotoUrl(body.url);
-      if (role === "provider") setStatus("pending");
+      // A live profile stays live; one not yet approved is waiting for review.
+      if (role === "provider" && body.moderationStatus) setStatus(body.moderationStatus);
     } catch {
       setPhotoError(t("photoUpdateError"));
     } finally {

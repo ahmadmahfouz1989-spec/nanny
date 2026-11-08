@@ -214,9 +214,9 @@ export default function NursingSeekerForm({
     >
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -251,7 +251,7 @@ export default function NursingSeekerForm({
         <FieldLabel field="careSpecialtiesNeeded" errors={fieldErrors}>{t("careSpecialtiesNeeded")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {CARE_SPECIALTIES.map((s) => (
-            <button type="button" key={s} onClick={() => toggle("careSpecialtiesNeeded", s)} className={ui.pill(form.careSpecialtiesNeeded.includes(s))}>
+            <button type="button" key={s} onClick={() => toggle("careSpecialtiesNeeded", s)} aria-pressed={form.careSpecialtiesNeeded.includes(s)} className={ui.pill(form.careSpecialtiesNeeded.includes(s))}>
               {tCare(s)}
             </button>
           ))}
@@ -262,7 +262,7 @@ export default function NursingSeekerForm({
         <FieldLabel field="providerGender" errors={fieldErrors}>{t("providerGender")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {GENDER_PREFERENCES.map((g) => (
-            <button type="button" key={g} onClick={() => update("providerGender", g)} className={ui.pill(form.providerGender === g)}>
+            <button type="button" key={g} onClick={() => update("providerGender", g)} aria-pressed={form.providerGender === g} className={ui.pill(form.providerGender === g)}>
               {t(`providerGenderOptions.${g}`)}
             </button>
           ))}
@@ -282,7 +282,7 @@ export default function NursingSeekerForm({
         <FieldLabel field="neededDays" errors={fieldErrors} optional>{t("neededDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("neededDays", day)} className={ui.pill(form.neededDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("neededDays", day)} aria-pressed={form.neededDays.includes(day)} className={ui.pill(form.neededDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}

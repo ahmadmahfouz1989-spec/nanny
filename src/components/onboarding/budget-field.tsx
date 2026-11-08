@@ -36,7 +36,7 @@ export default function BudgetField({
       <FieldLabel field="budget" errors={errors} optional>{t("yourBudget")}</FieldLabel>
       <div className="flex flex-wrap gap-2">
         {units.map((u) => (
-          <button type="button" key={u} onClick={() => onChange({ ...value, unit: u })} className={ui.pill(value.unit === u)}>
+          <button type="button" key={u} onClick={() => onChange({ ...value, unit: u })} aria-pressed={value.unit === u} className={ui.pill(value.unit === u)}>
             {t(`unit.${u}`)}
           </button>
         ))}

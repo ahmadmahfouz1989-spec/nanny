@@ -78,7 +78,10 @@ export function notificationHref(n: NotificationLike): string {
     case "profile_rejected":
       return categorySlug ? `/categories/${categorySlug}/dashboard` : "/dashboard";
     case "profile_pending_review":
-      return "/admin/profiles";
+      // A live profile that was edited: open it among the approved ones.
+      return n.payload?.edited && typeof n.payload.full_name === "string"
+        ? `/admin/profiles?status=approved&q=${encodeURIComponent(n.payload.full_name)}`
+        : "/admin/profiles";
     case "verification_updated":
       return "/profile";
     case "work_rejected": {
@@ -138,6 +141,9 @@ export function notificationLabel(n: NotificationLike, t: Translate, categoryNam
     // A repair job reads as a job and a quote, not an order and an offer.
     const job = slug === "maintenance" && JOB_LABELS.has(key);
     return t(job ? `${key}_job` : key, { number });
+  }
+  if (n.type === "profile_pending_review" && n.payload?.edited) {
+    return t("profile_edited_live", { name: typeof n.payload.full_name === "string" ? n.payload.full_name : "" });
   }
   if (n.type === "rating_received") {
     const score = typeof n.payload?.score === "number" ? (n.payload.score as number) : null;

@@ -59,6 +59,7 @@ export default function GenericPhotoField({
     <div className="flex items-center gap-4">
       <button
         type="button"
+        aria-label={value ? t("changePhoto") : t("uploadPhoto")}
         onClick={() => fileInputRef.current?.click()}
         className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted overflow-hidden hover:border-primary/50 transition-colors"
       >

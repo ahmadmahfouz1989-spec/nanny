@@ -79,14 +79,17 @@ export async function PATCH(request: Request) {
   await refreshUserSearchText(user.id);
   const { data: profile } = await db
     .from("generic_profiles")
-    .select("role, categories(slug, name_en, name_ar)")
+    .select("role, moderation_status, categories(slug, name_en, name_ar)")
     .eq("user_id", user.id)
     .eq("role", "provider")
     .neq("status", "draft")
     .limit(1)
     .maybeSingle();
   if (profile?.categories) {
-    await notifyAdminsOfPendingReview(fullName, `${profile.categories.slug}_${profile.role}`, profile.categories, profile.role as "seeker" | "provider");
+    await notifyAdminsOfPendingReview(fullName, `${profile.categories.slug}_${profile.role}`, profile.categories, profile.role as "seeker" | "provider", {
+      // The name changed on a live profile: it stays live, admins check it.
+      edited: profile.moderation_status === "approved",
+    });
   }
   return NextResponse.json({ ok: true });
 }

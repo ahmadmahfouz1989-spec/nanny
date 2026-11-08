@@ -253,6 +253,8 @@ export default function NannySeekerForm({
           {sectionHeading(1)}
           <input
             className={ui.input}
+            autoComplete="name"
+            aria-label={t("namePlaceholder")}
             placeholder={t("namePlaceholder")}
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
@@ -261,6 +263,8 @@ export default function NannySeekerForm({
           <input
             type="tel"
             className={ui.input}
+            autoComplete="tel"
+            aria-label={t("contactPhonePlaceholder")}
             placeholder={t("contactPhonePlaceholder")}
             value={form.contactPhone}
             onChange={(e) => update("contactPhone", e.target.value)}
@@ -336,6 +340,7 @@ export default function NannySeekerForm({
                 type="button"
                 key={range}
                 onClick={() => toggleAgeRange(range)}
+                aria-pressed={form.childrenAgeRanges.includes(range)}
                 className={ui.pill(form.childrenAgeRanges.includes(range))}
               >
                 {tAge(range)}
@@ -372,6 +377,7 @@ export default function NannySeekerForm({
                       : [...form.neededDays, day],
                   )
                 }
+                aria-pressed={form.neededDays.includes(day)}
                 className={ui.pill(form.neededDays.includes(day))}
               >
                 {tDays(day)}
@@ -423,6 +429,7 @@ export default function NannySeekerForm({
                 type="button"
                 key={duty}
                 onClick={() => toggleDuty(duty)}
+                aria-pressed={form.additionalDuties.includes(duty)}
                 className={ui.pill(form.additionalDuties.includes(duty))}
               >
                 {tDuty(duty)}

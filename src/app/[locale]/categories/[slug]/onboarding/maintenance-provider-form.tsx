@@ -209,9 +209,9 @@ export default function MaintenanceProviderForm({
     >
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -244,7 +244,7 @@ export default function MaintenanceProviderForm({
         <FieldLabel field="trades" errors={fieldErrors}>{t("trades")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TRADES.map((trade) => (
-            <button type="button" key={trade} onClick={() => toggle("trades", trade)} className={ui.pill(form.trades.includes(trade))}>
+            <button type="button" key={trade} onClick={() => toggle("trades", trade)} aria-pressed={form.trades.includes(trade)} className={ui.pill(form.trades.includes(trade))}>
               {tTrade(trade)}
             </button>
           ))}
@@ -261,7 +261,7 @@ export default function MaintenanceProviderForm({
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} aria-pressed={form.availabilityDays.includes(day)} className={ui.pill(form.availabilityDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}

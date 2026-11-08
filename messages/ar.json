@@ -94,7 +94,7 @@
     "errand_status_on_the_way": "الطلب #{number}: مقدّم الخدمة بالطريق",
     "errand_status_arrived": "الطلب #{number}: مقدّم الخدمة وصل",
     "errand_status_picked_up": "الطلب #{number}: تم الاستلام / بدأ العمل",
-    "errand_status_delivered": "الطلب #{number}: تم التسليم",
+    "errand_status_delivered": "الطلب #{number} وصل. أكّد إنه خلص",
     "errand_status_completed": "الطلب #{number} اكتمل",
     "errand_status_refused": "مقدّم الخدمة ما بيقدر ياخد الطلب #{number} — اختار عرض تاني",
     "errand_cancelled": "تم إلغاء الطلب #{number}",
@@ -116,7 +116,8 @@
     "errand_status_missed": "خلص وقت تأكيد الطلب #{number} — راح لمقدّمي خدمة تانيين",
     "errand_status_choose": "وصلت عروض على الطلب #{number} — اختار واحد هلّق",
     "announcements": "إعلانات من ouiKnow",
-    "actionAnnouncement": "اقرأ الرسالة"
+    "actionAnnouncement": "اقرأ الرسالة",
+    "profile_edited_live": "{name} عدّل ملفه المنشور. راجع التعديل"
   },
   "Push": {
     "title": "الإشعارات الفورية",
@@ -220,7 +221,9 @@
     "passwordLabel": "كلمة المرور",
     "showPassword": "إظهار",
     "hidePassword": "إخفاء",
-    "passwordRules": "٨ أحرف على الأقل، فيها حرف ورقم."
+    "passwordRules": "٨ أحرف على الأقل، فيها حرف ورقم.",
+    "weakPassword": "اختار كلمة سر أقوى: ٨ أحرف على الأقل، فيها حرف ورقم.",
+    "accountExists": "في حساب من قبل بهالإيميل."
   },
   "Signup": {
     "title": "أنشئ حسابك",
@@ -545,7 +548,7 @@
       "roleProviderTitle": "أنا بصلّح، بسحب أو بهتم بالسيارات",
       "roleProviderDescription": "ميكانيكي متنقّل، كاراج أو شركة — اعمل بروفايل تا السوّاقين اللي قريبين منك يلاقوك."
     },
-    "nameIsShared": "اسمك مشترك بين كل ملفاتك على ouiKnow. تغييره هنا يغيّره في كل مكان، وتُراجع ملفات مقدّمي الخدمة من جديد.",
+    "nameIsShared": "اسمك مشترك بين كل ملفاتك على ouiKnow. تغييره هنا يغيّره بكل مكان.",
     "carriedOver": "عبّأنا ما سبق أن أخبرتنا به في ملفاتك الأخرى. تحقق منه وأكمل الباقي."
   },
   "NursingProviderOnboarding": {
@@ -809,7 +812,8 @@
     "safetyTip": "نصيحة أمان: اتفقوا على العمل والساعات والسعر هنا في المحادثة أولاً. شارك عنوانك الكامل فقط بعد الاتفاق، وأبلغ عن أي شخص يطلب المال مسبقاً.",
     "ridersTitle": "طلبات التوصيل بتوصل على الطلبات",
     "ridersBody": "شغّل «متاح» لمّا تكون عم تشتغل. لمّا حدا قريب منك يعمل طلب، بيوصلك إشعار وفيك تبعت عرضك، مع الخريطة والأماكن.",
-    "ridersOpen": "افتح طلباتي"
+    "ridersOpen": "افتح طلباتي",
+    "undoNotInterested": "تراجع"
   },
   "Featured": {
     "title": "خود التوثيق",
@@ -1346,7 +1350,9 @@
     "check_phone": "الهاتف مؤكّد",
     "check_id": "الهوية متحقّق منها",
     "roleSeeker": "طلبك",
-    "roleProvider": "ملفك"
+    "roleProvider": "ملفك",
+    "orders": "الطلبات",
+    "ordersHint": "توصيل ومشاوير وتصليحات"
   },
   "Requests": {
     "title": "منشوراتي",
@@ -1374,7 +1380,7 @@
     "viewAll": "عرض الكل",
     "more": "خدمات أخرى",
     "comingSoon": "قريبًا",
-    "trustVerified": "تلفون وإيميل مأكّدين",
+    "trustVerified": "كل حساب مأكّد",
     "trustReport": "بلّغ عن أي شيء ونحن نراجعه",
     "trustFree": "مجاني 100%",
     "trustPrivate": "رقمك يبقى خاصًا",
@@ -2581,7 +2587,12 @@
     "asked_selected": "اخترته",
     "asked_not_selected": "بعت عرض",
     "asked_withdrawn": "سحب عرضه",
-    "asked_refused": "ما أكّد"
+    "asked_refused": "ما أكّد",
+    "entryPendingTitle": "الطلبات بتبلّش توصلك بس ينقبل ملفك",
+    "entryPendingHint": "فريقنا عم يراجع ملفك. طلبات التوصيل بتوصلك أوّل ما ينقبل.",
+    "unavailableTitle": "هالطلب مش متاح",
+    "unavailableBody": "يمكن انشال، أو هو لحدا غيرك.",
+    "chooseTrade": "اختار نوع المصلّح اللي بدك ياه."
   },
   "PublicProfile": {
     "serviceIn": "{service} في {place}",
@@ -2637,7 +2648,8 @@
     "more": "ورجيني أكتر",
     "offerToo": "بتقدّم {service}؟",
     "offerLink": "اعمل ملفك",
-    "verified": "موثّق"
+    "verified": "موثّق",
+    "subtitleSignedIn": "مقدّمو خدمة معتمدون بكل لبنان. راسل مين ما بدك."
   },
   "PlacePicker": {
     "searchPickup": "مكان، إحداثيات أو رابط",
@@ -2707,7 +2719,7 @@
   },
   "AccountDetails": {
     "name": "اسمك",
-    "nameHint": "يظهر في كل ملفاتك. تغييره يغيّره في كل مكان، وتُراجع ملفات مقدّمي الخدمة من جديد.",
+    "nameHint": "يظهر بكل ملفاتك. تغييره يغيّره بكل مكان.",
     "nameInvalid": "أدخل اسمك (من حرفين إلى 80 حرفًا).",
     "nameSaved": "تم الحفظ في كل ملفاتك.",
     "saveFailed": "تعذّر الحفظ. حاول مجددًا.",
@@ -2744,5 +2756,11 @@
     "empty": "لا توجد إعلانات بعد.",
     "all": "كل الإعلانات",
     "from": "من ouiKnow"
+  },
+  "NotFound": {
+    "title": "هالصفحة مش موجودة",
+    "body": "يمكن الرابط قديم، أو الصفحة انتقلت.",
+    "home": "عالرئيسية",
+    "services": "تصفّح الخدمات"
   }
 }

@@ -37,7 +37,9 @@ export async function GET(request: Request) {
     // -- that's not a real submission yet, just what makes the nav show
     // up early.
     .neq("status", "draft")
-    .order("created_at", { ascending: true });
+    // The queue oldest first; approved ones last-changed first, so a live
+    // profile that was just edited is at the top to check.
+    .order(moderationStatus === "approved" ? "updated_at" : "created_at", { ascending: moderationStatus !== "approved" });
   if (categoryId) query = query.eq("category_id", categoryId);
   if (role) query = query.eq("role", role);
 

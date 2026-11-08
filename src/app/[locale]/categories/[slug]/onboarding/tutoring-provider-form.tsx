@@ -219,9 +219,9 @@ export default function TutoringProviderForm({
     >
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -254,7 +254,7 @@ export default function TutoringProviderForm({
         <FieldLabel field="subjects" errors={fieldErrors}>{t("subjects")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {SUBJECTS.map((s) => (
-            <button type="button" key={s} onClick={() => toggle("subjects", s)} className={ui.pill(form.subjects.includes(s))}>
+            <button type="button" key={s} onClick={() => toggle("subjects", s)} aria-pressed={form.subjects.includes(s)} className={ui.pill(form.subjects.includes(s))}>
               {tSubject(s)}
             </button>
           ))}
@@ -263,7 +263,7 @@ export default function TutoringProviderForm({
         <FieldLabel field="gradeLevels" errors={fieldErrors}>{t("gradeLevels")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {GRADE_LEVELS.map((g) => (
-            <button type="button" key={g} onClick={() => toggle("gradeLevels", g)} className={ui.pill(form.gradeLevels.includes(g))}>
+            <button type="button" key={g} onClick={() => toggle("gradeLevels", g)} aria-pressed={form.gradeLevels.includes(g)} className={ui.pill(form.gradeLevels.includes(g))}>
               {tGrade(g)}
             </button>
           ))}
@@ -284,7 +284,7 @@ export default function TutoringProviderForm({
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} aria-pressed={form.availabilityDays.includes(day)} className={ui.pill(form.availabilityDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}

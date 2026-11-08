@@ -97,6 +97,15 @@ export default function AdminProfilesPage() {
   // Finds one person among many approved profiles: name, email or phone.
   const [search, setSearch] = useState("");
 
+  // From an "edited their live profile" notification: ?status=approved&q=<name>.
+  useEffect(() => {
+    const url = new URLSearchParams(window.location.search);
+    /* eslint-disable react-hooks/set-state-in-effect */
+    if (url.get("status") === "approved") setStatusFilter("approved");
+    if (url.get("q")) setSearch(url.get("q")!);
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+
   useEffect(() => {
     getJson("/api/admin/analytics").then((body) => body && setCategories(body.categories ?? []));
   }, []);

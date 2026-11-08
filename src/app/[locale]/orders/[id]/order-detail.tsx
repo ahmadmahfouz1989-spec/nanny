@@ -4,7 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
-import { getJson, request } from "@/lib/request";
+import { request } from "@/lib/request";
+import RatingButton from "@/components/matches/rating-button";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
 import {
   Countdown,
@@ -44,16 +45,29 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<"cancel" | "drop" | null>(null);
 
+  // A missing order (or one that isn't theirs) says so; a failed load (weak
+  // signal) keeps what's on screen and tries again on the next tick.
+  const fetchOrder = useCallback(async (): Promise<OrderView | null | "failed"> => {
+    const res = await request(`/api/errand-orders/${orderId}`);
+    if (!res) return "failed";
+    if (res.status === 404 || res.status === 403) return null;
+    if (!res.ok) return "failed";
+    const body = (await res.json().catch(() => null)) as { order?: OrderView } | null;
+    return body?.order ?? "failed";
+  }, [orderId]);
   const load = useCallback(
-    () => getJson<{ order?: OrderView }>(`/api/errand-orders/${orderId}`).then((body) => setOrder(body?.order ?? null)),
-    [orderId],
+    () =>
+      fetchOrder().then((o) => {
+        if (o !== "failed") setOrder(o);
+      }),
+    [fetchOrder],
   );
 
   useEffect(() => {
     let active = true;
     const tick = () =>
-      getJson<{ order?: OrderView }>(`/api/errand-orders/${orderId}`).then((body) => {
-        if (active) setOrder(body?.order ?? null);
+      fetchOrder().then((o) => {
+        if (active && o !== "failed") setOrder(o);
       });
     void tick();
     const timer = setInterval(() => void tick(), POLL_MS);
@@ -61,7 +75,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       active = false;
       clearInterval(timer);
     };
-  }, [orderId]);
+  }, [fetchOrder]);
 
   async function act(action: string, body: Record<string, unknown> = {}) {
     setBusy(true);
@@ -92,8 +106,10 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   if (order === undefined) return <div className="mx-auto w-full max-w-2xl px-4 py-6 text-sm text-muted">…</div>;
   if (order === null) {
     return (
-      <div className="mx-auto w-full max-w-2xl px-4 py-6">
-        <Link href="/orders" className={ui.link}>
+      <div className="mx-auto flex w-full max-w-2xl flex-col items-start gap-3 px-4 py-6">
+        <h1 className="text-xl font-bold text-ink">{t("unavailableTitle")}</h1>
+        <p className="text-sm text-muted">{t("unavailableBody")}</p>
+        <Link href="/orders" className={ui.buttonSecondary}>
           {t("back")}
         </Link>
       </div>
@@ -123,7 +139,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-6">
       <div>
         <Link href={order.viewer === "provider" ? "/orders?tab=provider" : "/orders"} className="text-sm text-muted hover:text-ink">
-          ← {t("back")}
+          <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
         </Link>
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
@@ -221,22 +237,26 @@ function AskedList({ order }: { order: OrderView }) {
   );
 }
 
-function PersonCard({ title, person, matchId }: { title: string; person: OrderPerson | null; matchId: string | null }) {
+function PersonCard({ title, person, matchId, rate = false }: { title: string; person: OrderPerson | null; matchId: string | null; rate?: boolean }) {
   const t = useTranslations("Orders");
   if (!person) return null;
   return (
-    <div className={ui.card + " flex items-center gap-3 p-4"}>
-      <Avatar photoUrl={person.photoUrl} size={48} />
-      <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted">{title}</p>
-        <p className="truncate font-semibold text-ink">{person.name}</p>
-        <p className="text-xs text-muted">{person.rating.average !== null ? `★ ${person.rating.average} (${person.rating.count})` : t("noRating")}</p>
+    <div className={ui.card + " p-4"}>
+      <div className="flex items-center gap-3">
+        <Avatar photoUrl={person.photoUrl} size={48} />
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-muted">{title}</p>
+          <p className="truncate font-semibold text-ink">{person.name}</p>
+          <p className="text-xs text-muted">{person.rating.average !== null ? `★ ${person.rating.average} (${person.rating.count})` : t("noRating")}</p>
+        </div>
+        {matchId && (
+          <Link href={`/messages?match=${matchId}`} className={ui.buttonSecondary + " shrink-0"}>
+            {t("message")}
+          </Link>
+        )}
       </div>
-      {matchId && (
-        <Link href={`/messages?match=${matchId}`} className={ui.buttonSecondary + " shrink-0"}>
-          {t("message")}
-        </Link>
-      )}
+      {/* Done: ask how it went, while it's fresh. */}
+      {rate && matchId && <RatingButton matchId={matchId} counterpartName={person.name} />}
     </div>
   );
 }
@@ -392,7 +412,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   // Confirmed and on its way.
   return (
     <div className="flex flex-col gap-3">
-      <PersonCard title={t("yourProvider")} person={order.provider} matchId={order.matchId} />
+      <PersonCard title={t("yourProvider")} person={order.provider} matchId={order.matchId} rate={order.status === "completed"} />
       {order.status === "delivered" && (
         <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("complete")}>
           {job ? t("markJobComplete") : t("markComplete")}
@@ -468,7 +488,7 @@ function ProviderPart({ order, busy, act, confirmBox }: PartProps) {
   }
 
   if (order.assignedToMe) {
-    return <PersonCard title={t("customer")} person={order.customer} matchId={order.matchId} />;
+    return <PersonCard title={t("customer")} person={order.customer} matchId={order.matchId} rate={order.status === "completed"} />;
   }
 
   if (mine?.status === "expired") return <p className="text-sm text-muted">{t("timeUp")}</p>;

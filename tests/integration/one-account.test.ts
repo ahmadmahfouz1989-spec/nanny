@@ -46,9 +46,9 @@ describe("one account, one identity", () => {
       expect((await profile(tutoring)).moderation_status).toBe("approved");
     });
 
-    it("a new account name reaches every profile and sends only the provider's back for review", async () => {
+    it("a new account name reaches every profile, and live ones stay live", async () => {
       await admin.from("users").update({ full_name: "Maya S. Saade" }).eq("id", user.id);
-      expect(await profile(tutoring)).toEqual({ full_name: "Maya S. Saade", moderation_status: "pending" });
+      expect(await profile(tutoring)).toEqual({ full_name: "Maya S. Saade", moderation_status: "approved" });
       expect(await profile(nursing)).toEqual({ full_name: "Maya S. Saade", moderation_status: "approved" });
     });
 

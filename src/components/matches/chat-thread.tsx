@@ -137,6 +137,9 @@ export default function ChatThread({
     // asleep, network switch) keeps the thread as it is until the next one.
     getJson(threadUrl).then((body) => {
         if (!body) return;
+        // Their message reached the open thread this way (the live
+        // connection dropped): it's been seen, so mark it read like a live one.
+        if (((body.messages ?? []) as Message[]).some((m) => m.sender_id !== userIdRef.current && !m.read_at)) markRead();
         const now = Date.now();
         const receivedAt = audioUrlReceivedAtRef.current;
         // This fetch always returns the newest window, regardless of how

@@ -191,9 +191,9 @@ export default function MaintenanceSeekerForm({
     >
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -216,7 +216,7 @@ export default function MaintenanceSeekerForm({
         <FieldLabel field="tradesNeeded" errors={fieldErrors}>{t("tradesNeeded")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TRADES.map((trade) => (
-            <button type="button" key={trade} onClick={() => toggle("tradesNeeded", trade)} className={ui.pill(form.tradesNeeded.includes(trade))}>
+            <button type="button" key={trade} onClick={() => toggle("tradesNeeded", trade)} aria-pressed={form.tradesNeeded.includes(trade)} className={ui.pill(form.tradesNeeded.includes(trade))}>
               {tTrade(trade)}
             </button>
           ))}
@@ -232,7 +232,7 @@ export default function MaintenanceSeekerForm({
         <FieldLabel field="urgency" errors={fieldErrors}>{t("urgency")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {URGENCIES.map((u) => (
-            <button type="button" key={u} onClick={() => update("urgency", u)} className={ui.pill(form.urgency === u)}>
+            <button type="button" key={u} onClick={() => update("urgency", u)} aria-pressed={form.urgency === u} className={ui.pill(form.urgency === u)}>
               {tUrgency(u)}
             </button>
           ))}
@@ -243,7 +243,7 @@ export default function MaintenanceSeekerForm({
             <FieldLabel field="neededDays" errors={fieldErrors} optional>{t("neededDays")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {DAYS.map((day) => (
-                <button type="button" key={day} onClick={() => toggle("neededDays", day)} className={ui.pill(form.neededDays.includes(day))}>
+                <button type="button" key={day} onClick={() => toggle("neededDays", day)} aria-pressed={form.neededDays.includes(day)} className={ui.pill(form.neededDays.includes(day))}>
                   {tDays(day)}
                 </button>
               ))}

@@ -269,9 +269,9 @@ export default function ErrandsProviderForm({
     >
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -333,7 +333,7 @@ export default function ErrandsProviderForm({
         </FieldLabel>
         <div className="flex flex-wrap gap-2">
           {VEHICLES.map((v) => (
-            <button type="button" key={v} onClick={() => update("vehicle", form.vehicle === v ? "" : v)} className={ui.pill(form.vehicle === v)}>
+            <button type="button" key={v} onClick={() => update("vehicle", form.vehicle === v ? "" : v)} aria-pressed={form.vehicle === v} className={ui.pill(form.vehicle === v)}>
               {tVehicle(v)}
             </button>
           ))}
@@ -376,7 +376,7 @@ export default function ErrandsProviderForm({
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} aria-pressed={form.availabilityDays.includes(day)} className={ui.pill(form.availabilityDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}
@@ -390,7 +390,7 @@ export default function ErrandsProviderForm({
         <FieldLabel field="pricing" errors={fieldErrors}>{t("pricing")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PRICING.map((p) => (
-            <button type="button" key={p} onClick={() => update("pricing", p)} className={ui.pill(form.pricing === p)}>
+            <button type="button" key={p} onClick={() => update("pricing", p)} aria-pressed={form.pricing === p} className={ui.pill(form.pricing === p)}>
               {tPricing(p)}
             </button>
           ))}

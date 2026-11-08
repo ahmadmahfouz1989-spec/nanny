@@ -162,6 +162,7 @@ export default function MessagesClient() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder={t("search")}
+                aria-label={t("search")}
                 className={ui.input + " rounded-full ps-9! py-2!"}
               />
             </div>

@@ -86,6 +86,7 @@ export default function ChatComposer({
             dir="auto"
             className={ui.input + " flex-1 resize-none rounded-3xl py-2.5! leading-snug"}
             placeholder={t("chatPlaceholder")}
+            aria-label={t("chatPlaceholder")}
             value={draft}
             disabled={uploading}
             onChange={(e) => {

@@ -31,12 +31,14 @@ export default function SignupForm() {
   const [password, setPassword] = useState("");
   const [agreed, setAgreed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [exists, setExists] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setExists(false);
 
     if (!agreed) {
       setError(tAuth("termsRequired"));
@@ -53,6 +55,18 @@ export default function SignupForm() {
 
     if (!res || !res.ok) {
       const body = ((await res?.json().catch(() => ({}))) ?? {});
+      if (body.code === "exists") {
+        setExists(true);
+        return;
+      }
+      if (body.code === "weak_password") {
+        setError(tAuth("weakPassword"));
+        return;
+      }
+      if (body.code === "failed") {
+        setError(tAuth("genericError"));
+        return;
+      }
       const err = body.error;
       const message =
         typeof err === "string"
@@ -127,6 +141,14 @@ export default function SignupForm() {
 
         {error && (
           <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">{error}</p>
+        )}
+        {exists && (
+          <p className="rounded-lg bg-danger-soft px-3 py-2 text-sm text-danger">
+            {tAuth("accountExists")}{" "}
+            <Link href={next ? `/login?next=${encodeURIComponent(next)}` : "/login"} className={ui.link}>
+              {t("logIn")}
+            </Link>
+          </p>
         )}
 
         <button type="submit" disabled={submitting} className={ui.buttonPrimary + " w-full"}>

@@ -94,7 +94,7 @@
     "errand_status_on_the_way": "Order #{number}: your provider is on the way",
     "errand_status_arrived": "Order #{number}: your provider has arrived",
     "errand_status_picked_up": "Order #{number}: picked up / started",
-    "errand_status_delivered": "Order #{number}: delivered",
+    "errand_status_delivered": "Order #{number} was delivered. Confirm it's done",
     "errand_status_completed": "Order #{number} is complete",
     "errand_status_refused": "The provider can't take order #{number} — choose another offer",
     "errand_cancelled": "Order #{number} was cancelled",
@@ -116,7 +116,8 @@
     "errand_status_missed": "Time ran out to confirm order #{number} — it went to other providers",
     "errand_status_choose": "Offers are in for order #{number} — choose one now",
     "announcements": "Announcements from ouiKnow",
-    "actionAnnouncement": "Read the message"
+    "actionAnnouncement": "Read the message",
+    "profile_edited_live": "{name} edited their live profile. Check the change"
   },
   "Push": {
     "title": "Push notifications",
@@ -220,7 +221,9 @@
     "passwordLabel": "Password",
     "showPassword": "Show",
     "hidePassword": "Hide",
-    "passwordRules": "At least 8 characters, with a letter and a number."
+    "passwordRules": "At least 8 characters, with a letter and a number.",
+    "weakPassword": "Choose a stronger password: at least 8 characters, with a letter and a number.",
+    "accountExists": "There's already an account with this email."
   },
   "Signup": {
     "title": "Create your account",
@@ -396,27 +399,27 @@
     "sun": "Sun"
   },
   "Duties": {
-    "light_housekeeping": "light housekeeping",
-    "cooking": "cooking",
-    "pet_care": "pet care",
-    "homework_help": "homework help",
-    "laundry": "laundry"
+    "light_housekeeping": "Light housekeeping",
+    "cooking": "Cooking",
+    "pet_care": "Pet care",
+    "homework_help": "Homework help",
+    "laundry": "Laundry"
   },
   "Certifications": {
-    "first_aid_cpr": "first aid / CPR",
-    "early_childhood_ed": "early childhood education",
-    "newborn_care_specialist": "newborn care specialist"
+    "first_aid_cpr": "First aid / CPR",
+    "early_childhood_ed": "Early childhood education",
+    "newborn_care_specialist": "Newborn care specialist"
   },
   "CareSpecialties": {
-    "elderly_care": "elderly care",
-    "post_surgical": "post-surgical care",
-    "wound_care": "wound care",
-    "medication_management": "medication management",
-    "mobility_assistance": "mobility assistance",
-    "chronic_disease_management": "chronic disease management",
-    "palliative_care": "palliative care",
-    "pediatric_nursing": "pediatric nursing",
-    "mental_health_support": "mental health support"
+    "elderly_care": "Elderly care",
+    "post_surgical": "Post-surgical care",
+    "wound_care": "Wound care",
+    "medication_management": "Medication management",
+    "mobility_assistance": "Mobility assistance",
+    "chronic_disease_management": "Chronic disease management",
+    "palliative_care": "Palliative care",
+    "pediatric_nursing": "Pediatric nursing",
+    "mental_health_support": "Mental health support"
   },
   "PatientAgeGroups": {
     "infant": "Infant",
@@ -545,7 +548,7 @@
       "roleProviderTitle": "I fix, tow or look after cars",
       "roleProviderDescription": "A mobile mechanic, a garage or a company — create a profile so drivers near you can find you."
     },
-    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere, and any provider profiles are reviewed again.",
+    "nameIsShared": "Your name is shared across all your ouiKnow profiles. Changing it here changes it everywhere.",
     "carriedOver": "We filled in what you've already told us on your other profiles. Check it and add the rest."
   },
   "NursingProviderOnboarding": {
@@ -809,7 +812,8 @@
     "safetyTip": "Stay safe: agree on the work, the hours and the price here in the chat first. Share your exact address only once you've agreed, and report anyone who asks for money up front.",
     "ridersTitle": "Delivery requests arrive in Orders",
     "ridersBody": "Turn on Available when you're working. When someone nearby places an order, you'll be notified and can send your offer, with the map and the places.",
-    "ridersOpen": "Open my orders"
+    "ridersOpen": "Open my orders",
+    "undoNotInterested": "Undo"
   },
   "Featured": {
     "title": "Get Verified",
@@ -1324,7 +1328,7 @@
     "myProfileHint": "Your photo, and what you need or offer",
     "findService": "Find a Service",
     "findServiceHint": "Browse services and people",
-    "myServices": "My Services",
+    "myServices": "My services",
     "myServicesHint": "Go to a service, or add one",
     "addService": "Add a service",
     "myRequests": "My posts",
@@ -1346,7 +1350,9 @@
     "check_phone": "Phone confirmed",
     "check_id": "ID checked",
     "roleSeeker": "your request",
-    "roleProvider": "your profile"
+    "roleProvider": "your profile",
+    "orders": "Orders",
+    "ordersHint": "Deliveries, errands and repair jobs"
   },
   "Requests": {
     "title": "My posts",
@@ -1374,7 +1380,7 @@
     "viewAll": "View all",
     "more": "More services",
     "comingSoon": "Coming soon",
-    "trustVerified": "Confirmed phone and email",
+    "trustVerified": "Every account confirmed",
     "trustReport": "Report anything, we review it",
     "trustFree": "100% free to use",
     "trustPrivate": "Your number stays private",
@@ -2581,7 +2587,12 @@
     "asked_selected": "You chose them",
     "asked_not_selected": "Sent an offer",
     "asked_withdrawn": "Took their offer back",
-    "asked_refused": "Didn't confirm"
+    "asked_refused": "Didn't confirm",
+    "entryPendingTitle": "Orders start once you're approved",
+    "entryPendingHint": "Our team is checking your profile. Delivery requests reach you as soon as it's approved.",
+    "unavailableTitle": "This order isn't available",
+    "unavailableBody": "It may have been removed, or it belongs to someone else.",
+    "chooseTrade": "Choose which pro you need."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",
@@ -2637,7 +2648,8 @@
     "more": "Show more",
     "offerToo": "Do you offer {service}?",
     "offerLink": "Create your profile",
-    "verified": "Verified"
+    "verified": "Verified",
+    "subtitleSignedIn": "Approved providers across Lebanon. Message anyone you like."
   },
   "PlacePicker": {
     "searchPickup": "Place, coordinates or link",
@@ -2707,7 +2719,7 @@
   },
   "AccountDetails": {
     "name": "Your name",
-    "nameHint": "Shown on all your profiles. Changing it changes it everywhere, and any provider profiles are reviewed again.",
+    "nameHint": "Shown on all your profiles. Changing it changes it everywhere.",
     "nameInvalid": "Enter your name (2 to 80 letters).",
     "nameSaved": "Saved on all your profiles.",
     "saveFailed": "Couldn't save. Please try again.",
@@ -2744,5 +2756,11 @@
     "empty": "No announcements yet.",
     "all": "All announcements",
     "from": "From ouiKnow"
+  },
+  "NotFound": {
+    "title": "This page doesn't exist",
+    "body": "The link may be old, or the page was moved.",
+    "home": "Go home",
+    "services": "Browse services"
   }
 }

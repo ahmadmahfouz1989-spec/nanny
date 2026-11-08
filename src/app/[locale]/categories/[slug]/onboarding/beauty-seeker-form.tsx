@@ -267,7 +267,7 @@ export default function BeautySeekerForm({
   const pills = <V extends string>(values: readonly V[], selected: (v: V) => boolean, onPick: (v: V) => void, label: (v: V) => string) => (
     <div className="flex flex-wrap gap-2">
       {values.map((v) => (
-        <button type="button" key={v} onClick={() => onPick(v)} className={ui.pill(selected(v))}>
+        <button type="button" key={v} onClick={() => onPick(v)} aria-pressed={selected(v)} className={ui.pill(selected(v))}>
           {label(v)}
         </button>
       ))}
@@ -314,7 +314,7 @@ export default function BeautySeekerForm({
             <FieldLabel field="massageMinutes" errors={fieldErrors} optional>{t("massageMinutes")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {MASSAGE_MINUTES.map((m) => (
-                <button type="button" key={m} onClick={() => update("massageMinutes", m)} className={ui.pill(form.massageMinutes === m)}>
+                <button type="button" key={m} onClick={() => update("massageMinutes", m)} aria-pressed={form.massageMinutes === m} className={ui.pill(form.massageMinutes === m)}>
                   {tFields("minutes", { count: m })}
                 </button>
               ))}
@@ -380,9 +380,9 @@ export default function BeautySeekerForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section4Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
       </div>

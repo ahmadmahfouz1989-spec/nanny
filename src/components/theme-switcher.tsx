@@ -6,7 +6,13 @@ const THEME_CHANGE_EVENT = "theme-change";
 
 function subscribe(callback: () => void) {
   window.addEventListener(THEME_CHANGE_EVENT, callback);
-  return () => window.removeEventListener(THEME_CHANGE_EVENT, callback);
+  // The phone switching to dark (or back) at sunset.
+  const system = window.matchMedia("(prefers-color-scheme: dark)");
+  system.addEventListener("change", callback);
+  return () => {
+    window.removeEventListener(THEME_CHANGE_EVENT, callback);
+    system.removeEventListener("change", callback);
+  };
 }
 
 function getSnapshot(): "light" | "dark" {
@@ -30,7 +36,9 @@ export function useTheme() {
   const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 
   useLayoutEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
+    // No data-theme here: without a choice of their own, the page follows
+    // the phone's setting (the CSS media query). Writing the first render's
+    // theme -- always "light", the server's guess -- pinned everyone to light.
     // The installed app's status bar follows <meta name="theme-color">, whose
     // media variants only know the OS preference -- pin it to the chosen theme.
     const color = getComputedStyle(document.documentElement).getPropertyValue("--background").trim();

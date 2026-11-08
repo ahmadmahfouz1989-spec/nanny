@@ -182,6 +182,7 @@ export default function AdminBroadcastsPage() {
               <button
                 key={kind}
                 type="button"
+                aria-pressed={audience === kind}
                 className={ui.pill(audience === kind)}
                 onClick={() => {
                   setAudience(kind);

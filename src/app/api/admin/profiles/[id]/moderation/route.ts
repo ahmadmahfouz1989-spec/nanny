@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/admin/auth";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { removeProfilePhotoIfUnused } from "@/lib/storage-cleanup";
 import { notify } from "@/lib/push";
+import { dispatchOrder } from "@/lib/errand-orders";
 import { WORK_BUCKET, workPhotoPaths } from "@/lib/work";
 
 const bodySchema = z.object({
@@ -144,5 +145,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   // other side (spec appendix: this was the known gap left after R4/R5).
   await recomputeGenericMatchesForProfile(id);
 
+  // A tradesperson approved today hears about the repair requests still
+  // open near them (requests only go out to whoever was there when posted).
+  if (row.role === "provider" && row.categories?.slug === "maintenance") await sendOpenJobs(db);
+
   return NextResponse.json({ profile: updated });
+}
+
+/** Sends every open repair request on to the tradespeople it hasn't reached yet. */
+async function sendOpenJobs(db: ReturnType<typeof createAdminClient>) {
+  const { data: open } = await db
+    .from("errand_orders")
+    .select("*")
+    .eq("category", "maintenance")
+    .eq("status", "open")
+    .gt("open_until", new Date().toISOString());
+  for (const order of open ?? []) {
+    try {
+      await dispatchOrder(db, order, { userId: null, role: "system" });
+    } catch (e) {
+      console.error("[moderation] sending open job failed", order.id, e);
+    }
+  }
 }

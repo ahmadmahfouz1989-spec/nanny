@@ -63,10 +63,10 @@ export default function PostComposer({
       <Avatar photoUrl={avatarUrl} size={44} className="mt-0.5" />
       <div className="flex-1 min-w-0 flex flex-col gap-2">
         <div className="flex gap-2">
-          <button type="button" onClick={() => onKind("looking_for")} className={ui.pill(kind === "looking_for")}>
+          <button type="button" onClick={() => onKind("looking_for")} aria-pressed={kind === "looking_for"} className={ui.pill(kind === "looking_for")}>
             {t("composeNeed")}
           </button>
-          <button type="button" onClick={() => onKind("offering")} className={ui.pill(kind === "offering")}>
+          <button type="button" onClick={() => onKind("offering")} aria-pressed={kind === "offering"} className={ui.pill(kind === "offering")}>
             {t("composeOffer")}
           </button>
         </div>
@@ -77,6 +77,7 @@ export default function PostComposer({
           rows={2}
           maxLength={500}
           placeholder={t(kind === "looking_for" ? "placeholderNeed" : "placeholderOffer")}
+          aria-label={t(kind === "looking_for" ? "placeholderNeed" : "placeholderOffer")}
           value={caption}
           onChange={(e) => onCaption(e.target.value)}
         />

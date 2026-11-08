@@ -11,6 +11,8 @@ export type ChatMessageData = {
   audio_duration_seconds: number | null;
   audioUrl?: string | null;
   created_at: string;
+  /** Null until the other person has seen it. */
+  read_at?: string | null;
 };
 
 /** One message bubble, optionally preceded by a day divider and followed by its time. */

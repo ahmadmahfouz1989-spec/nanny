@@ -20,15 +20,28 @@ export default async function OrdersEntry() {
     user && category
       ? await supabase
           .from("generic_profiles")
-          .select("available_now, attributes")
+          .select("available_now, attributes, moderation_status")
           .eq("user_id", user.id)
           .eq("category_id", category.id)
           .eq("role", "provider")
-          .eq("moderation_status", "approved")
           .neq("status", "draft")
           .limit(1)
           .maybeSingle()
       : { data: null };
+
+  // A rider still waiting for review: orders start once approved (not the
+  // customer's "order a delivery" card).
+  if (rider && rider.moderation_status !== "approved") {
+    return (
+      <div className={ui.card + " flex items-center gap-3 p-4"}>
+        <BoxIcon className="h-8 w-8 shrink-0 text-muted" />
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-ink">{t("entryPendingTitle")}</p>
+          <p className="text-sm text-muted">{t("entryPendingHint")}</p>
+        </div>
+      </div>
+    );
+  }
 
   // Saved before districts were asked for: no request can reach them yet.
   if (rider && typeof (rider.attributes as { districtId?: unknown } | null)?.districtId !== "string") {
@@ -36,7 +49,7 @@ export default async function OrdersEntry() {
       <Link href="/categories/errands/onboarding?role=provider" className="flex flex-col gap-1 rounded-2xl border border-warning/40 bg-warning-soft p-4">
         <span className="font-semibold text-warning">{t("needsAreaTitle")}</span>
         <span className="text-sm text-ink">{t("needsAreaBody")}</span>
-        <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} →</span>
+        <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span></span>
       </Link>
     );
   }

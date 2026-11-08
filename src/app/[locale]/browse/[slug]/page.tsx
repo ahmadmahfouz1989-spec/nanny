@@ -107,7 +107,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
         <ServiceSwitcher current={slug} />
         <div>
           <h1 className="font-display text-2xl font-bold text-ink">{t("title", { service: name })}</h1>
-          <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
+          <p className="mt-1 text-sm text-muted">{user ? t("subtitleSignedIn") : t("subtitle")}</p>
         </div>
 
         <div className={ui.card + " flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"}>

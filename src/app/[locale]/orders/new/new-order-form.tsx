@@ -254,7 +254,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
     <form onSubmit={submit} className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6">
       <div>
         <Link href="/orders" className="text-sm text-muted hover:text-ink">
-          ← {t("back")}
+          <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink">{t("newOrder")}</h1>
         {prefill && <p className="mt-1 text-sm text-muted">{t("prefilledHint")}</p>}
@@ -264,7 +264,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         <span className={ui.label}>{t("service")}</span>
         <div className="flex flex-wrap gap-2">
           {ERRAND_SERVICES.map((s) => (
-            <button key={s} type="button" className={ui.pill(service === s)} onClick={() => setService(s)}>
+            <button key={s} type="button" aria-pressed={service === s} className={ui.pill(service === s)} onClick={() => setService(s)}>
               {ts(s)}
             </button>
           ))}
@@ -351,10 +351,10 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("when")}</span>
         <div className="flex gap-2">
-          <button type="button" className={ui.pill(timing === "asap")} onClick={() => setTiming("asap")}>
+          <button type="button" aria-pressed={timing === "asap"} className={ui.pill(timing === "asap")} onClick={() => setTiming("asap")}>
             {t("asap")}
           </button>
-          <button type="button" className={ui.pill(timing === "scheduled")} onClick={() => setTiming("scheduled")}>
+          <button type="button" aria-pressed={timing === "scheduled"} className={ui.pill(timing === "scheduled")} onClick={() => setTiming("scheduled")}>
             {t("scheduled")}
           </button>
         </div>
@@ -371,13 +371,13 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("sendTo")}</span>
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={ui.pill(!pickRider)} onClick={() => {
+          <button type="button" aria-pressed={!pickRider} className={ui.pill(!pickRider)} onClick={() => {
               setPickRider(false);
               setError(null);
             }}>
             {t("sendToNearest")}
           </button>
-          <button type="button" className={ui.pill(pickRider)} onClick={() => setPickRider(true)}>
+          <button type="button" aria-pressed={pickRider} className={ui.pill(pickRider)} onClick={() => setPickRider(true)}>
             {t("sendToChosen")}
           </button>
         </div>

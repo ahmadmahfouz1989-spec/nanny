@@ -301,7 +301,7 @@ export default function CleaningSeekerForm({
   const pills = <K extends "placeType" | "size" | "dirtLevel">(key: K, values: readonly string[], group: string) => (
     <div className="flex flex-wrap gap-2">
       {values.map((v) => (
-        <button type="button" key={v} onClick={() => update(key, v)} className={ui.pill(form[key] === v)}>
+        <button type="button" key={v} onClick={() => update(key, v)} aria-pressed={form[key] === v} className={ui.pill(form[key] === v)}>
           {tOption(`${group}.${v}`)}
         </button>
       ))}
@@ -361,7 +361,7 @@ export default function CleaningSeekerForm({
             <FieldLabel field="furnished" errors={fieldErrors} optional>{t("furnished")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {([false, true] as const).map((v) => (
-                <button type="button" key={String(v)} onClick={() => update("furnished", v)} className={ui.pill(form.furnished === v)}>
+                <button type="button" key={String(v)} onClick={() => update("furnished", v)} aria-pressed={form.furnished === v} className={ui.pill(form.furnished === v)}>
                   {v ? t("furnishedYes") : t("furnishedNo")}
                 </button>
               ))}
@@ -391,7 +391,7 @@ export default function CleaningSeekerForm({
             <FieldLabel field="extras" errors={fieldErrors} optional>{t("extras")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {EXTRAS.map((x) => (
-                <button type="button" key={x} onClick={() => toggle("extras", x)} className={ui.pill(form.extras.includes(x))}>
+                <button type="button" key={x} onClick={() => toggle("extras", x)} aria-pressed={form.extras.includes(x)} className={ui.pill(form.extras.includes(x))}>
                   {tOption(`extras.${x}`)}
                 </button>
               ))}
@@ -411,7 +411,7 @@ export default function CleaningSeekerForm({
             <FieldLabel field="frequency" errors={fieldErrors}>{t("frequency")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {FREQUENCIES.map((v) => (
-                <button type="button" key={v} onClick={() => update("frequency", v)} className={ui.pill(form.frequency === v)}>
+                <button type="button" key={v} onClick={() => update("frequency", v)} aria-pressed={form.frequency === v} className={ui.pill(form.frequency === v)}>
                   {tOption(`frequency.${v}`)}
                 </button>
               ))}
@@ -423,7 +423,7 @@ export default function CleaningSeekerForm({
             <FieldLabel field="neededDays" errors={fieldErrors} optional>{t("neededDays")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {DAYS.map((day) => (
-                <button type="button" key={day} onClick={() => toggle("neededDays", day)} className={ui.pill(form.neededDays.includes(day))}>
+                <button type="button" key={day} onClick={() => toggle("neededDays", day)} aria-pressed={form.neededDays.includes(day)} className={ui.pill(form.neededDays.includes(day))}>
                   {tDays(day)}
                 </button>
               ))}
@@ -434,7 +434,7 @@ export default function CleaningSeekerForm({
             <FieldLabel field="timing" errors={fieldErrors}>{t("timing")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {TIMINGS.map((v) => (
-                <button type="button" key={v} onClick={() => update("timing", v)} className={ui.pill(form.timing === v)}>
+                <button type="button" key={v} onClick={() => update("timing", v)} aria-pressed={form.timing === v} className={ui.pill(form.timing === v)}>
                   {tTiming(v)}
                 </button>
               ))}
@@ -473,9 +473,9 @@ export default function CleaningSeekerForm({
 
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section4Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
       </div>

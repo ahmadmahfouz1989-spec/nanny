@@ -64,11 +64,11 @@ export default function BrowseFilters({
       </select>
       {services.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          <button type="button" className={ui.pill(!service)} onClick={() => go({ service: "" })}>
+          <button type="button" aria-pressed={!service} className={ui.pill(!service)} onClick={() => go({ service: "" })}>
             {labels.all}
           </button>
           {services.map((s) => (
-            <button key={s.code} type="button" className={ui.pill(service === s.code)} onClick={() => go({ service: s.code })}>
+            <button key={s.code} type="button" aria-pressed={service === s.code} className={ui.pill(service === s.code)} onClick={() => go({ service: s.code })}>
               {s.label}
             </button>
           ))}

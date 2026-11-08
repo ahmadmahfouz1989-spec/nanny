@@ -60,7 +60,7 @@ export default function ConversationHeader({
             type="button"
             onClick={onBack}
             aria-label={tInbox("backToList")}
-            className="sm:hidden -ms-1 text-ink/70 hover:text-ink shrink-0"
+            className="sm:hidden -ms-2 inline-flex h-11 w-11 shrink-0 items-center justify-center text-ink/70 hover:text-ink"
           >
             <svg viewBox="0 0 24 24" className="h-5 w-5 rtl:scale-x-[-1]" fill="none" stroke="currentColor" strokeWidth={2}>
               <path d="M15 19l-7-7 7-7" strokeLinecap="round" strokeLinejoin="round" />

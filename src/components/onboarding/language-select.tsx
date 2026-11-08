@@ -34,7 +34,7 @@ export default function LanguageSelect({
   return (
     <div className="flex flex-wrap gap-2">
       {languages.map((lang) => (
-        <button type="button" key={lang.id} onClick={() => toggle(lang.id)} className={ui.pill(value.includes(lang.id))}>
+        <button type="button" key={lang.id} onClick={() => toggle(lang.id)} aria-pressed={value.includes(lang.id)} className={ui.pill(value.includes(lang.id))}>
           {localizedName(lang, locale)}
         </button>
       ))}

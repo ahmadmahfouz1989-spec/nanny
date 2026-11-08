@@ -480,6 +480,9 @@ export default function FeedClient({
         </button>
       )}
 
+      {/* Room under the last post, so the floating button never sits on its buttons. */}
+      {!adminMode && <div aria-hidden className="h-20 sm:hidden" />}
+
       {/* X's floating compose button, on the phone: back to the top and
           straight into the new-post box. */}
       {!adminMode && (

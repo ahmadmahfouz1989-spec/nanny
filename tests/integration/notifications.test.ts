@@ -312,7 +312,7 @@ describe("orders", () => {
       `Order #${order!.number}: your provider is on the way`,
       `Order #${order!.number}: your provider has arrived`,
       `Order #${order!.number}: picked up / started`,
-      `Order #${order!.number}: delivered`,
+      `Order #${order!.number} was delivered. Confirm it's done`,
     ]);
     expect(pushesTo(provider)).toEqual([]);
 

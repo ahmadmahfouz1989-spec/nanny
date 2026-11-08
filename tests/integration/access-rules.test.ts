@@ -35,10 +35,17 @@ describe("profile moderation and visibility", () => {
     expect(data!.moderation_status).toBe("pending");
   });
 
-  it("a provider's direct edit can't keep an approved status, a customer's can", async () => {
+  it("an edit keeps the status it had, but nobody approves themselves", async () => {
     const [provider, customer] = await Promise.all([createUser("guard-provider"), createUser("guard-customer")]);
+    // A live provider stays live when they edit (admins check the change).
     const profile = await createProfile(provider, "nanny", "provider", NANNY_PROVIDER);
-    expect((await provider.client.from("generic_profiles").update({ full_name: "Edited Name" }).eq("id", profile)).error).not.toBeNull();
+    expect((await provider.client.from("generic_profiles").update({ full_name: "Edited Name" }).eq("id", profile)).error).toBeNull();
+    // One waiting for review can edit, but can't approve itself.
+    const applicant = await createUser("guard-waiting");
+    const waiting = await createProfile(applicant, "nursing", "provider", {}, { approved: false });
+    expect((await applicant.client.from("generic_profiles").update({ full_name: "Still Waiting" }).eq("id", waiting)).error).toBeNull();
+    expect((await applicant.client.from("generic_profiles").update({ moderation_status: "approved" }).eq("id", waiting)).error).not.toBeNull();
+    expect((await admin.from("generic_profiles").select("moderation_status").eq("id", waiting).single()).data!.moderation_status).toBe("pending");
     const request = await createProfile(customer, "nanny", "seeker", NANNY_SEEKER);
     expect((await customer.client.from("generic_profiles").update({ full_name: "Edited Name" }).eq("id", request)).error).toBeNull();
     expect((await customer.client.from("generic_profiles").update({ role: "provider" }).eq("id", request)).error).not.toBeNull();

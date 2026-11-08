@@ -103,10 +103,16 @@ export default function AdminOrdersPage() {
                   #{o.number} · {o.category === "maintenance" ? `${t("kindJobs")} · ` : ""}
                   {serviceLabel(o.service, o.category)} · {when(o.createdAt)}
                 </p>
-                <p className="mt-1 truncate font-medium text-ink">{o.description}</p>
+                <p dir="auto" className="mt-1 truncate text-start font-medium text-ink">{o.description}</p>
                 <p className="mt-1 text-sm text-muted">
                   {placeLabel(o.pickupDistrict, locale)}
-                  {o.dropoffDistrict ? ` → ${placeLabel(o.dropoffDistrict, locale)}` : ""} · {to("sentTo", { count: o.sent })} · {to("offersCount", { count: o.offers })}
+                  {o.dropoffDistrict && (
+                    <>
+                      {" "}
+                      <span aria-hidden className="inline-block rtl:-scale-x-100">→</span> {placeLabel(o.dropoffDistrict, locale)}
+                    </>
+                  )}{" "}
+                  · {to("sentTo", { count: o.sent })} · {to("offersCount", { count: o.offers })}
                 </p>
               </div>
               <OrderStatusBadge status={o.status} category={o.category} />

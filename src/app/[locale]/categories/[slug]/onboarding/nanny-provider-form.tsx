@@ -264,6 +264,8 @@ export default function NannyProviderForm({
           {sectionHeading(1)}
           <input
             className={ui.input}
+            autoComplete="name"
+            aria-label={t("namePlaceholder")}
             placeholder={t("namePlaceholder")}
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
@@ -272,6 +274,8 @@ export default function NannyProviderForm({
           <input
             type="tel"
             className={ui.input}
+            autoComplete="tel"
+            aria-label={t("contactPhonePlaceholder")}
             placeholder={t("contactPhonePlaceholder")}
             value={form.contactPhone}
             onChange={(e) => update("contactPhone", e.target.value)}
@@ -390,6 +394,7 @@ export default function NannyProviderForm({
                 type="button"
                 key={day}
                 onClick={() => toggleFromArray("days", day)}
+                aria-pressed={form.days.includes(day)}
                 className={ui.pill(form.days.includes(day))}
               >
                 {tDay(day)}
@@ -485,6 +490,7 @@ export default function NannyProviderForm({
                 type="button"
                 key={cert}
                 onClick={() => toggleFromArray("certifications", cert)}
+                aria-pressed={form.certifications.includes(cert)}
                 className={ui.pill(form.certifications.includes(cert))}
               >
                 {tCert(cert)}

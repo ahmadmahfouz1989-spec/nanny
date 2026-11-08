@@ -274,7 +274,7 @@ export default function CleaningProviderForm({
         <FieldLabel field="providerType" errors={fieldErrors}>{t("providerType")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PROVIDER_TYPES.map((v) => (
-            <button type="button" key={v} onClick={() => update("providerType", v)} className={ui.pill(form.providerType === v)}>
+            <button type="button" key={v} onClick={() => update("providerType", v)} aria-pressed={form.providerType === v} className={ui.pill(form.providerType === v)}>
               {tOption(`providerType.${v}`)}
             </button>
           ))}
@@ -292,7 +292,7 @@ export default function CleaningProviderForm({
             <input type="number" inputMode="numeric" min={2} max={100} className={ui.input} value={form.teamSize} onChange={(e) => update("teamSize", e.target.value)} />
           </>
         )}
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -366,7 +366,7 @@ export default function CleaningProviderForm({
         <FieldLabel field="equipment" errors={fieldErrors} optional>{t("equipment")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {EQUIPMENT.map((v) => (
-            <button type="button" key={v} onClick={() => toggle("equipment", v)} className={ui.pill(form.equipment.includes(v))}>
+            <button type="button" key={v} onClick={() => toggle("equipment", v)} aria-pressed={form.equipment.includes(v)} className={ui.pill(form.equipment.includes(v))}>
               {tOption(`equipment.${v}`)}
             </button>
           ))}
@@ -382,7 +382,7 @@ export default function CleaningProviderForm({
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} aria-pressed={form.availabilityDays.includes(day)} className={ui.pill(form.availabilityDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}
@@ -402,7 +402,7 @@ export default function CleaningProviderForm({
         <FieldLabel field="transport" errors={fieldErrors}>{t("transport")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {TRANSPORT.map((v) => (
-            <button type="button" key={v} onClick={() => update("transport", v)} className={ui.pill(form.transport === v)}>
+            <button type="button" key={v} onClick={() => update("transport", v)} aria-pressed={form.transport === v} className={ui.pill(form.transport === v)}>
               {tOption(`transport.${v}`)}
             </button>
           ))}
@@ -414,7 +414,7 @@ export default function CleaningProviderForm({
         <FieldLabel field="pricing" errors={fieldErrors}>{t("pricing")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PRICING.map((p) => (
-            <button type="button" key={p} onClick={() => update("pricing", p)} className={ui.pill(form.pricing === p)}>
+            <button type="button" key={p} onClick={() => update("pricing", p)} aria-pressed={form.pricing === p} className={ui.pill(form.pricing === p)}>
               {tOption(`pricing.${p}`)}
             </button>
           ))}

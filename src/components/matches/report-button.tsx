@@ -77,9 +77,10 @@ export default function ReportButton({
   }
 
   return (
-    <div className={`rounded-xl border border-border p-3 flex flex-col gap-2 ${trigger === "text" ? "mt-2" : ""}`}>
+    <div className={`w-full rounded-xl border border-border p-3 flex flex-col gap-2 ${trigger === "text" ? "mt-2" : ""}`}>
       <label className={ui.label + " text-xs"}>{t("reasonLabel")}</label>
       <select
+        aria-label={t("reasonLabel")}
         className={ui.select}
         value={reason}
         onChange={(e) => setReason(e.target.value as (typeof REASONS)[number])}
@@ -91,6 +92,7 @@ export default function ReportButton({
         ))}
       </select>
       <textarea
+        aria-label={t("detailsPlaceholder")}
         className={ui.input}
         rows={2}
         placeholder={t("detailsPlaceholder")}

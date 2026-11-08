@@ -51,11 +51,32 @@ export default function MatchActions({
     setCurrent(body.match.status);
   }
 
+  async function undo() {
+    setLoading(true);
+    setError(null);
+    const res = await request(`${MATCHES_API}/${matchId}/decline`, { method: "DELETE" });
+    setLoading(false);
+    const body = await res?.json().catch(() => null);
+    if (!res?.ok || !body?.match) {
+      setError(typeof body?.error === "string" ? body.error : t("actionError"));
+      return;
+    }
+    setCurrent(body.match.status);
+  }
+
   if (isBlocked(current)) {
+    const mine = current === `declined_by_${viewerSide}`;
     return (
-      <p className="text-sm text-muted mt-3">
-        {current === `declined_by_${viewerSide}` ? t("notInterestedDone") : t("conversationClosed")}
-      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <p className="text-sm text-muted">{mine ? t("notInterestedDone") : t("conversationClosed")}</p>
+        {/* A tap by mistake shouldn't close a match for good. */}
+        {mine && (
+          <button type="button" onClick={undo} disabled={loading} className={ui.link + " text-sm"}>
+            {t("undoNotInterested")}
+          </button>
+        )}
+        {error && <p className="text-xs text-danger">{error}</p>}
+      </div>
     );
   }
 

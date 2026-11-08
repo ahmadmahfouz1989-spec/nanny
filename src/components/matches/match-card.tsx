@@ -189,7 +189,8 @@ export default function MatchCard({
       </details>
 
       {viewerSide && <MatchActions matchId={match.id} status={match.status} viewerSide={viewerSide} />}
-      <div className="mt-2 flex items-center justify-between gap-3">
+      {/* Wraps: an open report form takes the whole row, not a squeezed corner. */}
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3">
         <Link href={`/u/${other.id}`} className={ui.link + " text-sm"}>
           {t("viewProfile")}
         </Link>

@@ -14,7 +14,7 @@ import { nannyProviderSchema, nannySeekerSchema } from "@/lib/validation/nanny";
 import { recomputeGenericMatchesForProfile } from "@/lib/matching/generic-recompute";
 import { refreshUserSearchText } from "@/lib/search-text";
 import { mustVerifyPhone } from "@/lib/phone-gate";
-import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
+import { notifyAdminsOfPendingReview, providerStatusAfterEdit } from "@/lib/admin/pending-review";
 import { removeProfilePhotoIfUnused, storageOwnPathFromPublicUrl } from "@/lib/storage-cleanup";
 import { asAttributes } from "@/lib/attributes";
 import type { Json } from "@/lib/supabase/database.types";
@@ -168,7 +168,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   // (claimed as a draft when the role was picked).
   const { data: before } = await db
     .from("generic_profiles")
-    .select("profile_photo_url, status")
+    .select("profile_photo_url, status, moderation_status")
     .eq("user_id", user.id)
     .eq("category_id", category.id)
     .eq("role", role)
@@ -222,8 +222,10 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     }
   }
 
-  // status stays "active". A customer's request goes live straight away; a
-  // provider's profile goes back to review on every save, including edits.
+  // status stays "active". A customer's request goes live straight away. A
+  // provider's first profile waits for review; an approved one stays live
+  // when edited (admins are told to check the change).
+  const editingLive = role === "provider" && before?.status !== "draft" && before?.moderation_status === "approved";
   const payload = {
     user_id: user.id,
     category_id: category.id,
@@ -232,7 +234,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
     location_id: locationId,
     attributes,
     status: "active",
-    moderation_status: role === "seeker" ? "approved" : "pending",
+    moderation_status: role === "seeker" ? "approved" : providerStatusAfterEdit(editingLive ? "approved" : null),
     ...(profilePhotoUrl !== undefined && { profile_photo_url: profilePhotoUrl }),
   };
 
@@ -254,7 +256,7 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
 
   await supabase.from("users").update({ contact_phone: contactPhone ?? null }).eq("id", user.id);
   await Promise.all([recomputeGenericMatchesForProfile(data.id), refreshUserSearchText(user.id)]);
-  if (role === "provider") await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role);
+  if (role === "provider") await notifyAdminsOfPendingReview(fullName, `${categorySlug}_${role}`, category, role, { edited: editingLive });
   // The first submit (not an edit): a request posted, or a provider applying.
   if (!before || before.status === "draft") {
     await reportMetaEvent(role === "seeker" ? "Lead" : "SubmitApplication", {

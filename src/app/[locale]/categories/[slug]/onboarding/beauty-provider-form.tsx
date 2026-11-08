@@ -276,7 +276,7 @@ export default function BeautyProviderForm({
   const pills = (key: "serves" | "workplaces", values: readonly string[], group: string) => (
     <div className="flex flex-wrap gap-2">
       {values.map((v) => (
-        <button type="button" key={v} onClick={() => toggle(key, v)} className={ui.pill(form[key].includes(v))}>
+        <button type="button" key={v} onClick={() => toggle(key, v)} aria-pressed={form[key].includes(v)} className={ui.pill(form[key].includes(v))}>
           {tOption(`${group}.${v}`)}
         </button>
       ))}
@@ -304,7 +304,7 @@ export default function BeautyProviderForm({
         <FieldLabel field="providerType" errors={fieldErrors}>{t("providerType")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PROVIDER_TYPES.map((v) => (
-            <button type="button" key={v} onClick={() => pickType(v)} className={ui.pill(form.providerType === v)}>
+            <button type="button" key={v} onClick={() => pickType(v)} aria-pressed={form.providerType === v} className={ui.pill(form.providerType === v)}>
               {tOption(`providerType.${v}`)}
             </button>
           ))}
@@ -327,14 +327,14 @@ export default function BeautyProviderForm({
             <FieldLabel field="gender" errors={fieldErrors}>{business ? t("teamGender") : t("gender")}</FieldLabel>
             <div className="flex flex-wrap gap-2">
               {genders.map((g) => (
-                <button type="button" key={g} onClick={() => update("gender", g)} className={ui.pill(form.gender === g)}>
+                <button type="button" key={g} onClick={() => update("gender", g)} aria-pressed={form.gender === g} className={ui.pill(form.gender === g)}>
                   {tOption(`${business ? "teamGender" : "gender"}.${g}`)}
                 </button>
               ))}
             </div>
           </>
         )}
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -375,7 +375,7 @@ export default function BeautyProviderForm({
                   <p className="text-xs text-muted">{t("treatmentsHint")}</p>
                   <div className="flex flex-wrap gap-2">
                     {TREATMENTS[s].map((x) => (
-                      <button type="button" key={x} onClick={() => toggle("treatments", x)} className={ui.pill(form.treatments.includes(x))}>
+                      <button type="button" key={x} onClick={() => toggle("treatments", x)} aria-pressed={form.treatments.includes(x)} className={ui.pill(form.treatments.includes(x))}>
                         {tTreatment(x)}
                       </button>
                     ))}
@@ -423,7 +423,7 @@ export default function BeautyProviderForm({
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} aria-pressed={form.availabilityDays.includes(day)} className={ui.pill(form.availabilityDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}
@@ -446,7 +446,7 @@ export default function BeautyProviderForm({
         <FieldLabel field="pricing" errors={fieldErrors}>{t("pricing")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PRICING.map((p) => (
-            <button type="button" key={p} onClick={() => update("pricing", p)} className={ui.pill(form.pricing === p)}>
+            <button type="button" key={p} onClick={() => update("pricing", p)} aria-pressed={form.pricing === p} className={ui.pill(form.pricing === p)}>
               {tOption(`pricing.${p}`)}
             </button>
           ))}

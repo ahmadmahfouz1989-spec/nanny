@@ -92,10 +92,15 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
           <p className="text-xs text-muted">
             {orderTitle(o.number, o.category)} · {serviceLabel(o.service, o.category)}
           </p>
-          <p className="mt-1 truncate font-medium text-ink">{o.description}</p>
+          <p dir="auto" className="mt-1 truncate text-start font-medium text-ink">{o.description}</p>
           <p className="mt-1 text-sm text-muted">
             {placeLabel(o.pickupDistrict, locale)}
-            {o.dropoffDistrict ? ` → ${placeLabel(o.dropoffDistrict, locale)}` : ""}
+            {o.dropoffDistrict && (
+              <>
+                {" "}
+                <span aria-hidden className="inline-block rtl:-scale-x-100">→</span> {placeLabel(o.dropoffDistrict, locale)}
+              </>
+            )}
           </p>
         </div>
         <OrderStatusBadge status={o.status} category={o.category} choosing={o.choosing} />
@@ -233,7 +238,7 @@ export function NeedsAreaCard() {
     <Link href="/categories/errands/onboarding?role=provider" className="flex flex-col gap-1 rounded-2xl border border-warning/40 bg-warning-soft p-4">
       <span className="font-semibold text-warning">{t("needsAreaTitle")}</span>
       <span className="text-sm text-ink">{t("needsAreaBody")}</span>
-      <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} →</span>
+      <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span></span>
     </Link>
   );
 }

@@ -8,7 +8,7 @@ import { lastCategory } from "@/lib/last-category";
 import BrandMark from "@/components/brand-mark";
 import SettingsRows from "@/components/settings-rows";
 import CategoryIcon from "@/components/category-icon";
-import { BellIcon, ProfileIcon, UsersIcon } from "@/components/nav-icons";
+import { BellIcon, BoxIcon, ProfileIcon, UsersIcon } from "@/components/nav-icons";
 import {
   BookmarkIcon,
   BriefcaseIcon,
@@ -183,9 +183,12 @@ export function MobileHeader({
   me,
   services,
   region,
+  orders = false,
 }: {
   me: ShellMe | null;
   services: ShellService[];
+  /** Has a delivery or repair profile: Orders gets its own row. */
+  orders?: boolean;
   /** The area picked on Home, from its cookie. */
   region: string;
 }) {
@@ -344,6 +347,13 @@ export function MobileHeader({
                 {tm("addService")}
               </Link>
             </div>
+          )}
+          {orders && (
+            <Link href="/orders" onClick={close} className={MENU_ROW}>
+              <RowIcon tone="primary"><BoxIcon className="h-[22px] w-[22px]" /></RowIcon>
+              <RowText title={tm("orders")} hint={tm("ordersHint")} />
+              {chevron}
+            </Link>
           )}
           <Link href="/requests" onClick={close} className={MENU_ROW}>
             <RowIcon tone="accent"><ClipboardIcon className="h-[22px] w-[22px]" /></RowIcon>

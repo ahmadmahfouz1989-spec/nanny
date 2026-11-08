@@ -3,7 +3,7 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
-import { notifyAdminsOfPendingReview } from "@/lib/admin/pending-review";
+import { notifyAdminsOfPendingReview, providerStatusAfterEdit } from "@/lib/admin/pending-review";
 
 const bodySchema = z.object({
   profileId: z.uuid(),
@@ -31,7 +31,7 @@ export async function PUT(request: Request) {
   const db = createAdminClient();
   const { data: profile } = await db
     .from("generic_profiles")
-    .select("id, role, full_name, status, headline, categories(slug, name_en, name_ar)")
+    .select("id, role, full_name, status, moderation_status, headline, categories(slug, name_en, name_ar)")
     .eq("id", profileId)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -44,11 +44,13 @@ export async function PUT(request: Request) {
     return NextResponse.json({ ok: true, headline: next });
   }
 
-  // Clearing it shows nothing new, so only a provider's new headline needs review.
+  // Clearing it shows nothing new, so only a provider's new headline needs a
+  // look. A live profile stays live (admins check it); otherwise it's reviewed.
   const review = Boolean(next) && profile.role === "provider";
+  const status = providerStatusAfterEdit(profile.moderation_status);
   const { error } = await db
     .from("generic_profiles")
-    .update(review ? { headline: next, moderation_status: "pending" } : { headline: next })
+    .update(review ? { headline: next, moderation_status: status } : { headline: next })
     .eq("id", profileId);
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
@@ -56,7 +58,7 @@ export async function PUT(request: Request) {
 
   if (review && profile.categories) {
     const role = profile.role as "seeker" | "provider";
-    await notifyAdminsOfPendingReview(profile.full_name, `${profile.categories.slug}_${role}`, profile.categories, role);
+    await notifyAdminsOfPendingReview(profile.full_name, `${profile.categories.slug}_${role}`, profile.categories, role, { edited: status === "approved" });
   }
-  return NextResponse.json({ ok: true, headline: next, moderationStatus: review ? "pending" : undefined });
+  return NextResponse.json({ ok: true, headline: next, moderationStatus: review ? status : undefined });
 }

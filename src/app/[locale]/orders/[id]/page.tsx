@@ -10,7 +10,8 @@ export default async function OrderPage({ params }: { params: Promise<{ locale: 
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user) redirect({ href: "/login", locale });
+  // Back to this order after logging in (a link from a notification or a message).
+  if (!user) redirect({ href: `/login?next=${encodeURIComponent(`/orders/${id}`)}`, locale });
 
   // Only which menu item to highlight: a repair job lives under Home
   // Maintenance. Who may see the order is checked by its API route.

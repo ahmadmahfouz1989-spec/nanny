@@ -9,7 +9,7 @@ import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
-import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon } from "@/components/nav-icons";
+import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon, BoxIcon } from "@/components/nav-icons";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
 import { APP_MAIN_ID, HideOnScroll, MatchesTabItem, MobileHeader, NotificationsTabItem } from "@/components/shell/mobile-chrome";
 import CategoryIcon from "@/components/category-icon";
@@ -88,6 +88,8 @@ export default async function AppShell({
     const mine = [roles.has("seeker") && tm("roleSeeker"), roles.has("provider") && tm("roleProvider")].filter(Boolean);
     return { slug: c.slug, icon: c.icon, label: [t(c.slug), mine.join(" + ")].filter(Boolean).join(" · ") };
   });
+  // Deliveries and repair jobs live in Orders: a link of its own, not three taps away.
+  const hasOrders = mySlugs.has("errands") || mySlugs.has("maintenance");
   const photoProfile = (profiles ?? []).find((p) => p.profile_photo_url) ?? profiles?.[0];
   const { data: account } = user
     ? await supabase.from("users").select("email_verified_at, phone_verified_at").eq("id", user.id).maybeSingle()
@@ -144,7 +146,7 @@ export default async function AppShell({
                   }`}
                 >
                   <FeedIcon className="h-[22px] w-[22px] shrink-0" />
-                  <span>{t("feed")}</span>
+                  <span>{t("home")}</span>
                 </Link>
                 <Link
                   href="/saved"
@@ -171,6 +173,15 @@ export default async function AppShell({
                     <span>{t(c.slug)}</span>
                   </Link>
                 ))}
+                {hasOrders && (
+                  <Link
+                    href="/orders"
+                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+                  >
+                    <BoxIcon className="h-[22px] w-[22px] shrink-0" />
+                    <span>{tm("orders")}</span>
+                  </Link>
+                )}
                 <MessagesSidebarItem active={active === "messages"} signedIn={!!user} />
                 <NotificationBell variant="sidebar" />
                 <Link
@@ -221,7 +232,7 @@ export default async function AppShell({
               </div>
             </aside>
 
-            <MobileHeader me={me} services={services} region={region} />
+            <MobileHeader me={me} services={services} region={region} orders={hasOrders} />
             <HideOnScroll />
             <PullToRefresh />
 

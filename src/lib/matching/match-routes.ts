@@ -357,18 +357,45 @@ export const declinePost: Handler = withAccess(async ({ access }) => {
   return NextResponse.json({ match: updated });
 });
 
+/** Undoes your own "Not interested" (never the other side's). */
+export const declineDelete: Handler = withAccess(async ({ access }) => {
+  const mine = `declined_by_${access.side}`;
+  if (access.status !== mine) return NextResponse.json({ error: CONVERSATION_CLOSED }, { status: 409 });
+  const { data: updated, error } = await createAdminClient()
+    .from("generic_matches")
+    .update({ status: "suggested", responded_at: null })
+    .eq("id", access.id)
+    .eq("status", mine)
+    .select("id, status")
+    .single();
+  if (error) return NextResponse.json({ error: "This match just changed — please refresh and try again." }, { status: 409 });
+  return NextResponse.json({ match: updated });
+});
+
 // ------------------------------------------------------------------ rating
 
 /**
  * Rating needs a real exchange, not just a match card: at least one
- * message from each side (generic_ratings_insert enforces the same).
+ * message from each side, or a completed order between them
+ * (generic_ratings_insert enforces the same).
  */
 async function bothHaveWritten(access: MatchAccess) {
   const admin = createAdminClient();
   const sent = (senderId: string) =>
     admin.from("generic_messages").select("id", { count: "exact", head: true }).eq("match_id", access.id).eq("sender_id", senderId);
-  const [{ count: mine }, { count: theirs }] = await Promise.all([sent(access.myUserId), sent(access.otherUserId)]);
-  return (mine ?? 0) > 0 && (theirs ?? 0) > 0;
+  const [{ count: mine }, { count: theirs }, { count: done }] = await Promise.all([
+    sent(access.myUserId),
+    sent(access.otherUserId),
+    // A finished delivery or repair job between them counts too.
+    admin
+      .from("errand_orders")
+      .select("id", { count: "exact", head: true })
+      .eq("generic_match_id", access.id)
+      .eq("status", "completed")
+      .in("seeker_user_id", [access.myUserId, access.otherUserId])
+      .in("provider_user_id", [access.myUserId, access.otherUserId]),
+  ]);
+  return ((mine ?? 0) > 0 && (theirs ?? 0) > 0) || (done ?? 0) > 0;
 }
 
 const ratingBodySchema = z.object({

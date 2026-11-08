@@ -47,7 +47,7 @@ export default function RateField({
       <FieldLabel field="rate" errors={errors} optional>{t("howYouCharge")}</FieldLabel>
       <div className="flex flex-wrap gap-2">
         {[...units, "quote" as const].map((u) => (
-          <button type="button" key={u} onClick={() => onChange({ ...value, unit: value.unit === u ? "" : u })} className={ui.pill(value.unit === u)}>
+          <button type="button" key={u} onClick={() => onChange({ ...value, unit: value.unit === u ? "" : u })} aria-pressed={value.unit === u} className={ui.pill(value.unit === u)}>
             {t(`unit.${u}`)}
           </button>
         ))}

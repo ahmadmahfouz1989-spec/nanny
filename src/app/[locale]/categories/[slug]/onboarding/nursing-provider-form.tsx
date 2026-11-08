@@ -246,9 +246,9 @@ export default function NursingProviderForm({
     >
       <div className="flex flex-col gap-3">
         <SectionHeading>{t("section1Title")}</SectionHeading>
-        <input className={ui.input} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
+        <input className={ui.input} autoComplete="name" aria-label={t("namePlaceholder")} placeholder={t("namePlaceholder")} value={form.fullName} onChange={(e) => update("fullName", e.target.value)} />
         <FieldError field="fullName" errors={fieldErrors} />
-        <input type="tel" className={ui.input} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
+        <input type="tel" autoComplete="tel" className={ui.input} aria-label={t("contactPhonePlaceholder")} placeholder={t("contactPhonePlaceholder")} value={form.contactPhone} onChange={(e) => update("contactPhone", e.target.value)} />
         <FieldError field="contactPhone" errors={fieldErrors} />
         <p className="-mt-1 text-xs text-muted">{tw("phoneHint")}</p>
         {initialProfile && (
@@ -275,7 +275,7 @@ export default function NursingProviderForm({
         <FieldLabel field="gender" errors={fieldErrors}>{t("gender")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {GENDERS.map((g) => (
-            <button type="button" key={g} onClick={() => update("gender", g)} className={ui.pill(form.gender === g)}>
+            <button type="button" key={g} onClick={() => update("gender", g)} aria-pressed={form.gender === g} className={ui.pill(form.gender === g)}>
               {t(`genderOptions.${g}`)}
             </button>
           ))}
@@ -318,7 +318,7 @@ export default function NursingProviderForm({
         <FieldLabel field="availability" errors={fieldErrors}>{t("availableDays")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {DAYS.map((day) => (
-            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} className={ui.pill(form.availabilityDays.includes(day))}>
+            <button type="button" key={day} onClick={() => toggle("availabilityDays", day)} aria-pressed={form.availabilityDays.includes(day)} className={ui.pill(form.availabilityDays.includes(day))}>
               {tDays(day)}
             </button>
           ))}
@@ -342,7 +342,7 @@ export default function NursingProviderForm({
         <FieldLabel field="careSpecialties" errors={fieldErrors}>{t("careSpecialties")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {CARE_SPECIALTIES.map((s) => (
-            <button type="button" key={s} onClick={() => toggle("careSpecialties", s)} className={ui.pill(form.careSpecialties.includes(s))}>
+            <button type="button" key={s} onClick={() => toggle("careSpecialties", s)} aria-pressed={form.careSpecialties.includes(s)} className={ui.pill(form.careSpecialties.includes(s))}>
               {tCare(s)}
             </button>
           ))}

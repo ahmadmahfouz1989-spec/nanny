@@ -27,8 +27,12 @@ export async function POST(request: Request) {
   });
 
   if (error) {
-    // Supabase returns a generic-enough message; avoid echoing raw provider errors
-    return NextResponse.json({ error: error.message }, { status: 400 });
+    // The form shows its own words for these (in the person's language).
+    if (error.code === "user_already_exists" || /already registered/i.test(error.message)) {
+      return NextResponse.json({ error: error.message, code: "exists" }, { status: 400 });
+    }
+    if (error.code === "weak_password") return NextResponse.json({ error: error.message, code: "weak_password" }, { status: 400 });
+    return NextResponse.json({ error: error.message, code: "failed" }, { status: 400 });
   }
 
   // Supabase deliberately returns success (no error) for an email that's
