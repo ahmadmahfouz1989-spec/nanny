@@ -41,7 +41,7 @@ export default function ReplyThread({
         return (
           <div key={r.id} id={`reply-${r.id}`}>
             <div className={`flex gap-2.5 rounded-lg transition-colors ${highlightId === r.id ? "bg-primary-soft -mx-1.5 px-1.5 py-1" : ""}`}>
-              <Avatar photoUrl={r.authorPhotoUrl} size={28} />
+              <Avatar photoUrl={r.authorPhotoUrl} name={r.authorName} size={28} />
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-1.5 flex-wrap">
                   <span className="text-sm font-semibold text-ink">{r.isMine ? t("you") : (r.authorName ?? t("someone"))}</span>

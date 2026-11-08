@@ -53,7 +53,11 @@ export function fieldErrorsFor(schema: z.ZodType, data: unknown): FieldErrors {
 /** Brings the first highlighted field into view after a failed save. */
 export function scrollToFirstError() {
   requestAnimationFrame(() => {
-    document.querySelector("[data-field-error]")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const first = document.querySelector("[data-field-error]");
+    if (!first) return;
+    // On a form shown step by step, open the step with the mistake first.
+    window.dispatchEvent(new CustomEvent("oui-reveal", { detail: first }));
+    requestAnimationFrame(() => first.scrollIntoView({ behavior: "smooth", block: "center" }));
   });
 }
 

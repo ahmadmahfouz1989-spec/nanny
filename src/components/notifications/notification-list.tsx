@@ -72,12 +72,13 @@ export default function NotificationList({ onOpen }: { onOpen?: (n: Notification
               onOpen?.(n);
               open(n);
             }}
-            className={`flex w-full items-center gap-3 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background ${
-              n.read_at ? "" : "bg-primary-soft/30"
-            }`}
+            className="flex w-full items-center gap-3 border-b border-border px-4 py-3 text-start transition-colors last:border-0 hover:bg-background"
           >
+            {/* Unread: a dot and bolder words, not a tinted row -- a list of
+                new ones stays light. */}
+            <span aria-hidden className={`h-2 w-2 shrink-0 rounded-full ${n.read_at ? "bg-transparent" : "bg-primary"}`} />
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="text-sm text-ink">{notificationLabel(n, t, categoryName)}</span>
+              <span className={`text-sm text-ink ${n.read_at ? "" : "font-semibold"}`}>{notificationLabel(n, t, categoryName)}</span>
               {notes && <span className="text-xs text-muted line-clamp-2">{notes}</span>}
               <span className="text-[11px] text-muted">
                 {formatRelative(n.created_at, locale, t("justNow"))}

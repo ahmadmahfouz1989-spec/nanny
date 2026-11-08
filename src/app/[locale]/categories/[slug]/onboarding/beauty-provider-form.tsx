@@ -361,7 +361,7 @@ export default function BeautyProviderForm({
                   <span className="block font-semibold text-ink">{tService(s)}</span>
                   <span className="block text-xs text-muted">{tService(`${s}Provider`)}</span>
                 </span>
-                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${offers(s) ? "border-primary bg-primary text-white" : "border-border-strong"}`}>
+                <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${offers(s) ? "border-primary bg-primary text-on-primary" : "border-border-strong"}`}>
                   {offers(s) && (
                     <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden>
                       <path d="m3.5 8.5 3 3 6-7" strokeLinecap="round" strokeLinejoin="round" />

@@ -185,7 +185,7 @@ export default function MessagesClient() {
           {conversations && conversations.length > 0 && filteredConversations?.length === 0 && (
             <p className="text-sm text-muted p-4">{t("noResults", { query })}</p>
           )}
-          {filteredConversations?.map((c, i) => (
+          {filteredConversations?.map((c) => (
             <button
               key={c.matchId}
               type="button"
@@ -204,7 +204,7 @@ export default function MessagesClient() {
                   className="h-12 w-12 rounded-full object-cover shrink-0"
                 />
               ) : (
-                <AvatarIllustration tone={TONES[i % TONES.length]} className="h-12 w-12 rounded-full shrink-0" />
+                <AvatarIllustration name={c.counterpart.name} className="h-12 w-12 rounded-full shrink-0" />
               )}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2">
@@ -225,7 +225,7 @@ export default function MessagesClient() {
                     {c.lastMessage ? c.lastMessage.body : t("noMessagesYet")}
                   </p>
                   {c.unreadCount > 0 && (
-                    <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-white text-xs font-semibold shrink-0">
+                    <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-on-primary text-xs font-semibold shrink-0">
                       {c.unreadCount}
                     </span>
                   )}

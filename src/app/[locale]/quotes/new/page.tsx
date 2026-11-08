@@ -41,7 +41,7 @@ export default async function NewQuotePage({
   const initialTrade = (TRADES as readonly string[]).includes(trade ?? "") ? (trade as Trade) : null;
 
   return (
-    <AppShell active="maintenance">
+    <AppShell active="orders">
       <QuoteForm needsName={!named && !account?.full_name} initialTrade={initialTrade} />
     </AppShell>
   );

@@ -183,7 +183,7 @@ export default function AdminReportsPage() {
                   <div
                     key={m.id}
                     className={`max-w-[85%] rounded-2xl px-3 py-1.5 text-sm ${
-                      m.isReporter ? "self-start bg-surface border border-border" : "self-end bg-primary text-white"
+                      m.isReporter ? "self-start bg-surface border border-border" : "self-end bg-primary text-on-primary"
                     }`}
                   >
                     <p className="text-[10px] uppercase tracking-wide opacity-70 mb-0.5">

@@ -21,7 +21,7 @@
     "instagram": "Instagram",
     "adminPanel": "Admin panel",
     "maintenance": "Home Maintenance",
-    "matches": "Matches",
+    "matches": "Services",
     "menu": "Menu",
     "viewProfile": "View your profile",
     "yourServices": "Your services",
@@ -34,7 +34,8 @@
     "privacy": "Privacy policy",
     "cleaning": "Cleaning",
     "beauty": "Beauty & Wellness",
-    "car": "Car Services"
+    "car": "Car Services",
+    "orders": "Orders"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -366,7 +367,10 @@
     "errorDescribe": "Tell them what needs cleaning.",
     "errorDescribeNeed": "Tell them what you need.",
     "errorTowTo": "Say where it should be towed to.",
-    "errorNotDrivable": "The car can't be driven — choose where they come to it, or a pickup."
+    "errorNotDrivable": "The car can't be driven — choose where they come to it, or a pickup.",
+    "stepOf": "Step {step} of {total}",
+    "next": "Next",
+    "back": "Back"
   },
   "Location": {
     "governorate": "Governorate",
@@ -380,7 +384,9 @@
     "coverTitle": "Other districts you also work in",
     "coverHint": "Your own district already counts. Customers in the districts you tick see you in their matches.",
     "allOf": "All of {place}",
-    "coverMore": "More districts in other governorates"
+    "coverMore": "More districts in other governorates",
+    "change": "Change",
+    "chooseFromList": "Or choose from the list"
   },
   "AgeGroups": {
     "newborn": "Newborn (0–3mo)",

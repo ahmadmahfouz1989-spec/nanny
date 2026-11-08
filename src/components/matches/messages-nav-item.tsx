@@ -60,7 +60,7 @@ export function MessagesSidebarItem({ active, signedIn = true }: { active: boole
       <ChatIcon className="h-[22px] w-[22px] shrink-0" />
       <span>{t("messages")}</span>
       {unreadCount > 0 && (
-        <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-white text-[11px] font-semibold">
+        <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-on-primary text-[11px] font-semibold">
           {unreadCount > 9 ? "9+" : unreadCount}
         </span>
       )}
@@ -83,7 +83,7 @@ export function MessagesTabItem({ active, signedIn = true }: { active: boolean; 
       <span className="relative">
         <ChatIcon className="h-[22px] w-[22px]" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -end-1.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-white text-[10px] font-semibold">
+          <span className="absolute -top-1 -end-1.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-on-primary text-[10px] font-semibold">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}

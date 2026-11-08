@@ -82,7 +82,7 @@ export default function MatchFilters({
           </svg>
           {t("filters")}
           {active > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-white">
+            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[11px] font-bold text-on-primary">
               {active}
             </span>
           )}

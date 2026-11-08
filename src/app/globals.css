@@ -14,11 +14,13 @@ button:not(:disabled),
   --surface-raised: #ffffff;
   --surface-sunken: #f6f1e9;
   --ink: #241d15;
-  --muted: #8b8175;
+  --muted: #746b61;
   --border: #ece5d9;
   --border-strong: #ddd2be;
-  --primary: #ee4f26;
-  --primary-hover: #d63d14;
+  --primary: #cf3a12;
+  --primary-hover: #b3300e;
+  /* Text on an orange fill: white here, dark in dark mode (the orange is light there). */
+  --on-primary: #ffffff;
   --primary-soft: #fce4da;
   --secondary: #1f8577;
   --secondary-soft: #dcefeb;
@@ -51,6 +53,7 @@ button:not(:disabled),
   --color-border-strong: var(--border-strong);
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
   --color-primary-soft: var(--primary-soft);
   --color-secondary: var(--secondary);
   --color-secondary-soft: var(--secondary-soft);
@@ -126,6 +129,7 @@ button:not(:disabled),
     --border-strong: #4c4030;
     --primary: #ff7a4d;
     --primary-hover: #ff9268;
+    --on-primary: #1b1712;
     --primary-soft: #45281c;
     --secondary: #4fc4b0;
     --secondary-soft: #1d3b36;
@@ -160,6 +164,7 @@ button:not(:disabled),
   --border-strong: #4c4030;
   --primary: #ff7a4d;
   --primary-hover: #ff9268;
+  --on-primary: #1b1712;
   --primary-soft: #45281c;
   --secondary: #4fc4b0;
   --secondary-soft: #1d3b36;
@@ -235,6 +240,11 @@ button:not(:disabled),
 }
 .oui-form-sections .oui-section-heading:lang(ar)::before {
   content: counter(oui-section, arabic-indic) " · ";
+}
+/* Step by step: the step line says where you are, and hidden sections
+   wouldn't be counted anyway. */
+.oui-form-sections[data-stepped] .oui-section-heading::before {
+  content: none;
 }
 
 /* ─── motion ─────────────────────────────────────────────────────────── */

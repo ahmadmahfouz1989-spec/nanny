@@ -39,10 +39,10 @@ export default function PostCard({
     <article id={`post-${post.id}`} className="flex gap-3 p-4 scroll-mt-6">
       {post.author?.profileId ? (
         <Link href={`/u/${post.author.profileId}`} aria-label={post.author.fullName} className="shrink-0 self-start">
-          <Avatar photoUrl={post.author.photoUrl} size={44} className="mt-0.5" />
+          <Avatar photoUrl={post.author.photoUrl} name={post.author.fullName} size={44} className="mt-0.5" />
         </Link>
       ) : (
-        <Avatar photoUrl={post.author?.photoUrl ?? null} size={44} className="mt-0.5" />
+        <Avatar photoUrl={post.author?.photoUrl ?? null} name={post.author?.fullName} size={44} className="mt-0.5" />
       )}
 
       <div className="flex-1 min-w-0 flex flex-col gap-1">

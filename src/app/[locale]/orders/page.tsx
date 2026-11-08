@@ -20,7 +20,7 @@ export default async function OrdersPage({
   if (!user) redirect({ href: "/login", locale });
 
   return (
-    <AppShell active="errands">
+    <AppShell active="orders">
       <OrdersClient initialTab={tab === "provider" ? "provider" : "seeker"} />
     </AppShell>
   );

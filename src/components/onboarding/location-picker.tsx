@@ -63,6 +63,10 @@ export default function LocationPicker({
   const [districts, setDistricts] = useState<AreaHit[]>([]);
   const [areas, setAreas] = useState<AreaHit[]>([]);
   const [query, setQuery] = useState("");
+  // With areas: the search is the way in; the three lists only on request,
+  // and a chosen place is one line with "Change".
+  const [listMode, setListMode] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [hits, setHits] = useState<AreaHit[]>([]);
   const searchSeq = useRef(0);
   // A plain flag for the effects (onArea itself is a new function each render).
@@ -133,13 +137,39 @@ export default function LocationPicker({
     onArea?.(hit.districtId, hit.level === "area" ? hit.id : null);
     setQuery("");
     setHits([]);
+    setEditing(false);
+    setListMode(false);
   }
+
+  const chosenName = [
+    areas.find((a) => a.id === areaId),
+    districts.find((d) => d.id === districtId),
+    governorates.find((g) => g.id === governorateId),
+  ]
+    .filter((x): x is NonNullable<typeof x> => !!x)
+    .map((x) => nameOf(x, locale))
+    .filter((name, i, all) => all.indexOf(name) === i)
+    .join(", ");
+  const showSummary = !!onArea && !!districtId && !listMode && !editing;
+  const showSearch = !!onArea && !showSummary;
+  const showLists = !onArea || listMode;
 
   return (
     <div className="flex flex-col gap-2">
-      {onArea && (
+      {showSummary && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-border-strong bg-surface px-4 py-2.5">
+          <span className="flex min-w-0 items-center gap-2 text-sm font-medium text-ink">
+            <span aria-hidden>📍</span>
+            <span className="truncate">{chosenName || "…"}</span>
+          </span>
+          <button type="button" onClick={() => setEditing(true)} className={ui.link + " shrink-0 text-sm"}>
+            {t("change")}
+          </button>
+        </div>
+      )}
+      {showSearch && (
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute start-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+          <SearchIcon className="pointer-events-none absolute start-3.5 top-[21px] h-4 w-4 -translate-y-1/2 text-muted" />
           <input
             type="search"
             dir="auto"
@@ -177,9 +207,22 @@ export default function LocationPicker({
           {query.trim().length >= 2 && hits.length === 0 && <p className="mt-1 text-xs text-muted">{t("noMatch")}</p>}
         </div>
       )}
+      {/* Outside the search's box, so its icon stays centred on the field. */}
+      {showSearch && !listMode && (
+        <button type="button" onClick={() => setListMode(true)} className={ui.link + " self-start text-sm"}>
+          {t("chooseFromList")}
+        </button>
+      )}
+      {/* Mistakes still show when the lists are folded away. */}
+      {!showLists && !showSummary && (
+        <>
+          <FieldError field="locationId" errors={errors} />
+          <FieldError field="districtId" errors={errors} />
+        </>
+      )}
 
-      {onArea && <span className="-mb-1 text-xs font-medium text-muted">{t("governorate")}</span>}
-      <select
+      {showLists && onArea && <span className="-mb-1 text-xs font-medium text-muted">{t("governorate")}</span>}
+      {showLists && <select
         className={`${ui.select} ${errors.locationId ? "border-danger!" : ""}`}
         aria-invalid={!!errors.locationId}
         aria-label={t("governorate")}
@@ -195,10 +238,10 @@ export default function LocationPicker({
             {nameOf(g, locale)}
           </option>
         ))}
-      </select>
-      <FieldError field="locationId" errors={errors} />
+      </select>}
+      {showLists && <FieldError field="locationId" errors={errors} />}
 
-      {onArea && governorateId && (
+      {showLists && onArea && governorateId && (
         <>
           <span className="-mb-1 text-xs font-medium text-muted">{t("district")}</span>
           <select
@@ -219,8 +262,8 @@ export default function LocationPicker({
         </>
       )}
 
-      {onArea && districtId && <span className="-mb-1 text-xs font-medium text-muted">{t("areaOptional")}</span>}
-      {onArea && districtId && (
+      {showLists && onArea && districtId && <span className="-mb-1 text-xs font-medium text-muted">{t("areaOptional")}</span>}
+      {showLists && onArea && districtId && (
         <select className={ui.select} aria-label={t("area")} value={areaId ?? ""} onChange={(e) => onArea(districtId, e.target.value || null)}>
           <option value="">{t("areaOptional")}</option>
           {areas.map((a) => (

@@ -7,10 +7,8 @@ import en from "../../../messages/en.json";
 import ar from "../../../messages/ar.json";
 import {
   ChevronIcon,
-  FlagReportIcon,
   FreeIcon,
   LockIcon,
-  PersonIcon,
   ProviderIcon,
   ShieldCheckIcon,
 } from "@/components/home-icons";
@@ -99,9 +97,8 @@ export default async function Discover() {
 
   const trust = [
     { Icon: ShieldCheckIcon, text: t("trustVerified") },
-    { Icon: FlagReportIcon, text: t("trustReport") },
     { Icon: FreeIcon, text: t("trustFree") },
-    { Icon: LockIcon, text: t("trustPrivate"), note: t("trustPrivateNote") },
+    { Icon: LockIcon, text: t("trustPrivate") },
   ];
 
   return (
@@ -137,40 +134,32 @@ export default async function Discover() {
         <CategoryTiles categories={live} locale={locale} more={{ title: t("more"), note: t("comingSoon") }} />
       </section>
 
-      <ul className="grid grid-cols-4 divide-x divide-border rounded-2xl border border-border bg-secondary-soft/40 py-3 rtl:divide-x-reverse">
-        {trust.map(({ Icon, text, note }) => (
-          <li key={text} className="flex flex-col items-center gap-1.5 px-1.5 text-center">
-            <Icon className="h-6 w-6 text-secondary" />
-            <span className="text-[11px] font-medium leading-tight text-ink">{text}</span>
-            {note && <span className="text-[10px] leading-tight text-muted">{note}</span>}
+      {/* One quiet line of reassurance, not a block to read. */}
+      <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 text-xs font-medium text-ink/80">
+        {trust.map(({ Icon, text }) => (
+          <li key={text} className="inline-flex items-center gap-1.5">
+            <Icon className="h-4 w-4 shrink-0 text-secondary" />
+            {text}
           </li>
         ))}
       </ul>
 
-      <div className="grid grid-cols-2 gap-2.5">
-        <div className="flex flex-col gap-2 rounded-2xl bg-primary-soft/50 p-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-primary-soft text-primary">
-            <PersonIcon className="h-5 w-5" />
-          </span>
-          <p className="font-display text-sm font-bold text-ink">{t("seekerTitle")}</p>
-          <p className="flex-1 text-xs text-muted">{t("seekerBody")}</p>
-          <Link href="/categories" className="inline-flex items-center justify-center gap-1 self-start rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white">
-            {t("seekerCta")}
-            <ChevronIcon className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-        <div className="flex flex-col gap-2 rounded-2xl bg-secondary-soft/50 p-3">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary-soft text-secondary">
-            <ProviderIcon className="h-5 w-5" />
-          </span>
-          <p className="font-display text-sm font-bold text-ink">{offering ? t("providerTitleHave") : t("providerTitle")}</p>
-          <p className="flex-1 text-xs text-muted">{offering ? t("providerBodyHave") : t("providerBody")}</p>
-          <Link href={offering ? "/dashboard" : "/categories"} className="inline-flex items-center justify-center gap-1 self-start rounded-full bg-secondary px-3 py-1.5 text-xs font-semibold text-white">
-            {offering ? t("providerCtaHave") : t("providerCta")}
-            <ChevronIcon className="h-3.5 w-3.5" />
-          </Link>
-        </div>
-      </div>
+      {/* Finding help is the category grid above; this is the way in for
+          people offering a service. */}
+      <Link
+        href={offering ? "/dashboard" : "/categories"}
+        className="flex items-center gap-3 rounded-2xl bg-secondary-soft/60 px-4 py-3 transition-colors hover:bg-secondary-soft"
+      >
+        <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-secondary-soft text-secondary">
+          <ProviderIcon className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-display text-sm font-bold text-ink">{offering ? t("providerTitleHave") : t("providerTitle")}</span>
+          <span className="block text-xs text-muted">{offering ? t("providerBodyHave") : t("providerBody")}</span>
+        </span>
+        <span className="sr-only">{offering ? t("providerCtaHave") : t("providerCta")}</span>
+        <ChevronIcon className="h-5 w-5 shrink-0 text-secondary" />
+      </Link>
     </div>
   );
 }

@@ -25,7 +25,7 @@ import type { CategorySlug } from "@/lib/category-slugs";
 import { LAST_CATEGORY_COOKIE } from "@/lib/last-category";
 import { REGION_COOKIE } from "@/lib/region";
 
-type ActiveKey = "categories" | CategorySlug | "feed" | "saved" | "messages" | "notifications" | "profile";
+type ActiveKey = "categories" | CategorySlug | "feed" | "saved" | "messages" | "notifications" | "profile" | "orders";
 
 const TAB = "flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] transition-colors";
 
@@ -179,7 +179,9 @@ export default async function AppShell({
                 {hasOrders && (
                   <Link
                     href="/orders"
-                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+                    className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
+                      active === "orders" ? "bg-surface-sunken font-semibold text-ink" : "text-muted hover:bg-surface-sunken hover:text-ink"
+                    }`}
                   >
                     <BoxIcon className="h-[22px] w-[22px] shrink-0" />
                     <span>{tm("orders")}</span>
@@ -257,6 +259,13 @@ export default async function AppShell({
                 active={matchesActive}
                 className={TAB}
               />
+              {/* Riders and tradespeople work from Orders: a tab of its own. */}
+              {hasOrders && (
+                <Link href="/orders" replace className={`${TAB} ${active === "orders" ? "font-semibold text-primary" : "text-muted"}`}>
+                  <BoxIcon className="h-[22px] w-[22px]" />
+                  {t("orders")}
+                </Link>
+              )}
               <MessagesTabItem active={active === "messages"} signedIn={!!user} />
               <NotificationsTabItem active={active === "notifications"} className={TAB} />
               {/* Your profile, Saved, your services and settings live in

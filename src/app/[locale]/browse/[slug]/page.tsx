@@ -146,7 +146,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
                 {c.photoUrl ? (
                   <Image src={c.photoUrl} alt="" width={72} height={72} unoptimized className="h-18 w-18 shrink-0 rounded-xl object-cover" />
                 ) : (
-                  <AvatarIllustration tone="primary" className="h-18 w-18 shrink-0 rounded-xl" />
+                  <AvatarIllustration name={c.fullName} className="h-18 w-18 shrink-0 rounded-xl" />
                 )}
                 <div className="min-w-0 flex-1">
                   <p className="flex min-w-0 items-center gap-1 font-semibold text-ink">

@@ -16,7 +16,6 @@ export default function ConversationHeader({
   matchId,
   name,
   photoUrl,
-  tone,
   profileId,
   subtitle,
   onBack,
@@ -27,7 +26,8 @@ export default function ConversationHeader({
   matchId: string;
   name: string;
   photoUrl: string | null;
-  tone: "primary" | "secondary" | "berry";
+  /** No longer used: avatars take their colour from the name. */
+  tone?: "primary" | "secondary" | "berry";
   profileId: string;
   onBack?: () => void;
   /** Called once the user blocks this conversation. */
@@ -78,7 +78,7 @@ export default function ConversationHeader({
               className="h-10 w-10 rounded-full object-cover shrink-0"
             />
           ) : (
-            <AvatarIllustration tone={tone} className="h-10 w-10 rounded-full shrink-0" />
+            <AvatarIllustration name={name} className="h-10 w-10 rounded-full shrink-0" />
           )}
           <span className="flex min-w-0 flex-col">
             <span className="font-display font-semibold truncate hover:underline">{name}</span>

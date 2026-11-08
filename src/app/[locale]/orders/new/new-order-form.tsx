@@ -430,7 +430,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
                     }}
                     className={ui.card + " flex items-center gap-3 p-3 text-start" + (riderId === r.profileId ? " ring-2 ring-primary" : "")}
                   >
-                    <Avatar photoUrl={r.photoUrl} size={40} />
+                    <Avatar photoUrl={r.photoUrl} name={r.name} size={40} />
                     <span className="flex min-w-0 flex-1 flex-col">
                       <span className="truncate font-medium text-ink">{r.name}</span>
                       <span className="text-xs text-muted">

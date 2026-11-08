@@ -39,7 +39,7 @@ function Bell({ variant = "sidebar" }: { variant?: "sidebar" | "header" }) {
       >
         <HeartIcon className="h-5 w-5" />
         {unread > 0 && (
-          <span className="absolute top-1 end-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-white">
+          <span className="absolute top-1 end-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-on-primary">
             {unread > 9 ? "9+" : unread}
           </span>
         )}
@@ -57,7 +57,7 @@ function Bell({ variant = "sidebar" }: { variant?: "sidebar" | "header" }) {
         <HeartIcon className="h-[22px] w-[22px] shrink-0" />
         <span>{t("title")}</span>
         {unread > 0 && (
-          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-white">
+          <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[11px] font-semibold text-on-primary">
             {unread > 9 ? "9+" : unread}
           </span>
         )}

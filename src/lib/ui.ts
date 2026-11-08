@@ -12,7 +12,7 @@ export const ui = {
     "rounded-2xl border border-border bg-surface shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-border-strong",
 
   buttonPrimary:
-    "inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-white shadow-xs transition-all hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0",
+    "inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary shadow-xs transition-all hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0",
   buttonSecondary:
     "inline-flex items-center justify-center rounded-full border border-border bg-surface px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-border-strong hover:bg-surface-sunken active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none",
   buttonGhost:
@@ -20,11 +20,13 @@ export const ui = {
 
   link: "text-primary underline decoration-primary/25 underline-offset-[3px] transition-colors hover:text-primary-hover hover:decoration-primary/60",
 
+  // A choice: picked is a dark outline on a soft fill -- calm, so the one
+  // orange button on a form stays the thing to press.
   pill: (active: boolean) =>
-    `min-h-10 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+    `min-h-10 rounded-full border px-4 py-2 text-sm transition-colors ${
       active
-        ? "border-primary bg-primary text-white"
-        : "border-border text-ink/70 hover:border-border-strong hover:text-ink"
+        ? "border-ink bg-surface-sunken font-semibold text-ink ring-1 ring-ink"
+        : "border-border font-medium text-ink/75 hover:border-border-strong hover:text-ink"
     }`,
   toggleTab: (active: boolean) =>
     `flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${

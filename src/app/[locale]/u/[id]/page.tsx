@@ -170,7 +170,7 @@ async function ProfileHeader({ data, locale, contact, share }: { data: ProfilePa
           </>
         ) : (
           <AvatarIllustration
-            tone={profile.role === "seeker" ? "secondary" : "primary"}
+            name={profile.full_name}
             banner
             className="h-40 sm:h-48 w-full"
           />

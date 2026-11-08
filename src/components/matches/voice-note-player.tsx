@@ -115,7 +115,7 @@ export default function VoiceNotePlayer({ src, durationSeconds, own }: { src: st
         onClick={toggle}
         aria-label={playing || state === "loading" ? t("voicePause") : t("voicePlay")}
         className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition active:scale-95 ${
-          own ? "bg-white/25 text-white" : "bg-primary text-white"
+          own ? "bg-white/25 text-on-primary" : "bg-primary text-on-primary"
         }`}
       >
         {state === "loading" ? (

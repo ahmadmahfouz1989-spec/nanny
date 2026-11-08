@@ -21,7 +21,7 @@
     "instagram": "إنستغرام",
     "adminPanel": "لوحة الإدارة",
     "maintenance": "صيانة المنزل",
-    "matches": "التطابقات",
+    "matches": "خدماتي",
     "menu": "القائمة",
     "viewProfile": "عرض ملفك الشخصي",
     "yourServices": "خدماتك",
@@ -34,7 +34,8 @@
     "privacy": "سياسة الخصوصية",
     "cleaning": "تنظيف",
     "beauty": "تجميل وعناية",
-    "car": "خدمات السيارات"
+    "car": "خدمات السيارات",
+    "orders": "الطلبات"
   },
   "Install": {
     "title": "نزّل تطبيق ouiKnow",
@@ -366,7 +367,10 @@
     "errorDescribe": "قلّن شو بدّو تنظيف.",
     "errorDescribeNeed": "قلّن شو بدّك.",
     "errorTowTo": "قلّن لوين بدّك تنسحب.",
-    "errorNotDrivable": "السيارة ما بتمشي — اختار يجوا لعندها أو يستلموها."
+    "errorNotDrivable": "السيارة ما بتمشي — اختار يجوا لعندها أو يستلموها.",
+    "stepOf": "الخطوة {step} من {total}",
+    "next": "التالي",
+    "back": "رجوع"
   },
   "Location": {
     "governorate": "المحافظة",
@@ -380,7 +384,9 @@
     "coverTitle": "أقضية تانية بتشتغل فيها",
     "coverHint": "قضاؤك محسوب من قبل. الزباين بالأقضية اللي بتختارها بيشوفوك بتطابقاتن.",
     "allOf": "كل {place}",
-    "coverMore": "أقضية بمحافظات تانية"
+    "coverMore": "أقضية بمحافظات تانية",
+    "change": "غيّر",
+    "chooseFromList": "أو اختار من اللائحة"
   },
   "AgeGroups": {
     "newborn": "حديث الولادة (٠–٣ أشهر)",

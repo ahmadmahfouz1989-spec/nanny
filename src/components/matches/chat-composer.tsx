@@ -73,7 +73,7 @@ export default function ChatComposer({
             type="button"
             onClick={onStopRecording}
             aria-label={t("sendRecording")}
-            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition hover:bg-primary-hover"
           >
             <SendIcon className="h-5 w-5 rtl:scale-x-[-1]" />
           </button>
@@ -108,7 +108,7 @@ export default function ChatComposer({
               onClick={onSend}
               disabled={sending}
               aria-label={t("chatSend")}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:opacity-50"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition hover:bg-primary-hover disabled:opacity-50"
             >
               <SendIcon className="h-5 w-5 rtl:scale-x-[-1]" />
             </button>
@@ -118,7 +118,7 @@ export default function ChatComposer({
               onClick={onStartRecording}
               disabled={uploading}
               aria-label={t("recordVoiceNote")}
-              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white transition hover:bg-primary-hover disabled:opacity-50"
+              className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary transition hover:bg-primary-hover disabled:opacity-50"
             >
               <MicIcon className="h-5 w-5" />
             </button>

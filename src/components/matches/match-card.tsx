@@ -58,11 +58,11 @@ function localizedLocationName(loc: OtherProfile["locations"], locale: string) {
 export default function MatchCard({
   match,
   viewerSide,
-  tone,
 }: {
   match: Match;
   viewerSide: "seeker" | "provider" | null;
-  tone: "primary" | "secondary" | "berry";
+  /** No longer used: avatars take their colour from the name. */
+  tone?: "primary" | "secondary" | "berry";
 }) {
   const t = useTranslations("Matches");
   const tDays = useTranslations("Days");
@@ -131,7 +131,7 @@ export default function MatchCard({
           {other.profile_photo_url ? (
             <Image src={other.profile_photo_url} alt="" width={56} height={56} unoptimized className="h-14 w-14 rounded-full object-cover" />
           ) : (
-            <AvatarIllustration tone={tone} className="h-14 w-14 rounded-full" />
+            <AvatarIllustration name={other.full_name} className="h-14 w-14 rounded-full" />
           )}
         </Link>
         <div className="min-w-0 flex-1">

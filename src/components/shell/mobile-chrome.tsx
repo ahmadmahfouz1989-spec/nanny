@@ -8,7 +8,8 @@ import { lastCategory } from "@/lib/last-category";
 import BrandMark from "@/components/brand-mark";
 import SettingsRows from "@/components/settings-rows";
 import CategoryIcon from "@/components/category-icon";
-import { BellIcon, BoxIcon, ProfileIcon, UsersIcon } from "@/components/nav-icons";
+import AvatarIllustration from "@/components/illustrations/avatar-illustration";
+import { BellIcon, BoxIcon, UsersIcon } from "@/components/nav-icons";
 import {
   BookmarkIcon,
   BriefcaseIcon,
@@ -91,14 +92,7 @@ function Avatar({ me, size }: { me: ShellMe | null; size: number }) {
       />
     );
   }
-  return (
-    <span
-      className="flex shrink-0 items-center justify-center rounded-full bg-primary-soft text-primary"
-      style={{ width: size, height: size }}
-    >
-      <ProfileIcon className="h-1/2 w-1/2" />
-    </span>
-  );
+  return <AvatarIllustration name={me?.name} className="shrink-0 rounded-full" style={{ width: size, height: size }} />;
 }
 
 /** Logo, wordmark and tagline -- the top of Home and of the menu. */
@@ -376,7 +370,7 @@ export function MobileHeader({
           <Link
             href="/feed?compose=1"
             onClick={close}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 font-semibold text-white shadow-sm transition hover:bg-primary-hover active:scale-[0.98]"
+            className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 font-semibold text-on-primary shadow-sm transition hover:bg-primary-hover active:scale-[0.98]"
           >
             <SendIcon className="h-5 w-5 rtl:scale-x-[-1]" />
             {tm("postRequest")}
@@ -406,7 +400,7 @@ export function NotificationsTabItem({ active, className }: { active: boolean; c
       <span className="relative">
         <BellIcon className="h-[22px] w-[22px]" fill={active ? "currentColor" : "none"} />
         {unread > 0 && (
-          <span className="absolute -top-1 -end-1.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-white text-[10px] font-semibold">
+          <span className="absolute -top-1 -end-1.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-on-primary text-[10px] font-semibold">
             {unread > 9 ? "9+" : unread}
           </span>
         )}

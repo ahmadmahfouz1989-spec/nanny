@@ -45,7 +45,7 @@ export default async function PublicProfileView({ profile, locale }: { profile: 
                 <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-transparent" />
               </>
             ) : (
-              <AvatarIllustration tone="primary" banner className="h-44 w-full" />
+              <AvatarIllustration name={profile.fullName} banner className="h-44 w-full" />
             )}
             <div className="absolute bottom-0 start-0 end-0 p-4">
               <h1 className="font-display text-2xl font-bold text-white drop-shadow">

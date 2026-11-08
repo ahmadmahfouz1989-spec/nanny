@@ -73,7 +73,7 @@ export default async function NewOrderPage({
     .maybeSingle();
 
   return (
-    <AppShell active="errands">
+    <AppShell active="orders">
       <NewOrderForm prefill={prefill} needsName={!named && !account?.full_name} userId={user!.id} />
     </AppShell>
   );

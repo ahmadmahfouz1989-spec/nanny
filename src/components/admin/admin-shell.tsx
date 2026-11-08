@@ -36,6 +36,10 @@ function isActive(pathname: string, href: string) {
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const t = useTranslations("Admin");
   const pathname = usePathname();
+  // On a phone, the open page's tab in view (it can sit past the edge).
+  useEffect(() => {
+    document.querySelector('[data-admin-tabs] [aria-current="page"]')?.scrollIntoView({ block: "nearest", inline: "nearest" });
+  }, [pathname]);
   const [counts, setCounts] = useState<{ pending: number; reports: number } | null>(null);
 
   // Re-read on navigation, so a queue badge drops as soon as an admin has
@@ -67,7 +71,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
 
   const badge = (count: number | undefined) =>
     count ? (
-      <span className="ms-auto rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-white tabular-nums">
+      <span className="ms-auto rounded-full bg-primary px-2 py-0.5 text-[11px] font-semibold text-on-primary tabular-nums">
         {count > 99 ? "99+" : count}
       </span>
     ) : null;
@@ -132,7 +136,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                 <SignOutButton />
               </div>
             </div>
-            <nav className="flex gap-1 overflow-x-auto px-3 pb-2" aria-label={t("adminBadge")}>
+            {/* Fades out at the end: more tabs scroll in from there. The open
+                one is scrolled into view (AdminTabsScroll). */}
+            <nav
+              data-admin-tabs
+              className="flex gap-1 overflow-x-auto px-3 pb-2 pe-10 [mask-image:linear-gradient(to_right,black_85%,transparent)] rtl:[mask-image:linear-gradient(to_left,black_85%,transparent)]"
+              aria-label={t("adminBadge")}
+            >
               {items.map(({ href, label, count }) => {
                 const active = isActive(pathname, href);
                 return (
@@ -146,7 +156,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
                   >
                     {label}
                     {count ? (
-                      <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-white tabular-nums">
+                      <span className="rounded-full bg-primary px-1.5 text-[10px] font-semibold text-on-primary tabular-nums">
                         {count > 99 ? "99+" : count}
                       </span>
                     ) : null}

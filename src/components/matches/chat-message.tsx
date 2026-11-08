@@ -40,7 +40,7 @@ export default function ChatMessage({
         dir="auto"
         className={`max-w-[85%] sm:max-w-md rounded-2xl text-sm ${
           m.audio_path ? "p-2" : "px-3.5 py-2"
-        } ${own ? "self-end bg-primary text-white" : "self-start bg-surface-sunken text-ink"}`}
+        } ${own ? "self-end bg-primary text-on-primary" : "self-start bg-surface-sunken text-ink"}`}
       >
         {m.audio_path ? (
           m.audioUrl ? (

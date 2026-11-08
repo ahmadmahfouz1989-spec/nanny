@@ -20,12 +20,12 @@ function localizedLocationName(loc: { name_en: string; name_ar: string; name_fr:
 
 export default function SavedProfileCard({
   item,
-  tone,
   onRemoved,
   onRestored,
 }: {
   item: SavedListItem;
-  tone: "primary" | "secondary" | "berry";
+  /** No longer used: avatars take their colour from the name. */
+  tone?: "primary" | "secondary" | "berry";
   onRemoved: (item: SavedListItem) => void;
   onRestored: (item: SavedListItem) => void;
 }) {
@@ -101,7 +101,7 @@ export default function SavedProfileCard({
         {profile.photoUrl ? (
           <Image src={profile.photoUrl} alt="" width={640} height={160} unoptimized className="h-28 w-full object-cover" />
         ) : (
-          <AvatarIllustration tone={tone} banner className="h-28 w-full" />
+          <AvatarIllustration name={profile.displayName} banner className="h-28 w-full" />
         )}
         {profile.photoUrl && <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/0 to-transparent" />}
         {match && (

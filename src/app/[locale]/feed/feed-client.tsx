@@ -41,6 +41,18 @@ export default function FeedClient({
   const tDiscover = useTranslations("Discover");
 
   const [posts, setPosts] = useState<Post[] | null>(null);
+  // The floating "+" only once the post box is out of sight: the two
+  // shouldn't sit on the screen together.
+  const [composerInView, setComposerInView] = useState(true);
+  // The box renders with the first page of posts.
+  const loaded = posts !== null;
+  useEffect(() => {
+    const box = document.getElementById(POST_COMPOSER_INPUT_ID);
+    if (!box || typeof IntersectionObserver === "undefined") return;
+    const seen = new IntersectionObserver(([entry]) => setComposerInView(!!entry?.isIntersecting));
+    seen.observe(box);
+    return () => seen.disconnect();
+  }, [loaded]);
   // The first page failed to arrive (offline, dropped connection).
   const [loadFailed, setLoadFailed] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
@@ -473,7 +485,7 @@ export default function FeedClient({
         <button
           type="button"
           onClick={showIncoming}
-          className="fixed inset-x-0 mx-auto z-20 w-max top-[calc(4.25rem+env(safe-area-inset-top))] sm:top-6 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white shadow-lg transition active:scale-95"
+          className="fixed inset-x-0 mx-auto z-20 w-max top-[calc(4.25rem+env(safe-area-inset-top))] sm:top-6 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-semibold text-on-primary shadow-lg transition active:scale-95"
         >
           <span aria-hidden>↑</span>
           {t("newPostsPill", { count: incoming.length })}
@@ -484,15 +496,15 @@ export default function FeedClient({
       {!adminMode && <div aria-hidden className="h-20 sm:hidden" />}
 
       {/* X's floating compose button, on the phone: back to the top and
-          straight into the new-post box. */}
-      {!adminMode && (
+          straight into the new-post box -- once that box is scrolled away. */}
+      {!adminMode && !composerInView && (
         <button
           type="button"
           onClick={() => {
             openComposer();
           }}
           aria-label={t("newPost")}
-          className="sm:hidden fixed end-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom))] inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-white shadow-lg transition active:scale-95"
+          className="sm:hidden fixed end-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom))] inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg transition active:scale-95"
         >
           <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />

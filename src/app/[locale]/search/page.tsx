@@ -142,7 +142,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
 function PersonRow({ person, verifiedLabel }: { person: PersonResult; verifiedLabel: string }) {
   return (
     <Link href={`/u/${person.id}`} className="flex items-start gap-3 p-4 transition hover:bg-surface-sunken">
-      <Avatar photoUrl={person.photoUrl} size={48} />
+      <Avatar photoUrl={person.photoUrl} name={person.fullName} size={48} />
       <span className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="inline-flex items-center gap-1 font-semibold text-ink">
           {person.fullName}
@@ -166,7 +166,7 @@ function PersonRow({ person, verifiedLabel }: { person: PersonResult; verifiedLa
 function PostRow({ post, lookingFor, offering }: { post: PostResult; lookingFor: string; offering: string }) {
   return (
     <Link href={`/feed?post=${post.id}`} className="flex items-start gap-3 p-4 transition hover:bg-surface-sunken">
-      <Avatar photoUrl={post.authorPhotoUrl} size={40} />
+      <Avatar photoUrl={post.authorPhotoUrl} name={post.authorName} size={40} />
       <span className="flex min-w-0 flex-1 flex-col gap-1">
         <span className="flex flex-wrap items-center gap-1.5 text-sm">
           <span className="font-semibold text-ink">{post.authorName}</span>

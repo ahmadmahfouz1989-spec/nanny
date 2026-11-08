@@ -220,7 +220,7 @@ function AskedList({ order }: { order: OrderView }) {
         {order.asked.map((p) => (
           <li key={p.profileId}>
             <Link href={`/u/${p.profileId}`} className="flex items-center gap-3 py-2.5">
-              <Avatar photoUrl={p.photoUrl} size={40} />
+              <Avatar photoUrl={p.photoUrl} name={p.name} size={40} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-medium text-ink">{p.name}</span>
                 <span className="block text-xs text-muted">
@@ -243,7 +243,7 @@ function PersonCard({ title, person, matchId, rate = false }: { title: string; p
   return (
     <div className={ui.card + " p-4"}>
       <div className="flex items-center gap-3">
-        <Avatar photoUrl={person.photoUrl} size={48} />
+        <Avatar photoUrl={person.photoUrl} name={person.name} size={48} />
         <div className="min-w-0 flex-1">
           <p className="text-xs text-muted">{title}</p>
           <p className="truncate font-semibold text-ink">{person.name}</p>
@@ -355,7 +355,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
         ) : (
           offers.map((o) => (
             <div key={o.recipientId} className={ui.card + " flex items-center gap-3 p-4"}>
-              <Avatar photoUrl={o.photoUrl} size={44} />
+              <Avatar photoUrl={o.photoUrl} name={o.name} size={44} />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-ink">{o.name}</p>
                 <p className="text-xs text-muted">
