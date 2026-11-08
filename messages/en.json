@@ -2632,7 +2632,17 @@
     "locationOn": "📍 Using your location: orders near you reach you first.",
     "locationStop": "Stop sharing",
     "reachSome": "{count, plural, one {1 rider is} other {# riders are}} available near this pickup.",
-    "reachNone": "No rider is available near this pickup right now. You can still send it, and we'll tell you if nobody takes it. Or choose a rider below."
+    "reachNone": "No rider is available near this pickup right now. You can still send it, and we'll tell you if nobody takes it. Or choose a rider below.",
+    "trackingOn": "The customer can see where you are on the map until you deliver. Keep this page open while you ride.",
+    "trackingDenied": "Location is blocked, so the customer can't follow you on the map. Allow it for ouiKnow in your phone's settings.",
+    "trackingUnavailable": "Couldn't get your location, so the customer can't follow you on the map. Check that location is on.",
+    "trackingLive": "{name} is on the way",
+    "trackingToPickup": "{name} is about {km} km from the pickup",
+    "trackingToDropoff": "{name} is about {km} km from the drop-off",
+    "trackingAtPickup": "{name} is at the pickup",
+    "trackingAtDropoff": "{name} is at the drop-off",
+    "trackingSecondsAgo": "updated {n} s ago",
+    "trackingMinutesAgo": "updated {n} min ago"
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

@@ -240,6 +240,18 @@ isOneToOne: false
                     "day"?: string,"elements"?: number
                   }
                   Relationships: []
+                },"errand_order_tracking": {
+                  Row: {
+                    "accuracy_m": number | null,"lat": number,"lng": number,"located_at": string,"order_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "accuracy_m"?: number | null,"lat": number,"lng": number,"located_at"?: string,"order_id": string
+                  }
+                  Update: {
+                    "accuracy_m"?: number | null,"lat"?: number,"lng"?: number,"located_at"?: string,"order_id"?: string
+                  }
+                  Relationships: []
                 },"rider_locations": {
                   Row: {
                     "lat": number,"lng": number,"located_at": string,"profile_id": string

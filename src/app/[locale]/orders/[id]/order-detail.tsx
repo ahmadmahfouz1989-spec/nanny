@@ -6,6 +6,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import RatingButton from "@/components/matches/rating-button";
+import LiveTracking from "@/components/orders/live-tracking";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
 import {
   Countdown,
@@ -180,7 +181,22 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       </div>
 
       {/* From and To (or Where), with the map and directions. */}
-      <OrderPlaces pickup={order.pickup} dropoff={order.dropoff} route={order.route} job={order.category === "maintenance"} rider={order.viewer === "provider"} />
+      <OrderPlaces
+        pickup={order.pickup}
+        dropoff={order.dropoff}
+        route={order.route}
+        job={order.category === "maintenance"}
+        rider={order.viewer === "provider"}
+        live={
+          order.riderAt && order.provider
+            ? { ...order.riderAt, name: order.provider.name.split(" ")[0] || order.provider.name, toward: order.status === "picked_up" ? "dropoff" : "pickup" }
+            : null
+        }
+      />
+      {/* The rider doing it: their position goes to the customer while it's in progress. */}
+      {order.assignedToMe && order.category === "errands" && ["accepted", "on_the_way", "arrived", "picked_up"].includes(order.status) && (
+        <LiveTracking orderId={order.id} />
+      )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
 

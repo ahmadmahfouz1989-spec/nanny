@@ -99,6 +99,8 @@ export type OrderView = {
   cancelReason: string | null;
   /** The conversation, once confirmed. */
   matchId: string | null;
+  /** Customer and admin, during a delivery: where the rider was a moment ago. */
+  riderAt: { lat: number; lng: number; at: string; accuracyM: number | null } | null;
   /** Provider view: this order was given to the viewer. */
   assignedToMe: boolean;
   customer: OrderPerson | null;
@@ -180,7 +182,17 @@ async function photoLinks(db: Admin, paths: string[]): Promise<string[]> {
   return (data ?? []).map((d) => d.signedUrl).filter((u): u is string => !!u);
 }
 
+/** A rider position older than this isn't shown: they've closed the app. */
+const TRACKING_FRESH_MS = 5 * 60_000;
+
 export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, viewerUserId: string): Promise<OrderView> {
+  // The rider on the map: only for the customer (and admins), only mid-delivery.
+  const tracked = order.category === "errands" && ["accepted", "on_the_way", "arrived", "picked_up"].includes(order.status) && (viewer === "admin" || order.seeker_user_id === viewerUserId);
+  const { data: track } = tracked ? await db.from("errand_order_tracking").select("lat, lng, accuracy_m, located_at").eq("order_id", order.id).maybeSingle() : { data: null };
+  const riderAt =
+    track && Date.now() - Date.parse(track.located_at) < TRACKING_FRESH_MS
+      ? { lat: track.lat, lng: track.lng, at: track.located_at, accuracyM: track.accuracy_m }
+      : null;
   const [{ data: recipients }, { data: events }, names] = await Promise.all([
     db.from("errand_order_recipients").select("*").eq("order_id", order.id).order("rank"),
     db.from("errand_order_events").select("type, actor_role, detail, created_at").eq("order_id", order.id).order("id"),
@@ -291,6 +303,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     cancelReason: order.cancel_reason,
     // The chat is only for the two people on the order.
     matchId: viewer === "admin" || order.provider_user_id === viewerUserId || order.seeker_user_id === viewerUserId ? order.generic_match_id : null,
+    riderAt,
     assignedToMe: order.provider_user_id === viewerUserId,
     // Providers sent the order see what's asked and where, not who: the
     // customer's name and photo go only to the one doing it. Nor does a
