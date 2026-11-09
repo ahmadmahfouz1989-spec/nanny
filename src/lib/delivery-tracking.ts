@@ -52,7 +52,7 @@ async function start(next: Active) {
   setState("starting");
   if (hasBackgroundLocation()) {
     nativeWatch = await watchBackgroundLocation(notice, onLocation, () => setState("denied")).catch(() => null);
-    if (!nativeWatch) setState("unavailable");
+    if (!nativeWatch && state !== "denied") setState("unavailable");
     return;
   }
   if (!navigator.geolocation) return setState("unavailable");

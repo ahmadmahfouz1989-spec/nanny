@@ -43,6 +43,8 @@ type BackgroundGeolocationPlugin = {
   ): Promise<string>;
   removeWatcher(o: { id: string }): Promise<void>;
   openSettings(): Promise<void>;
+  checkPermissions?(): Promise<{ location?: PermissionState }>;
+  requestPermissions?(): Promise<{ location?: PermissionState }>;
 };
 type HttpPlugin = {
   post(o: { url: string; headers?: Record<string, string>; data?: unknown }): Promise<{ status: number; data: unknown }>;
@@ -262,8 +264,20 @@ export async function watchBackgroundLocation(
   onLocation: (l: { lat: number; lng: number; accuracy: number }) => void,
   onDenied: () => void,
 ): Promise<string | null> {
-  const plugin = capacitor()?.Plugins.BackgroundGeolocation;
+  const cap = capacitor();
+  const plugin = cap?.Plugins.BackgroundGeolocation;
   if (!plugin) return null;
+  // Android: ask first. Left to addWatcher, the plugin starts its location
+  // service before the answer (Android refuses it) and never hears the answer,
+  // so nothing is sent until the app is reopened.
+  if (cap?.getPlatform() === "android" && plugin.requestPermissions) {
+    let { location } = (await plugin.checkPermissions?.().catch(() => null)) ?? {};
+    if (location !== "granted") ({ location } = (await plugin.requestPermissions().catch(() => null)) ?? {});
+    if (location !== "granted") {
+      onDenied();
+      return null;
+    }
+  }
   return plugin.addWatcher(
     { backgroundTitle: notice.title, backgroundMessage: notice.message, requestPermissions: true, stale: false, distanceFilter: 25 },
     (location, error) => {
