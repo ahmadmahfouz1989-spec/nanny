@@ -4,11 +4,14 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
 import { BUSY_STATUSES, type OrderStatus } from "@/lib/errand-orders";
+import { readTrackingToken } from "@/lib/tracking-token";
 
 const bodySchema = z.object({
   lat: z.number().min(-90).max(90),
   lng: z.number().min(-180).max(180),
   accuracy: z.number().min(0).max(100_000).optional(),
+  // From the apps in the background: the delivery's tracking key instead of the login cookie.
+  token: z.string().max(300).optional(),
 });
 
 /**
@@ -19,15 +22,19 @@ const bodySchema = z.object({
  */
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const user = await requireActiveUser(supabase);
-  if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "lat and lng are required" }, { status: 400 });
+  // Who's sending: the tracking key (apps, in the background) or the login.
+  let userId = parsed.data.token ? readTrackingToken(parsed.data.token, id) : null;
+  if (!userId) {
+    const user = await requireActiveUser(await createClient());
+    if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
+    userId = user.id;
+  }
 
   const db = createAdminClient();
   const { data: order } = await db.from("errand_orders").select("provider_user_id, status, category").eq("id", id).maybeSingle();
-  if (!order || order.provider_user_id !== user.id || order.category !== "errands") return NextResponse.json({ error: "Not your delivery" }, { status: 403 });
+  if (!order || order.provider_user_id !== userId || order.category !== "errands") return NextResponse.json({ error: "Not your delivery" }, { status: 403 });
   if (!BUSY_STATUSES.includes(order.status as OrderStatus)) return NextResponse.json({ ok: false, reason: "not_active" });
 
   const { error } = await db.from("errand_order_tracking").upsert({

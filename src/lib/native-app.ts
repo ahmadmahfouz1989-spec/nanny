@@ -34,6 +34,20 @@ type AppleSignInPlugin = {
   }>;
 };
 
+type BgLocation = { latitude: number; longitude: number; accuracy: number; time: number | null };
+type BgError = { code?: string; message?: string };
+type BackgroundGeolocationPlugin = {
+  addWatcher(
+    options: { backgroundTitle?: string; backgroundMessage?: string; requestPermissions?: boolean; stale?: boolean; distanceFilter?: number },
+    callback: (location?: BgLocation, error?: BgError) => void,
+  ): Promise<string>;
+  removeWatcher(o: { id: string }): Promise<void>;
+  openSettings(): Promise<void>;
+};
+type HttpPlugin = {
+  post(o: { url: string; headers?: Record<string, string>; data?: unknown }): Promise<{ status: number; data: unknown }>;
+};
+
 type CapacitorGlobal = {
   isNativePlatform(): boolean;
   getPlatform(): "ios" | "android" | "web";
@@ -43,6 +57,8 @@ type CapacitorGlobal = {
     Browser?: BrowserPlugin;
     Haptics?: HapticsPlugin;
     SignInWithApple?: AppleSignInPlugin;
+    BackgroundGeolocation?: BackgroundGeolocationPlugin;
+    CapacitorHttp?: HttpPlugin;
   };
 };
 
@@ -227,4 +243,54 @@ export function listenForNativeEvents() {
     // eslint-disable-next-line @next/next/no-location-assign-relative-destination
     window.location.href = `${window.location.origin}/auth/callback${query}`;
   });
+}
+
+// -- Background location (a delivery in progress) ---------------------------
+
+/** App builds with background location (1.2+); older ones and browsers don't. */
+export function hasBackgroundLocation() {
+  return !!capacitor()?.Plugins.BackgroundGeolocation;
+}
+
+/**
+ * Watches the phone's location even with the app in the background (Android
+ * shows `title`/`message` as an ongoing notification; iPhone shows the blue
+ * location indicator). Returns the watcher's id, or null without the plugin.
+ */
+export async function watchBackgroundLocation(
+  notice: { title: string; message: string },
+  onLocation: (l: { lat: number; lng: number; accuracy: number }) => void,
+  onDenied: () => void,
+): Promise<string | null> {
+  const plugin = capacitor()?.Plugins.BackgroundGeolocation;
+  if (!plugin) return null;
+  return plugin.addWatcher(
+    { backgroundTitle: notice.title, backgroundMessage: notice.message, requestPermissions: true, stale: false, distanceFilter: 25 },
+    (location, error) => {
+      if (error) {
+        if (error.code === "NOT_AUTHORIZED") onDenied();
+        return;
+      }
+      if (location) onLocation({ lat: location.latitude, lng: location.longitude, accuracy: location.accuracy });
+    },
+  );
+}
+
+export async function stopBackgroundLocation(id: string) {
+  await capacitor()?.Plugins.BackgroundGeolocation?.removeWatcher({ id }).catch(() => {});
+}
+
+/**
+ * A JSON POST that keeps working with the app in the background: through the
+ * native connection in the apps (Android slows the web view's own requests
+ * after a few minutes in the background), a normal fetch elsewhere.
+ */
+export async function postJson(url: string, body: unknown): Promise<unknown> {
+  const http = capacitor()?.Plugins.CapacitorHttp;
+  if (http) {
+    const res = await http.post({ url: new URL(url, window.location.origin).toString(), headers: { "Content-Type": "application/json" }, data: body });
+    return res.data;
+  }
+  const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return res.json().catch(() => null);
 }

@@ -1,53 +1,28 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-
-const SEND_EVERY_MS = 15_000;
+import { TRACKING_CHECK_EVENT, TRACKING_STATE_EVENT, trackingState, type TrackingState } from "@/lib/delivery-tracking";
+import { hasBackgroundLocation } from "@/lib/native-app";
 
 /**
- * On the rider's own order page while the delivery is in progress: where
- * their phone is, sent every 15 s so the customer can follow them on the
- * map. Only while this page is open (a website can't track in the
- * background); stops by itself once the order is delivered.
+ * On the rider's own order page while the delivery is in progress: tells
+ * them the customer can see where they are, or why not. The sending itself
+ * is DeliveryTracker's, in the app frame, so it carries on across pages
+ * (and, in the apps, in the background).
  */
 export default function LiveTracking({ orderId }: { orderId: string }) {
   const t = useTranslations("Orders");
-  const [state, setState] = useState<"starting" | "on" | "denied" | "unavailable">("starting");
-  const lastSent = useRef(0);
-  const latest = useRef<GeolocationPosition | null>(null);
-
+  const [state, setState] = useState<TrackingState>(() => (trackingState().orderId === orderId ? trackingState().state : "starting"));
   useEffect(() => {
-    if (typeof navigator === "undefined" || !navigator.geolocation) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setState("unavailable");
-      return;
-    }
-    const send = (pos: GeolocationPosition) => {
-      lastSent.current = Date.now();
-      void fetch(`/api/errand-orders/${orderId}/location`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
-      }).catch(() => {});
+    const on = (e: Event) => {
+      const d = (e as CustomEvent<{ state: TrackingState; orderId: string | null }>).detail;
+      if (d.orderId === orderId || d.state === "off") setState(d.orderId === orderId ? d.state : "starting");
     };
-    const watch = navigator.geolocation.watchPosition(
-      (pos) => {
-        latest.current = pos;
-        setState("on");
-        if (Date.now() - lastSent.current >= SEND_EVERY_MS) send(pos);
-      },
-      (e) => setState(e.code === e.PERMISSION_DENIED ? "denied" : "unavailable"),
-      { enableHighAccuracy: true, maximumAge: 10_000, timeout: 30_000 },
-    );
-    // Standing still sends no new positions: keep the customer's map fresh anyway.
-    const timer = setInterval(() => {
-      if (latest.current && Date.now() - lastSent.current >= SEND_EVERY_MS) send(latest.current);
-    }, SEND_EVERY_MS);
-    return () => {
-      navigator.geolocation.clearWatch(watch);
-      clearInterval(timer);
-    };
+    window.addEventListener(TRACKING_STATE_EVENT, on);
+    // Just confirmed: start now rather than at the next check.
+    window.dispatchEvent(new Event(TRACKING_CHECK_EVENT));
+    return () => window.removeEventListener(TRACKING_STATE_EVENT, on);
   }, [orderId]);
 
   if (state === "denied" || state === "unavailable") {
@@ -56,7 +31,7 @@ export default function LiveTracking({ orderId }: { orderId: string }) {
   return (
     <p className="flex items-start gap-2 rounded-2xl bg-secondary-soft/60 px-4 py-3 text-sm text-ink">
       <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${state === "on" ? "bg-success" : "bg-muted"}`} />
-      {t("trackingOn")}
+      {hasBackgroundLocation() ? t("trackingOnApp") : t("trackingOn")}
     </p>
   );
 }

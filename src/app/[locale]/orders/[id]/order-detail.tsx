@@ -7,6 +7,7 @@ import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import RatingButton from "@/components/matches/rating-button";
 import LiveTracking from "@/components/orders/live-tracking";
+import { TRACKING_CHECK_EVENT } from "@/lib/delivery-tracking";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
 import {
   Countdown,
@@ -101,6 +102,8 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       return true;
     }
     await load();
+    // Confirming starts the live location; delivering or dropping ends it.
+    window.dispatchEvent(new Event(TRACKING_CHECK_EVENT));
     return true;
   }
 

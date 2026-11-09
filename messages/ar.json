@@ -2642,7 +2642,10 @@
     "trackingAtPickup": "{name} وصل لمكان الاستلام",
     "trackingAtDropoff": "{name} وصل لمكان التسليم",
     "trackingSecondsAgo": "من {n} ثانية",
-    "trackingMinutesAgo": "من {n} دقيقة"
+    "trackingMinutesAgo": "من {n} دقيقة",
+    "trackingNoticeTitle": "عم نشارك موقعك",
+    "trackingNoticeBody": "الزبون بيشوف وينك لحتى توصّل الطلب.",
+    "trackingOnApp": "الزبون فيه يشوف وينك عالخريطة لحتى توصّل الطلب، حتى لو فتحت Maps أو سكّرت التلفون."
   },
   "PublicProfile": {
     "serviceIn": "{service} في {place}",

@@ -2642,7 +2642,10 @@
     "trackingAtPickup": "{name} is at the pickup",
     "trackingAtDropoff": "{name} is at the drop-off",
     "trackingSecondsAgo": "updated {n} s ago",
-    "trackingMinutesAgo": "updated {n} min ago"
+    "trackingMinutesAgo": "updated {n} min ago",
+    "trackingNoticeTitle": "Sharing your location",
+    "trackingNoticeBody": "The customer sees where you are until you deliver.",
+    "trackingOnApp": "The customer can see where you are on the map until you deliver, even if you switch to Maps or lock your phone."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

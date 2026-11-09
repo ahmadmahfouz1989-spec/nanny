@@ -40,7 +40,9 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Take a profile photo, a photo of your work, or a photo to send in a message.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Use your current location as the pickup or drop-off place of a delivery, only when you tap "Use my current location".</string>
+	<string>Use your current location as the pickup or drop-off of a delivery, and, while you're doing a delivery, show the customer where you are until it's delivered.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>While you're doing a delivery, the customer sees where you are until it's delivered, even if you switch to another app such as Maps. Tracking stops when the delivery ends.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record voice messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
@@ -66,6 +68,7 @@
 	</dict>
 	<key>UIBackgroundModes</key>
 	<array>
+		<string>location</string>
 		<string>remote-notification</string>
 	</array>
 	<key>UILaunchStoryboardName</key>

@@ -17,6 +17,11 @@ const config: CapacitorConfig = {
     allowNavigation: ["oui-know.com", "www.oui-know.com"],
     errorPath: "index.html",
   },
+  android: {
+    // Background location (deliveries in progress): without it, Android
+    // stops location updates after 5 minutes in the background.
+    useLegacyBridge: true,
+  },
   ios: {
     contentInset: "never",
     limitsNavigationsToAppBoundDomains: false,

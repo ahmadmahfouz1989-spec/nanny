@@ -18,6 +18,7 @@ import PullToRefresh from "@/components/shell/pull-to-refresh";
 import { ToastProvider } from "@/components/toast-provider";
 import { SavedProfilesProvider } from "@/components/saved-profiles-provider";
 import RiderLocation from "@/components/orders/rider-location";
+import DeliveryTracker from "@/components/orders/delivery-tracker";
 import InstallPrompt from "@/components/install-prompt";
 import PushSync from "@/components/push-sync";
 import PushPrompt from "@/components/push-prompt";
@@ -239,6 +240,7 @@ export default async function AppShell({
 
             <MobileHeader me={me} services={services} region={region} orders={hasOrders} />
             {rider && <RiderLocation available={!!rider.available_now} />}
+            {rider && <DeliveryTracker />}
             <HideOnScroll />
             <PullToRefresh />
 
