@@ -1425,7 +1425,8 @@
     "serviceLabel": "خدمة:",
     "providerTitleHave": "إنت عم تقدّم مساعدة",
     "providerBodyHave": "شوف مين عم يدوّر على اللي بتعمله.",
-    "providerCtaHave": "تطابقاتي"
+    "providerCtaHave": "تطابقاتي",
+    "verified": "موثّق"
   },
   "ErrandServices": {
     "delivery": "توصيل واستلام أغراض",

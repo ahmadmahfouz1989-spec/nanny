@@ -1,7 +1,7 @@
 import { afterAll, describe, expect, it, vi } from "vitest";
 import { createClient } from "@supabase/supabase-js";
 import { browseProviders } from "@/lib/public-browse";
-import { search } from "@/lib/search";
+import { search, suggestNames } from "@/lib/search";
 import { admin, cleanupUsers, createProfile, createUser, governorateId, NANNY_PROVIDER, NANNY_SEEKER } from "./helpers";
 
 // search() reads the categories through the request's own client (cookies),
@@ -77,6 +77,20 @@ describe("browsing without an account", () => {
     expect((await search("khoury zzrana", area!.id, null, "en")).offering.map((p) => p.fullName)).toEqual(["Zzrana Khoury"]);
     expect((await search("زاية", area!.id, null, "en")).offering.map((p) => p.fullName)).toEqual(["زآية خوري"]);
     expect((await search("Zzfarword", area!.id, null, "en")).offering).toEqual([]);
+  });
+
+  it("suggests people by name as it's typed: providers once each, only names, never seekers for a visitor", async () => {
+    const [both, seeker, mention] = await Promise.all([createUser("suggest-both"), createUser("suggest-seeker"), createUser("suggest-mention")]);
+    await createProfile(both, "tutoring", "provider", {}, { fullName: "Zzsuggest Haddad" });
+    await createProfile(both, "nursing", "provider", {}, { fullName: "Zzsuggest Haddad" });
+    await createProfile(seeker, "tutoring", "seeker", {}, { fullName: "Zzsuggest Seeker" });
+    await createProfile(mention, "tutoring", "provider", { shortIntro: "Works with Zzsuggest" }, { fullName: "Other Name" });
+    // Profiles made here skip the save that writes their search text; a full search fills it in.
+    await search("zzsuggest", null, null, "en");
+
+    expect((await suggestNames("zzsugg", null, "en")).map((p) => p.fullName)).toEqual(["Zzsuggest Haddad"]);
+    expect((await suggestNames("haddad zzsuggest", null, "en")).map((p) => p.fullName)).toEqual(["Zzsuggest Haddad"]);
+    expect(await suggestNames("z", null, "en")).toEqual([]);
   });
 
   it("gives a visitor's own database access no profiles or posts", async () => {

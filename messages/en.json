@@ -1425,7 +1425,8 @@
     "serviceLabel": "Service:",
     "providerTitleHave": "You're offering help",
     "providerBodyHave": "See who's looking for what you do.",
-    "providerCtaHave": "My matches"
+    "providerCtaHave": "My matches",
+    "verified": "Verified"
   },
   "ErrandServices": {
     "delivery": "Delivery & Pickup",

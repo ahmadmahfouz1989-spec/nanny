@@ -51,6 +51,90 @@ function about(a: Record<string, unknown>): string | null {
   return null;
 }
 
+type Reader = Awaited<ReturnType<typeof createClient>> | ReturnType<typeof createAdminClient>;
+
+/**
+ * Reads profiles the way the viewer may see them: approved, active, in a
+ * live service, never their own. Signed out (`userId` null): providers with
+ * their public page on, read on the server (visitors can't read profiles
+ * themselves).
+ */
+async function profileReader(userId: string | null) {
+  const visitor = userId === null;
+  const supabase: Reader = visitor ? createAdminClient() : await createClient();
+  const categories = (await getCategories()).filter((c) => c.status === "live");
+
+  const visibleProfiles = (role: "seeker" | "provider") => {
+    const q = supabase
+      .from("generic_profiles")
+      .select("id, user_id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
+      .eq("role", role)
+      .eq("status", "active")
+      .eq("moderation_status", "approved")
+      .in("category_id", categories.map((c) => c.id));
+    return visitor ? q.eq("public_page", true) : q.neq("user_id", userId);
+  };
+
+  /** Profiles whose name holds every word, anywhere in Lebanon. */
+  const named = (role: "seeker" | "provider", words: string[], limit: number) => {
+    let q = visibleProfiles(role);
+    // The name is what comes before search_text's first separator, already
+    // normalised like the words, so "اية" finds "آية".
+    for (const w of words) q = q.filter("search_text", "match", `^[^\\x01]*${w}`);
+    return q.order("created_at", { ascending: false }).limit(limit);
+  };
+
+  return { visitor, supabase, categories, visibleProfiles, named };
+}
+
+/**
+ * The database's own rule hides suspended accounts from signed-in viewers;
+ * read on the server for a visitor, it's done here.
+ */
+async function withoutSuspended<T extends { user_id: string }>(supabase: Reader, rows: T[]): Promise<T[]> {
+  if (!rows.length) return rows;
+  const { data: suspended } = await supabase
+    .from("users")
+    .select("id")
+    .in("id", rows.map((p) => p.user_id))
+    .eq("status", "suspended");
+  const out = new Set((suspended ?? []).map((u) => u.id));
+  return rows.filter((p) => !out.has(p.user_id));
+}
+
+export type NameSuggestion = { id: string; fullName: string; photoUrl: string | null; categoryName: string; verified: boolean };
+
+/**
+ * People whose name matches what's typed so far, for the list under Home's
+ * search box: providers first, verified first, each person once (someone
+ * offering two services shows under the first).
+ */
+export async function suggestNames(query: string, userId: string | null, locale: string, limit = 5): Promise<NameSuggestion[]> {
+  const words = searchWords(query).map(safeWord).filter(Boolean);
+  if (words.join("").length < 2) return [];
+  const { visitor, categories, named, supabase } = await profileReader(userId);
+  const none = Promise.resolve({ data: [] as never[] });
+  const [{ data: providers }, { data: seekers }] = await Promise.all([named("provider", words, limit * 2), visitor ? none : named("seeker", words, limit * 2)]);
+  const seen = new Set<string>();
+  let rows = [...(providers ?? []), ...(seekers ?? [])].filter((p) => !seen.has(p.user_id) && seen.add(p.user_id));
+  if (visitor) rows = await withoutSuspended(supabase, rows);
+  const verified = await featuredUserIds(rows.map((p) => p.user_id));
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return rows
+    .map((p) => {
+      const c = byId.get(p.category_id);
+      return {
+        id: p.id,
+        fullName: p.full_name,
+        photoUrl: p.profile_photo_url,
+        categoryName: c ? (locale === "ar" ? c.name_ar : c.name_en) : "",
+        verified: verified.has(p.user_id),
+      };
+    })
+    .sort((a, b) => Number(b.verified) - Number(a.verified))
+    .slice(0, limit);
+}
+
 /**
  * Home's search: approved profiles and open posts whose words contain
  * every word typed. A profile also matches on its category's own name and
@@ -71,15 +155,13 @@ export async function search(query: string, region: string | null, userId: strin
   const words = searchWords(query).map(safeWord).filter(Boolean);
   if (words.length === 0) return { offering: [], seeking: [], posts: [] };
 
-  const visitor = userId === null;
-  const supabase = visitor ? createAdminClient() : await createClient();
+  const { visitor, supabase, categories, visibleProfiles, named: byName } = await profileReader(userId);
   // The region is a governorate or a district (Home's area picker).
   const { data: regionRow } = region
     ? await supabase.from("locations").select("level, parent_location_id").eq("id", region).maybeSingle()
     : { data: null };
   const regionLevel = regionRow?.level ?? null;
   const regionParent = regionRow?.parent_location_id ?? null;
-  const categories = (await getCategories()).filter((c) => c.status === "live");
   // Profiles saved before search_text existed would otherwise never match.
   await Promise.all(categories.map((c) => fillMissingSearchText(c.id)));
 
@@ -87,24 +169,7 @@ export async function search(query: string, region: string | null, userId: strin
     categories.map((c) => [c.id, normalizeForSearch([c.name_en, c.name_ar, c.tagline_en, c.tagline_ar].join(" "))]),
   );
 
-  const visibleProfiles = (role: "seeker" | "provider") => {
-    const q = supabase
-      .from("generic_profiles")
-      .select("id, user_id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
-      .eq("role", role)
-      .eq("status", "active")
-      .eq("moderation_status", "approved")
-      .in("category_id", categories.map((c) => c.id));
-    return visitor ? q.eq("public_page", true) : q.neq("user_id", userId);
-  };
-
-  const named = (role: "seeker" | "provider") => {
-    let q = visibleProfiles(role);
-    // The name is what comes before search_text's first separator, already
-    // normalised like the words, so "اية" finds "آية".
-    for (const w of words) q = q.filter("search_text", "match", `^[^\\x01]*${w}`);
-    return q.order("created_at", { ascending: false }).limit(SEARCH_LIMIT);
-  };
+  const named = (role: "seeker" | "provider") => byName(role, words, SEARCH_LIMIT);
 
   const people = (role: "seeker" | "provider") => {
     let q = visibleProfiles(role);
@@ -147,15 +212,7 @@ export async function search(query: string, region: string | null, userId: strin
   const namesFirst = <T extends { id: string }>(byName: T[] | null, others: T[] | null) =>
     [...(byName ?? []), ...(others ?? []).filter((p) => !nameMatches.has(p.id))].slice(0, SEARCH_LIMIT);
   let shownProviders = namesFirst(namedProviders, providersRaw);
-  if (visitor && shownProviders.length) {
-    const { data: suspended } = await supabase
-      .from("users")
-      .select("id")
-      .in("id", shownProviders.map((p) => p.user_id))
-      .eq("status", "suspended");
-    const out = new Set((suspended ?? []).map((u) => u.id));
-    shownProviders = shownProviders.filter((p) => !out.has(p.user_id));
-  }
+  if (visitor) shownProviders = await withoutSuspended(supabase, shownProviders);
   const [providers, seekers] = await Promise.all([withPlaceNames(shownProviders), withPlaceNames(namesFirst(namedSeekers, seekersRaw))]);
 
   const byId = new Map(categories.map((c) => [c.id, c]));
