@@ -518,12 +518,12 @@ export default function FeedClient({
           onClick={() => {
             openComposer();
           }}
-          aria-label={t("newPost")}
-          className="sm:hidden fixed end-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom))] inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary shadow-lg transition active:scale-95"
+          className="sm:hidden fixed end-4 z-20 bottom-[calc(5rem+env(safe-area-inset-bottom))] inline-flex h-12 items-center justify-center gap-2 rounded-full bg-primary ps-4 pe-5 font-semibold text-on-primary shadow-lg transition active:scale-95"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
             <path d="M12 5v14M5 12h14" strokeLinecap="round" />
           </svg>
+          {t("newPost")}
         </button>
       )}
     </div>

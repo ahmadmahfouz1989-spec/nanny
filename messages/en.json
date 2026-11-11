@@ -119,7 +119,8 @@
     "announcements": "Announcements from ouiKnow",
     "actionAnnouncement": "Read the message",
     "profile_edited_live": "{name} edited their live profile. Check the change",
-    "errand_status_auto_offline": "You missed several requests in a row, so you're set to Offline: riders who are Available are asked first. Switch back when you're ready"
+    "errand_status_auto_offline": "You missed several requests in a row, so you're set to Offline: riders who are Available are asked first. Switch back when you're ready",
+    "emptyHint": "Replies, offers and updates on your orders will show up here."
   },
   "Push": {
     "title": "Push notifications",
@@ -861,7 +862,7 @@
   "Inbox": {
     "navLabel": "Messages",
     "title": "Messages",
-    "empty": "No conversations yet. Messages start from your matches: open one and tap Message.",
+    "empty": "No conversations yet. Find someone in any service and tap Message. Your number stays private.",
     "noMessagesYet": "No messages yet",
     "selectConversation": "Select a conversation to start chatting.",
     "menu": "More options",
@@ -870,7 +871,7 @@
     "noResults": "No conversations match \"{query}\"",
     "loading": "Loading conversations…",
     "loadError": "Couldn't load — check your connection and try again.",
-    "emptyAction": "Go to my matches"
+    "emptyAction": "Find someone"
   },
   "Report": {
     "action": "Report",
@@ -1400,13 +1401,8 @@
     "search": "Search names, services or posts…",
     "searchLabel": "Search for a service",
     "noResults": "No service matches “{query}” yet.",
-    "heroTitle": "From North Lebanon to South Lebanon",
-    "heroScript": "All services in one place",
-    "heroNote": "Your neighbour, near you",
     "browse": "Browse categories",
     "viewAll": "View all",
-    "more": "More services",
-    "comingSoon": "Coming soon",
     "trustVerified": "Every account confirmed",
     "trustReport": "Report anything, we review it",
     "trustFree": "100% free to use",
@@ -1426,7 +1422,10 @@
     "providerTitleHave": "You're offering help",
     "providerBodyHave": "See who's looking for what you do.",
     "providerCtaHave": "My matches",
-    "verified": "Verified"
+    "verified": "Verified",
+    "nearTitle": "People near you",
+    "nearIn": "In {place}",
+    "nearAll": "Across Lebanon"
   },
   "ErrandServices": {
     "delivery": "Delivery & Pickup",
@@ -2416,10 +2415,9 @@
   "Orders": {
     "title": "Orders & quotes",
     "subtitle": "Deliveries, errands and repair quotes from people near you.",
-    "newOrder": "New order",
+    "newOrder": "Delivery or errand",
     "myOrders": "My orders",
     "incoming": "Requests for me",
-    "noOrders": "No orders yet.",
     "noIncoming": "No requests right now. New orders near you will show up here.",
     "needRequestProfile": "To order, first fill in your short Delivery & Errands request — it takes a minute.",
     "prefilledHint": "We filled this in from your request — check the places and send it.",
@@ -2460,9 +2458,9 @@
     "asap": "As soon as possible",
     "scheduled": "Scheduled",
     "budget": "Budget in $ (optional)",
-    "placeOrder": "Send to providers near me",
+    "placeOrder": "Send to riders near me",
     "sendTo": "Send to",
-    "sendToNearest": "Nearest available riders",
+    "sendToNearest": "Riders near me",
     "sendToChosen": "A rider I choose",
     "chosenHint": "Only this rider gets your order. If they can't take it, Try again sends it to the nearest riders.",
     "ridersNeedPickup": "Choose the pickup first to see who's available.",
@@ -2533,8 +2531,8 @@
     "cancelledLine": "Cancelled",
     "deliveryTitle": "Delivery orders",
     "deliverySubtitle": "Order a delivery or an errand and get offers from providers near you.",
-    "newQuote": "Get quotes",
-    "quotesTitle": "Get quotes",
+    "newQuote": "Repair quote",
+    "quotesTitle": "Get a repair quote",
     "quotesSubtitle": "Describe the job once — pros near you send their price.",
     "trade": "Which pro do you need?",
     "jobWhat": "What needs doing?",
@@ -2646,7 +2644,10 @@
     "trackingMinutesAgo": "updated {n} min ago",
     "trackingNoticeTitle": "Sharing your location",
     "trackingNoticeBody": "The customer sees where you are until you deliver.",
-    "trackingOnApp": "The customer can see where you are on the map until you deliver, even if you switch to Maps or lock your phone."
+    "trackingOnApp": "The customer can see where you are on the map until you deliver, even if you switch to Maps or lock your phone.",
+    "emptyTitle": "Need something done nearby?",
+    "emptyDeliveryBody": "Parcels, groceries, pharmacy, paperwork or a moto taxi. Riders near you send their price.",
+    "emptyQuoteBody": "Plumber, electrician, painter and more. Describe the job once and pros send their price."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",
@@ -2689,7 +2690,7 @@
     "title": "{service}",
     "subtitle": "Approved providers across Lebanon. Look freely — you only need an account to contact someone.",
     "ctaText": "Want them to come to you? Post what you need and get replies.",
-    "ctaQuotes": "Get quotes",
+    "ctaQuotes": "Get a repair quote",
     "ctaOrder": "Order a delivery",
     "ctaRequest": "Post a request",
     "allLebanon": "All of Lebanon",
