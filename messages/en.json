@@ -1434,7 +1434,9 @@
     "verified": "Verified",
     "nearTitle": "People near you",
     "nearIn": "In {place}",
-    "nearAll": "Across Lebanon"
+    "nearAll": "Across Lebanon",
+    "strengthTitle": "Your {service} profile is {percent}% complete",
+    "strengthNext": "Next: {tip}. Complete profiles get more messages."
   },
   "ErrandServices": {
     "delivery": "Delivery & Pickup",

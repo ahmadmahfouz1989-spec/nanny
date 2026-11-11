@@ -18,6 +18,8 @@ import {
   ProviderIcon,
   ShieldCheckIcon,
 } from "@/components/home-icons";
+import { ui } from "@/lib/ui";
+import { profileStrength, type ProfileStrength } from "@/lib/profile-growth";
 import ServiceSearch, { type SearchableService } from "./service-search";
 import CategoryTiles, { LOOK } from "@/components/category-tiles";
 
@@ -29,6 +31,34 @@ function labels(namespace: string | undefined): string {
     .join(" ");
 }
 
+type ProviderRow = { id: string; profile_photo_url: string | null; headline: string | null; attributes: unknown; moderation_status: string; category_id: string };
+
+/**
+ * The least complete of someone's live provider profiles, for the reminder
+ * on Home -- what to add next, until every one is complete.
+ */
+async function weakestProfile(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  profiles: ProviderRow[],
+): Promise<{ profileId: string; categoryId: string; strength: ProfileStrength } | null> {
+  const live = profiles.filter((p) => p.moderation_status === "approved");
+  if (live.length === 0) return null;
+  const { data: work } = await supabase.from("work_projects").select("profile_id, work_photos(id)").in("profile_id", live.map((p) => p.id));
+  const withWork = new Set((work ?? []).filter((w) => (w.work_photos ?? []).length > 0).map((w) => w.profile_id));
+  const scored = live.map((p) => ({
+    profileId: p.id,
+    categoryId: p.category_id,
+    strength: profileStrength({
+      role: "provider",
+      photoUrl: p.profile_photo_url,
+      headline: p.headline,
+      attributes: (p.attributes ?? {}) as Record<string, unknown>,
+      hasWork: withWork.has(p.id),
+    }),
+  }));
+  return scored.sort((a, b) => a.strength.percent - b.strength.percent)[0]!;
+}
+
 /**
  * The top of Home: search, real people near you, the services, why
  * ouiKnow is safe to use, and a way in for each side. The latest posts
@@ -36,6 +66,7 @@ function labels(namespace: string | undefined): string {
  */
 export default async function Discover() {
   const t = await getTranslations("Discover");
+  const tProfile = await getTranslations("ProfilePage");
   const locale = await getLocale();
   const live = (await getCategories()).filter((c) => c.status === "live" && c.href);
   // Someone already offering a service is past "create your profile":
@@ -44,14 +75,16 @@ export default async function Discover() {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  const { count: offering } = user
+  const { data: mine } = user
     ? await supabase
         .from("generic_profiles")
-        .select("id", { count: "exact", head: true })
+        .select("id, profile_photo_url, headline, attributes, moderation_status, category_id")
         .eq("user_id", user.id)
         .eq("role", "provider")
         .neq("status", "draft")
-    : { count: 0 };
+    : { data: null };
+  const offering = mine?.length ?? 0;
+  const strength = await weakestProfile(supabase, mine ?? []);
 
   const region = (await cookies()).get(REGION_COOKIE)?.value || null;
   const [nearby, { data: place }] = await Promise.all([
@@ -130,6 +163,21 @@ export default async function Discover() {
           </li>
         ))}
       </ul>
+
+      {strength && strength.strength.percent < 100 && (
+        <Link href={`/u/${strength.profileId}`} className={ui.card + " flex flex-col gap-2 p-4 transition hover:border-border-strong"}>
+          <span className="flex items-center justify-between gap-3">
+            <span className="font-display text-sm font-bold text-ink">
+              {t("strengthTitle", { service: categoryName(live.find((c) => c.id === strength.categoryId) ?? live[0]!, locale), percent: strength.strength.percent })}
+            </span>
+            <ChevronIcon className="h-5 w-5 shrink-0 text-muted" />
+          </span>
+          <span className="block h-2 overflow-hidden rounded-full bg-surface-sunken" aria-hidden>
+            <span className="block h-full rounded-full bg-primary" style={{ width: `${strength.strength.percent}%` }} />
+          </span>
+          <span className="text-xs text-muted">{t("strengthNext", { tip: tProfile(`strengthAdd_${strength.strength.missing[0]!}`) })}</span>
+        </Link>
+      )}
 
       {/* Finding help is the category grid above; this is the way in for
           people offering a service. */}

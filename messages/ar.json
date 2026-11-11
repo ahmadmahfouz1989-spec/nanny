@@ -1434,7 +1434,9 @@
     "verified": "موثّق",
     "nearTitle": "ناس قريبين منك",
     "nearIn": "في {place}",
-    "nearAll": "من كل لبنان"
+    "nearAll": "من كل لبنان",
+    "strengthTitle": "صفحتك بـ{service} مكتملة {percent}٪",
+    "strengthNext": "الخطوة الجاية: {tip}. الصفحات الكاملة بتجيها رسائل أكتر."
   },
   "ErrandServices": {
     "delivery": "توصيل واستلام أغراض",
