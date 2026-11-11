@@ -1,12 +1,11 @@
 import Image from "next/image";
+import ProfileHero from "@/components/profile-hero";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import BrandMark from "@/components/brand-mark";
-import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import RatingStars from "@/components/matches/rating-stars";
 import type { PublicProfile } from "@/lib/public-profile";
-import VerifiedCheck from "@/components/verified-check";
 
 /**
  * A provider's profile as someone without an account sees it, opened from
@@ -38,27 +37,14 @@ export default async function PublicProfileView({ profile, locale }: { profile: 
 
       <main className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 pb-10">
         <section className={ui.card + " overflow-hidden"}>
-          <div className="relative">
-            {profile.photoUrl ? (
-              <>
-                <Image src={profile.photoUrl} alt="" width={960} height={480} unoptimized priority className="h-64 w-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-transparent" />
-              </>
-            ) : (
-              <AvatarIllustration name={profile.fullName} banner className="h-44 w-full" />
-            )}
-            <div className="absolute bottom-0 start-0 end-0 p-4">
-              <h1 className="font-display text-2xl font-bold text-white drop-shadow">
-                {profile.fullName}
-                {profile.verified && (
-                  <span className="ms-1.5 inline-flex rounded-full bg-white align-middle">
-                    <VerifiedCheck label={t("verified")} />
-                  </span>
-                )}
-              </h1>
-              <p className="text-sm text-white/90 drop-shadow">{place ? t("serviceIn", { service, place }) : service}</p>
-            </div>
-          </div>
+          <ProfileHero
+            name={profile.fullName}
+            photoUrl={profile.photoUrl}
+            coverUrl={profile.workPhotos[0]?.url ?? null}
+            verified={profile.verified}
+            verifiedLabel={t("verified")}
+            subtitle={place ? t("serviceIn", { service, place }) : service}
+          />
 
           <div className="flex flex-col gap-3 p-4">
             {profile.headline && (

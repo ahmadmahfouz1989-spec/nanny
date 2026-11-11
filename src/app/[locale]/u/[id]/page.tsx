@@ -1,5 +1,4 @@
 import { cache } from "react";
-import Image from "next/image";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
@@ -13,8 +12,8 @@ import { isCategorySlug } from "@/lib/category-slugs";
 import { DAYS } from "@/lib/validation/profile";
 import { formatHoursRange } from "@/lib/format-hours";
 import { ui } from "@/lib/ui";
+import ProfileHero from "@/components/profile-hero";
 import AppShell from "@/components/app-shell";
-import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import SaveProfileButton from "@/components/save-profile-button";
 import RatingStars from "@/components/matches/rating-stars";
 import MatchDetails from "@/components/matches/match-details";
@@ -26,7 +25,6 @@ import WorkSection from "@/components/work/work-section";
 import HeadlineEditor from "@/components/work/headline-editor";
 import BackButton from "@/components/back-button";
 import ProfileSectionNav from "@/components/profile-section-nav";
-import VerifiedCheck from "@/components/verified-check";
 
 // generateMetadata and the page both need it; cache() makes it one load.
 const getPage = cache(async (id: string) => {
@@ -154,46 +152,15 @@ async function ProfileHeader({ data, locale, contact, share }: { data: ProfilePa
 
   return (
     <section id="profile-top" className={ui.card + " overflow-hidden scroll-mt-20"}>
-      <div className="relative">
-        {profile.profile_photo_url ? (
-          <>
-            <Image
-              src={profile.profile_photo_url}
-              alt=""
-              width={960}
-              height={480}
-              unoptimized
-              priority
-              className="h-56 sm:h-72 w-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/65 via-black/0 to-transparent" />
-          </>
-        ) : (
-          <AvatarIllustration
-            name={profile.full_name}
-            banner
-            className="h-40 sm:h-48 w-full"
-          />
-        )}
-        {match && (
-          <span className={ui.badge(ui.scoreTone(match.score)) + " absolute top-3 end-3 bg-surface/90!"}>
-            {tMatches("scoreLabel", { score: Math.round(match.score) })}
-          </span>
-        )}
-        <div className="absolute bottom-0 start-0 end-0 p-4 sm:p-5">
-          <h1 className="font-display text-2xl sm:text-3xl font-bold text-white drop-shadow">
-            {profile.full_name}
-            {data.featured && (
-              <span className="ms-1.5 inline-flex rounded-full bg-white align-middle">
-                <VerifiedCheck label={tMatches("featuredBadge")} />
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-white/90 drop-shadow">
-            {[categoryName, roleLabel].filter(Boolean).join(" · ")}
-          </p>
-        </div>
-      </div>
+      <ProfileHero
+        name={profile.full_name}
+        photoUrl={profile.profile_photo_url}
+        coverUrl={data.work.find((w) => w.status === "approved" && w.photos.length)?.photos[0]?.url ?? null}
+        verified={data.featured}
+        verifiedLabel={tMatches("featuredBadge")}
+        subtitle={[categoryName, roleLabel].filter(Boolean).join(" · ")}
+        badge={match ? <span className={ui.badge(ui.scoreTone(match.score)) + " bg-surface/90!"}>{tMatches("scoreLabel", { score: Math.round(match.score) })}</span> : undefined}
+      />
 
       <div className="p-4 sm:p-5 flex flex-col gap-3">
         {data.isOwn ? (

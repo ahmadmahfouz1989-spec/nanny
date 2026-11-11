@@ -24,6 +24,8 @@ export type BrowseCard = {
   languages: string[];
   /** When the profile was made: "Joined Oct 2026" until ratings come. */
   joinedAt: string;
+  /** Up to three photos of their work, newest project first. */
+  workPhotos: string[];
 };
 
 export type BrowseFilters = {
@@ -119,7 +121,22 @@ export async function browseProviders(options: {
 
   const start = Math.max(0, options.page) * BROWSE_PAGE_SIZE;
   const slice = ranked.slice(start, start + BROWSE_PAGE_SIZE);
-  const placed = await withPlaceNames(slice.map((x) => x.r));
+  const [placed, { data: projects }] = await Promise.all([
+    withPlaceNames(slice.map((x) => x.r)),
+    slice.length
+      ? db
+          .from("work_projects")
+          .select("profile_id, position, work_photos(url, position)")
+          .in("profile_id", slice.map((x) => x.r.id))
+          .eq("status", "approved")
+          .order("position", { ascending: true })
+      : Promise.resolve({ data: [] }),
+  ]);
+  const workOf = new Map<string, string[]>();
+  for (const project of projects ?? []) {
+    const urls = [...(project.work_photos ?? [])].sort((a, b) => a.position - b.position).map((w) => w.url);
+    workOf.set(project.profile_id, [...(workOf.get(project.profile_id) ?? []), ...urls].slice(0, 3));
+  }
 
   const cards = placed.map((p, i) => {
     const a = (p.attributes ?? {}) as Record<string, unknown>;
@@ -139,6 +156,7 @@ export async function browseProviders(options: {
       years: yearsOf(a),
       languages: languagesOf(a),
       joinedAt: p.created_at,
+      workPhotos: workOf.get(p.id) ?? [],
     };
   });
   return { cards, more: ranked.length > start + BROWSE_PAGE_SIZE, total: ranked.length };

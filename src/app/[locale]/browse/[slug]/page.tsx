@@ -198,7 +198,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
             const contact = `/u/${c.id}?contact=1`;
             return (
               <div key={c.id} className={ui.cardHover + " flex min-w-0 flex-col gap-3 p-3"}>
-                <Link href={`/u/${c.id}`} className="flex min-w-0 gap-3">
+                <Link href={`/u/${c.id}`} className="flex min-w-0 flex-wrap gap-3">
                   {c.photoUrl ? (
                     <Image src={c.photoUrl} alt="" width={72} height={72} unoptimized className="h-18 w-18 shrink-0 rounded-xl object-cover" />
                   ) : (
@@ -228,6 +228,13 @@ export default async function BrowsePage({ params, searchParams }: Props) {
                     {c.services.length > 0 && <p className="mt-1 truncate text-xs text-muted">{c.services.map(serviceLabel).join(" · ")}</p>}
                     {c.languages.length > 0 && <p className="mt-1 truncate text-xs text-muted">{t("speaks", { languages: c.languages.map(languageLabel).join(" · ") })}</p>}
                   </div>
+                  {c.workPhotos.length > 0 && (
+                    <div className="mt-1 grid w-full grid-cols-3 gap-1.5">
+                      {c.workPhotos.map((url) => (
+                        <Image key={url} src={url} alt="" width={160} height={160} unoptimized className="aspect-square w-full rounded-lg object-cover" />
+                      ))}
+                    </div>
+                  )}
                 </Link>
                 <div className="flex items-center gap-2">
                   <Link href={user ? contact : signup(contact)} className={ui.buttonSecondary + " flex-1 py-2! text-center"}>

@@ -2850,7 +2850,7 @@
     "addPhoto": "Add a photo",
     "changePhoto": "Change photo",
     "uploading": "Uploading…",
-    "photoHint": "Optional. A clear photo of your face gets more replies.",
+    "photoHint": "Optional. Your face, clear and close up: it gets more replies. Logos and photos of your work go under Work on your profile.",
     "photoSize": "That photo is too large (5 MB at most).",
     "photoType": "Use a JPG, PNG or WebP photo.",
     "photoFailed": "The photo didn't upload. Try again.",
