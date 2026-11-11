@@ -106,6 +106,73 @@ async function withoutSuspended<T extends { user_id: string }>(supabase: Reader,
   return rows.filter((p) => !out.has(p.user_id));
 }
 
+/**
+ * Profiles in an area picked on Home -- a governorate or a district: in the
+ * district, covering it, or (saved before districts) in its governorate.
+ */
+function inArea(region: string, level: string | null, parent: string | null): string {
+  if (level === "district") {
+    return (
+      `attributes->>districtId.eq.${region},attributes->coverDistrictIds.cs.["${region}"]` +
+      (parent ? `,and(attributes->>districtId.is.null,location_id.eq.${parent})` : "")
+    );
+  }
+  return `location_id.eq.${region},attributes->serviceAreaIds.cs.["${region}"]`;
+}
+
+export type NearbyPerson = { id: string; fullName: string; photoUrl: string; categoryName: string; place: string | null; verified: boolean };
+
+/**
+ * A few real providers for the top of Home: people with a photo, in the
+ * area picked there (verified first, then the newest). Too few in that
+ * area -- fewer than 4 -- and it's all of Lebanon instead (`wide`). Each
+ * person once, under the service they added last.
+ */
+export async function nearbyProviders(
+  region: string | null,
+  userId: string | null,
+  locale: string,
+  limit = 12,
+): Promise<{ people: NearbyPerson[]; wide: boolean }> {
+  const { visitor, supabase, categories, visibleProfiles } = await profileReader(userId);
+  const { data: regionRow } = region
+    ? await supabase.from("locations").select("level, parent_location_id").eq("id", region).maybeSingle()
+    : { data: null };
+
+  const load = async (area: string | null) => {
+    let q = visibleProfiles("provider").not("profile_photo_url", "is", null);
+    if (area) q = q.or(area);
+    const { data } = await q.order("created_at", { ascending: false }).limit(limit * 4);
+    const seen = new Set<string>();
+    let rows = (data ?? []).filter((p) => !seen.has(p.user_id) && seen.add(p.user_id));
+    if (visitor) rows = await withoutSuspended(supabase, rows);
+    return rows;
+  };
+  const area = region && regionRow ? inArea(region, regionRow.level, regionRow.parent_location_id) : null;
+  let rows = area ? await load(area) : [];
+  const wide = rows.length < 4;
+  if (wide) rows = await load(null);
+
+  const verified = await featuredUserIds(rows.map((p) => p.user_id));
+  const placed = await withPlaceNames(rows.sort((a, b) => Number(verified.has(b.user_id)) - Number(verified.has(a.user_id))).slice(0, limit));
+  const byId = new Map(categories.map((c) => [c.id, c]));
+  return {
+    wide,
+    people: placed.map((p) => {
+      const c = byId.get(p.category_id);
+      const place = Array.isArray(p.locations) ? p.locations[0] : p.locations;
+      return {
+        id: p.id,
+        fullName: p.full_name,
+        photoUrl: p.profile_photo_url!,
+        categoryName: c ? (locale === "ar" ? c.name_ar : c.name_en) : "",
+        place: place ? (locale === "ar" ? place.name_ar : place.name_en) : null,
+        verified: verified.has(p.user_id),
+      };
+    }),
+  };
+}
+
 export type NameSuggestion = { id: string; fullName: string; photoUrl: string | null; categoryName: string; verified: boolean };
 
 /**
@@ -185,15 +252,8 @@ export async function search(query: string, region: string | null, userId: strin
       if (inCategories.length) clauses.push(`category_id.in.(${inCategories.join(",")})`);
       q = q.or(clauses.join(","));
     }
-    if (region && regionLevel === "district") {
-      // In the district, covering it, or (saved before districts) in its governorate.
-      q = q.or(
-        `attributes->>districtId.eq.${region},attributes->coverDistrictIds.cs.["${region}"]` +
-          (regionParent ? `,and(attributes->>districtId.is.null,location_id.eq.${regionParent})` : ""),
-      );
-    } else if (region) {
-      q = q.or(`location_id.eq.${region},attributes->serviceAreaIds.cs.["${region}"]`);
-    }
+    const area = region ? inArea(region, regionLevel, regionParent) : null;
+    if (area) q = q.or(area);
     return q.order("created_at", { ascending: false }).limit(SEARCH_LIMIT);
   };
 
