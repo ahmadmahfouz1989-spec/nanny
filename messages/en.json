@@ -2861,5 +2861,15 @@
     "saving": "Saving…",
     "continue": "Continue",
     "edit": "Edit"
+  },
+  "PageError": {
+    "title": "This page didn't load",
+    "body": "It may be your connection. Check it and try again.",
+    "retry": "Try again",
+    "home": "Go to Home"
+  },
+  "Offline": {
+    "offline": "You're offline. We'll carry on when your connection is back.",
+    "back": "Back online"
   }
 }

@@ -1,3 +1,4 @@
+import OfflineBar from "@/components/shell/offline-bar";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
@@ -121,6 +122,7 @@ export default async function LocaleLayout({
         <NextIntlClientProvider>
           {children}
           <LanguageChooser />
+          <OfflineBar />
         </NextIntlClientProvider>
       </body>
     </html>
