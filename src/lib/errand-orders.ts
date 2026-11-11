@@ -1,3 +1,4 @@
+import { hiddenUserIds } from "@/lib/hidden-accounts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { placeOf, placeScore } from "@/lib/matching/place";
 import { notify } from "@/lib/push";
@@ -286,10 +287,12 @@ export async function eligibleProviders(
     .eq("moderation_status", "approved")
     .neq("user_id", order.seekerUserId);
   if (options.only) query = query.eq("id", options.only);
-  const { data: providers } = await query;
+  const [{ data: providers }, hidden] = await Promise.all([query, hiddenUserIds()]);
 
   const exclude = new Set(options.exclude ?? []);
+  const hiddenUsers = new Set(hidden);
   const offeringService = (providers ?? []).filter((p) => {
+    if (hiddenUsers.has(p.user_id)) return false;
     if (exclude.has(p.id)) return false;
     const a = (p.attributes ?? {}) as Record<string, unknown>;
     const offered = jobs ? a.trades : a.errandServices;

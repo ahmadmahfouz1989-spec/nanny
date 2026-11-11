@@ -1,3 +1,4 @@
+import { hiddenUserIds } from "@/lib/hidden-accounts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { withPlaceNames } from "@/lib/place-names";
 import { ratingAggregatesByUser, type RatingAggregate } from "@/lib/ratings";
@@ -69,7 +70,7 @@ export async function browseProviders(options: {
   const { data: suspended } = all.length
     ? await db.from("users").select("id").in("id", all.map((r) => r.user_id)).eq("status", "suspended")
     : { data: [] as { id: string }[] };
-  const out = new Set((suspended ?? []).map((u) => u.id));
+  const out = new Set([...(suspended ?? []).map((u) => u.id), ...(await hiddenUserIds())]);
   const visible = all.filter((r) => !out.has(r.user_id));
 
   const [ratings, verified] = await Promise.all([

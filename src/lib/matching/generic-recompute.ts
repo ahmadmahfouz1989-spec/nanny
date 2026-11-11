@@ -1,3 +1,4 @@
+import { hiddenUserIds } from "@/lib/hidden-accounts";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { placeOf } from "./place";
 import { toJson, type JsonObject } from "@/lib/attributes";
@@ -293,7 +294,8 @@ async function loadActiveApproved(admin: Admin, categoryId: string, role: "seeke
     .eq("role", role)
     .eq("status", "active")
     .eq("moderation_status", "approved");
-  return (data ?? []) as GenericProfileRow[];
+  const hidden = new Set(await hiddenUserIds());
+  return ((data ?? []) as GenericProfileRow[]).filter((p) => !hidden.has(p.user_id));
 }
 
 async function upsertGenericMatches(

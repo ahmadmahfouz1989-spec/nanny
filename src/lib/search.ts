@@ -6,6 +6,7 @@ import { fillMissingSearchText } from "@/lib/search-text";
 import { POST_FEED_COLUMNS, resolvePostAuthors } from "@/lib/posts";
 import { withPlaceNames } from "@/lib/place-names";
 import { featuredUserIds } from "@/lib/featured";
+import { hiddenUserIds, notInList } from "@/lib/hidden-accounts";
 
 /** Results per section; a full section shows its count as "20+". */
 export const SEARCH_LIMIT = 20;
@@ -62,16 +63,19 @@ type Reader = Awaited<ReturnType<typeof createClient>> | ReturnType<typeof creat
 async function profileReader(userId: string | null) {
   const visitor = userId === null;
   const supabase: Reader = visitor ? createAdminClient() : await createClient();
-  const categories = (await getCategories()).filter((c) => c.status === "live");
+  const [allCategories, hidden] = await Promise.all([getCategories(), hiddenUserIds()]);
+  const categories = allCategories.filter((c) => c.status === "live");
+  const hiddenList = notInList(hidden);
 
   const visibleProfiles = (role: "seeker" | "provider") => {
-    const q = supabase
+    let q = supabase
       .from("generic_profiles")
       .select("id, user_id, role, full_name, profile_photo_url, attributes, category_id, locations(name_en, name_ar, name_fr)")
       .eq("role", role)
       .eq("status", "active")
       .eq("moderation_status", "approved")
       .in("category_id", categories.map((c) => c.id));
+    if (hiddenList) q = q.not("user_id", "in", hiddenList);
     return visitor ? q.eq("public_page", true) : q.neq("user_id", userId);
   };
 
