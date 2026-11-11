@@ -2713,7 +2713,17 @@
     "offerToo": "بتقدّم {service}؟",
     "offerLink": "اعمل ملفك",
     "verified": "موثّق",
-    "subtitleSignedIn": "مقدّمو خدمة معتمدون بكل لبنان. راسل مين ما بدك."
+    "subtitleSignedIn": "مقدّمو خدمة معتمدون بكل لبنان. راسل مين ما بدك.",
+    "count": "{count, plural, one {شخص واحد} two {شخصين} few {# أشخاص} many {# شخص} other {# شخص}}",
+    "years": "+٥ سنين خبرة",
+    "yearsShort": "{count, plural, one {سنة خبرة} two {سنتين خبرة} few {# سنين خبرة} other {# سنة خبرة}}",
+    "joined": "انضم {date}",
+    "speaks": "بيحكي {languages}",
+    "message": "مراسلة",
+    "lang_ar": "عربي",
+    "lang_en": "إنكليزي",
+    "lang_fr": "فرنسي",
+    "clearFilters": "امسح الفلاتر"
   },
   "PlacePicker": {
     "searchPickup": "مكان، إحداثيات أو رابط",

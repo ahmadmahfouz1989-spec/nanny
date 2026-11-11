@@ -2713,7 +2713,17 @@
     "offerToo": "Do you offer {service}?",
     "offerLink": "Create your profile",
     "verified": "Verified",
-    "subtitleSignedIn": "Approved providers across Lebanon. Message anyone you like."
+    "subtitleSignedIn": "Approved providers across Lebanon. Message anyone you like.",
+    "count": "{count, plural, one {# person} other {# people}}",
+    "years": "5+ years",
+    "yearsShort": "{count, plural, one {# yr experience} other {# yrs experience}}",
+    "joined": "Joined {date}",
+    "speaks": "Speaks {languages}",
+    "message": "Message",
+    "lang_ar": "Arabic",
+    "lang_en": "English",
+    "lang_fr": "French",
+    "clearFilters": "Clear filters"
   },
   "PlacePicker": {
     "searchPickup": "Place, coordinates or link",

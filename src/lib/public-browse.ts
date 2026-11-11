@@ -18,6 +18,21 @@ export type BrowseCard = {
   idChecked: boolean;
   /** Verified (blue check): shown first. */
   verified: boolean;
+  /** Years of experience they gave, when the service asks (null: not given). */
+  years: number | null;
+  /** Languages they speak, as codes (ar, en, fr). */
+  languages: string[];
+  /** When the profile was made: "Joined Oct 2026" until ratings come. */
+  joinedAt: string;
+};
+
+export type BrowseFilters = {
+  /** Only people whose ID the team checked. */
+  idChecked?: boolean;
+  /** At least this many years of experience. */
+  minYears?: number;
+  /** Speaks this language (a code: ar, en, fr). */
+  language?: string | null;
 };
 
 /**
@@ -33,14 +48,14 @@ export async function browseProviders(options: {
   region: string | null;
   service: string | null;
   page: number;
-}): Promise<{ cards: BrowseCard[]; more: boolean } | null> {
+} & BrowseFilters): Promise<{ cards: BrowseCard[]; more: boolean; total: number } | null> {
   const db = createAdminClient();
   const { data: category } = await db.from("categories").select("id, status").eq("slug", options.slug).maybeSingle();
   if (!category || category.status !== "live") return null;
 
   let q = db
     .from("generic_profiles")
-    .select("id, user_id, full_name, profile_photo_url, headline, attributes, location_id, locations(name_en, name_ar, name_fr)")
+    .select("id, user_id, full_name, profile_photo_url, headline, attributes, location_id, created_at, locations(name_en, name_ar, name_fr)")
     .eq("category_id", category.id)
     .eq("role", "provider")
     .eq("status", "active")
@@ -71,12 +86,27 @@ export async function browseProviders(options: {
     ? await db.from("users").select("id").in("id", all.map((r) => r.user_id)).eq("status", "suspended")
     : { data: [] as { id: string }[] };
   const out = new Set([...(suspended ?? []).map((u) => u.id), ...(await hiddenUserIds())]);
-  const visible = all.filter((r) => !out.has(r.user_id));
+  const shown = all.filter((r) => !out.has(r.user_id));
 
-  const [ratings, verified] = await Promise.all([
-    ratingAggregatesByUser(visible.map((r) => r.user_id)),
-    featuredUserIds(visible.map((r) => r.user_id)),
+  const [ratings, verified, { data: idsOk }, { data: languageRows }] = await Promise.all([
+    ratingAggregatesByUser(shown.map((r) => r.user_id)),
+    featuredUserIds(shown.map((r) => r.user_id)),
+    shown.length ? db.from("id_documents").select("profile_id").in("profile_id", shown.map((r) => r.id)).eq("status", "approved") : Promise.resolve({ data: [] }),
+    db.from("languages").select("id, code"),
   ]);
+  const checked = new Set((idsOk ?? []).map((d) => d.profile_id));
+  const codeOf = new Map((languageRows ?? []).map((l) => [l.id, l.code]));
+  const yearsOf = (a: Record<string, unknown>) => (typeof a.yearsExperience === "number" && a.yearsExperience > 0 ? a.yearsExperience : null);
+  const languagesOf = (a: Record<string, unknown>) =>
+    (Array.isArray(a.languageIds) ? a.languageIds : []).map((id) => codeOf.get(id as string)).filter((c): c is string => !!c);
+
+  const visible = shown.filter((r) => {
+    const a = (r.attributes ?? {}) as Record<string, unknown>;
+    if (options.idChecked && !checked.has(r.id)) return false;
+    if (options.minYears && (yearsOf(a) ?? 0) < options.minYears) return false;
+    if (options.language && !languagesOf(a).includes(options.language)) return false;
+    return true;
+  });
   const ranked = visible
     .map((r) => ({ r, rating: ratings.get(r.user_id) ?? { average: null, count: 0 }, verified: verified.has(r.user_id) }))
     .sort(
@@ -89,12 +119,7 @@ export async function browseProviders(options: {
 
   const start = Math.max(0, options.page) * BROWSE_PAGE_SIZE;
   const slice = ranked.slice(start, start + BROWSE_PAGE_SIZE);
-  const ids = slice.map((x) => x.r.id);
-  const [placed, { data: ids_ok }] = await Promise.all([
-    withPlaceNames(slice.map((x) => x.r)),
-    ids.length ? db.from("id_documents").select("profile_id").in("profile_id", ids).eq("status", "approved") : Promise.resolve({ data: [] }),
-  ]);
-  const checked = new Set((ids_ok ?? []).map((d) => d.profile_id));
+  const placed = await withPlaceNames(slice.map((x) => x.r));
 
   const cards = placed.map((p, i) => {
     const a = (p.attributes ?? {}) as Record<string, unknown>;
@@ -111,7 +136,10 @@ export async function browseProviders(options: {
       services: Array.isArray(services) ? services.filter((x): x is string => typeof x === "string") : [],
       idChecked: checked.has(p.id),
       verified: slice[i]!.verified,
+      years: yearsOf(a),
+      languages: languagesOf(a),
+      joinedAt: p.created_at,
     };
   });
-  return { cards, more: ranked.length > start + BROWSE_PAGE_SIZE };
+  return { cards, more: ranked.length > start + BROWSE_PAGE_SIZE, total: ranked.length };
 }
