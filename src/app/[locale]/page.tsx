@@ -10,7 +10,7 @@ import SignOutButton from "@/components/sign-out-button";
 import CreateProfileIllustration from "@/components/illustrations/create-profile-illustration";
 import MatchIllustration from "@/components/illustrations/match-illustration";
 import ConnectIllustration from "@/components/illustrations/connect-illustration";
-import PreviewProfileCard from "@/components/preview-profile-card";
+import { nearbyProviders } from "@/lib/search";
 import CategoryGrid from "@/components/category-grid";
 import { getCategories } from "@/lib/categories";
 import { ui } from "@/lib/ui";
@@ -36,10 +36,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   const tNav = await getTranslations("Nav");
   const tPreview = await getTranslations("Preview");
   const tCat = await getTranslations("Categories");
-  const tAge = await getTranslations("AgeGroups");
-  const tCare = await getTranslations("CareSpecialties");
-  const tSubject = await getTranslations("Subjects");
-  const tTrade = await getTranslations("Trades");
   // The service tiles open each service's providers -- no account needed to look.
   const categories = (await getCategories()).map((c) => ({ ...c, href: c.href ? `/browse/${c.slug}` : null }));
 
@@ -65,13 +61,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   const bullets = [t("bullet1"), t("bullet2"), t("bullet3")];
 
-  // One made-up example per live category, labelled "Example" on the card.
-  const previewCards = [
-    { name: "Layla", area: "Achrafieh", tone: "primary" as const, years: 5, availableDays: ["mon", "tue", "wed", "thu", "fri"], category: tNav("nanny"), skill: tAge("toddler") },
-    { name: "Maya", area: "Jounieh", tone: "secondary" as const, years: 8, availableDays: ["mon", "wed", "fri", "sat"], category: tNav("nursing"), skill: tCare("elderly_care") },
-    { name: "Sara", area: "Hazmieh", tone: "berry" as const, years: 3, availableDays: ["tue", "thu", "sat", "sun"], category: tNav("tutoring"), skill: tSubject("math") },
-    { name: "Karim", area: "Jdeideh", tone: "primary" as const, years: 12, availableDays: ["mon", "tue", "wed", "thu", "fri", "sat"], category: tNav("maintenance"), skill: tTrade("plumber") },
-  ];
+  // Real providers with a photo, not made-up examples.
+  const people = (await nearbyProviders(null, null, locale, 8)).people;
   const liveCategoryCount = categories.filter((c) => c.status === "live").length;
 
   return (
@@ -214,7 +205,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         </div>
       </section>
 
-      {/* Preview */}
+      {/* Real people on ouiKnow */}
+      {people.length >= 4 && (
       <section className="border-t border-border px-6 py-16 sm:py-20">
         <div className="mx-auto max-w-5xl">
           <h2 className="oui-reveal mb-3 text-center font-display text-2xl font-bold sm:text-3xl">
@@ -222,15 +214,23 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </h2>
           <p className="oui-reveal mx-auto mb-10 max-w-lg text-center text-muted">{tPreview("subtitle")}</p>
 
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {previewCards.map((card, i) => (
-              <div key={card.name} className="oui-reveal" style={{ animationDelay: `${i * 0.06}s` }}>
-                <PreviewProfileCard {...card} />
-              </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {people.map((p, i) => (
+              <Link key={p.id} href={`/u/${p.id}`} className="oui-reveal group flex flex-col gap-2" style={{ animationDelay: `${i * 0.06}s` }}>
+                <span className="relative block aspect-square overflow-hidden rounded-2xl border border-border bg-surface-sunken">
+                  <Image src={p.photoUrl} alt="" fill sizes="(min-width: 640px) 240px, 45vw" className="object-cover transition group-hover:scale-[1.02]" />
+                </span>
+                <span className="truncate font-semibold text-ink">{p.fullName}</span>
+                <span className="-mt-1.5 truncate text-sm text-muted">
+                  {p.categoryName}
+                  {p.place && ` · ${p.place}`}
+                </span>
+              </Link>
             ))}
           </div>
         </div>
       </section>
+      )}
 
       {/* How it works */}
       <section className="border-t border-border bg-surface-sunken px-6 py-16 sm:py-20">

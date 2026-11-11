@@ -734,10 +734,8 @@
     "createTitle": "Create your request"
   },
   "Preview": {
-    "title": "See what a profile looks like",
-    "subtitle": "Every match shows the skills, availability and experience that matter for that service.",
-    "example": "Example",
-    "yearsExperience": "{years} yrs experience"
+    "title": "Real people, all over Lebanon",
+    "subtitle": "Nannies, nurses, tutors, tradespeople, riders and more. Look at anyone's profile without an account."
   },
   "Matches": {
     "titleMatches": "Your matches",

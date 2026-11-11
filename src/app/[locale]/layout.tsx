@@ -2,7 +2,7 @@ import OfflineBar from "@/components/shell/offline-bar";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
 import Script from "next/script";
-import { Baloo_2, Inter, Cairo, Plus_Jakarta_Sans } from "next/font/google";
+import { Baloo_2, Cairo, Plus_Jakarta_Sans } from "next/font/google";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -25,15 +25,12 @@ const THEME_INIT_SCRIPT = `
 })();
 `;
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-});
-
+// One typeface for English (body and headings) and one for Arabic; Baloo
+// only draws the "ouiKnow" wordmark.
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 const baloo = Baloo_2({
@@ -103,7 +100,7 @@ export default async function LocaleLayout({
     <html
       lang={locale}
       dir={dir}
-      className={`${inter.variable} ${jakarta.variable} ${baloo.variable} ${cairo.variable} h-full antialiased`}
+      className={`${jakarta.variable} ${baloo.variable} ${cairo.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-ink font-sans">
