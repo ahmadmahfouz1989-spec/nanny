@@ -8,6 +8,7 @@ import { createClient } from "@/lib/supabase/server";
 import { nearbyProviders } from "@/lib/search";
 import { REGION_COOKIE } from "@/lib/region";
 import VerifiedCheck from "@/components/verified-check";
+import RatePrompt from "@/components/rating/rate-prompt";
 import en from "../../../messages/en.json";
 import ar from "../../../messages/ar.json";
 import {
@@ -75,6 +76,8 @@ export default async function Discover() {
   return (
     <div className="flex flex-col gap-5">
       <ServiceSearch services={searchable} />
+
+      {user && <RatePrompt />}
 
       {nearby.people.length > 0 && (
         <section>

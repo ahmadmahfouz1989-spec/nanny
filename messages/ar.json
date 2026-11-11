@@ -910,7 +910,16 @@
     "raterGenericProvider": "— مقدّم خدمة في {category} تطابق معهم",
     "myRatingsTitle": "التقييمات التي تلقيتها",
     "myRatingsEmpty": "لم يقيّمك أحد بعد. تظهر التقييمات هنا بعد التطابق.",
-    "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا."
+    "loadError": "تعذّر التحميل — تحقّق من اتصالك وحاول مجددًا.",
+    "promptTitle": "كيف كانت التجربة مع {name}؟",
+    "promptBody": "اضغط على نجمة. تقييمك بيساعد جيرانك يختاروا.",
+    "promptStar": "{count, plural, one {نجمة وحدة} two {نجمتين} other {# نجوم}}",
+    "promptNotNow": "مش هلّق",
+    "promptComment": "بدك تكتب كم كلمة عن {name}؟ (اختياري)",
+    "promptSend": "ابعت",
+    "promptDone": "تمام",
+    "promptThanks": "شكراً!",
+    "promptThanksBody": "تقييمك صار على صفحتهن."
   },
   "Admin": {
     "navOverview": "نظرة عامة",

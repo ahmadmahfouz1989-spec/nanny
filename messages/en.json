@@ -910,7 +910,16 @@
     "raterGenericProvider": "— someone offering {category} they matched with",
     "myRatingsTitle": "Ratings you've received",
     "myRatingsEmpty": "No one has rated you yet. Ratings appear here after a match.",
-    "loadError": "Couldn't load — check your connection and try again."
+    "loadError": "Couldn't load — check your connection and try again.",
+    "promptTitle": "How was it with {name}?",
+    "promptBody": "Tap a star. Your rating helps neighbours choose.",
+    "promptStar": "{count, plural, one {# star} other {# stars}}",
+    "promptNotNow": "Not now",
+    "promptComment": "Want to add a few words about {name}? (optional)",
+    "promptSend": "Send",
+    "promptDone": "Done",
+    "promptThanks": "Thank you!",
+    "promptThanksBody": "Your rating is on their profile now."
   },
   "Admin": {
     "navOverview": "Overview",
