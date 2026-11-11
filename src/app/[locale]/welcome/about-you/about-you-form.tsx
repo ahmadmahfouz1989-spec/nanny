@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
@@ -9,12 +9,20 @@ import { shrinkImage } from "@/lib/shrink-image";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import type { AccountBasics } from "@/lib/account-basics";
+import { forgetInvite, storedInvite } from "@/lib/invite-capture";
 
 type Field = "fullName" | "contactPhone" | "nationality" | "photoUrl";
 
 /** Name, phone, nationality and an optional photo: asked once, used by every service. */
-export default function AboutYouForm({ initial, next }: { initial: AccountBasics; next: string }) {
+export default function AboutYouForm({ initial, next, askInvite = false }: { initial: AccountBasics; next: string; askInvite?: boolean }) {
   const t = useTranslations("AboutYou");
+  const tp = useTranslations("Points");
+  const [inviteCode, setInviteCode] = useState("");
+  // The code this device came with (an invite link, Google Play), already filled in.
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (askInvite) setInviteCode(storedInvite()?.code ?? "");
+  }, [askInvite]);
   const router = useRouter();
   const [fullName, setFullName] = useState(initial.fullName ?? "");
   const [contactPhone, setContactPhone] = useState(initial.contactPhone ?? "");
@@ -55,6 +63,15 @@ export default function AboutYouForm({ initial, next }: { initial: AccountBasics
     if (!res?.ok) {
       setError({ field: (body?.field as Field) ?? null, text: typeof body?.error === "string" ? body.error : t("saveFailed") });
       return;
+    }
+    if (askInvite && inviteCode.trim().length >= 4) {
+      // Best effort: a wrong code doesn't stop them, and it can be fixed in Points & invites.
+      const claimed = await request("/api/referrals/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: inviteCode.trim(), source: storedInvite()?.code === inviteCode.trim() ? storedInvite()!.source : "code" }),
+      });
+      if (claimed) forgetInvite();
     }
     router.replace(next);
     router.refresh();
@@ -139,6 +156,23 @@ export default function AboutYouForm({ initial, next }: { initial: AccountBasics
         </div>
         {fieldError("nationality")}
       </div>
+
+      {askInvite && (
+        <label className="flex flex-col gap-1.5">
+          <span className={ui.label}>
+            {tp("claimTitle")} <span className="font-normal text-muted">({t("optional")})</span>
+          </span>
+          <input
+            dir="ltr"
+            autoCapitalize="characters"
+            maxLength={12}
+            placeholder="AB12CD"
+            className={ui.input + " tracking-widest"}
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+          />
+        </label>
+      )}
 
       {error && error.field === null && <p className="text-sm text-danger">{error.text}</p>}
 

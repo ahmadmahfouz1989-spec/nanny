@@ -1,3 +1,4 @@
+import InviteCapture from "@/components/invite-capture";
 import OfflineBar from "@/components/shell/offline-bar";
 import type { Metadata, Viewport } from "next";
 import { Suspense } from "react";
@@ -112,6 +113,7 @@ export default async function LocaleLayout({
         </Script>
         <ServiceWorkerRegister />
         <NativeAppBridge />
+        <InviteCapture />
         {/* Reads the search query, which needs a Suspense boundary. */}
         <Suspense fallback={null}>
           <MetaPixel />

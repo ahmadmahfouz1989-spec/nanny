@@ -5,6 +5,7 @@ import { accountBasics } from "@/lib/account-basics";
 import { safeReturnPath } from "@/lib/return-path";
 import AppShell from "@/components/app-shell";
 import AboutYouForm from "./about-you-form";
+import { canClaimInvite } from "@/lib/points";
 
 /**
  * "About you": the basics every account gives once, right after signing up
@@ -29,11 +30,14 @@ export default async function AboutYouPage({
     redirect({ href: "/login", locale });
     return;
   }
-  const basics = await accountBasics(createAdminClient(), user.id);
+  const db = createAdminClient();
+  // "Did someone invite you?": once Points are released, for a new account
+  // that hasn't said yet (on iPhone, typing the code is the only way).
+  const [basics, askInvite] = await Promise.all([accountBasics(db, user.id), canClaimInvite(user.id, db)]);
   return (
     <AppShell active="profile">
       <div className="mx-auto w-full max-w-lg px-4 py-6 sm:px-6 sm:py-10">
-        <AboutYouForm initial={basics} next={safeReturnPath(next ?? null) ?? "/welcome"} />
+        <AboutYouForm initial={basics} next={safeReturnPath(next ?? null) ?? "/welcome"} askInvite={askInvite} />
       </div>
     </AppShell>
   );

@@ -61,6 +61,8 @@ type CapacitorGlobal = {
     SignInWithApple?: AppleSignInPlugin;
     BackgroundGeolocation?: BackgroundGeolocationPlugin;
     CapacitorHttp?: HttpPlugin;
+    /** Android builds from 1.3: Google Play's install referrer (the app's own plugin). */
+    InstallReferrer?: { get(): Promise<{ referrer: string | null }> };
   };
 };
 
@@ -307,4 +309,19 @@ export async function postJson(url: string, body: unknown): Promise<unknown> {
   }
   const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   return res.json().catch(() => null);
+}
+
+/**
+ * What Google Play passed on when the Android app was installed from an
+ * invite link ("ref=CODE&..."), or null: older builds, iPhone, the website,
+ * or an install that didn't come from a link.
+ */
+export async function installReferrer(): Promise<string | null> {
+  const cap = capacitor();
+  if (cap?.getPlatform() !== "android" || !cap.Plugins.InstallReferrer) return null;
+  try {
+    return (await cap.Plugins.InstallReferrer.get()).referrer ?? null;
+  } catch {
+    return null;
+  }
 }

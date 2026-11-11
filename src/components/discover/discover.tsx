@@ -6,6 +6,7 @@ import { categoryName, getCategories } from "@/lib/categories";
 import { normalizeServiceText } from "@/lib/service-text";
 import { createClient } from "@/lib/supabase/server";
 import { nearbyProviders } from "@/lib/search";
+import { canSeePoints } from "@/lib/points";
 import { REGION_COOKIE } from "@/lib/region";
 import VerifiedCheck from "@/components/verified-check";
 import RatePrompt from "@/components/rating/rate-prompt";
@@ -17,6 +18,7 @@ import {
   LockIcon,
   ProviderIcon,
   ShieldCheckIcon,
+  SparklesIcon,
 } from "@/components/home-icons";
 import { ui } from "@/lib/ui";
 import { profileStrength, type ProfileStrength } from "@/lib/profile-growth";
@@ -67,6 +69,7 @@ async function weakestProfile(
 export default async function Discover() {
   const t = await getTranslations("Discover");
   const tProfile = await getTranslations("ProfilePage");
+  const tPoints = await getTranslations("Points");
   const locale = await getLocale();
   const live = (await getCategories()).filter((c) => c.status === "live" && c.href);
   // Someone already offering a service is past "create your profile":
@@ -84,7 +87,10 @@ export default async function Discover() {
         .neq("status", "draft")
     : { data: null };
   const offering = mine?.length ?? 0;
-  const strength = await weakestProfile(supabase, mine ?? []);
+  const [strength, showPoints] = await Promise.all([weakestProfile(supabase, mine ?? []), canSeePoints(user?.id ?? null)]);
+  // Their own ledger rows (RLS): the balance for the invite card.
+  const { data: ledger } = showPoints && user ? await supabase.from("points_ledger").select("points").eq("user_id", user.id) : { data: null };
+  const balance = (ledger ?? []).reduce((sum, r) => sum + r.points, 0);
 
   const region = (await cookies()).get(REGION_COOKIE)?.value || null;
   const [nearby, { data: place }] = await Promise.all([
@@ -176,6 +182,18 @@ export default async function Discover() {
             <span className="block h-full rounded-full bg-primary" style={{ width: `${strength.strength.percent}%` }} />
           </span>
           <span className="text-xs text-muted">{t("strengthNext", { tip: tProfile(`strengthAdd_${strength.strength.missing[0]!}`) })}</span>
+        </Link>
+      )}
+
+      {showPoints && (
+        <Link href="/points" className="flex items-center gap-3 rounded-2xl bg-primary-soft/70 px-4 py-3 transition-colors hover:bg-primary-soft">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary">
+            <SparklesIcon className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-display text-sm font-bold text-ink">{tPoints("homeTitle")}</span>
+            <span className="block text-xs text-muted">{tPoints("homeBody", { points: balance })}</span>
+          </span>
         </Link>
       )}
 

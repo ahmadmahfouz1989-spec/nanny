@@ -154,19 +154,45 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"errand_orders": {
+                },"errand_order_tracking": {
                   Row: {
-                    "budget_usd": number | null,"cancel_reason": string | null,"cancelled_by": string | null,"category": string,"chosen_provider_profile_id": string | null,"choose_until": string | null,"confirm_until": string | null,"created_at": string,"description": string,"dropoff_address": string | null,"dropoff_area_id": string | null,"dropoff_contact_name": string | null,"dropoff_contact_phone": string | null,"dropoff_detail": string | null,"dropoff_district_id": string | null,"dropoff_instructions": string | null,"dropoff_lat": number | null,"dropoff_lng": number | null,"dropoff_place_name": string | null,"generic_match_id": string | null,"id": string,"number": number,"open_until": string,"photo_paths": (string)[],"pickup_address": string | null,"pickup_area_id": string | null,"pickup_contact_name": string | null,"pickup_contact_phone": string | null,"pickup_detail": string | null,"pickup_district_id": string,"pickup_instructions": string | null,"pickup_lat": number | null,"pickup_lng": number | null,"pickup_place_name": string | null,"provider_profile_id": string | null,"provider_user_id": string | null,"radius_km": number | null,"scheduled_at": string | null,"seeker_profile_id": string | null,"seeker_user_id": string,"selected_recipient_id": string | null,"service": string,"status": string,"status_changed_at": string,"timing": string,"updated_at": string,"wave": number,"wave_until": string | null
+                    "accuracy_m": number | null,"lat": number,"lng": number,"located_at": string,"order_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"category"?: string,"chosen_provider_profile_id"?: string | null,"choose_until"?: string | null,"confirm_until"?: string | null,"created_at"?: string,"description": string,"dropoff_address"?: string | null,"dropoff_area_id"?: string | null,"dropoff_contact_name"?: string | null,"dropoff_contact_phone"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"dropoff_instructions"?: string | null,"dropoff_lat"?: number | null,"dropoff_lng"?: number | null,"dropoff_place_name"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until": string,"photo_paths"?: (string)[],"pickup_address"?: string | null,"pickup_area_id"?: string | null,"pickup_contact_name"?: string | null,"pickup_contact_phone"?: string | null,"pickup_detail"?: string | null,"pickup_district_id": string,"pickup_instructions"?: string | null,"pickup_lat"?: number | null,"pickup_lng"?: number | null,"pickup_place_name"?: string | null,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"radius_km"?: number | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id": string,"selected_recipient_id"?: string | null,"service": string,"status"?: string,"status_changed_at"?: string,"timing": string,"updated_at"?: string,"wave"?: number,"wave_until"?: string | null
+                    "accuracy_m"?: number | null,"lat": number,"lng": number,"located_at"?: string,"order_id": string
                   }
                   Update: {
-                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"category"?: string,"chosen_provider_profile_id"?: string | null,"choose_until"?: string | null,"confirm_until"?: string | null,"created_at"?: string,"description"?: string,"dropoff_address"?: string | null,"dropoff_area_id"?: string | null,"dropoff_contact_name"?: string | null,"dropoff_contact_phone"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"dropoff_instructions"?: string | null,"dropoff_lat"?: number | null,"dropoff_lng"?: number | null,"dropoff_place_name"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until"?: string,"photo_paths"?: (string)[],"pickup_address"?: string | null,"pickup_area_id"?: string | null,"pickup_contact_name"?: string | null,"pickup_contact_phone"?: string | null,"pickup_detail"?: string | null,"pickup_district_id"?: string,"pickup_instructions"?: string | null,"pickup_lat"?: number | null,"pickup_lng"?: number | null,"pickup_place_name"?: string | null,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"radius_km"?: number | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id"?: string,"selected_recipient_id"?: string | null,"service"?: string,"status"?: string,"status_changed_at"?: string,"timing"?: string,"updated_at"?: string,"wave"?: number,"wave_until"?: string | null
+                    "accuracy_m"?: number | null,"lat"?: number,"lng"?: number,"located_at"?: string,"order_id"?: string
                   }
                   Relationships: [
                     {
+      foreignKeyName: "errand_order_tracking_order_id_fkey"
+      columns: ["order_id"]
+isOneToOne: true
+      referencedRelation: "errand_orders"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"errand_orders": {
+                  Row: {
+                    "budget_usd": number | null,"cancel_reason": string | null,"cancelled_by": string | null,"category": string,"choose_until": string | null,"chosen_provider_profile_id": string | null,"confirm_until": string | null,"created_at": string,"description": string,"dropoff_address": string | null,"dropoff_area_id": string | null,"dropoff_contact_name": string | null,"dropoff_contact_phone": string | null,"dropoff_detail": string | null,"dropoff_district_id": string | null,"dropoff_instructions": string | null,"dropoff_lat": number | null,"dropoff_lng": number | null,"dropoff_place_name": string | null,"generic_match_id": string | null,"id": string,"number": number,"open_until": string,"photo_paths": (string)[],"pickup_address": string | null,"pickup_area_id": string | null,"pickup_contact_name": string | null,"pickup_contact_phone": string | null,"pickup_detail": string | null,"pickup_district_id": string,"pickup_instructions": string | null,"pickup_lat": number | null,"pickup_lng": number | null,"pickup_place_name": string | null,"provider_profile_id": string | null,"provider_user_id": string | null,"radius_km": number | null,"scheduled_at": string | null,"seeker_profile_id": string | null,"seeker_user_id": string,"selected_recipient_id": string | null,"service": string,"status": string,"status_changed_at": string,"timing": string,"updated_at": string,"wave": number,"wave_until": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"category"?: string,"choose_until"?: string | null,"chosen_provider_profile_id"?: string | null,"confirm_until"?: string | null,"created_at"?: string,"description": string,"dropoff_address"?: string | null,"dropoff_area_id"?: string | null,"dropoff_contact_name"?: string | null,"dropoff_contact_phone"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"dropoff_instructions"?: string | null,"dropoff_lat"?: number | null,"dropoff_lng"?: number | null,"dropoff_place_name"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until": string,"photo_paths"?: (string)[],"pickup_address"?: string | null,"pickup_area_id"?: string | null,"pickup_contact_name"?: string | null,"pickup_contact_phone"?: string | null,"pickup_detail"?: string | null,"pickup_district_id": string,"pickup_instructions"?: string | null,"pickup_lat"?: number | null,"pickup_lng"?: number | null,"pickup_place_name"?: string | null,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"radius_km"?: number | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id": string,"selected_recipient_id"?: string | null,"service": string,"status"?: string,"status_changed_at"?: string,"timing": string,"updated_at"?: string,"wave"?: number,"wave_until"?: string | null
+                  }
+                  Update: {
+                    "budget_usd"?: number | null,"cancel_reason"?: string | null,"cancelled_by"?: string | null,"category"?: string,"choose_until"?: string | null,"chosen_provider_profile_id"?: string | null,"confirm_until"?: string | null,"created_at"?: string,"description"?: string,"dropoff_address"?: string | null,"dropoff_area_id"?: string | null,"dropoff_contact_name"?: string | null,"dropoff_contact_phone"?: string | null,"dropoff_detail"?: string | null,"dropoff_district_id"?: string | null,"dropoff_instructions"?: string | null,"dropoff_lat"?: number | null,"dropoff_lng"?: number | null,"dropoff_place_name"?: string | null,"generic_match_id"?: string | null,"id"?: string,"number"?: never,"open_until"?: string,"photo_paths"?: (string)[],"pickup_address"?: string | null,"pickup_area_id"?: string | null,"pickup_contact_name"?: string | null,"pickup_contact_phone"?: string | null,"pickup_detail"?: string | null,"pickup_district_id"?: string,"pickup_instructions"?: string | null,"pickup_lat"?: number | null,"pickup_lng"?: number | null,"pickup_place_name"?: string | null,"provider_profile_id"?: string | null,"provider_user_id"?: string | null,"radius_km"?: number | null,"scheduled_at"?: string | null,"seeker_profile_id"?: string | null,"seeker_user_id"?: string,"selected_recipient_id"?: string | null,"service"?: string,"status"?: string,"status_changed_at"?: string,"timing"?: string,"updated_at"?: string,"wave"?: number,"wave_until"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "errand_orders_chosen_provider_profile_id_fkey"
+      columns: ["chosen_provider_profile_id"]
+isOneToOne: false
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    },{
       foreignKeyName: "errand_orders_dropoff_area_id_fkey"
       columns: ["dropoff_area_id"]
 isOneToOne: false
@@ -228,52 +254,16 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"travel_time_usage": {
-                  Row: {
-                    "day": string,"elements": number
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "day": string,"elements"?: number
-                  }
-                  Update: {
-                    "day"?: string,"elements"?: number
-                  }
-                  Relationships: []
-                },"errand_order_tracking": {
-                  Row: {
-                    "accuracy_m": number | null,"lat": number,"lng": number,"located_at": string,"order_id": string
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "accuracy_m"?: number | null,"lat": number,"lng": number,"located_at"?: string,"order_id": string
-                  }
-                  Update: {
-                    "accuracy_m"?: number | null,"lat"?: number,"lng"?: number,"located_at"?: string,"order_id"?: string
-                  }
-                  Relationships: []
-                },"rider_locations": {
-                  Row: {
-                    "lat": number,"lng": number,"located_at": string,"profile_id": string
-                  }
-                  ComputedFields: never
-                  Insert: {
-                    "lat": number,"lng": number,"located_at"?: string,"profile_id": string
-                  }
-                  Update: {
-                    "lat"?: number,"lng"?: number,"located_at"?: string,"profile_id"?: string
-                  }
-                  Relationships: []
                 },"errand_settings": {
                   Row: {
-                    "auto_offline_after_misses": number,"travel_time_daily_limit": number,"choose_seconds": number,"confirm_seconds": number,"id": boolean,"location_fresh_minutes": number,"travel_time_candidates": number,"initial_radius_km": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"updated_at": string,"updated_by": string | null,"wave_size": number
+                    "auto_offline_after_misses": number,"choose_seconds": number,"confirm_seconds": number,"id": boolean,"initial_radius_km": number,"location_fresh_minutes": number,"max_active_orders": number,"max_radius_km": number,"max_recipients": number,"nearby_fallback_km": number,"open_minutes": number,"quote_open_minutes": number,"radius_step_km": number,"response_seconds": number,"travel_time_candidates": number,"travel_time_daily_limit": number,"updated_at": string,"updated_by": string | null,"wave_size": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "auto_offline_after_misses"?: number,"travel_time_daily_limit"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "auto_offline_after_misses"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"location_fresh_minutes"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"travel_time_candidates"?: number,"travel_time_daily_limit"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Update: {
-                    "auto_offline_after_misses"?: number,"travel_time_daily_limit"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"location_fresh_minutes"?: number,"travel_time_candidates"?: number,"initial_radius_km"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
+                    "auto_offline_after_misses"?: number,"choose_seconds"?: number,"confirm_seconds"?: number,"id"?: boolean,"initial_radius_km"?: number,"location_fresh_minutes"?: number,"max_active_orders"?: number,"max_radius_km"?: number,"max_recipients"?: number,"nearby_fallback_km"?: number,"open_minutes"?: number,"quote_open_minutes"?: number,"radius_step_km"?: number,"response_seconds"?: number,"travel_time_candidates"?: number,"travel_time_daily_limit"?: number,"updated_at"?: string,"updated_by"?: string | null,"wave_size"?: number
                   }
                   Relationships: [
                     {
@@ -760,6 +750,66 @@ isOneToOne: true
       referencedColumns: ["id"]
     }
                   ]
+                },"points_ledger": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": string,"kind": string,"note": string | null,"points": number,"ref": string | null,"rule_key": string | null,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind": string,"note"?: string | null,"points": number,"ref"?: string | null,"rule_key"?: string | null,"user_id": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: string,"kind"?: string,"note"?: string | null,"points"?: number,"ref"?: string | null,"rule_key"?: string | null,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "points_ledger_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "points_ledger_rule_key_fkey"
+      columns: ["rule_key"]
+isOneToOne: false
+      referencedRelation: "points_rules"
+      referencedColumns: ["key"]
+    },{
+      foreignKeyName: "points_ledger_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"points_rules": {
+                  Row: {
+                    "enabled": boolean,"key": string,"kind": string,"max_per_day": number | null,"max_per_month": number | null,"max_total": number | null,"points": number,"sort_order": number,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "enabled"?: boolean,"key": string,"kind": string,"max_per_day"?: number | null,"max_per_month"?: number | null,"max_total"?: number | null,"points": number,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Update: {
+                    "enabled"?: boolean,"key"?: string,"kind"?: string,"max_per_day"?: number | null,"max_per_month"?: number | null,"max_total"?: number | null,"points"?: number,"sort_order"?: number,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"points_settings": {
+                  Row: {
+                    "enabled": boolean,"id": boolean,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "enabled"?: boolean,"id"?: boolean,"updated_at"?: string
+                  }
+                  Update: {
+                    "enabled"?: boolean,"id"?: boolean,"updated_at"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
                 },"post_likes": {
                   Row: {
                     "created_at": string,"post_id": string,"user_id": string
@@ -820,14 +870,14 @@ isOneToOne: false
                   ]
                 },"posts": {
                   Row: {
-                    "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"photo_urls": string[],"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string,"work_project_id": string | null
+                    "caption": string,"created_at": string,"expires_at": string,"id": string,"kind": string,"photo_urls": (string)[],"posted_as_generic_profile_id": string | null,"posted_as_nanny_profile_id": string | null,"posted_as_parent_profile_id": string | null,"status": string,"updated_at": string,"user_id": string,"work_project_id": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"photo_urls"?: string[],"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string,"work_project_id"?: string | null
+                    "caption": string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind": string,"photo_urls"?: (string)[],"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id": string,"work_project_id"?: string | null
                   }
                   Update: {
-                    "caption"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind"?: string,"photo_urls"?: string[],"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"work_project_id"?: string | null
+                    "caption"?: string,"created_at"?: string,"expires_at"?: string,"id"?: string,"kind"?: string,"photo_urls"?: (string)[],"posted_as_generic_profile_id"?: string | null,"posted_as_nanny_profile_id"?: string | null,"posted_as_parent_profile_id"?: string | null,"status"?: string,"updated_at"?: string,"user_id"?: string,"work_project_id"?: string | null
                   }
                   Relationships: [
                     {
@@ -966,6 +1016,52 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"referral_codes": {
+                  Row: {
+                    "code": string,"created_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"created_at"?: string,"user_id": string
+                  }
+                  Update: {
+                    "code"?: string,"created_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "referral_codes_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: true
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"referrals": {
+                  Row: {
+                    "code": string,"counted_at": string | null,"created_at": string,"referred_user_id": string,"referrer_user_id": string,"reject_reason": string | null,"source": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "code": string,"counted_at"?: string | null,"created_at"?: string,"referred_user_id": string,"referrer_user_id": string,"reject_reason"?: string | null,"source": string,"status"?: string
+                  }
+                  Update: {
+                    "code"?: string,"counted_at"?: string | null,"created_at"?: string,"referred_user_id"?: string,"referrer_user_id"?: string,"reject_reason"?: string | null,"source"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "referrals_referred_user_id_fkey"
+      columns: ["referred_user_id"]
+isOneToOne: true
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "referrals_referrer_user_id_fkey"
+      columns: ["referrer_user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"reports": {
                   Row: {
                     "created_at": string,"details": string | null,"id": string,"match_id": string | null,"match_source": string | null,"post_id": string | null,"reason": string,"reported_user_id": string | null,"reporter_user_id": string | null,"resolution_notes": string | null,"resolved_at": string | null,"resolved_by_admin_id": string | null,"status": string
@@ -1004,6 +1100,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"rider_locations": {
+                  Row: {
+                    "lat": number,"lng": number,"located_at": string,"profile_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "lat": number,"lng": number,"located_at"?: string,"profile_id": string
+                  }
+                  Update: {
+                    "lat"?: number,"lng"?: number,"located_at"?: string,"profile_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "rider_locations_profile_id_fkey"
+      columns: ["profile_id"]
+isOneToOne: true
+      referencedRelation: "generic_profiles"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"saved_places": {
                   Row: {
                     "address": string | null,"id": string,"kind": string,"lat": number,"lng": number,"name": string | null,"updated_at": string,"user_id": string
@@ -1024,16 +1140,30 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"users": {
+                },"travel_time_usage": {
                   Row: {
-                    "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"full_name": string | null,"nationality": string | null,"photo_url": string | null,"id": string,"last_login_at": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
+                    "day": string,"elements": number
                   }
                   ComputedFields: never
                   Insert: {
-                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"nationality"?: string | null,"photo_url"?: string | null,"id": string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                    "day": string,"elements"?: number
                   }
                   Update: {
-                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"nationality"?: string | null,"photo_url"?: string | null,"id"?: string,"last_login_at"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                    "day"?: string,"elements"?: number
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"users": {
+                  Row: {
+                    "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"full_name": string | null,"id": string,"last_login_at": string | null,"nationality": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"photo_url": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id": string,"last_login_at"?: string | null,"nationality"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"photo_url"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                  }
+                  Update: {
+                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id"?: string,"last_login_at"?: string | null,"nationality"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"photo_url"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     
@@ -1122,13 +1252,7 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "mark_messages_delivered":
-{ Args: { "p_user": string }; Returns: number
-                           },
-"use_travel_time":
-{ Args: { "p_elements": number,"p_limit": number }; Returns: boolean
-                           },
-"account_is_suspended":
+            "account_is_suspended":
 { Args: { "check_user_id": string }; Returns: boolean
                            },
 "admin_conversation_stats":
@@ -1140,6 +1264,15 @@ isOneToOne: false
 { Args: { "p_active_since"?: string,"p_category"?: string,"p_limit"?: number,"p_offset"?: number }; Returns: {
               "category_name_ar": string,"category_name_en": string,"category_slug": string,"from_provider": number,"from_seeker": number,"last_message_at": string,"match_id": string,"messages": number,"provider_name": string,"provider_profile_id": string,"seeker_name": string,"seeker_profile_id": string,"started_at": string,"started_by_side": string,"status": string,"total_count": number
             }[]
+                           },
+"award_points":
+{ Args: { "p_note"?: string,"p_ref": string,"p_rule": string,"p_user": string }; Returns: number
+                           },
+"completed_order_between":
+{ Args: { "p_match_id": string,"p_ratee": string,"p_rater": string }; Returns: boolean
+                           },
+"counted_referrer":
+{ Args: { "p_user": string }; Returns: string
                            },
 "create_nanny_profile":
 { Args: { "p_availability": Json,"p_can_drive": boolean,"p_certifications": (string)[],"p_employment_type": string,"p_experience": Json,"p_full_name": string,"p_has_transportation": boolean,"p_language_ids": (string)[],"p_live_arrangement_pref": string,"p_location_detail": string,"p_location_id": string,"p_profile_photo_url": string,"p_short_intro": string,"p_work_radius_km": number,"p_years_experience": number }; Returns: {
@@ -1228,6 +1361,12 @@ isOneToOne: false
               "created_at": string,"generic_profile_id": string,"id": string
             }[]
                            },
+"mark_messages_delivered":
+{ Args: { "p_user": string }; Returns: number
+                           },
+"message_has_lebanese_phone":
+{ Args: { "p_body": string }; Returns: boolean
+                           },
 "message_summaries_for_matches":
 { Args: { "p_match_ids": (string)[],"p_user_id": string }; Returns: {
               "last_body": string,"last_created_at": string,"match_id": string,"unread_count": number
@@ -1240,6 +1379,9 @@ isOneToOne: false
                            },
 "report_match_participants_valid":
 { Args: { "p_match_id": string,"p_match_source": string,"p_reported_user_id": string,"p_reporter_user_id": string }; Returns: boolean
+                           },
+"settle_referral":
+{ Args: { "p_user": string }; Returns: undefined
                            },
 "update_nanny_profile":
 { Args: { "p_availability": Json,"p_can_drive": boolean,"p_certifications": (string)[],"p_employment_type": string,"p_experience": Json,"p_full_name": string,"p_has_transportation": boolean,"p_language_ids": (string)[],"p_live_arrangement_pref": string,"p_location_detail": string,"p_location_id": string,"p_profile_photo_url": string,"p_short_intro": string,"p_work_radius_km": number,"p_years_experience": number }; Returns: {
@@ -1301,6 +1443,9 @@ isOneToOne: false
         isOneToOne: true
         isSetofReturn: false
       } },
+"use_travel_time":
+{ Args: { "p_elements": number,"p_limit": number }; Returns: boolean
+                           },
 "user_is_featured":
 { Args: { "p_user_id": string }; Returns: boolean
                            }

@@ -24,6 +24,7 @@ import {
   SearchIcon,
   SendIcon,
   ShieldCheckIcon,
+  SparklesIcon,
   WhatsAppIcon,
 } from "@/components/home-icons";
 import { rememberRegion } from "@/lib/region";
@@ -178,6 +179,7 @@ export function MobileHeader({
   services,
   region,
   orders = false,
+  points = false,
 }: {
   me: ShellMe | null;
   services: ShellService[];
@@ -185,9 +187,12 @@ export function MobileHeader({
   orders?: boolean;
   /** The area picked on Home, from its cookie. */
   region: string;
+  /** Points & invites (released, or an admin setting it up). */
+  points?: boolean;
 }) {
   const t = useTranslations("Nav");
   const tm = useTranslations("Menu");
+  const tpts = useTranslations("Points");
   const [menuOpen, setMenuOpen] = useState(false);
   const [servicesOpen, setServicesOpen] = useState(false);
   const pathname = usePathname();
@@ -360,6 +365,13 @@ export function MobileHeader({
             <RowText title={tm("saved")} hint={tm("savedHint")} />
             {chevron}
           </Link>
+          {points && (
+            <Link href="/points" onClick={close} className={MENU_ROW}>
+              <RowIcon tone="primary"><SparklesIcon className="h-[22px] w-[22px]" /></RowIcon>
+              <RowText title={tpts("menu")} hint={tpts("menuHint")} />
+              {chevron}
+            </Link>
+          )}
           <Link href="/settings" onClick={close} className={MENU_ROW}>
             <RowIcon tone="neutral"><GearIcon className="h-[22px] w-[22px]" /></RowIcon>
             <RowText title={tm("settings")} hint={tm("settingsHint")} />

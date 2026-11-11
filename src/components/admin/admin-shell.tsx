@@ -1,5 +1,6 @@
 "use client";
 
+import { SparklesIcon } from "@/components/home-icons";
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
@@ -67,6 +68,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
     { href: "/admin/users", label: t("navUsers"), Icon: UsersIcon },
     { href: "/admin/feed", label: t("navFeed"), Icon: FeedIcon },
     { href: "/admin/broadcasts", label: t("navBroadcast"), Icon: MegaphoneIcon },
+    { href: "/admin/points", label: t("navPoints"), Icon: SparklesIcon },
   ];
 
   const badge = (count: number | undefined) =>
