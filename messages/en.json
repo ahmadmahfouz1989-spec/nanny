@@ -2658,7 +2658,15 @@
     "trackingOnApp": "The customer can see where you are on the map until you deliver, even if you switch to Maps or lock your phone.",
     "emptyTitle": "Need something done nearby?",
     "emptyDeliveryBody": "Parcels, groceries, pharmacy, paperwork or a moto taxi. Riders near you send their price.",
-    "emptyQuoteBody": "Plumber, electrician, painter and more. Describe the job once and pros send their price."
+    "emptyQuoteBody": "Plumber, electrician, painter and more. Describe the job once and pros send their price.",
+    "stepOf": "Step {step} of {total}",
+    "step1Title": "1. What do you need?",
+    "step2Title": "2. Where?",
+    "step3Title": "3. When, and who gets it",
+    "summary": "Your order",
+    "edit": "Change",
+    "stepBack": "Back",
+    "stepNext": "Next"
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

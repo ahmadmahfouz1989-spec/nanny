@@ -12,6 +12,7 @@ import { straightLineKm } from "@/lib/place-input";
 import { ERRAND_SERVICES, type ErrandService } from "@/lib/validation/errands";
 import { NEEDS_DROPOFF } from "@/lib/validation/errand-order";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
+import ErrandServiceIcon from "@/components/errand-service-icon";
 
 type Place = { governorateId: string | null; districtId: string | null; areaId: string | null; detail: string };
 const emptyPlace: Place = { governorateId: null, districtId: null, areaId: null, detail: "" };
@@ -46,7 +47,15 @@ type Rider = { profileId: string; name: string; photoUrl: string | null; rating:
 /** Closer than this, both ends are the same spot. */
 const SAME_SPOT_KM = 0.05;
 
-/** A new Delivery & Errands order: service, what's needed, where, when. */
+type Step = 1 | 2 | 3;
+/** Which step each missing answer is on. */
+const STEP_OF: Record<Missing, Step> = { description: 1, name: 1, pickup: 2, dropoff: 2 };
+
+/**
+ * A new Delivery & Errands order, in three short steps: what (the service
+ * and a line about it), where (pickup and drop-off), then when, who gets
+ * it and a summary before sending. One long page made it feel like a form.
+ */
 export default function NewOrderForm({ prefill = null, needsName = false, userId }: { prefill?: OrderPrefill | null; needsName?: boolean; userId: string }) {
   const t = useTranslations("Orders");
   const ts = useTranslations("ErrandServices");
@@ -78,6 +87,13 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   const [riderId, setRiderId] = useState<string | null>(null);
   const [ridersTick, setRidersTick] = useState(0);
   const sections = useRef<Partial<Record<Missing, HTMLElement | null>>>({});
+  const [step, setStep] = useState<Step>(1);
+  const top = useRef<HTMLFormElement>(null);
+  const goTo = (next: Step) => {
+    setStep(next);
+    setError(null);
+    requestAnimationFrame(() => top.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  };
 
   // What's been filled in survives leaving the page and coming back in the
   // same session: this form is too long to ask twice.
@@ -165,6 +181,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   /** Takes the person to what's still needed, and says so there. */
   function pointTo(what: Missing) {
     setMissing(what);
+    setStep(STEP_OF[what]);
     requestAnimationFrame(() => {
       const el = sections.current[what];
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -187,8 +204,28 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
     [`${prefix}ContactPhone`]: m.contactPhone.trim() || undefined,
   });
 
+  /** Moves on only when this step has what it needs. */
+  function next() {
+    setMissing(null);
+    if (step === 1) {
+      if (description.trim().length < 3) return pointTo("description");
+      if (askName && fullName.trim().length < 2) return pointTo("name");
+      return goTo(2);
+    }
+    if (useMap) {
+      if (!pickupMap.point) return pointTo("pickup");
+      if (needsDropoff && !dropoffMap.point) return pointTo("dropoff");
+    } else if (!pickup.districtId || (needsDropoff && !dropoff.districtId)) {
+      setError(t("chooseDistrict"));
+      return;
+    }
+    goTo(3);
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    // Enter in a field moves on rather than sending half an order.
+    if (step < 3) return next();
     setError(null);
     setMissing(null);
     if (description.trim().length < 3) return pointTo("description");
@@ -197,6 +234,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       if (!pickupMap.point) return pointTo("pickup");
       if (needsDropoff && !dropoffMap.point) return pointTo("dropoff");
     } else if (!pickup.districtId || (needsDropoff && !dropoff.districtId)) {
+      setStep(2);
       setError(t("chooseDistrict"));
       return;
     }
@@ -252,6 +290,11 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
     router.push(`/orders/${body.order.id}`);
   }
 
+  // The summary's "from → to": each map place's name or address (without
+  // the map, the areas aren't named here -- the line is left out).
+  const placeLabel = (m: MapPlace) => m.name.trim() || m.address.trim();
+  const placesLine = useMap ? [placeLabel(pickupMap), needsDropoff ? placeLabel(dropoffMap) : ""].filter(Boolean).join(" → ") : "";
+
   // Functional updates: picking an area from the search sets the
   // governorate and then the district in the same click, and the second
   // mustn't overwrite the first.
@@ -268,26 +311,43 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   );
 
   return (
-    <form onSubmit={submit} className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6">
+    <form ref={top} onSubmit={submit} className="mx-auto flex w-full max-w-2xl scroll-mt-4 flex-col gap-5 px-4 py-6">
       <div>
         <Link href="/orders" className="text-sm text-muted hover:text-ink">
           <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-ink">{t("newOrder")}</h1>
         {prefill && <p className="mt-1 text-sm text-muted">{t("prefilledHint")}</p>}
-      </div>
-
-      <section className="flex flex-col gap-2">
-        <span className={ui.label}>{t("service")}</span>
-        <div className="flex flex-wrap gap-2">
-          {ERRAND_SERVICES.map((s) => (
-            <button key={s} type="button" aria-pressed={service === s} className={ui.pill(service === s)} onClick={() => setService(s)}>
-              {ts(s)}
-            </button>
+        <div className="mt-3 flex items-center gap-2" aria-label={t("stepOf", { step, total: 3 })}>
+          {[1, 2, 3].map((n) => (
+            <span key={n} className={`h-1.5 flex-1 rounded-full ${n <= step ? "bg-primary" : "bg-surface-sunken"}`} />
           ))}
         </div>
-      </section>
+        <p className="mt-2 text-sm font-semibold text-ink">{t(`step${step}Title` as "step1Title")}</p>
+      </div>
 
+      {step === 1 && (
+      <section className="flex flex-col gap-2" role="radiogroup" aria-label={t("service")}>
+        {ERRAND_SERVICES.map((s) => (
+          <button
+            key={s}
+            type="button"
+            role="radio"
+            aria-checked={service === s}
+            onClick={() => setService(s)}
+            className={ui.card + " flex items-center gap-3 p-3 text-start transition" + (service === s ? " ring-2 ring-primary" : " hover:border-border-strong")}
+          >
+            <ErrandServiceIcon service={s} />
+            <span className="flex min-w-0 flex-1 flex-col">
+              <span className="font-semibold text-ink">{ts(s)}</span>
+              <span className="text-sm text-muted">{ts(`${s}Seeker` as "deliverySeeker")}</span>
+            </span>
+          </button>
+        ))}
+      </section>
+      )}
+
+      {step === 1 && (
       <label ref={(el) => { sections.current.description = el; }} className="flex flex-col gap-2">
         <span className={ui.label}>{t("whatNeeded")}</span>
         <textarea
@@ -301,8 +361,9 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         />
         {stillMissing("description") && <span className="text-sm text-danger">{t("describeNeed")}</span>}
       </label>
+      )}
 
-      {askName && (
+      {step === 1 && askName && (
         <label ref={(el) => { sections.current.name = el; }} className="flex flex-col gap-2">
           <span className={ui.label}>{t("yourName")}</span>
           <input className={ui.input} maxLength={80} autoComplete="name" value={fullName} onChange={(e) => setFullName(e.target.value)} />
@@ -310,7 +371,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         </label>
       )}
 
-      {useMap ? (
+      {step === 2 && (useMap ? (
         <>
           <section ref={(el) => { sections.current.pickup = el; }} className={ui.card + " flex flex-col gap-3 p-4" + (stillMissing("pickup") ? " ring-2 ring-danger/50" : "")}>
             <h2 className="font-semibold text-ink">{needsDropoff ? t("mapFrom") : t("mapWhere")}</h2>
@@ -363,8 +424,31 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
           )}
           <p className="-mt-2 text-xs text-muted">{t("landmarkHint")}</p>
         </>
+      ))}
+
+      {step === 3 && (
+        <section className={ui.card + " flex flex-col gap-2 p-4"} aria-label={t("summary")}>
+          <div className="flex items-center gap-3">
+            <ErrandServiceIcon service={service} className="h-9 w-9" />
+            <span className="font-semibold text-ink">{ts(service)}</span>
+            <button type="button" onClick={() => goTo(1)} className={ui.link + " ms-auto text-sm"}>
+              {t("edit")}
+            </button>
+          </div>
+          <p dir="auto" className="line-clamp-3 text-sm text-ink/90">{description.trim()}</p>
+          {placesLine && (
+          <div className="flex items-start gap-2 border-t border-border pt-2 text-sm text-muted">
+            <span className="min-w-0 flex-1">{placesLine}</span>
+            <button type="button" onClick={() => goTo(2)} className={ui.link + " shrink-0 text-sm"}>
+              {t("edit")}
+            </button>
+          </div>
+          )}
+        </section>
       )}
 
+      {step === 3 && (
+      <>
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("when")}</span>
         <div className="flex gap-2">
@@ -446,11 +530,28 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
             </>
           ))}
       </section>
+      </>
+      )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
-      <button type="submit" disabled={sending} className={ui.buttonPrimary}>
-        {sending ? t("placing") : chosenRider ? t("placeOrderTo", { name: chosenRider.name }) : t("placeOrder")}
-      </button>
+      <div className="flex items-center gap-3">
+        {step > 1 && (
+          <button type="button" onClick={() => goTo((step - 1) as Step)} className={ui.buttonSecondary}>
+            {t("stepBack")}
+          </button>
+        )}
+        {/* Separate keys: the same button turning into Send during the tap
+            that reached step 3 would send the order straight away. */}
+        {step < 3 ? (
+          <button key="next" type="button" onClick={next} className={ui.buttonPrimary + " flex-1"}>
+            {t("stepNext")}
+          </button>
+        ) : (
+          <button key="send" type="submit" disabled={sending} className={ui.buttonPrimary + " flex-1"}>
+            {sending ? t("placing") : chosenRider ? t("placeOrderTo", { name: chosenRider.name }) : t("placeOrder")}
+          </button>
+        )}
+      </div>
     </form>
   );
 }
