@@ -240,6 +240,15 @@ export function listenForNativeEvents() {
   });
 
   cap.Plugins.App?.addListener("appUrlOpen", ({ url }) => {
+    // An oui-know.com link the app was opened with (an invite link):
+    // that page, inside the app.
+    const site = /^https:\/\/(www\.)?oui-know\.com(\/[^#]*)?/.exec(url);
+    if (site) {
+      // A full load: the app may have just started on this link.
+      // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+      window.location.href = `${window.location.origin}${site[2] || "/"}`;
+      return;
+    }
     if (!url.startsWith(NATIVE_AUTH_CALLBACK)) return;
     cap.Plugins.Browser?.close().catch(() => {});
     const query = url.slice(NATIVE_AUTH_CALLBACK.length);

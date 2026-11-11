@@ -27,6 +27,10 @@ export async function proxy(request: NextRequest) {
   const canonical = canonicalHostRedirect(request.headers.get("host"), request.nextUrl.pathname + request.nextUrl.search);
   if (canonical) return NextResponse.redirect(canonical, 308);
 
+  // App link verification files (Apple, Android): served as they are, never
+  // under a language.
+  if (request.nextUrl.pathname.startsWith("/.well-known/")) return NextResponse.next();
+
   if (request.nextUrl.pathname.startsWith("/api/")) {
     if (isBlockedWrite(request)) {
       return NextResponse.json(

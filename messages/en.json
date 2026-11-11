@@ -2887,6 +2887,7 @@
     "back": "Back online"
   },
   "Points": {
+    "claimPaste": "Paste",
     "title": "Points & invites",
     "previewNote": "Only admins can see this page until Points are released from the admin panel.",
     "balance": "Your points",
@@ -2950,13 +2951,14 @@
     "review_received": "A review from a customer"
   },
   "Invite": {
+    "inApp": "Continue",
     "title": "{name} invited you to ouiKnow",
     "titleNoName": "You're invited to ouiKnow",
     "body": "Find trusted help near you in Lebanon (nannies, nurses, tutors, repairs, deliveries and more) or offer your own services.",
     "codeLabel": "Invite code",
     "android": "Get the app on Google Play",
     "iphone": "Get the app on the App Store",
-    "iphoneHint": "On iPhone, enter the code {code} when the app asks \"Did someone invite you?\"",
+    "iphoneHint": "Tapping App Store copies the code {code}. Paste it when the app asks \"Did someone invite you?\"",
     "web": "Or continue on the website"
   },
   "AdminPoints": {

@@ -23,6 +23,13 @@ export default function AboutYouForm({ initial, next, askInvite = false }: { ini
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (askInvite) setInviteCode(storedInvite()?.code ?? "");
   }, [askInvite]);
+
+  async function pasteCode() {
+    try {
+      const text = (await navigator.clipboard.readText()).trim().toUpperCase().replace(/[^A-Z0-9]/g, "");
+      if (/^[A-Z0-9]{6,10}$/.test(text)) setInviteCode(text);
+    } catch {}
+  }
   const router = useRouter();
   const [fullName, setFullName] = useState(initial.fullName ?? "");
   const [contactPhone, setContactPhone] = useState(initial.contactPhone ?? "");
@@ -162,15 +169,23 @@ export default function AboutYouForm({ initial, next, askInvite = false }: { ini
           <span className={ui.label}>
             {tp("claimTitle")} <span className="font-normal text-muted">({t("optional")})</span>
           </span>
-          <input
-            dir="ltr"
-            autoCapitalize="characters"
-            maxLength={12}
-            placeholder="AB12CD"
-            className={ui.input + " tracking-widest"}
-            value={inviteCode}
-            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
-          />
+          <div className="flex gap-2">
+            <input
+              dir="ltr"
+              autoCapitalize="characters"
+              maxLength={12}
+              placeholder="AB12CD"
+              className={ui.input + " min-w-0 flex-1 tracking-widest"}
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+            />
+            {/* The App Store button on the invite page copied the code (Apple carries nothing through an install). */}
+            {!inviteCode && (
+              <button type="button" onClick={pasteCode} className={ui.buttonSecondary + " shrink-0"}>
+                {tp("claimPaste")}
+              </button>
+            )}
+          </div>
         </label>
       )}
 

@@ -3,6 +3,8 @@ import { Link, redirect } from "@/i18n/navigation";
 import BrandMark from "@/components/brand-mark";
 import { ui } from "@/lib/ui";
 import { APP_STORE_URL, inviterOf, playStoreLink, pointsReleased } from "@/lib/points";
+import { isNativeAppRequest } from "@/lib/native-app-server";
+import CopyCodeLink from "./copy-code-link";
 import RememberInvite from "./remember-invite";
 
 /**
@@ -19,6 +21,9 @@ export default async function InvitePage({ params }: { params: Promise<{ locale:
     return;
   }
   const t = await getTranslations("Invite");
+  // Opened in the app (an invite link the app caught): it's installed
+  // already, so just on to making the account.
+  const inApp = await isNativeAppRequest();
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center gap-6 bg-background px-6 py-10 text-center">
@@ -36,18 +41,24 @@ export default async function InvitePage({ params }: { params: Promise<{ locale:
         </p>
       </div>
 
-      <div className="flex w-full flex-col gap-3">
-        <a href={playStoreLink(inviter.code)} className={ui.buttonPrimary + " text-center"}>
-          {t("android")}
-        </a>
-        <a href={APP_STORE_URL} className={ui.buttonSecondary + " text-center"}>
-          {t("iphone")}
-        </a>
-        <p className="text-xs text-muted">{t("iphoneHint", { code: inviter.code })}</p>
-        <Link href="/signup" className={ui.link + " text-sm"}>
-          {t("web")}
+      {inApp ? (
+        <Link href="/signup" className={ui.buttonPrimary + " w-full text-center"}>
+          {t("inApp")}
         </Link>
-      </div>
+      ) : (
+        <div className="flex w-full flex-col gap-3">
+          <a href={playStoreLink(inviter.code)} className={ui.buttonPrimary + " text-center"}>
+            {t("android")}
+          </a>
+          <CopyCodeLink href={APP_STORE_URL} code={inviter.code} className={ui.buttonSecondary + " text-center"}>
+            {t("iphone")}
+          </CopyCodeLink>
+          <p className="text-xs text-muted">{t("iphoneHint", { code: inviter.code })}</p>
+          <Link href="/signup" className={ui.link + " text-sm"}>
+            {t("web")}
+          </Link>
+        </div>
+      )}
     </main>
   );
 }

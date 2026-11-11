@@ -19,6 +19,18 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
+            <!-- Invite links (oui-know.com/r/CODE) open in the app; verified by
+                 oui-know.com/.well-known/assetlinks.json. -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="https" android:host="oui-know.com" />
+                <data android:pathPrefix="/r/" />
+                <data android:pathPrefix="/en/r/" />
+                <data android:pathPrefix="/ar/r/" />
+            </intent-filter>
+
             <!-- ouiknow://auth/callback brings Google sign-in back into the app. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
