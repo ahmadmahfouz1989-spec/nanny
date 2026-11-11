@@ -1,5 +1,4 @@
 import { redirect } from "@/i18n/navigation";
-import { accountBasics, aboutYouHref } from "@/lib/account-basics";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mustVerifyPhone } from "@/lib/phone-gate";
 import { createClient } from "@/lib/supabase/server";
@@ -61,7 +60,8 @@ export default async function NewOrderPage({
   } = await supabase.auth.getUser();
   if (!user) redirect({ href: "/login", locale });
   if (await mustVerifyPhone(createAdminClient(), user!)) redirect({ href: `/verify-phone?next=/orders/new`, locale });
-  if (!(await accountBasics(createAdminClient(), user!.id)).complete) redirect({ href: aboutYouHref("/orders/new"), locale });
+  // No "About you" first: the form asks for a name when it has none, and
+  // an order needs nothing else from the account.
 
   const prefill = from === "request" ? await prefillFromRequest(supabase, user!.id) : null;
   // The name is only asked for when none of their profiles has one yet.

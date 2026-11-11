@@ -1,5 +1,4 @@
 import { redirect } from "@/i18n/navigation";
-import { accountBasics, aboutYouHref } from "@/lib/account-basics";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mustVerifyPhone } from "@/lib/phone-gate";
 import { createClient } from "@/lib/supabase/server";
@@ -28,7 +27,8 @@ export default async function NewQuotePage({
   } = await supabase.auth.getUser();
   if (!user) redirect({ href: `/login?next=/${locale}/quotes/new`, locale });
   if (await mustVerifyPhone(createAdminClient(), user!)) redirect({ href: `/verify-phone?next=/quotes/new`, locale });
-  if (!(await accountBasics(createAdminClient(), user!.id)).complete) redirect({ href: aboutYouHref("/quotes/new"), locale });
+  // No "About you" first: the form asks for a name when it has none, and
+  // an order needs nothing else from the account.
 
   // The name is only asked for when none of their profiles has one yet.
   const { data: account } = await supabase.from("users").select("full_name").eq("id", user!.id).single();
