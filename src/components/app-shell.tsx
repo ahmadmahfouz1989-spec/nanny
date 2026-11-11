@@ -11,7 +11,7 @@ import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
 import { ProfileIcon, GridIcon, FeedIcon, BookmarkIcon, HomeIcon, BoxIcon } from "@/components/nav-icons";
 import { NotificationsProvider } from "@/components/notifications/notifications-provider";
-import { APP_MAIN_ID, HideOnScroll, MatchesTabItem, MobileHeader, NotificationsTabItem } from "@/components/shell/mobile-chrome";
+import { APP_MAIN_ID, HideOnScroll, MatchesTabItem, MobileHeader } from "@/components/shell/mobile-chrome";
 import CategoryIcon from "@/components/category-icon";
 import { ClipboardIcon, GearIcon } from "@/components/home-icons";
 import PullToRefresh from "@/components/shell/pull-to-refresh";
@@ -177,7 +177,7 @@ export default async function AppShell({
                     <span>{t(c.slug)}</span>
                   </Link>
                 ))}
-                {hasOrders && (
+                {user && (
                   <Link
                     href="/orders"
                     className={`flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] transition-colors ${
@@ -185,7 +185,7 @@ export default async function AppShell({
                     }`}
                   >
                     <BoxIcon className="h-[22px] w-[22px] shrink-0" />
-                    <span>{tm("orders")}</span>
+                    <span>{t("activity")}</span>
                   </Link>
                 )}
                 <MessagesSidebarItem active={active === "messages"} signedIn={!!user} />
@@ -261,15 +261,15 @@ export default async function AppShell({
                 active={matchesActive}
                 className={TAB}
               />
-              {/* Riders and tradespeople work from Orders: a tab of its own. */}
-              {hasOrders && (
+              {/* Activity: orders, quotes and your requests, for everyone
+                  signed in. Notifications are the bell at the top. */}
+              {user && (
                 <Link href="/orders" replace className={`${TAB} ${active === "orders" ? "font-semibold text-primary" : "text-muted"}`}>
                   <BoxIcon className="h-[22px] w-[22px]" />
-                  {t("orders")}
+                  {t("activity")}
                 </Link>
               )}
               <MessagesTabItem active={active === "messages"} signedIn={!!user} />
-              <NotificationsTabItem active={active === "notifications"} className={TAB} />
               {/* Your profile, Saved, your services and settings live in
                   the menu behind your photo, as on X -- not here too. */}
             </nav>

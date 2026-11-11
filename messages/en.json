@@ -35,7 +35,8 @@
     "cleaning": "Cleaning",
     "beauty": "Beauty & Wellness",
     "car": "Car Services",
-    "orders": "Orders"
+    "orders": "Orders",
+    "activity": "Activity"
   },
   "Install": {
     "title": "Get the ouiKnow app",
@@ -2424,8 +2425,8 @@
     }
   },
   "Orders": {
-    "title": "Orders & quotes",
-    "subtitle": "Deliveries, errands and repair quotes from people near you.",
+    "title": "Activity",
+    "subtitle": "Your orders, repair quotes and requests.",
     "newOrder": "Delivery or errand",
     "myOrders": "My orders",
     "incoming": "Requests for me",
@@ -2666,7 +2667,10 @@
     "summary": "Your order",
     "edit": "Change",
     "stepBack": "Back",
-    "stepNext": "Next"
+    "stepNext": "Next",
+    "yourRequests": "Your requests",
+    "yourRequestsHint": "What you asked for in each service, and who matches it.",
+    "yourPosts": "Your posts"
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",

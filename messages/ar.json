@@ -35,7 +35,8 @@
     "cleaning": "تنظيف",
     "beauty": "تجميل وعناية",
     "car": "خدمات السيارات",
-    "orders": "الطلبات"
+    "orders": "الطلبات",
+    "activity": "نشاطي"
   },
   "Install": {
     "title": "نزّل تطبيق ouiKnow",
@@ -2424,8 +2425,8 @@
     }
   },
   "Orders": {
-    "title": "الطلبات والأسعار",
-    "subtitle": "توصيل ومشاوير وأسعار تصليحات من ناس قريبين منك.",
+    "title": "نشاطي",
+    "subtitle": "طلباتك وأسعار التصليح والطلبات اللي نشرتها.",
     "newOrder": "توصيل أو مشوار",
     "myOrders": "طلباتي",
     "incoming": "طلبات إلي",
@@ -2666,7 +2667,10 @@
     "summary": "طلبك",
     "edit": "غيّر",
     "stepBack": "رجوع",
-    "stepNext": "التالي"
+    "stepNext": "التالي",
+    "yourRequests": "طلباتك",
+    "yourRequestsHint": "شو طلبت بكل خدمة، ومين بيناسبك.",
+    "yourPosts": "منشوراتك"
   },
   "PublicProfile": {
     "serviceIn": "{service} في {place}",

@@ -220,6 +220,7 @@ export function MobileHeader({
             <span className="min-w-0 flex-1 flex justify-end">
               {pathname === "/feed" && <RegionPicker initial={region} />}
             </span>
+            {me && <NotificationsHeaderLink />}
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
@@ -391,21 +392,22 @@ export function MobileHeader({
   );
 }
 
-/** Notifications in the phone tab bar, with the unread count. */
-export function NotificationsTabItem({ active, className }: { active: boolean; className: string }) {
+/** The bell at the top of the phone screens, with the unread count. */
+function NotificationsHeaderLink() {
   const t = useTranslations("Notifications");
   const { unread } = useNotifications();
   return (
-    <Link href="/notifications" replace className={className + (active ? " font-semibold text-primary" : " text-muted")}>
-      <span className="relative">
-        <BellIcon className="h-[22px] w-[22px]" fill={active ? "currentColor" : "none"} />
-        {unread > 0 && (
-          <span className="absolute -top-1 -end-1.5 inline-flex items-center justify-center h-4 min-w-4 px-1 rounded-full bg-primary text-on-primary text-[10px] font-semibold">
-            {unread > 9 ? "9+" : unread}
-          </span>
-        )}
-      </span>
-      {t("title")}
+    <Link
+      href="/notifications"
+      aria-label={unread > 0 ? `${t("title")} (${unread})` : t("title")}
+      className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink transition hover:bg-surface-sunken"
+    >
+      <BellIcon className="h-[22px] w-[22px]" />
+      {unread > 0 && (
+        <span className="absolute -top-0.5 -end-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-on-primary">
+          {unread > 9 ? "9+" : unread}
+        </span>
+      )}
     </Link>
   );
 }
