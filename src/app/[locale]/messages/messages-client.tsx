@@ -176,8 +176,7 @@ export default function MessagesClient() {
             <div className="flex flex-col items-center gap-3 px-6 py-12 text-center">
               <ConnectIllustration className="h-24 w-auto" />
               <p className="text-sm text-muted">{t("empty")}</p>
-              {/* /dashboard picks your Matches, or the services if you have none. */}
-              <Link href="/dashboard" className={ui.buttonPrimary}>
+              <Link href="/categories" className={ui.buttonPrimary}>
                 {t("emptyAction")}
               </Link>
             </div>

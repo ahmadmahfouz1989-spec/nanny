@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { ChevronIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
 import { ui } from "@/lib/ui";
 import { getJson, request } from "@/lib/request";
 import { RIDER_AVAILABILITY_EVENT, setSharing, shareLocationOnce, stopSharing, type ShareResult } from "@/lib/rider-location";
@@ -121,7 +122,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
           <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted">{t("subtitle")}</p>
         </div>
-        {shownTab === "seeker" && (
+        {shownTab === "seeker" && !(mine && mine.orders.length === 0) && (
           <div className="flex shrink-0 flex-col gap-2 sm:flex-row">
             <Link href="/quotes/new" className={ui.buttonSecondary}>
               {t("newQuote")}
@@ -151,7 +152,11 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
       {shownTab === "seeker" && mine && (
         <div className="flex flex-col gap-3">
           {mine.orders.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted">{t("noOrders")}</p>
+            <div className="flex flex-col gap-3 pt-2">
+              <h2 className="font-display text-lg font-semibold text-ink">{t("emptyTitle")}</h2>
+              <StartCard href="/orders/new" icon={<ScooterIcon className="h-6 w-6" />} tone="bg-primary-soft text-primary" title={t("newOrder")} body={t("emptyDeliveryBody")} />
+              <StartCard href="/quotes/new" icon={<WrenchIcon className="h-6 w-6" />} tone="bg-accent-soft text-accent-hover" title={t("newQuote")} body={t("emptyQuoteBody")} />
+            </div>
           ) : (
             mine.orders.map((o) =>
               row(
@@ -299,6 +304,20 @@ export function NeedsAreaCard() {
       <span className="font-semibold text-warning">{t("needsAreaTitle")}</span>
       <span className="text-sm text-ink">{t("needsAreaBody")}</span>
       <span className="text-sm font-semibold text-primary">{t("needsAreaAction")} <span aria-hidden className="inline-block rtl:-scale-x-100">→</span></span>
+    </Link>
+  );
+}
+
+/** One way to start, as a big tappable card: for someone with no orders yet. */
+function StartCard({ href, icon, tone, title, body }: { href: string; icon: React.ReactNode; tone: string; title: string; body: string }) {
+  return (
+    <Link href={href} className={ui.card + " flex items-center gap-4 p-4 transition hover:border-border-strong active:scale-[0.99]"}>
+      <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${tone}`}>{icon}</span>
+      <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="font-semibold text-ink">{title}</span>
+        <span className="text-sm text-muted">{body}</span>
+      </span>
+      <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
     </Link>
   );
 }

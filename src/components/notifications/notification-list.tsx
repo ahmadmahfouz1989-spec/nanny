@@ -54,7 +54,8 @@ export default function NotificationList({ onOpen }: { onOpen?: (n: Notification
         <span className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-sunken text-muted">
           <HeartIcon className="h-4 w-4" />
         </span>
-        <p className="text-sm text-muted">{t("empty")}</p>
+        <p className="text-sm font-medium text-ink">{t("empty")}</p>
+        <p className="max-w-xs text-sm text-muted">{t("emptyHint")}</p>
       </div>
     );
   }
