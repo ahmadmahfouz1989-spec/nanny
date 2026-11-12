@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import PageTransition from "@/components/motion/page-transition";
 import { getLocale, getTranslations } from "next-intl/server";
 import { createClient } from "@/lib/supabase/server";
 import { Link } from "@/i18n/navigation";
@@ -31,7 +32,7 @@ import { REGION_COOKIE } from "@/lib/region";
 
 type ActiveKey = "categories" | CategorySlug | "feed" | "saved" | "messages" | "notifications" | "profile" | "orders";
 
-const TAB = "flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] transition-colors";
+const TAB = "tab-item flex flex-1 flex-col items-center gap-0.5 py-1 text-[11px] transition-[color,transform] active:scale-90";
 
 // Each category's nav entry (icon matches the one seeded on that
 // category's row -- see category-icon.tsx).
@@ -299,14 +300,15 @@ export default async function AppShell({
             {user && <PushPrompt />}
 
             <main id={APP_MAIN_ID} className="flex-1 min-w-0 h-dvh overflow-y-auto overflow-x-hidden pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(5rem+env(safe-area-inset-bottom))] sm:pt-0 sm:pb-0">
-              {/* No entrance animation here: sliding every page in made moving
-                  around the app feel slow. Messages fills the screen exactly
+              {/* The page comes in quickly and only after a tap (PageTransition:
+                  a slide in, a fade between tabs) -- an earlier slide on every
+                  page load made moving around the app feel slow. Messages fills the screen exactly
                   (h-full: its own panels scroll). Every other page grows with
                   its content (min-h-full) -- with h-full a long page spilled
                   out of this box, the space kept for the tab bar (main's
                   padding) came after the box instead of after the page, and
                   the last button (Send on New order) stayed under the tabs. */}
-              <div className={active === "messages" ? "h-full" : "min-h-full"}>{children}</div>
+              <PageTransition className={active === "messages" ? "h-full" : "min-h-full"}>{children}</PageTransition>
             </main>
           </div>
         </SavedProfilesProvider>

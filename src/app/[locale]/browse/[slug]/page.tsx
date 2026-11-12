@@ -192,7 +192,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
           </div>
         )}
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="rise-in grid grid-cols-1 gap-3 sm:grid-cols-2">
           {result?.cards.map((c) => {
             const place = c.place ? (ar ? c.place.name_ar : c.place.name_en) : null;
             const contact = `/u/${c.id}?contact=1`;

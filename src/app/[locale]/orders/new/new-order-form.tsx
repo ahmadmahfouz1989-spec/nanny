@@ -1,5 +1,6 @@
 "use client";
 
+import { celebrate } from "@/lib/celebrate";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -287,6 +288,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       sessionStorage.removeItem(draftKey);
     } catch {}
     draftReady.current = false;
+    celebrate();
     router.push(`/orders/${body.order.id}`);
   }
 

@@ -9,7 +9,7 @@ export const ui = {
   card: "rounded-2xl border border-border bg-surface shadow-sm",
   // Card that reacts to hover — for grids of clickable things.
   cardHover:
-    "rounded-2xl border border-border bg-surface shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-border-strong",
+    "rounded-2xl border border-border bg-surface shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md hover:border-border-strong active:translate-y-0 active:scale-[0.985]",
 
   buttonPrimary:
     "inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-on-primary shadow-xs transition-all hover:bg-primary-hover hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0",

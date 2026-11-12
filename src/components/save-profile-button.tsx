@@ -27,6 +27,8 @@ export default function SaveProfileButton({ profileId, initialSaved, className =
   const { show } = useToast();
   const { isSaved, setSaved } = useSavedProfiles();
   const [pending, setPending] = useState(false);
+  // Bumped on each save: the icon remounts and pops.
+  const [bump, setBump] = useState(0);
 
   const saved = isSaved(profileId, initialSaved);
 
@@ -36,7 +38,10 @@ export default function SaveProfileButton({ profileId, initialSaved, className =
     if (pending) return;
 
     const nextSaved = !saved;
-    if (nextSaved) haptic();
+    if (nextSaved) {
+      haptic();
+      setBump((b) => b + 1);
+    }
     setPending(true);
     setSaved(profileId, nextSaved);
 
@@ -71,7 +76,7 @@ export default function SaveProfileButton({ profileId, initialSaved, className =
       aria-pressed={saved}
       className={className}
     >
-      <BookmarkIcon className="h-[18px] w-[18px]" fill={saved ? "currentColor" : "none"} />
+      <BookmarkIcon key={bump} className={`h-[18px] w-[18px] ${bump && saved ? "pop" : ""}`} fill={saved ? "currentColor" : "none"} />
     </button>
   );
 }

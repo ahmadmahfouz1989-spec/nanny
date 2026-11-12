@@ -34,6 +34,8 @@ export default function PostCard({
 }) {
   const t = useTranslations("Feed");
   const tAdmin = useTranslations("Admin");
+  // Bumped on each like: the heart remounts and pops.
+  const [likePop, setLikePop] = useState(0);
   const locale = useLocale();
 
   return (
@@ -122,11 +124,14 @@ export default function PostCard({
           </button>
           <button
             type="button"
-            onClick={onToggleLike}
+            onClick={() => {
+              if (!post.likedByMe) setLikePop((n) => n + 1);
+              onToggleLike();
+            }}
             disabled={adminMode}
             className={`flex items-center gap-2 transition ${post.likedByMe ? "text-primary" : "text-muted hover:text-primary"} disabled:hover:text-muted`}
           >
-            <HeartIcon className="h-[18px] w-[18px]" fill={post.likedByMe ? "currentColor" : "none"} />
+            <HeartIcon key={likePop} className={`h-[18px] w-[18px] ${likePop && post.likedByMe ? "pop" : ""}`} fill={post.likedByMe ? "currentColor" : "none"} />
             <span className="text-sm">{post.likeCount > 0 ? post.likeCount : ""}</span>
           </button>
         </div>

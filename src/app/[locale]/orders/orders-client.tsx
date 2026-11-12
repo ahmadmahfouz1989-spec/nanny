@@ -150,7 +150,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
       )}
 
       {shownTab === "seeker" && mine && (
-        <div className="flex flex-col gap-3">
+        <div className="rise-in flex flex-col gap-3">
           {mine.orders.length === 0 ? (
             <div className="flex flex-col gap-3 pt-2">
               <h2 className="font-display text-lg font-semibold text-ink">{t("emptyTitle")}</h2>
@@ -197,13 +197,13 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
           )}
 
           {provider.assigned.filter((o) => LIVE.has(o.status)).length > 0 && (
-            <section className="flex flex-col gap-3">
+            <section className="rise-in flex flex-col gap-3">
               <h2 className={ui.eyebrow}>{t("active")}</h2>
               {provider.assigned.filter((o) => LIVE.has(o.status)).map((o) => row(o))}
             </section>
           )}
 
-          <section className="flex flex-col gap-3">
+          <section className="rise-in flex flex-col gap-3">
             <h2 className={ui.eyebrow}>{t("incoming")}</h2>
             {provider.incoming.length === 0 ? (
               <p className="py-6 text-center text-sm text-muted">{provider.provider?.rider ? t("noIncoming") : t("noIncomingJobs")}</p>

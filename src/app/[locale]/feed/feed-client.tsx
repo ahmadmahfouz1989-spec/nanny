@@ -450,7 +450,7 @@ export default function FeedClient({
         {posts === null && !loadFailed && <CardListSkeleton label={t("loading")} />}
         {posts !== null && posts.length === 0 && <p className="text-sm text-muted text-center py-10">{t("empty")}</p>}
 
-        <div className="divide-y divide-border">
+        <div className="rise-in divide-y divide-border">
           {posts?.map((post) => (
             <PostCard
               key={post.id}

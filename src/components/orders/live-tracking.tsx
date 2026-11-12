@@ -30,7 +30,7 @@ export default function LiveTracking({ orderId }: { orderId: string }) {
   }
   return (
     <p className="flex items-start gap-2 rounded-2xl bg-secondary-soft/60 px-4 py-3 text-sm text-ink">
-      <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${state === "on" ? "bg-success" : "bg-muted"}`} />
+      <span aria-hidden className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${state === "on" ? "step-now bg-success" : "bg-muted"}`} />
       {hasBackgroundLocation() ? t("trackingOnApp") : t("trackingOn")}
     </p>
   );

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { celebrate } from "@/lib/celebrate";
 import { useFormatter, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
@@ -43,6 +44,13 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const format = useFormatter();
   const router = useRouter();
   const [order, setOrder] = useState<OrderView | null | undefined>(undefined);
+  // A job finishing while you watch (delivered, completed): a little burst.
+  const lastStatus = useRef<string | null>(null);
+  useEffect(() => {
+    const status = order?.status ?? null;
+    if (lastStatus.current && status && status !== lastStatus.current && (status === "delivered" || status === "completed")) celebrate();
+    lastStatus.current = status;
+  }, [order?.status]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<"cancel" | "drop" | null>(null);
@@ -608,7 +616,9 @@ function Timeline({ order }: { order: OrderView }) {
           const at = reached.get(stage);
           return (
             <li key={stage} className="flex items-center gap-3">
-              <span className={`h-3 w-3 shrink-0 rounded-full ${done ? (i === current ? "bg-primary" : "bg-success") : "bg-border"}`} />
+              <span
+                className={`h-3 w-3 shrink-0 rounded-full transition-colors duration-500 ${done ? (i === current ? "bg-primary" : "bg-success") : "bg-border"} ${i === current && !["completed", "delivered", "cancelled"].includes(stage) ? "step-now" : ""}`}
+              />
               <span className={`flex-1 text-sm ${done ? "font-medium text-ink" : "text-muted"}`}>{statusLabel(stage, order.category)}</span>
               {done && at && <span className="text-xs text-muted">{format.dateTime(new Date(at), { timeStyle: "short" })}</span>}
             </li>

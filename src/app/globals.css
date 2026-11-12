@@ -548,3 +548,57 @@ html[data-chrome="hidden"] .app-chrome-top {
 @keyframes intro-grow {
   to { transform: scale(1.08); }
 }
+
+/* ── Motion ────────────────────────────────────────────────────────────────
+   Short and cheap (opacity and transform only), all off with reduced motion.
+
+   Pages come in with components/motion/page-transition.tsx. */
+
+/* The tab you land on: its icon gives a small hop. */
+.tab-item.text-primary svg { animation: tab-pop 320ms cubic-bezier(.3,1.6,.5,1); }
+@keyframes tab-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.18) translateY(-1px); }
+  100% { transform: scale(1); }
+}
+
+/* Lists arriving: each item rises in, a beat after the one before (the
+   first eight; the rest come with the eighth). */
+.rise-in > * { animation: rise-in 280ms cubic-bezier(.2,.8,.2,1) both; }
+.rise-in > :nth-child(2) { animation-delay: 35ms; }
+.rise-in > :nth-child(3) { animation-delay: 70ms; }
+.rise-in > :nth-child(4) { animation-delay: 105ms; }
+.rise-in > :nth-child(5) { animation-delay: 140ms; }
+.rise-in > :nth-child(6) { animation-delay: 175ms; }
+.rise-in > :nth-child(7) { animation-delay: 210ms; }
+.rise-in > :nth-child(n + 8) { animation-delay: 245ms; }
+@keyframes rise-in { from { opacity: 0; transform: translateY(10px); } }
+
+/* Pressing a card or a row: it gives a little under the finger. */
+.press { transition: transform 120ms ease-out; }
+.press:active { transform: scale(0.985); }
+
+/* Something just changed: a soft pop (a heart saved, a number going up). */
+.pop { animation: pop 360ms cubic-bezier(.3,1.6,.5,1); }
+@keyframes pop {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+/* The step an order is on: a ring breathing out from its dot. */
+.step-now { position: relative; }
+.step-now::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: inherit;
+  animation: step-ping 1.6s cubic-bezier(0,0,.2,1) infinite;
+}
+@keyframes step-ping { 75%, 100% { transform: scale(2.4); opacity: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-item svg, .rise-in > *, .pop, .step-now::after { animation: none !important; }
+  .press:active { transform: none; }
+}

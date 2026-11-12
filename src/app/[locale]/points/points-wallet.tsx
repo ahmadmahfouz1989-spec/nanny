@@ -1,13 +1,26 @@
 "use client";
 
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useFormatter, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import type { PointsRule, Wallet } from "@/lib/points";
+import CountUp from "@/components/motion/count-up";
+import { celebrate } from "@/lib/celebrate";
 
 const noop = () => () => {};
+const SEEN_KEY = "ouiknow_points_seen";
+
+/** The balance last time this phone showed it (null the first time). */
+function seenBalance(): number | null {
+  try {
+    const v = localStorage.getItem(SEEN_KEY);
+    return v === null ? null : Number(v);
+  } catch {
+    return null;
+  }
+}
 
 /** The wallet page: balance, invite link and sharing, who joined, how to earn, history. */
 export default function PointsWallet({ wallet, rules, preview }: { wallet: Wallet; rules: PointsRule[]; preview: boolean }) {
@@ -19,6 +32,17 @@ export default function PointsWallet({ wallet, rules, preview }: { wallet: Walle
   const [code, setCode] = useState("");
   const [claimMsg, setClaimMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const canSystemShare = useSyncExternalStore(noop, () => typeof navigator.share === "function", () => false);
+  // The balance counts up from what it was last time; points earned since
+  // then get a little celebration.
+  const lastSeen = useSyncExternalStore(noop, seenBalance, () => null);
+  const balanceRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const before = seenBalance();
+    if (before !== null && wallet.balance > before) setTimeout(() => celebrate(balanceRef.current), 450);
+    try {
+      localStorage.setItem(SEEN_KEY, String(wallet.balance));
+    } catch {}
+  }, [wallet.balance]);
 
   const link = () => new URL(`/r/${wallet.code}`, window.location.origin).toString();
   const message = () => t("shareText", { code: wallet.code, link: link() });
@@ -60,7 +84,11 @@ export default function PointsWallet({ wallet, rules, preview }: { wallet: Walle
       <section className="flex flex-col gap-4 rounded-3xl bg-gradient-to-br from-primary to-primary-hover p-5 text-on-primary shadow-sm">
         <div>
           <p className="text-sm opacity-90">{t("balance")}</p>
-          <p className="font-display text-5xl font-extrabold tabular-nums">{format.number(wallet.balance)}</p>
+          <p className="font-display text-5xl font-extrabold tabular-nums">
+            <span ref={balanceRef}>
+              <CountUp value={wallet.balance} from={lastSeen ?? 0} format={(n) => format.number(n)} />
+            </span>
+          </p>
         </div>
         <dl className="grid grid-cols-3 gap-2 text-sm">
           {[
@@ -129,7 +157,7 @@ export default function PointsWallet({ wallet, rules, preview }: { wallet: Walle
         {wallet.invited.length === 0 ? (
           <p className="text-sm text-muted">{t("invitedEmpty")}</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="rise-in divide-y divide-border">
             {wallet.invited.map((p, i) => (
               <li key={i} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <span className="text-ink">{p.firstName ?? t("someone")}</span>
@@ -197,7 +225,7 @@ export default function PointsWallet({ wallet, rules, preview }: { wallet: Walle
         {wallet.history.length === 0 ? (
           <p className="text-sm text-muted">{t("historyEmpty")}</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="rise-in divide-y divide-border">
             {wallet.history.map((e) => (
               <li key={e.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                 <span className="min-w-0">

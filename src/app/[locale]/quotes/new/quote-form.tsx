@@ -1,5 +1,6 @@
 "use client";
 
+import { celebrate } from "@/lib/celebrate";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -90,6 +91,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
       setError(typeof body?.error === "string" ? body.error : t("error"));
       return;
     }
+    celebrate();
     router.push(`/orders/${body.order.id}`);
   }
 

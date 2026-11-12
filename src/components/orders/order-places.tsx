@@ -173,8 +173,23 @@ function RouteMap({ pickup, dropoff, live }: { pickup: OrderPlace; dropoff: Orde
     }
     const at = { lat: live.lat, lng: live.lng };
     if (riderMarker.current) {
-      riderMarker.current.setPosition(at);
-      return;
+      // Glides to the new place rather than jumping (under a second).
+      const marker = riderMarker.current;
+      const from = marker.getPosition();
+      if (!from || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        marker.setPosition(at);
+        return;
+      }
+      const start = performance.now();
+      let frame = 0;
+      const step = (now: number) => {
+        const p = Math.min(1, (now - start) / 900);
+        const e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+        marker.setPosition({ lat: from.lat() + (at.lat - from.lat()) * e, lng: from.lng() + (at.lng - from.lng()) * e });
+        if (p < 1) frame = requestAnimationFrame(step);
+      };
+      frame = requestAnimationFrame(step);
+      return () => cancelAnimationFrame(frame);
     }
     riderMarker.current = new google.maps.Marker({
       map,
