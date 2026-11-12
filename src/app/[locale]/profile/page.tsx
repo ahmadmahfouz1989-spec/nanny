@@ -11,6 +11,8 @@ import MyRatings from "@/components/matches/my-ratings";
 import MyPostsCard from "@/components/my-posts-card";
 import ProfileTabs, { type ProfileTabDef } from "@/components/profile-tabs";
 import { ui } from "@/lib/ui";
+import { canSeePoints, pointsReleased, pointsRules, wallet } from "@/lib/points";
+import PointsWallet from "@/app/[locale]/points/points-wallet";
 
 export default async function ProfilePage({
   params,
@@ -33,6 +35,13 @@ export default async function ProfilePage({
     .select("email, email_verified_at, phone, phone_verified_at, featured_until")
     .eq("id", user!.id)
     .single();
+
+  // Points & invites: once released (admins see it before, to set it up).
+  const points = (await canSeePoints(user!.id))
+    ? await Promise.all([wallet(user!.id), pointsRules(), pointsReleased()]).then(([w, rules, released]) => (
+        <PointsWallet wallet={w} rules={rules.filter((r) => r.enabled && r.points > 0)} preview={!released} />
+      ))
+    : null;
 
   const isFeatured = !!profile?.featured_until && new Date(profile.featured_until) > new Date();
   // Featured is bought on the website only (see /featured); the apps leave out the link.
@@ -67,6 +76,7 @@ export default async function ProfilePage({
               <p className="mt-1 text-sm text-muted">{t("noProfileOfferBody")}</p>
             </Link>
           </div>
+          <div className="mt-8">{points}</div>
           <Link href="/settings" className={ui.link + " mt-6 inline-block text-sm"}>
             {t("noProfileSettings")}
           </Link>
@@ -151,6 +161,8 @@ export default async function ProfilePage({
             )}
           </dl>
         </div>
+
+        {points}
 
         {!inApp && (
           <Link

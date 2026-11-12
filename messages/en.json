@@ -2892,7 +2892,7 @@
   "Points": {
     "claimPaste": "Paste",
     "title": "Points & invites",
-    "previewNote": "Only admins can see this page until Points are released from the admin panel.",
+    "previewNote": "Only admins can see this section until Points are released from the admin panel.",
     "balance": "Your points",
     "earned": "Earned",
     "fromInvites": "From invites",

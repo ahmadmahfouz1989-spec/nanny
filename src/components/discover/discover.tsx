@@ -186,7 +186,7 @@ export default async function Discover() {
       )}
 
       {showPoints && (
-        <Link href="/points" className="flex items-center gap-3 rounded-2xl bg-primary-soft/70 px-4 py-3 transition-colors hover:bg-primary-soft">
+        <Link href="/profile#points" className="flex items-center gap-3 rounded-2xl bg-primary-soft/70 px-4 py-3 transition-colors hover:bg-primary-soft">
           <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary">
             <SparklesIcon className="h-5 w-5" />
           </span>

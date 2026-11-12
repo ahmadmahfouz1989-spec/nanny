@@ -9,7 +9,6 @@ import ThemeSwitcher from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
 import ReferralClaimer from "@/components/referral-claimer";
-import { SparklesIcon } from "@/components/home-icons";
 import { pointsReleased } from "@/lib/points";
 import NotificationBell from "@/components/notification-bell";
 import { MessagesSidebarItem, MessagesTabItem } from "@/components/matches/messages-nav-item";
@@ -65,7 +64,6 @@ export default async function AppShell({
 }) {
   const t = await getTranslations("Nav");
   const tm = await getTranslations("Menu");
-  const tp = await getTranslations("Points");
   const supabase = await createClient();
   const {
     data: { user },
@@ -74,12 +72,8 @@ export default async function AppShell({
     ? await supabase.from("generic_profiles").select("id, role, status, moderation_status, available_now, full_name, profile_photo_url, categories(slug), locations(name_en, name_ar)").eq("user_id", user.id).neq("status", "draft")
     : { data: null };
   const mySlugs = new Set((profiles ?? []).map((p) => p.categories?.slug));
-  // Points & invites: hidden until released, except for admins setting it up.
-  const [released, { data: roleRow }] = await Promise.all([
-    pointsReleased(),
-    user ? supabase.from("users").select("role").eq("id", user.id).maybeSingle() : Promise.resolve({ data: null }),
-  ]);
-  const showPoints = !!user && (released || roleRow?.role === "admin");
+  // Points & invites (on the profile page): once released, invites are claimed here.
+  const released = await pointsReleased();
   const sidebarCategories = CATEGORY_NAV.filter((c) => c.slug === active || mySlugs.has(c.slug));
   // The phone has one tab for your services: the one you're in, else the
   // one you were last in, else your first.
@@ -174,15 +168,6 @@ export default async function AppShell({
                   <BookmarkIcon className="h-[22px] w-[22px] shrink-0" />
                   <span>{t("saved")}</span>
                 </Link>
-                {showPoints && (
-                  <Link
-                    href="/points"
-                    className="flex items-center gap-3 rounded-xl px-3 py-2 text-[15px] text-muted transition-colors hover:bg-surface-sunken hover:text-ink"
-                  >
-                    <SparklesIcon className="h-[22px] w-[22px] shrink-0" />
-                    <span>{tp("menu")}</span>
-                  </Link>
-                )}
                 {sidebarCategories.map((c) => (
                   <Link
                     key={c.slug}
@@ -258,7 +243,7 @@ export default async function AppShell({
               </div>
             </aside>
 
-            <MobileHeader me={me} services={services} region={region} orders={hasOrders} points={showPoints} />
+            <MobileHeader me={me} services={services} region={region} orders={hasOrders} />
             {user && released && <ReferralClaimer />}
             {rider && <RiderLocation available={!!rider.available_now} />}
             {rider && <DeliveryTracker />}

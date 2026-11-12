@@ -22,7 +22,7 @@ function seenBalance(): number | null {
   }
 }
 
-/** The wallet page: balance, invite link and sharing, who joined, how to earn, history. */
+/** Points & invites on the profile page: balance, invite link and sharing, who joined, how to earn, history. */
 export default function PointsWallet({ wallet, rules, preview }: { wallet: Wallet; rules: PointsRule[]; preview: boolean }) {
   const t = useTranslations("Points");
   const tr = useTranslations("PointsRules");
@@ -75,10 +75,10 @@ export default function PointsWallet({ wallet, rules, preview }: { wallet: Walle
   const activityRules = rules.filter((r) => r.kind === "activity");
 
   return (
-    <div className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6">
+    <section id="points" className="mb-5 flex scroll-mt-20 flex-col gap-5">
       {preview && <p className="rounded-xl bg-warning-soft px-4 py-3 text-sm text-warning">{t("previewNote")}</p>}
 
-      <h1 className="text-2xl font-bold text-ink">{t("title")}</h1>
+      <h2 className="font-display text-xl font-bold text-ink">{t("title")}</h2>
 
       {/* Balance */}
       <section className="flex flex-col gap-4 rounded-3xl bg-gradient-to-br from-primary to-primary-hover p-5 text-on-primary shadow-sm">
@@ -241,6 +241,6 @@ export default function PointsWallet({ wallet, rules, preview }: { wallet: Walle
           </ul>
         )}
       </section>
-    </div>
+    </section>
   );
 }
