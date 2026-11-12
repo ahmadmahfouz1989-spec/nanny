@@ -1,4 +1,3 @@
-import AppIntro from "@/components/app-intro";
 import InviteCapture from "@/components/invite-capture";
 import OfflineBar from "@/components/shell/offline-bar";
 import type { Metadata, Viewport } from "next";
@@ -106,8 +105,6 @@ export default async function LocaleLayout({
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col bg-background text-ink font-sans">
-        {/* First, so it covers the page before anything else shows (app only). */}
-        <AppIntro />
         <Script id="theme-init" strategy="beforeInteractive">
           {THEME_INIT_SCRIPT}
         </Script>
