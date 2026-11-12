@@ -129,6 +129,10 @@ const SYNONYM_GROUPS: [canonical: string, words: string[]][] = [
   ["painter", ["دهان", "بويجي", "دهين", "painting", "peintre"]],
   ["tiler", ["بلاط", "بليط", "تبليط", "tiles", "tiling", "carreleur"]],
   ["carpenter", ["نجار", "نجارة", "carpentry", "menuisier"]],
+  // Appliance repair: pointed at the Arabic label each profile stores.
+  ["براد", ["تلاجه", "تلاجة", "ثلاجه", "ثلاجة", "فريزر", "fridge", "refrigerator", "freezer", "frigo", "réfrigérateur"]],
+  ["غسال", ["غساله", "غسالة", "غسيل", "washer", "laundry", "lave-linge"]],
+  ["مكيف", ["مكيفات", "مكيّف", "تكييف", "مكيفه", "سبليت", "aircon", "conditioner", "conditioning", "climatisation", "clim", "split"]],
   ["nanny", ["مربيه", "داده", "دادا", "جليسه", "جليسة", "babysitter", "baby-sitter", "nounou"]],
   ["nurs", ["ممرضه", "ممرض", "ممرضة", "تمريض", "infirmier", "infirmiere"]],
   ["tutor", ["استاذ", "أستاذ", "معلم", "معلمه", "مدرس", "مدرسه", "teacher", "professeur", "prof"]],

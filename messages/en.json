@@ -477,7 +477,10 @@
     "electrician": "Electrician",
     "painter": "Painter",
     "tiler": "Tiler",
-    "carpenter": "Carpenter"
+    "carpenter": "Carpenter",
+    "fridge": "Fridge repair",
+    "washing_machine": "Washing machine repair",
+    "air_conditioning": "AC repair"
   },
   "Urgency": {
     "urgent": "Urgent (today)",
@@ -541,7 +544,7 @@
     },
     "maintenance": {
       "roleSeekerTitle": "I need work done at home",
-      "roleSeekerDescription": "Describe the job and get matched with plumbers, electricians, painters, tilers and carpenters near you.",
+      "roleSeekerDescription": "Describe the job and get matched with plumbers, electricians, painters, tilers, carpenters and appliance repair near you.",
       "roleProviderTitle": "I'm a tradesperson looking for work",
       "roleProviderDescription": "Create a profile so customers near you can find and hire you."
     },
