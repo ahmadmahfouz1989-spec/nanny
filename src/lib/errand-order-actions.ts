@@ -122,7 +122,10 @@ export async function seekerAction(db: Admin, order: OrderRow, actor: Actor, act
     case "complete": {
       if (!(await move(db, order, ["delivered"], "completed"))) return fail(409, "It can be marked complete once delivered");
       await logOrderEvent(db, order.id, actor, "status", { status: "completed" });
-      if (order.provider_user_id) await notify({ user_id: order.provider_user_id, type: "errand_status", payload: payload(order, { status: "completed" }) });
+      // Completing is what gives the order its number (the database does it).
+      const { data: done } = await db.from("errand_orders").select("number").eq("id", order.id).single();
+      const completed = { ...order, number: done?.number ?? null };
+      if (order.provider_user_id) await notify({ user_id: order.provider_user_id, type: "errand_status", payload: payload(completed, { status: "completed" }) });
       return { ok: true };
     }
     case "cancel": {

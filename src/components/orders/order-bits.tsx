@@ -90,10 +90,13 @@ export function useServiceLabel() {
   return (service: string, category = "errands") => (category === "maintenance" ? trades(service as "plumber") : errands(service as "delivery"));
 }
 
-/** "Order #12" or "Job #12". */
+/** "Order #12" or "Job #12"; just "Order" until it's completed (numbers count completed orders). */
 export function useOrderTitle() {
   const t = useTranslations("Orders");
-  return (number: number, category = "errands") => (category === "maintenance" ? t("jobNumber", { number }) : t("orderNumber", { number }));
+  return (n: number | null, category = "errands") => {
+    const number = n ?? "none";
+    return category === "maintenance" ? t("jobNumber", { number }) : t("orderNumber", { number });
+  };
 }
 
 /** Available (green), busy (orange), offline (grey), suspended (red). */

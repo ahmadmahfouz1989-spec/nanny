@@ -100,7 +100,7 @@ export default function AdminOrdersPage() {
             <button type="button" className="flex w-full items-start justify-between gap-3 text-start" onClick={() => setOpenId(openId === o.id ? null : o.id)}>
               <div className="min-w-0">
                 <p className="text-xs text-muted">
-                  #{o.number} · {o.category === "maintenance" ? `${t("kindJobs")} · ` : ""}
+                  {o.number ? `#${o.number} · ` : ""}{o.category === "maintenance" ? `${t("kindJobs")} · ` : ""}
                   {serviceLabel(o.service, o.category)} · {when(o.createdAt)}
                 </p>
                 <p dir="auto" className="mt-1 truncate text-start font-medium text-ink">{o.description}</p>

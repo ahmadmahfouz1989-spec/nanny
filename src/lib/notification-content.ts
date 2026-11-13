@@ -138,7 +138,8 @@ export function notificationLabel(n: NotificationLike, t: Translate, categoryNam
   if (isProviderApproval(n) && category) return t("profile_approved_share", { category });
   if (category && PER_CATEGORY.has(n.type)) return t(`${n.type}_in`, { category });
   if (ORDER_TYPES.has(n.type)) {
-    const number = typeof n.payload?.order_number === "number" ? n.payload.order_number : "";
+    // Orders are numbered once completed; before that the label has no number.
+    const number = typeof n.payload?.order_number === "number" ? n.payload.order_number : "none";
     const status = typeof n.payload?.status === "string" ? n.payload.status : null;
     const key = n.type === "errand_status" && status ? `errand_status_${status}` : n.type;
     // A repair job reads as a job and a quote, not an order and an offer.

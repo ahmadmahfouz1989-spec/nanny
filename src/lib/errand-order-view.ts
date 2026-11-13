@@ -76,7 +76,8 @@ export type OrderMatching = {
 export type OrderView = {
   viewer: Viewer;
   id: string;
-  number: number;
+  /** Given when the order is completed; null until then. */
+  number: number | null;
   /** "errands" (a delivery or errand) or "maintenance" (a repair job asking for quotes). */
   category: string;
   service: string;

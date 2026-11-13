@@ -286,7 +286,7 @@ describe("orders", () => {
       .single();
     await dispatchOrder(admin, { ...order!, service: "delivery" }, { userId: customer.id, role: "seeker" });
     await settle();
-    expect(pushesTo(provider)[0]).toMatchObject({ body: `New order #${order!.number} near you — send your price`, url: `/en/orders/${order!.id}` });
+    expect(pushesTo(provider)[0]).toMatchObject({ body: "New order near you — send your price", url: `/en/orders/${order!.id}` });
     expect(pushesTo(outsider)).toEqual([]);
 
     const step = async (who: TestUser, action: string, body: unknown = {}) => {
@@ -297,27 +297,29 @@ describe("orders", () => {
     };
     captured.pushes.length = 0;
     await step(provider, "offer", { priceUsd: 4, etaMinutes: 20 });
-    expect(pushesTo(customer).map((p) => p.body)).toEqual([`You have a new offer on order #${order!.number}`]);
+    expect(pushesTo(customer).map((p) => p.body)).toEqual([`You have a new offer on your order`]);
 
     const { data: recipient } = await admin.from("errand_order_recipients").select("id").eq("order_id", order!.id).eq("provider_user_id", provider.id).single();
     captured.pushes.length = 0;
     await step(customer, "select", { recipientId: recipient!.id });
-    expect(pushesTo(provider).map((p) => p.body)).toEqual([`You were chosen for order #${order!.number} — confirm it`]);
+    expect(pushesTo(provider).map((p) => p.body)).toEqual([`You were chosen for an order — confirm it`]);
 
     captured.pushes.length = 0;
     await step(provider, "confirm");
     for (let i = 0; i < 4; i++) await step(provider, "advance");
     expect(pushesTo(customer).map((p) => p.body)).toEqual([
-      `Order #${order!.number} is confirmed`,
-      `Order #${order!.number}: your provider is on the way`,
-      `Order #${order!.number}: your provider has arrived`,
-      `Order #${order!.number}: picked up / started`,
-      `Order #${order!.number} was delivered. Confirm it's done`,
+      `Order is confirmed`,
+      `Order: your provider is on the way`,
+      `Order: your provider has arrived`,
+      `Order: picked up / started`,
+      `Order was delivered. Confirm it's done`,
     ]);
     expect(pushesTo(provider)).toEqual([]);
 
     captured.pushes.length = 0;
     await step(customer, "complete");
-    expect(pushesTo(provider).map((p) => p.body)).toEqual([`Order #${order!.number} is complete`]);
+    const { data: completed } = await admin.from("errand_orders").select("number").eq("id", order!.id).single();
+    expect(completed!.number).toBeGreaterThan(0);
+    expect(pushesTo(provider).map((p) => p.body)).toEqual([`Order #${completed!.number} is complete`]);
   });
 });
