@@ -131,7 +131,9 @@
     "unsupported": "This browser doesn't support push notifications.",
     "error": "Couldn't change notifications — please try again.",
     "someone": "Someone",
-    "voiceMessage": "🎤 Voice message"
+    "voiceMessage": "🎤 Voice message",
+    "incomingCall": "📞 Incoming call — tap to answer",
+    "missedCall": "📞 Missed call"
   },
   "Feed": {
     "title": "Feed",
@@ -3024,5 +3026,34 @@
     "status_rejected": "Rejected",
     "progressRequest": "First request",
     "progressCompleted": "First service completed"
+  },
+  "Calls": {
+    "call": "Call",
+    "callName": "Call {name}",
+    "someone": "Someone",
+    "screenLabel": "Call with {name}",
+    "calling": "Calling…",
+    "incoming": "Incoming call",
+    "connecting": "Connecting…",
+    "accept": "Accept",
+    "decline": "Decline",
+    "hangUp": "Hang up",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "close": "Close",
+    "reason": {
+      "ended": "Call ended",
+      "declined": "Call declined",
+      "busy": "They're on another call",
+      "no_answer": "No answer",
+      "missed": "Missed call",
+      "failed": "Couldn't connect the call. Check your connection and try again.",
+      "no_conversation": "Send a message first. Calls open once you've talked here.",
+      "blocked": "This conversation is closed.",
+      "too_many": "Too many calls. Try again in a few minutes.",
+      "mic_denied": "ouiKnow needs your microphone for calls. Allow it in your settings, then try again.",
+      "unsupported": "Calls don't work in this browser. Try the ouiKnow app.",
+      "error": "Something went wrong. Please try again."
+    }
   }
 }

@@ -8,6 +8,7 @@ import RatingButton from "@/components/matches/rating-button";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { Link } from "@/i18n/navigation";
 import { MoreIcon } from "@/components/nav-icons";
+import CallButton from "@/components/calls/call-button";
 import { MATCHES_API } from "@/lib/matching/match-access";
 import { request } from "@/lib/request";
 
@@ -89,6 +90,7 @@ export default function ConversationHeader({
             )}
           </span>
         </Link>
+        <CallButton matchId={matchId} name={name} photoUrl={photoUrl} />
         <button
           type="button"
           onClick={() => setMenuOpen((v) => !v)}

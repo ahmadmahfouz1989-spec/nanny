@@ -13,6 +13,7 @@ import NativeAppBridge from "@/components/native-app-bridge";
 import LanguageChooser from "@/components/language-chooser";
 import { LANGUAGE_ASK_SCRIPT } from "@/lib/language-ask";
 import MetaPixel from "@/components/meta-pixel";
+import { CallProvider } from "@/components/calls/call-provider";
 import "../globals.css";
 
 const THEME_INIT_SCRIPT = `
@@ -119,7 +120,7 @@ export default async function LocaleLayout({
           <MetaPixel />
         </Suspense>
         <NextIntlClientProvider>
-          {children}
+          <CallProvider>{children}</CallProvider>
           <LanguageChooser />
           <OfflineBar />
         </NextIntlClientProvider>

@@ -82,6 +82,38 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"calls": {
+                  Row: {
+                    "answered_at": string | null,"callee_id": string,"caller_id": string,"created_at": string,"ended_at": string | null,"id": string,"match_id": string,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answered_at"?: string | null,"callee_id": string,"caller_id": string,"created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id": string,"status"?: string
+                  }
+                  Update: {
+                    "answered_at"?: string | null,"callee_id"?: string,"caller_id"?: string,"created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id"?: string,"status"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "calls_callee_id_fkey"
+      columns: ["callee_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "calls_caller_id_fkey"
+      columns: ["caller_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "calls_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "generic_matches"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"categories": {
                   Row: {
                     "created_at": string,"href": string | null,"icon": string,"id": string,"name_ar": string,"name_en": string,"slug": string,"sort_order": number,"status": string,"tagline_ar": string,"tagline_en": string

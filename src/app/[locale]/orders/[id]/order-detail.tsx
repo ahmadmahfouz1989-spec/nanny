@@ -7,6 +7,7 @@ import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import RatingButton from "@/components/matches/rating-button";
+import CallButton from "@/components/calls/call-button";
 import LiveTracking from "@/components/orders/live-tracking";
 import { TRACKING_CHECK_EVENT } from "@/lib/delivery-tracking";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
@@ -276,6 +277,7 @@ function PersonCard({ title, person, matchId, rate = false }: { title: string; p
           <p className="truncate font-semibold text-ink">{person.name}</p>
           <p className="text-xs text-muted">{person.rating.average !== null ? `★ ${person.rating.average} (${person.rating.count})` : t("noRating")}</p>
         </div>
+        {matchId && <CallButton matchId={matchId} name={person.name} photoUrl={person.photoUrl} />}
         {matchId && (
           <Link href={`/messages?match=${matchId}`} className={ui.buttonSecondary + " shrink-0"}>
             {t("message")}
