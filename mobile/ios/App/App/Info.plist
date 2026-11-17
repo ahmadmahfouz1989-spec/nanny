@@ -44,7 +44,7 @@
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>While you're doing a delivery, the customer sees where you are until it's delivered, even if you switch to another app such as Maps. Tracking stops when the delivery ends.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Record voice messages.</string>
+	<string>Talk on calls and record voice messages.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Choose a profile photo, photos of your work, or a photo to send in a message.</string>
 	<key>UIApplicationSceneManifest</key>
