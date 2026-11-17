@@ -79,6 +79,16 @@ export function isNativeApp() {
 /** Where OAuth providers send the app back to (registered in Info.plist / AndroidManifest.xml). */
 export const NATIVE_AUTH_CALLBACK = "ouiknow://auth/callback";
 
+/**
+ * Where Google sign-in returns in the app. iOS can refuse the in-app
+ * browser's automatic redirect into the app, so on iPhone it ends on a
+ * page with a "Continue to ouiKnow" button (/auth/callback-app) instead.
+ * Android follows the redirect fine.
+ */
+export function nativeOAuthRedirect() {
+  return capacitor()?.getPlatform() === "ios" ? `${window.location.origin}/auth/callback-app` : NATIVE_AUTH_CALLBACK;
+}
+
 /** Opens a URL (e.g. Google sign-in, which refuses embedded web views) in the in-app system browser. */
 export async function openInSystemBrowser(url: string) {
   await capacitor()?.Plugins.Browser?.open({ url });

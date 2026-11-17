@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { RETURN_PATH_COOKIE } from "@/lib/return-path";
-import { isNativeApp, NATIVE_AUTH_CALLBACK, openInSystemBrowser } from "@/lib/native-app";
+import { isNativeApp, nativeOAuthRedirect, openInSystemBrowser } from "@/lib/native-app";
 
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
@@ -60,7 +60,7 @@ export default function GoogleAuthButton({ next = null }: { next?: string | null
     if (isNativeApp()) {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: "google",
-        options: { redirectTo: NATIVE_AUTH_CALLBACK, skipBrowserRedirect: true, queryParams },
+        options: { redirectTo: nativeOAuthRedirect(), skipBrowserRedirect: true, queryParams },
       });
       setLoading(false);
       if (error || !data.url) setError(t("genericError"));
