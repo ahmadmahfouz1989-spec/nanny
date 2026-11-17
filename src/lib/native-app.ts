@@ -50,6 +50,28 @@ type HttpPlugin = {
   post(o: { url: string; headers?: Record<string, string>; data?: unknown }): Promise<{ status: number; data: unknown }>;
 };
 
+/**
+ * The apps' own calls plugin (iOS 1.5 / Android 1.4): calls ring like phone
+ * calls -- CallKit on iPhone, a full-screen call notification on Android.
+ * mobile/ios/App/App/CallsPlugin.swift, mobile/android/.../CallsPlugin.java.
+ */
+export type CallsPlugin = {
+  /** iPhone: this install's PushKit token, once PushKit has given one. */
+  getVoipToken(): Promise<{ token?: string }>;
+  /** A call the phone answered or opened the app for before this page was listening. */
+  takePending(): Promise<{ callId?: string; action?: "answer" | "ring" }>;
+  /** Answer through the phone's own call screen; `handled` false when it doesn't know the call. */
+  answer(o: { callId: string }): Promise<{ handled: boolean }>;
+  /** The call connected: Android keeps the app alive with an ongoing-call notification. */
+  callActive(o: { callId: string; name: string }): Promise<void>;
+  /** The call is over (or declined here): the phone's ringing and call screens go away. */
+  callEnded(o: { callId: string }): Promise<void>;
+  /** iPhone: sign in through Apple's sign-in sheet; the URL it came back with. */
+  signIn?(o: { url: string; scheme: string }): Promise<{ url: string }>;
+  addListener(event: "callAnswered" | "callEnded", cb: (e: { callId: string }) => void): Listener | Promise<Listener>;
+  addListener(event: "voipToken", cb: (e: { token: string }) => void): Listener | Promise<Listener>;
+};
+
 type CapacitorGlobal = {
   isNativePlatform(): boolean;
   getPlatform(): "ios" | "android" | "web";
@@ -63,6 +85,7 @@ type CapacitorGlobal = {
     CapacitorHttp?: HttpPlugin;
     /** Android builds from 1.3: Google Play's install referrer (the app's own plugin). */
     InstallReferrer?: { get(): Promise<{ referrer: string | null }> };
+    OuiCalls?: CallsPlugin;
   };
 };
 
@@ -86,7 +109,41 @@ export const NATIVE_AUTH_CALLBACK = "ouiknow://auth/callback";
  * Android follows the redirect fine.
  */
 export function nativeOAuthRedirect() {
-  return capacitor()?.getPlatform() === "ios" ? `${window.location.origin}/auth/callback-app` : NATIVE_AUTH_CALLBACK;
+  const cap = capacitor();
+  // Apple's sign-in sheet (iOS 1.5+) catches ouiknow:// itself.
+  if (cap?.getPlatform() !== "ios" || cap.Plugins.OuiCalls?.signIn) return NATIVE_AUTH_CALLBACK;
+  return `${window.location.origin}/auth/callback-app`;
+}
+
+/** The calls plugin, in app builds that have it. */
+export function nativeCalls(): CallsPlugin | null {
+  return capacitor()?.Plugins.OuiCalls ?? null;
+}
+
+/**
+ * Google sign-in in an iPhone build with Apple's sign-in sheet
+ * (ASWebAuthenticationSession): it returns to the app by itself, without
+ * the in-app browser's redirect that iOS can refuse. Resolves to the
+ * ouiknow:// URL it came back with, "cancelled" when the person closed the
+ * sheet, or null when the build doesn't have the sheet.
+ */
+export async function nativeSignIn(url: string): Promise<string | "cancelled" | null> {
+  const plugin = capacitor()?.Plugins.OuiCalls;
+  if (!plugin?.signIn) return null;
+  try {
+    return (await plugin.signIn({ url, scheme: "ouiknow" })).url;
+  } catch {
+    return "cancelled";
+  }
+}
+
+/** Finishes a sign-in that came back to the app (ouiknow://auth/callback?code=...). */
+export function finishNativeSignIn(url: string) {
+  if (!url.startsWith(NATIVE_AUTH_CALLBACK)) return;
+  const query = url.slice(NATIVE_AUTH_CALLBACK.length);
+  // A route handler, not a page: it needs a real request to set the session cookies.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  window.location.href = `${window.location.origin}/auth/callback${query}`;
 }
 
 /** Opens a URL (e.g. Google sign-in, which refuses embedded web views) in the in-app system browser. */
@@ -178,10 +235,13 @@ export async function enableNativePush(locale: string): Promise<PermissionState 
   });
   if (!token) return receive;
 
+  // Builds that ring for calls say so; an iPhone adds its PushKit token.
+  const calls = cap.Plugins.OuiCalls;
+  const voipToken = calls && cap.getPlatform() === "ios" ? (await calls.getVoipToken().catch(() => ({ token: undefined }))).token : undefined;
   const res = await fetch("/api/push/native", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, platform: cap.getPlatform(), locale }),
+    body: JSON.stringify({ token, platform: cap.getPlatform(), locale, voipToken, ringsCalls: calls ? true : undefined }),
   });
   if (!res.ok) throw new Error(`native token save failed (${res.status})`);
   try {
@@ -261,10 +321,7 @@ export function listenForNativeEvents() {
     }
     if (!url.startsWith(NATIVE_AUTH_CALLBACK)) return;
     cap.Plugins.Browser?.close().catch(() => {});
-    const query = url.slice(NATIVE_AUTH_CALLBACK.length);
-    // A route handler, not a page: it needs a real request to set the session cookies.
-    // eslint-disable-next-line @next/next/no-location-assign-relative-destination
-    window.location.href = `${window.location.origin}/auth/callback${query}`;
+    finishNativeSignIn(url);
   });
 }
 

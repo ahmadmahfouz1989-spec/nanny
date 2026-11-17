@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="calls_channel">المكالمات الواردة</string>
+    <string name="calls_incoming">مكالمة واردة على ouiKnow</string>
+    <string name="calls_ongoing_channel">المكالمات الجارية</string>
+    <string name="calls_ongoing">مكالمة جارية. اضغط للعودة.</string>
+</resources>

@@ -30,6 +30,7 @@ class AppViewController: CAPBridgeViewController {
     private var urlObservation: NSKeyValueObservation?
 
     override func capacitorDidLoad() {
+        bridge?.registerPluginInstance(CallsPlugin())
         // url updates on the site's own page changes too, not just full loads.
         urlObservation = webView?.observe(\.url, options: [.initial, .new]) { webView, _ in
             webView.allowsBackForwardNavigationGestures = !AppViewController.isTabRoot(webView.url)

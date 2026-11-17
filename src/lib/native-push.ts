@@ -55,16 +55,35 @@ function apnsJwt() {
   return jwt;
 }
 
+const BUNDLE_ID = () => process.env.APNS_BUNDLE_ID || "com.ouiknow.app";
+
 /** Sends to iPhone device tokens over one HTTP/2 connection. */
 export async function sendApns(tokens: string[], message: NativeMessage): Promise<SendResult[]> {
-  if (!apnsEnabled() || tokens.length === 0) return tokens.map(() => "failed");
-  const host = process.env.APNS_SANDBOX === "1" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
-  const session = http2.connect(host);
-  session.on("error", (err) => console.error("[native-push] apns connection:", err));
   const payload = JSON.stringify({
     aps: { alert: { title: message.title, body: message.body }, sound: "default" },
     url: message.url,
   });
+  return apnsSend(tokens, payload, { pushType: "alert", topic: BUNDLE_ID(), expiresIn: 24 * 60 * 60, collapseId: message.tag });
+}
+
+/**
+ * A call ringing on an iPhone (PushKit): wakes the app, which shows the
+ * phone's own incoming-call screen (CallKit, mobile/ios/App/App/CallManager.swift).
+ * Short-lived: a ring delivered late is no use.
+ */
+export async function sendApnsVoip(tokens: string[], data: Record<string, string>, expiresIn: number): Promise<SendResult[]> {
+  return apnsSend(tokens, JSON.stringify(data), { pushType: "voip", topic: `${BUNDLE_ID()}.voip`, expiresIn });
+}
+
+async function apnsSend(
+  tokens: string[],
+  payload: string,
+  opts: { pushType: "alert" | "voip"; topic: string; expiresIn: number; collapseId?: string },
+): Promise<SendResult[]> {
+  if (!apnsEnabled() || tokens.length === 0) return tokens.map(() => "failed");
+  const host = process.env.APNS_SANDBOX === "1" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com";
+  const session = http2.connect(host);
+  session.on("error", (err) => console.error("[native-push] apns connection:", err));
 
   try {
     return await Promise.all(
@@ -75,12 +94,12 @@ export async function sendApns(tokens: string[], message: NativeMessage): Promis
               ":method": "POST",
               ":path": `/3/device/${token}`,
               authorization: `bearer ${apnsJwt()}`,
-              "apns-topic": process.env.APNS_BUNDLE_ID || "com.ouiknow.app",
-              "apns-push-type": "alert",
+              "apns-topic": opts.topic,
+              "apns-push-type": opts.pushType,
               "apns-priority": "10",
-              "apns-expiration": String(Math.floor(Date.now() / 1000) + 24 * 60 * 60),
+              "apns-expiration": String(Math.floor(Date.now() / 1000) + opts.expiresIn),
             };
-            if (message.tag) headers["apns-collapse-id"] = message.tag.slice(0, 64);
+            if (opts.collapseId) headers["apns-collapse-id"] = opts.collapseId.slice(0, 64);
             const req = session.request(headers);
             let status = 0;
             let body = "";
@@ -164,6 +183,26 @@ async function fcmAccessToken(account: ServiceAccount) {
 
 /** Sends to Android registration tokens (FCM HTTP v1 takes one per request). */
 export async function sendFcm(tokens: string[], message: NativeMessage): Promise<SendResult[]> {
+  return fcmSend(tokens, {
+    notification: { title: message.title, body: message.body },
+    data: { url: message.url },
+    android: {
+      priority: "high",
+      ttl: "86400s",
+      notification: message.tag ? { tag: message.tag } : {},
+    },
+  });
+}
+
+/**
+ * Data only, no notification: the app's own code handles it even in the
+ * background -- a call ringing on Android (mobile/android/.../CallMessagingService.java).
+ */
+export async function sendFcmData(tokens: string[], data: Record<string, string>, ttlSeconds: number): Promise<SendResult[]> {
+  return fcmSend(tokens, { data, android: { priority: "high", ttl: `${ttlSeconds}s` } });
+}
+
+async function fcmSend(tokens: string[], body: Record<string, unknown>): Promise<SendResult[]> {
   const account = serviceAccount();
   if (!account || tokens.length === 0) return tokens.map(() => "failed");
   let access: string;
@@ -180,18 +219,7 @@ export async function sendFcm(tokens: string[], message: NativeMessage): Promise
         const res = await fetch(`https://fcm.googleapis.com/v1/projects/${account.project_id}/messages:send`, {
           method: "POST",
           headers: { Authorization: `Bearer ${access}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: {
-              token,
-              notification: { title: message.title, body: message.body },
-              data: { url: message.url },
-              android: {
-                priority: "high",
-                ttl: "86400s",
-                notification: message.tag ? { tag: message.tag } : {},
-              },
-            },
-          }),
+          body: JSON.stringify({ message: { token, ...body } }),
         });
         if (res.ok) return "sent";
         const text = await res.text();

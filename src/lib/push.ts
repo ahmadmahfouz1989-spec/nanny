@@ -47,11 +47,15 @@ export type PushMessage = {
   tag?: string;
 };
 
-/** Sends to all of these users' devices, building the text per device language. */
-export async function sendPush(userIds: string[], build: (locale: Locale) => PushMessage) {
+/**
+ * Sends to all of these users' devices, building the text per device
+ * language. `skipNativeTokens`: app installs already told another way
+ * (a call ringing on them).
+ */
+export async function sendPush(userIds: string[], build: (locale: Locale) => PushMessage, opts?: { skipNativeTokens?: Set<string> }) {
   if (!anyPushEnabled() || userIds.length === 0) return;
   const users = [...new Set(userIds)];
-  await Promise.all([sendWebPush(users, build), sendNativePush(users, build)]);
+  await Promise.all([sendWebPush(users, build), sendNativePush(users, build, undefined, opts?.skipNativeTokens)]);
 }
 
 /** Devices per user: accepted by Apple/Google/the browser, or not. Dead tokens count as neither. */
@@ -112,7 +116,7 @@ async function sendWebPush(userIds: string[], build: (locale: Locale) => PushMes
   }
 }
 
-async function sendNativePush(userIds: string[], build: (locale: Locale) => PushMessage, counts?: DeviceCounts) {
+async function sendNativePush(userIds: string[], build: (locale: Locale) => PushMessage, counts?: DeviceCounts, skip?: Set<string>) {
   // With a log to keep, go on: a phone that can't be reached because its side
   // isn't set up comes back as failed, not as having no phone.
   if (!counts && !apnsEnabled() && !fcmEnabled()) return;
@@ -127,6 +131,7 @@ async function sendNativePush(userIds: string[], build: (locale: Locale) => Push
     const gone: string[] = [];
     const batches = new Map<string, NonNullable<typeof rows>>();
     for (const row of rows ?? []) {
+      if (skip?.has(row.token)) continue;
       const key = `${row.platform}:${row.locale === "ar" ? "ar" : "en"}`;
       batches.set(key, [...(batches.get(key) ?? []), row]);
     }

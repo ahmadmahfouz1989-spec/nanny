@@ -1,6 +1,8 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { after } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
+import { apnsEnabled, fcmEnabled, sendApnsVoip, sendFcmData } from "@/lib/native-push";
 
 /**
  * In-app voice calls (see 20261117000001_calls.sql). The audio goes peer to
@@ -66,20 +68,94 @@ export async function profileCard(db: Admin, profileId: string) {
   return { name: data?.full_name ?? "", photoUrl: data?.profile_photo_url ?? null };
 }
 
-/** Rings the callee's phones: opens the conversation, where the call screen shows. */
+// -- ringing phones ------------------------------------------------------------
+
+/**
+ * Proof, carried in a ring, that the phone may decline or end this call on
+ * its own (iOS CallKit's Decline, Android's notification button) -- the
+ * native side has no session cookie to call the API with.
+ */
+export function callActionToken(callId: string, calleeId: string) {
+  const key = process.env.CALL_ACTION_SECRET || `calls:${process.env.SUPABASE_SERVICE_ROLE_KEY}`;
+  return createHmac("sha256", key).update(`${callId}:${calleeId}`).digest("base64url");
+}
+
+export function validCallActionToken(callId: string, calleeId: string, token: string) {
+  const expected = Buffer.from(callActionToken(callId, calleeId));
+  const given = Buffer.from(token);
+  return expected.length === given.length && timingSafeEqual(expected, given);
+}
+
+type RingRow = { token: string; platform: string; voip_token: string | null; rings_calls: boolean };
+
+/** The callee's app installs that ring for calls themselves (iPhone CallKit, Android call screen). */
+async function ringingDevices(calleeId: string): Promise<RingRow[]> {
+  const { data, error } = await createAdminClient()
+    .from("native_push_tokens")
+    .select("token, platform, voip_token, rings_calls")
+    .eq("user_id", calleeId);
+  // Before 20261118000001 the columns don't exist: no device rings, every one gets the notification.
+  if (error) return [];
+  return (data ?? []).filter((r) => (r.platform === "ios" && r.voip_token) || (r.platform === "android" && r.rings_calls));
+}
+
+async function ring(rows: RingRow[], data: Record<string, string>, ttlSeconds: number) {
+  const ios = rows.filter((r) => r.platform === "ios" && r.voip_token).map((r) => r.voip_token!);
+  const android = rows.filter((r) => r.platform === "android").map((r) => r.token);
+  await Promise.all([
+    ios.length && apnsEnabled() ? sendApnsVoip(ios, data, ttlSeconds) : null,
+    android.length && fcmEnabled() ? sendFcmData(android, data, ttlSeconds) : null,
+  ]);
+}
+
+/**
+ * Rings the callee: phones whose app rings for calls get the incoming-call
+ * screen; every other device (browsers, older apps) a notification that
+ * opens the conversation, where the call screen shows.
+ */
 export function pushIncomingCall(calleeId: string, callId: string, matchId: string, callerName: string) {
   if (!anyPushEnabled()) return;
-  after(() =>
-    sendPush([calleeId], (locale) => {
-      const t = pushTranslator(locale, "Push");
-      return {
-        title: callerName || t("someone"),
-        body: t("incomingCall"),
-        url: `/${locale}/messages?match=${matchId}`,
-        tag: `call-${callId}`,
-      };
-    }),
-  );
+  after(async () => {
+    const rows = await ringingDevices(calleeId);
+    await Promise.all([
+      ring(
+        rows,
+        {
+          kind: "incoming",
+          callId,
+          matchId,
+          name: callerName,
+          actionToken: callActionToken(callId, calleeId),
+          url: `/messages?match=${matchId}`,
+        },
+        RING_SECONDS,
+      ),
+      sendPush(
+        [calleeId],
+        (locale) => {
+          const t = pushTranslator(locale, "Push");
+          return {
+            title: callerName || t("someone"),
+            body: t("incomingCall"),
+            url: `/${locale}/messages?match=${matchId}`,
+            tag: `call-${callId}`,
+          };
+        },
+        { skipNativeTokens: new Set(rows.map((r) => r.token)) },
+      ),
+    ]);
+  });
+}
+
+/**
+ * Stops the ringing on the callee's phones: the call was answered (the
+ * phone that answered ignores this), declined, or the caller gave up.
+ */
+export function cancelRinging(callId: string, calleeId: string, reason: "answered" | "declined" | "ended") {
+  after(async () => {
+    const rows = await ringingDevices(calleeId);
+    if (rows.length) await ring(rows, { kind: "cancel", callId, reason }, 60);
+  });
 }
 
 /** Replaces the ringing notification with a missed-call one. */

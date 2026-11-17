@@ -692,14 +692,14 @@ isOneToOne: true
                   ]
                 },"native_push_tokens": {
                   Row: {
-                    "created_at": string,"id": string,"locale": string,"platform": string,"token": string,"updated_at": string,"user_id": string
+                    "created_at": string,"id": string,"locale": string,"platform": string,"rings_calls": boolean,"token": string,"updated_at": string,"user_id": string,"voip_token": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"locale"?: string,"platform": string,"token": string,"updated_at"?: string,"user_id": string
+                    "created_at"?: string,"id"?: string,"locale"?: string,"platform": string,"rings_calls"?: boolean,"token": string,"updated_at"?: string,"user_id": string,"voip_token"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"locale"?: string,"platform"?: string,"token"?: string,"updated_at"?: string,"user_id"?: string
+                    "created_at"?: string,"id"?: string,"locale"?: string,"platform"?: string,"rings_calls"?: boolean,"token"?: string,"updated_at"?: string,"user_id"?: string,"voip_token"?: string | null
                   }
                   Relationships: [
                     {

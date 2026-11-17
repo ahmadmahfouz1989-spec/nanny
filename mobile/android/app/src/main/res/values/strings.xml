@@ -7,4 +7,9 @@
     <!-- The notice shown while a delivery's location is shared (background-geolocation). -->
     <string name="capacitor_background_geolocation_notification_channel_name">Delivery tracking</string>
     <string name="capacitor_background_geolocation_notification_color">#cf3a12</string>
+    <!-- Calls ringing like phone calls (java/com/ouiknow/app/calls). -->
+    <string name="calls_channel">Incoming calls</string>
+    <string name="calls_incoming">Incoming call on ouiKnow</string>
+    <string name="calls_ongoing_channel">Ongoing calls</string>
+    <string name="calls_ongoing">Call in progress. Tap to return.</string>
 </resources>

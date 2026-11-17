@@ -40,6 +40,27 @@
             </intent-filter>
         </activity>
 
+        <!-- Calls ring like phone calls (java/com/ouiknow/app/calls): this
+             receiver takes over from the push plugin's own, handing it every
+             push that isn't a call. -->
+        <service
+            android:name="com.capacitorjs.plugins.pushnotifications.MessagingService"
+            tools:node="remove" />
+        <service
+            android:name=".calls.CallMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name=".calls.CallService"
+            android:exported="false"
+            android:foregroundServiceType="microphone" />
+        <receiver
+            android:name=".calls.CallActionReceiver"
+            android:exported="false" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -56,6 +77,11 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.CAMERA" />
+    <!-- Calls: ringing over the lock screen, and staying on with the screen locked. -->
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.VIBRATE" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <!-- "Use my current location" for a delivery's pickup or drop-off (asked when tapped). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />

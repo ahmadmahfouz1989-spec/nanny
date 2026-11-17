@@ -20,6 +20,10 @@ const registerSchema = z.object({
   token: tokenSchema,
   platform: z.enum(["ios", "android"]),
   locale: z.enum(["en", "ar"]),
+  // Apps that ring for calls (iOS 1.5 / Android 1.4 and later): the
+  // iPhone's PushKit token, and Android saying it can show the call screen.
+  voipToken: z.string().regex(/^[0-9a-fA-F]{32,200}$/).optional(),
+  ringsCalls: z.boolean().optional(),
 });
 
 export async function PUT(request: Request) {
@@ -36,11 +40,16 @@ export async function PUT(request: Request) {
 
   // Upsert on token: an install that signs in as someone else moves to
   // that account instead of keeping the old one's notifications.
-  const { token, platform, locale } = parsed.data;
-  const { error } = await createAdminClient()
+  const { token, platform, locale, voipToken, ringsCalls } = parsed.data;
+  const db = createAdminClient();
+  // Older apps send neither: their row is written exactly as before.
+  const calls = voipToken || ringsCalls ? { voip_token: voipToken ?? null, rings_calls: !!ringsCalls } : {};
+  // A PushKit token moves with the install, like the token itself.
+  if (voipToken) await db.from("native_push_tokens").update({ voip_token: null }).eq("voip_token", voipToken).neq("token", token);
+  const { error } = await db
     .from("native_push_tokens")
     .upsert(
-      { user_id: user.id, token, platform, locale, updated_at: new Date().toISOString() },
+      { user_id: user.id, token, platform, locale, updated_at: new Date().toISOString(), ...calls },
       { onConflict: "token" },
     );
 

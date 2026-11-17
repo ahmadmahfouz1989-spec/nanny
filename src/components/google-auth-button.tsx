@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { createClient } from "@/lib/supabase/client";
 import { ui } from "@/lib/ui";
 import { RETURN_PATH_COOKIE } from "@/lib/return-path";
-import { isNativeApp, nativeOAuthRedirect, openInSystemBrowser } from "@/lib/native-app";
+import { finishNativeSignIn, isNativeApp, nativeOAuthRedirect, nativeSignIn, openInSystemBrowser } from "@/lib/native-app";
 
 function GoogleIcon({ className = "" }: { className?: string }) {
   return (
@@ -62,9 +62,16 @@ export default function GoogleAuthButton({ next = null }: { next?: string | null
         provider: "google",
         options: { redirectTo: nativeOAuthRedirect(), skipBrowserRedirect: true, queryParams },
       });
+      if (error || !data.url) {
+        setLoading(false);
+        setError(t("genericError"));
+        return;
+      }
+      // iPhone 1.5+: Apple's sign-in sheet hands the result straight back.
+      const back = await nativeSignIn(data.url);
       setLoading(false);
-      if (error || !data.url) setError(t("genericError"));
-      else await openInSystemBrowser(data.url);
+      if (back === null) await openInSystemBrowser(data.url);
+      else if (back !== "cancelled") finishNativeSignIn(back);
       return;
     }
 

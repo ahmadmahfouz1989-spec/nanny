@@ -7,7 +7,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     var window: UIWindow?
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
-        // Override point for customization after application launch.
+        // Calls ring through CallKit: PushKit has to be listening from launch,
+        // since a VoIP push can be what launched the app.
+        CallManager.shared.start()
         return true
     }
 

@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
 import { resolveMatchAccess } from "@/lib/matching/match-access";
 import { iceServers } from "@/lib/ice-servers";
-import { profileCard, pushMissedCall, ringCutoff, type CallStatus } from "@/lib/calls";
+import { cancelRinging, profileCard, pushMissedCall, ringCutoff, type CallStatus } from "@/lib/calls";
 
 type Ctx = { params: Promise<{ id: string }> };
 
@@ -89,23 +89,28 @@ export async function POST(request: Request, { params }: Ctx) {
       }
       status = await move(["ringing"], "active", { answered_at: now });
       if (!status) return NextResponse.json({ error: "The call ended", status: call.status }, { status: 409 });
+      // The callee's other phones stop ringing.
+      cancelRinging(call.id, call.callee_id, "answered");
       return NextResponse.json({ status, iceServers: await iceServers() });
     }
     case "decline":
     case "busy":
       if (isCaller) return NextResponse.json({ error: "Not your call to decline" }, { status: 403 });
       status = await move(["ringing"], action === "busy" ? "busy" : "declined", { ended_at: now });
+      if (status) cancelRinging(call.id, call.callee_id, "declined");
       break;
     case "end":
       if (call.status === "ringing") {
         status = isCaller ? await move(["ringing"], "missed", { ended_at: now }) : await move(["ringing"], "declined", { ended_at: now });
         if (status === "missed") pushMissedCall(call.id);
+        if (status) cancelRinging(call.id, call.callee_id, isCaller ? "ended" : "declined");
       } else {
         status = await move(["active"], "ended", { ended_at: now });
       }
       break;
     case "failed":
       status = await move(["ringing", "active"], "failed", { ended_at: now });
+      if (status && call.status === "ringing") cancelRinging(call.id, call.callee_id, "ended");
       break;
   }
 

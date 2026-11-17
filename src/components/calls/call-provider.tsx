@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { getJson, request } from "@/lib/request";
-import { haptic } from "@/lib/native-app";
+import { haptic, nativeCalls } from "@/lib/native-app";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { MicIcon } from "@/components/nav-icons";
 import { PhoneIcon } from "@/components/calls/phone-icon";
@@ -57,6 +57,8 @@ type Signal =
 
 type Session = {
   id: string | null;
+  /** Who's on the other end, for the phone's own call screens. */
+  name: string;
   matchId: string;
   role: "caller" | "callee";
   createdAt: number;
@@ -162,6 +164,7 @@ function later(session: Session, ms: number, fn: () => void) {
 function newSession(role: Session["role"], matchId: string, id: string | null, createdAt = Date.now()): Session {
   return {
     id,
+    name: "",
     matchId,
     role,
     createdAt,
@@ -242,6 +245,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       for (const ch of session.channels) supabase.removeChannel(ch);
       if (audioRef.current) audioRef.current.srcObject = null;
       if (sessionRef.current === session) sessionRef.current = null;
+      // The phone's own ringing, call screen and ongoing-call notification go too.
+      if (session.id) nativeCalls()?.callEnded({ callId: session.id }).catch(() => {});
       setMuted(false);
       setView((v) => (v ? { ...v, phase: "ended", reason, activeSince: undefined } : v));
       if (idleTimer.current) clearTimeout(idleTimer.current);
@@ -378,6 +383,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           session.stopTone?.();
           session.stopTone = null;
           haptic("success");
+          if (session.id) nativeCalls()?.callActive({ callId: session.id, name: session.name }).catch(() => {});
           setView((v) => (v && v.phase !== "active" ? { ...v, phase: "active", activeSince: Date.now() } : v));
         } else if (state === "failed") {
           finish(session, "failed", "failed");
@@ -401,6 +407,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       if (sessionRef.current) return;
       if (idleTimer.current) clearTimeout(idleTimer.current);
       const session = newSession("caller", matchId, null);
+      session.name = counterpart.name;
       sessionRef.current = session;
       setMuted(false);
       setView({ phase: "starting", counterpart });
@@ -444,8 +451,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
 
   // -- incoming --
 
+  // ringIn starts the answer itself when the phone's call screen was used to answer.
+  const acceptRef = useRef<() => Promise<void>>(async () => {});
+
   const ringIn = useCallback(
-    async (call: { id: string; matchId: string; createdAt: string }, counterpart?: Counterpart) => {
+    async (call: { id: string; matchId: string; createdAt: string }, counterpart?: Counterpart, answered = false) => {
       const current = sessionRef.current;
       if (current?.id === call.id) return;
       if (current) {
@@ -461,20 +471,30 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       sessionRef.current = session;
       if (idleTimer.current) clearTimeout(idleTimer.current);
       setMuted(false);
-      setView({ phase: "incoming", counterpart: counterpart ?? { name: "", photoUrl: null } });
-      session.stopTone = playTone("ring");
+      session.name = counterpart?.name ?? "";
+      setView({ phase: answered ? "connecting" : "incoming", counterpart: counterpart ?? { name: "", photoUrl: null } });
+      // In the apps the phone rings itself (CallKit, Android's call notification).
+      if (!nativeCalls() && !answered) session.stopTone = playTone("ring");
       later(session, ringFor, () => !session.accepted && finish(session, "missed"));
-      void listen(session);
+      const listening = listen(session);
+      if (answered) {
+        await listening;
+        await acceptRef.current();
+      }
       if (!counterpart) {
         const info = await getJson<{ counterpart?: Counterpart; call?: { status: string } }>(`/api/calls/${call.id}`);
         if (info?.call && info.call.status !== "ringing") return finish(session, "missed");
-        if (info?.counterpart) setView((v) => (v && sessionRef.current === session ? { ...v, counterpart: info.counterpart! } : v));
+        if (info?.counterpart) {
+          session.name = info.counterpart.name;
+          setView((v) => (v && sessionRef.current === session ? { ...v, counterpart: info.counterpart! } : v));
+        }
       }
     },
     [finish, listen, tellServer],
   );
 
-  const accept = useCallback(async () => {
+  /** Answers the ringing call: the microphone, the server, then waiting for the caller's offer. */
+  const acceptNow = useCallback(async () => {
     const session = sessionRef.current;
     if (!session || session.role !== "callee" || session.accepted) return;
     session.accepted = true;
@@ -504,6 +524,29 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       if (session.pc?.connectionState !== "connected") finish(session, "failed", "failed");
     });
   }, [finish, makePeer, send, tellServer]);
+
+  useEffect(() => {
+    acceptRef.current = acceptNow;
+  }, [acceptNow]);
+
+  /**
+   * Accept on the call screen. On iPhone it goes through CallKit, so the
+   * call is a phone call to iOS (keeps running with the screen locked);
+   * CallKit's "answered" event then starts it here.
+   */
+  const accept = useCallback(async () => {
+    const session = sessionRef.current;
+    const calls = nativeCalls();
+    if (session?.id && calls) {
+      const { handled } = await calls.answer({ callId: session.id }).catch(() => ({ handled: false }));
+      if (handled) {
+        session.stopTone?.();
+        setView((v) => (v ? { ...v, phase: "connecting" } : v));
+        return;
+      }
+    }
+    await acceptNow();
+  }, [acceptNow]);
 
   const decline = useCallback(() => {
     const session = sessionRef.current;
@@ -540,6 +583,37 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       supabase.removeChannel(channel);
     };
   }, [userId, supabase, ringIn]);
+
+  // The phone's own call screens: answered or hung up there, and a call the
+  // app was opened for before this page was listening.
+  useEffect(() => {
+    const calls = nativeCalls();
+    if (!userId || !calls) return;
+    const byId = async (callId: string, answered: boolean) => {
+      if (sessionRef.current?.id === callId) {
+        if (answered) await acceptRef.current();
+        return;
+      }
+      const info = await getJson<{ call?: { id: string; matchId: string; createdAt: string; status: string }; counterpart?: Counterpart }>(
+        `/api/calls/${callId}`,
+      );
+      if (info?.call?.status === "ringing") await ringIn(info.call, info.counterpart, answered);
+      else calls.callEnded({ callId }).catch(() => {});
+    };
+    calls
+      .takePending()
+      .then(({ callId, action }) => (callId ? byId(callId, action === "answer") : undefined))
+      .catch(() => {});
+    const subs = [
+      calls.addListener("callAnswered", ({ callId }) => void byId(callId, true)),
+      calls.addListener("callEnded", ({ callId }) => {
+        const session = sessionRef.current;
+        if (session?.id !== callId) return;
+        finish(session, session.accepted || session.role === "caller" ? "ended" : "declined", session.accepted || session.role === "caller" ? "end" : "decline");
+      }),
+    ];
+    return () => subs.forEach((l) => void Promise.resolve(l).then((h) => h.remove()).catch(() => {}));
+  }, [userId, ringIn, finish]);
 
   // Closing the page or the app mid-call hangs up properly.
   useEffect(() => {
