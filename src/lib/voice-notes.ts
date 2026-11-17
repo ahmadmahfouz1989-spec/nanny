@@ -4,11 +4,11 @@
 // one place rather than drifting between two copies.
 
 /**
- * Recording new voice notes in chat. Off for now (a spoken phone number
- * can't be caught like a typed one); the code stays, and voice notes
- * already sent still play. Set to true to bring the mic button back.
+ * Recording new voice notes in chat. Back on since in-app calls (people
+ * talk directly anyway); set to false to hide the mic button and refuse
+ * new recordings -- voice notes already sent still play.
  */
-export const VOICE_NOTES_ENABLED = false;
+export const VOICE_NOTES_ENABLED = true;
 
 export const MAX_RECORDING_SECONDS = 120;
 export const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
