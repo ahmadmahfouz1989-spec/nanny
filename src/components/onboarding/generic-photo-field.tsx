@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 
@@ -64,7 +65,7 @@ export default function GenericPhotoField({
         className="relative flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-border bg-background text-muted overflow-hidden hover:border-primary/50 transition-colors"
       >
         {value ? (
-          <Image src={value} alt="" width={64} height={64} unoptimized className="h-full w-full object-cover" />
+          <Image src={value} alt="" width={64} height={64} unoptimized={!canOptimize(value)} className="h-full w-full object-cover" />
         ) : (
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
             <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />

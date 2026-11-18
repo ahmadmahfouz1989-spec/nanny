@@ -63,6 +63,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const { error: uploadError } = await supabase.storage.from(WORK_BUCKET).upload(path, file, {
     contentType: file.type,
     upsert: false,
+    // A new photo is always a new file: browsers can keep this one.
+    cacheControl: "31536000",
   });
   if (uploadError) {
     return NextResponse.json({ error: uploadError.message }, { status: 400 });

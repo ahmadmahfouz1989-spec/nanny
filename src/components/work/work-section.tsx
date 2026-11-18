@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
@@ -100,7 +101,7 @@ export default function WorkSection({
                     alt=""
                     width={400}
                     height={400}
-                    unoptimized
+                    unoptimized={!canOptimize(cover.url)}
                     className="h-full w-full object-cover transition hover:scale-[1.03]"
                   />
                 ) : (

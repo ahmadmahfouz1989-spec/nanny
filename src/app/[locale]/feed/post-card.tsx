@@ -7,6 +7,7 @@ import { Link } from "@/i18n/navigation";
 import { ChatIcon, HeartIcon } from "@/components/nav-icons";
 import { ui } from "@/lib/ui";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { Avatar, formatRelative, type Post } from "./feed-shared";
 import type { PostWork } from "@/lib/posts";
 import VerifiedCheck from "@/components/verified-check";
@@ -163,7 +164,7 @@ function WorkPhotos({ work, label }: { work: PostWork; label: string }) {
             photos.length === 1 ? "aspect-[16/10]" : photos.length === 3 && i === 0 ? "row-span-2 aspect-auto" : "aspect-square"
           }`}
         >
-          <Image src={photo.url} alt="" fill unoptimized sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
+          <Image src={photo.url} alt="" fill unoptimized={!canOptimize(photo.url)} sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
           {more > 0 && i === photos.length - 1 && (
             <span className="absolute inset-0 flex items-center justify-center bg-black/45 text-lg font-semibold text-white">+{more}</span>
           )}
@@ -204,7 +205,7 @@ function PostPhotos({ urls, label, closeLabel }: { urls: string[]; label: string
               urls.length === 1 ? "aspect-[4/3]" : urls.length === 3 && i === 0 ? "row-span-2 aspect-auto" : "aspect-square"
             }`}
           >
-            <Image src={url} alt="" fill unoptimized sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
+            <Image src={url} alt="" fill unoptimized={!canOptimize(url)} sizes="(max-width: 640px) 50vw, 300px" className="object-cover" />
           </button>
         ))}
       </div>

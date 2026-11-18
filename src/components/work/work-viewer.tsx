@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useTranslations } from "next-intl";
 import Modal from "./modal";
 import type { WorkProject } from "@/lib/work";
@@ -100,7 +101,7 @@ export default function WorkViewer({ project, onClose }: { project: WorkProject;
                     alt={photo.caption ?? ""}
                     width={photo.width ?? 1600}
                     height={photo.height ?? 1200}
-                    unoptimized
+                    unoptimized={!canOptimize(photo.url)}
                     priority={i === 0}
                     className="mx-auto max-h-[60dvh] w-auto max-w-full object-contain"
                   />

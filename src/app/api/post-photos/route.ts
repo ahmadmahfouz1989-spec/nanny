@@ -34,7 +34,7 @@ export async function POST(request: Request) {
 
   const path = `${user.id}/${randomUUID()}.${ext}`;
   const db = createAdminClient();
-  const { error } = await db.storage.from(POST_PHOTO_BUCKET).upload(path, file, { contentType: file.type });
+  const { error } = await db.storage.from(POST_PHOTO_BUCKET).upload(path, file, { contentType: file.type, cacheControl: "31536000" });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const { data } = db.storage.from(POST_PHOTO_BUCKET).getPublicUrl(path);
   return NextResponse.json({ url: data.publicUrl }, { status: 201 });

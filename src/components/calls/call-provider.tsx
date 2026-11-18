@@ -2,6 +2,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useTranslations } from "next-intl";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
@@ -720,7 +721,7 @@ function CallScreen({
       <div className="flex flex-col items-center gap-4 text-center">
         <div className={`relative ${phase === "incoming" || phase === "outgoing" ? "animate-pulse" : ""}`}>
           {counterpart.photoUrl ? (
-            <Image src={counterpart.photoUrl} alt="" width={112} height={112} unoptimized className="h-28 w-28 rounded-full object-cover" />
+            <Image src={counterpart.photoUrl} alt="" width={112} height={112} unoptimized={!canOptimize(counterpart.photoUrl)} className="h-28 w-28 rounded-full object-cover" />
           ) : (
             <AvatarIllustration name={name} className="h-28 w-28 rounded-full" />
           )}

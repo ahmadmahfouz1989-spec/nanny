@@ -20,7 +20,7 @@ export async function POST(request: Request) {
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "Photo too large (max 5MB)", code: "size" }, { status: 400 });
   const db = createAdminClient();
   const path = `${user.id}/${Date.now()}.${ext}`;
-  const { error } = await db.storage.from(BUCKET).upload(path, file, { contentType: file.type });
+  const { error } = await db.storage.from(BUCKET).upload(path, file, { contentType: file.type, cacheControl: "31536000" });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ url: db.storage.from(BUCKET).getPublicUrl(path).data.publicUrl }, { status: 201 });
 }

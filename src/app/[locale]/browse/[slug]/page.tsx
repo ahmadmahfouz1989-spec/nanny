@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link, redirect } from "@/i18n/navigation";
@@ -200,7 +201,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
               <div key={c.id} className={ui.cardHover + " flex min-w-0 flex-col gap-3 p-3"}>
                 <Link href={`/u/${c.id}`} className="flex min-w-0 flex-wrap gap-3">
                   {c.photoUrl ? (
-                    <Image src={c.photoUrl} alt="" width={72} height={72} unoptimized className="h-18 w-18 shrink-0 rounded-xl object-cover" />
+                    <Image src={c.photoUrl} alt="" width={72} height={72} unoptimized={!canOptimize(c.photoUrl)} className="h-18 w-18 shrink-0 rounded-xl object-cover" />
                   ) : (
                     <AvatarIllustration name={c.fullName} className="h-18 w-18 shrink-0 rounded-xl" />
                   )}
@@ -231,7 +232,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
                   {c.workPhotos.length > 0 && (
                     <div className="mt-1 grid w-full grid-cols-3 gap-1.5">
                       {c.workPhotos.map((url) => (
-                        <Image key={url} src={url} alt="" width={160} height={160} unoptimized className="aspect-square w-full rounded-lg object-cover" />
+                        <Image key={url} src={url} alt="" width={160} height={160} unoptimized={!canOptimize(url)} className="aspect-square w-full rounded-lg object-cover" />
                       ))}
                     </div>
                   )}

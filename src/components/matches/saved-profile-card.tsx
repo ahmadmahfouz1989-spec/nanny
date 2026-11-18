@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useLocale, useTranslations } from "next-intl";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import ProfileRating from "@/components/matches/profile-rating";
@@ -99,7 +100,7 @@ export default function SavedProfileCard({
     <div className={ui.cardHover + " overflow-hidden"}>
       <div className="relative">
         {profile.photoUrl ? (
-          <Image src={profile.photoUrl} alt="" width={640} height={160} unoptimized className="h-28 w-full object-cover" />
+          <Image src={profile.photoUrl} alt="" width={640} height={160} unoptimized={!canOptimize(profile.photoUrl)} className="h-28 w-full object-cover" />
         ) : (
           <AvatarIllustration name={profile.displayName} banner className="h-28 w-full" />
         )}

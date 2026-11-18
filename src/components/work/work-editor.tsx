@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useTranslations } from "next-intl";
 import Modal from "./modal";
 import { ui } from "@/lib/ui";
@@ -255,7 +256,7 @@ export default function WorkEditor({
                     alt=""
                     width={96}
                     height={96}
-                    unoptimized
+                    unoptimized={!canOptimize(photo.url)}
                     className="h-20 w-20 shrink-0 rounded-xl object-cover bg-surface-sunken"
                   />
                   <div className="flex-1 min-w-0 flex flex-col gap-1.5">

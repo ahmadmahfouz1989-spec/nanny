@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import { labelOr } from "@/lib/i18n-fallback";
@@ -319,7 +320,7 @@ export default function AdminProfilesPage() {
                   alt=""
                   width={56}
                   height={56}
-                  unoptimized
+                  unoptimized={!canOptimize(profile.profile_photo_url)}
                   className="h-14 w-14 rounded-full object-cover shrink-0"
                 />
               ) : (

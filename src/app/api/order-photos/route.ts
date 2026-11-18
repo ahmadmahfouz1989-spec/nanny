@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   const path = `${user.id}/${randomUUID()}.${ext}`;
   const db = createAdminClient();
-  const { error } = await db.storage.from(ORDER_PHOTO_BUCKET).upload(path, file, { contentType: file.type });
+  const { error } = await db.storage.from(ORDER_PHOTO_BUCKET).upload(path, file, { contentType: file.type, cacheControl: "31536000" });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   const { data: signed } = await db.storage.from(ORDER_PHOTO_BUCKET).createSignedUrl(path, 3600);
   return NextResponse.json({ path, url: signed?.signedUrl ?? null }, { status: 201 });

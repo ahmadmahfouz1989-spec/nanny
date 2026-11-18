@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import ProfileHero from "@/components/profile-hero";
 import { getFormatter, getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -95,7 +96,7 @@ export default async function PublicProfileView({ profile, locale }: { profile: 
             <h2 className="mb-3 font-semibold text-ink">{t("work")}</h2>
             <div className="grid grid-cols-3 gap-2">
               {profile.workPhotos.map((p) => (
-                <Image key={p.url} src={p.url} alt={p.caption ?? ""} width={300} height={300} unoptimized className="aspect-square w-full rounded-lg object-cover" />
+                <Image key={p.url} src={p.url} alt={p.caption ?? ""} width={300} height={300} unoptimized={!canOptimize(p.url)} className="aspect-square w-full rounded-lg object-cover" />
               ))}
             </div>
           </section>

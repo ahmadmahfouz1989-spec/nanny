@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useLocale, useTranslations } from "next-intl";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { lastCategory } from "@/lib/last-category";
@@ -85,7 +86,7 @@ function Avatar({ me, size }: { me: ShellMe | null; size: number }) {
         alt=""
         width={size}
         height={size}
-        unoptimized
+        unoptimized={!canOptimize(me.photoUrl)}
         onError={() => setBroken(true)}
         className="shrink-0 rounded-full object-cover bg-surface-sunken"
         style={{ width: size, height: size }}

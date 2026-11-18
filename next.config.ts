@@ -13,6 +13,11 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.N
 
 const nextConfig: NextConfig = {
   images: {
+    // Photo addresses are unique per upload (a new photo is a new file), so
+    // a resized copy never goes stale: keep it a month in browsers and in
+    // the resizer's cache instead of going back to Supabase's metered CDN.
+    minimumCacheTTL: 60 * 60 * 24 * 31,
+    formats: ["image/avif", "image/webp"],
     remotePatterns: supabaseUrl
       ? [
           {

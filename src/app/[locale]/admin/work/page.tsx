@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
@@ -88,7 +89,7 @@ export default function AdminWorkPage() {
                       alt=""
                       width={320}
                       height={320}
-                      unoptimized
+                      unoptimized={!canOptimize(photo.url)}
                       className="aspect-square w-full rounded-xl object-cover bg-surface-sunken"
                     />
                     {photo.caption && (

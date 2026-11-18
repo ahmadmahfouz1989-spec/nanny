@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import VerifiedCheck from "@/components/verified-check";
 
@@ -31,7 +32,7 @@ export default function ProfileHero({
     <div>
       <div className="relative h-28 sm:h-36">
         {coverUrl ? (
-          <Image src={coverUrl} alt="" fill sizes="(min-width: 640px) 672px, 100vw" unoptimized priority className="object-cover" />
+          <Image src={coverUrl} alt="" fill sizes="(min-width: 640px) 672px, 100vw" unoptimized={!canOptimize(coverUrl)} priority className="object-cover" />
         ) : (
           <div className="h-full w-full bg-gradient-to-br from-primary-soft via-surface-sunken to-secondary-soft" />
         )}
@@ -40,7 +41,7 @@ export default function ProfileHero({
       <div className="px-4 sm:px-5">
         <div className="relative z-10 -mt-12 h-24 w-24 overflow-hidden rounded-full border-4 border-surface bg-surface shadow-sm sm:-mt-14 sm:h-28 sm:w-28">
           {photoUrl ? (
-            <Image src={photoUrl} alt="" width={224} height={224} unoptimized priority className="h-full w-full object-cover" />
+            <Image src={photoUrl} alt="" width={224} height={224} unoptimized={!canOptimize(photoUrl)} priority className="h-full w-full object-cover" />
           ) : (
             <AvatarIllustration name={name} className="h-full w-full" />
           )}

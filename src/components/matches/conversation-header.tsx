@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useTranslations } from "next-intl";
 import ReportButton from "@/components/matches/report-button";
 import RatingButton from "@/components/matches/rating-button";
@@ -75,7 +76,7 @@ export default function ConversationHeader({
               alt=""
               width={40}
               height={40}
-              unoptimized
+              unoptimized={!canOptimize(photoUrl)}
               className="h-10 w-10 rounded-full object-cover shrink-0"
             />
           ) : (

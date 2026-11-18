@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import CriteriaChecklist from "./criteria-checklist";
@@ -129,7 +130,7 @@ export default function MatchCard({
       <div className="flex items-start gap-3">
         <Link href={`/u/${other.id}`} className="shrink-0" aria-label={other.full_name}>
           {other.profile_photo_url ? (
-            <Image src={other.profile_photo_url} alt="" width={56} height={56} unoptimized className="h-14 w-14 rounded-full object-cover" />
+            <Image src={other.profile_photo_url} alt="" width={56} height={56} unoptimized={!canOptimize(other.profile_photo_url)} className="h-14 w-14 rounded-full object-cover" />
           ) : (
             <AvatarIllustration name={other.full_name} className="h-14 w-14 rounded-full" />
           )}

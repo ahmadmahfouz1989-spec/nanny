@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import { canOptimize } from "@/lib/image-src";
 import { useSearchParams } from "next/navigation";
 import { useLocale, useTranslations } from "next-intl";
 import ChatThread from "@/components/matches/chat-thread";
@@ -236,7 +237,7 @@ export default function MessagesClient() {
                   alt=""
                   width={48}
                   height={48}
-                  unoptimized
+                  unoptimized={!canOptimize(c.counterpart.photoUrl)}
                   className="h-12 w-12 rounded-full object-cover shrink-0"
                 />
               ) : (
