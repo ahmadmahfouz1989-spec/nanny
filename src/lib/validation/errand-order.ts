@@ -15,12 +15,27 @@ const detail = z.string().trim().max(160, "That's too long").optional();
 // what to do there, and who to ask for. All optional: without a map (no
 // Maps key yet) an order is a district, an area and a landmark as before.
 const point = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
+// Arabic-Indic and Persian digits typed on an Arabic keyboard count as digits.
+const westernDigits = (v: string) => v.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (d) => String((d.charCodeAt(0) & 0xf) % 10));
+// Lebanese numbers are written many ways: "03/123456", "03 123 456",
+// "+961 3-123.456", "٠٣١٢٣٤٥٦". Separators are fine; 6 to 15 digits.
 const phone = z
   .string()
   .trim()
   .max(30)
-  .refine((v) => v === "" || /^\+?[0-9 ()-]{6,30}$/.test(v), "Enter a phone number, or leave it empty")
+  .transform(westernDigits)
+  .refine((v) => v === "" || (/^\+?[0-9 ()./-]+$/.test(v) && /^(\D*\d){6,15}\D*$/.test(v)), "Enter a phone number, or leave it empty")
   .optional();
+
+/**
+ * A delivered order the customer didn't confirm closes by itself after
+ * this long, so the provider still gets it completed (its number, their
+ * points, the rating prompt). A repair job gets a day.
+ */
+export const AUTO_COMPLETE_HOURS = { errands: 2, maintenance: 24 } as const;
+
+/** A scheduled order is for some time from now, within a month. */
+export const SCHEDULE_MAX_DAYS = 30;
 const placeText = {
   address: z.string().trim().max(300).optional(),
   name: z.string().trim().max(160, "That's too long").optional(),
@@ -60,7 +75,10 @@ export const orderCreateSchema = z
     timing: z.enum(TIMINGS, "Choose when"),
     scheduledAt: z
       .string()
-      .refine((d) => !Number.isNaN(Date.parse(d)), "Invalid date")
+      .refine((d) => !Number.isNaN(Date.parse(d)), "Pick a time from now on")
+      // A few minutes' grace for a slow send.
+      .refine((d) => Date.parse(d) > Date.now() - 5 * 60_000, "Pick a time from now on")
+      .refine((d) => Date.parse(d) < Date.now() + SCHEDULE_MAX_DAYS * 86_400_000, "Pick a time within the next 30 days")
       .optional(),
     budgetUsd: z.number().min(0).max(10000).optional(),
     // Photos already uploaded through /api/order-photos (paths in the

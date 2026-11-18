@@ -5,13 +5,12 @@ import { requireActiveUser } from "@/lib/session";
 import { mustVerifyPhone } from "@/lib/phone-gate";
 import { containsContactInfo } from "@/lib/content-filter";
 import { orderCreateSchema } from "@/lib/validation/errand-order";
-import { advanceOrders, dispatchOrder, eligibleProviders, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor } from "@/lib/errand-orders";
+import { advanceOrders, dispatchOrder, eligibleProviders, errandSettings, logOrderEvent, myErrandProfiles, nextWaveOrClose, openMinutesFor, scheduledSendAt } from "@/lib/errand-orders";
+import { ORDER_ERRORS, orderError, orderFieldError } from "@/lib/order-errors";
 import { placeOfPoint } from "@/lib/nearest-place";
 import { rememberRecentPlaces } from "@/lib/saved-places";
 import { ensureErrandRequestProfile, ensureJobRequestProfile } from "@/lib/job-request-profile";
 import { orderSummaries } from "@/lib/errand-order-view";
-
-const CONTACT_ERROR = "Please remove phone numbers, emails, or social handles from the description. Put a phone number in the contact field instead: only the provider who confirms sees it.";
 
 /**
  * The caller's orders. `?as=seeker` (default): orders they placed.
@@ -96,10 +95,15 @@ export async function POST(request: Request) {
   const user = await requireActiveUser(supabase);
   if (!user) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
 
-  if (await mustVerifyPhone(createAdminClient(), user)) return NextResponse.json({ error: "phone_required" }, { status: 403 });
+  if (await mustVerifyPhone(createAdminClient(), user)) return NextResponse.json(orderError("phone_required"), { status: 403 });
 
   const parsed = orderCreateSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) {
+    // The first problem, as a code the screen can say in its own language.
+    const issue = parsed.error.issues[0];
+    const code = issue?.message === ORDER_ERRORS.schedule_too_far ? "schedule_too_far" : orderFieldError(issue?.path[0]);
+    return NextResponse.json({ ...orderError(code), field: issue?.path[0] ?? null }, { status: 400 });
+  }
   const parsedOrder = parsed.data;
   // Phone numbers belong in the contact fields (seen only by the rider who
   // confirms), not in text every rider asked can read.
@@ -108,7 +112,7 @@ export async function POST(request: Request) {
       (text) => text && containsContactInfo(text),
     )
   ) {
-    return NextResponse.json({ error: CONTACT_ERROR }, { status: 400 });
+    return NextResponse.json(orderError("contact_info"), { status: 400 });
   }
 
   // A place picked on the map: its district and area come from the point.
@@ -120,7 +124,7 @@ export async function POST(request: Request) {
   const pickupPlace = await fromPoint(parsedOrder.pickupPoint, parsedOrder.pickupDistrictId, parsedOrder.pickupAreaId);
   const dropoffPlace = await fromPoint(parsedOrder.dropoffPoint, parsedOrder.dropoffDistrictId, parsedOrder.dropoffAreaId);
   if (!pickupPlace.ok || !dropoffPlace.ok || !pickupPlace.districtId) {
-    return NextResponse.json({ error: "Pick a place in Lebanon" }, { status: 400 });
+    return NextResponse.json(orderError("not_in_lebanon"), { status: 400 });
   }
   const o = {
     ...parsedOrder,
@@ -134,7 +138,7 @@ export async function POST(request: Request) {
   const job = o.category === "maintenance";
   // Photos must be ones this customer uploaded (their own folder).
   if (o.photoPaths.some((p) => !p.startsWith(`${user.id}/`) || p.includes(".."))) {
-    return NextResponse.json({ error: "Upload the photos again" }, { status: 400 });
+    return NextResponse.json(orderError("upload_photos_again"), { status: 400 });
   }
 
   // The places must be real districts (and areas inside them).
@@ -145,7 +149,7 @@ export async function POST(request: Request) {
   const areaIn = (area: string | null | undefined, parent: string | null | undefined) =>
     !area || (byId.get(area)?.level === "area" && byId.get(area)?.parent_location_id === parent);
   if (!district(o.pickupDistrictId) || !district(o.dropoffDistrictId) || !areaIn(o.pickupAreaId, o.pickupDistrictId) || !areaIn(o.dropoffAreaId, o.dropoffDistrictId)) {
-    return NextResponse.json({ error: "Choose the places from the list" }, { status: 400 });
+    return NextResponse.json(orderError("choose_from_list"), { status: 400 });
   }
 
   let seekerProfileId: string;
@@ -174,12 +178,15 @@ export async function POST(request: Request) {
     .eq("seeker_user_id", user.id)
     .in("status", ["open", "reserved"]);
   if ((count ?? 0) >= 3) {
-    return NextResponse.json({ error: "You already have 3 orders waiting. Choose an offer or cancel one first." }, { status: 429 });
+    return NextResponse.json(orderError("too_many_orders"), { status: 429 });
   }
 
   const settings = await errandSettings(db);
-  // A rider the customer picked: still able to take it right now?
-  if (o.providerProfileId) {
+  // A delivery for later waits, and goes out to riders shortly before its time.
+  const holdUntil = job ? null : scheduledSendAt(o.timing, o.scheduledAt);
+  // A rider the customer picked: still able to take it right now? (For
+  // later, they may well be offline now -- it's asked when it goes out.)
+  if (o.providerProfileId && !holdUntil) {
     const free = await eligibleProviders(
       db,
       {
@@ -192,7 +199,7 @@ export async function POST(request: Request) {
       { limit: 1, maxActive: settings.max_active_orders, only: o.providerProfileId },
     );
     if (free.length === 0) {
-      return NextResponse.json({ error: "That rider can't take orders right now. Pick another one, or send it to the nearest riders.", code: "rider_unavailable" }, { status: 409 });
+      return NextResponse.json(orderError("rider_unavailable"), { status: 409 });
     }
   }
   const { data: order, error } = await db
@@ -228,11 +235,15 @@ export async function POST(request: Request) {
       scheduled_at: o.timing === "scheduled" ? (o.scheduledAt ?? null) : null,
       budget_usd: o.budgetUsd ?? null,
       ...(o.providerProfileId ? { chosen_provider_profile_id: o.providerProfileId } : {}),
-      open_until: new Date(Date.now() + openMinutesFor(settings, o.category) * 60_000).toISOString(),
+      open_until: new Date((holdUntil ? Date.parse(holdUntil) : Date.now()) + openMinutesFor(settings, o.category) * 60_000).toISOString(),
+      ...(holdUntil ? { wave_until: holdUntil } : {}),
     })
     .select("*")
     .single();
-  if (error || !order) return NextResponse.json({ error: error?.message ?? "Could not place the order" }, { status: 400 });
+  if (error || !order) {
+    console.error("[errand-orders] insert failed:", error?.message);
+    return NextResponse.json(orderError("invalid_order"), { status: 400 });
+  }
 
   await logOrderEvent(db, order.id, { userId: user.id, role: "seeker" }, "created", o.providerProfileId ? { chosen_provider_profile_id: o.providerProfileId } : {});
   // One tap next time: the places of this order (never its contact details).
@@ -243,6 +254,10 @@ export async function POST(request: Request) {
     ]);
   }
   const actor = { userId: user.id, role: "seeker" as const };
+  if (holdUntil) {
+    await logOrderEvent(db, order.id, actor, "scheduled_hold", { send_at: holdUntil });
+    return NextResponse.json({ order: { id: order.id, number: order.number, status: "open", sent: 0, sendAt: holdUntil } }, { status: 201 });
+  }
   // A delivery goes to its first wave; with nobody to send it to it closes at
   // once (no notification: the customer is looking at the answer on screen).
   const sent = job

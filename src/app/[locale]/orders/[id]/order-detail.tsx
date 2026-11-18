@@ -18,8 +18,10 @@ import {
   useOrderTitle,
   useSecondsLeft,
   useServiceLabel,
+  useOrderErrorText,
   useStatusLabel,
 } from "@/components/orders/order-bits";
+import { AUTO_COMPLETE_HOURS } from "@/lib/validation/errand-order";
 import type { OrderOffer, OrderPerson, OrderView } from "@/lib/errand-order-view";
 import OrderPlaces from "@/components/orders/order-places";
 
@@ -44,6 +46,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const orderTitle = useOrderTitle();
   const format = useFormatter();
   const router = useRouter();
+  const errorText = useOrderErrorText();
   const [order, setOrder] = useState<OrderView | null | undefined>(undefined);
   // A job finishing while you watch (delivered, completed): a little burst.
   const lastStatus = useRef<string | null>(null);
@@ -55,6 +58,8 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState<"cancel" | "drop" | null>(null);
+  // Why, optionally: the other side sees it.
+  const [reason, setReason] = useState("");
 
   // A missing order (or one that isn't theirs) says so; a failed load (weak
   // signal) keeps what's on screen and tries again on the next tick.
@@ -103,9 +108,10 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
     setBusy(false);
     setConfirming(null);
     if (!res?.ok) {
-      setError(typeof data?.error === "string" ? data.error : t("error"));
+      setError(errorText(data));
       return false;
     }
+    setReason("");
     if (data?.orderId && data.orderId !== orderId) {
       router.push(`/orders/${data.orderId}`);
       return true;
@@ -133,8 +139,12 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
     confirming === kind ? (
       <div className={ui.card + " flex flex-col gap-3 p-4"}>
         <p className="text-sm text-ink">{kind === "cancel" ? t("cancelConfirm") : t("dropConfirm")}</p>
+        <label className="flex flex-col gap-1">
+          <span className={ui.label}>{t("reasonLabel")}</span>
+          <input dir="auto" maxLength={300} className={ui.input} placeholder={kind === "cancel" ? t("cancelReasonPlaceholder") : t("dropReasonPlaceholder")} value={reason} onChange={(e) => setReason(e.target.value)} />
+        </label>
         <div className="flex gap-2">
-          <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("cancel")}>
+          <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("cancel", reason.trim() ? { reason: reason.trim() } : {})}>
             {t("yesCancel")}
           </button>
           <button type="button" className={ui.buttonSecondary} onClick={() => setConfirming(null)}>
@@ -211,6 +221,13 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       )}
 
       {error && <p className="text-sm text-danger">{error}</p>}
+
+      {/* The rider of an order the customer cancelled: what they said. */}
+      {order.viewer === "provider" && order.assignedToMe && order.status === "cancelled" && (
+        <p className="rounded-xl bg-surface-sunken px-3 py-2 text-sm text-ink">
+          {order.cancelReason ? t("cancelledByCustomerReason", { reason: order.cancelReason }) : t("cancelledByCustomer")}
+        </p>
+      )}
 
       {order.viewer === "seeker" ? (
         <SeekerPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
@@ -362,7 +379,11 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
         {m && offers.length > 0 && chooseLeft === null && waveLeft !== null && waveLeft > 0 && (
           <p className="text-sm text-muted">{t.rich("moreOffersFor", { time: () => <Countdown seconds={waveLeft} /> })}</p>
         )}
-        {offers.length === 0 ? (
+        {offers.length === 0 && m?.sendAt ? (
+          <p className="text-sm text-muted">
+            {t("scheduledSendAt", { time: format.dateTime(new Date(m.sendAt), { weekday: "short", hour: "numeric", minute: "2-digit" }) })}
+          </p>
+        ) : offers.length === 0 ? (
           m ? (
             <div className="flex flex-col gap-1 text-sm text-muted">
               <p>
@@ -443,9 +464,12 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
     <div className="flex flex-col gap-3">
       <PersonCard title={t("yourProvider")} person={order.provider} matchId={order.matchId} rate={order.status === "completed"} />
       {order.status === "delivered" && (
-        <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("complete")}>
-          {job ? t("markJobComplete") : t("markComplete")}
-        </button>
+        <>
+          <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("complete")}>
+            {job ? t("markJobComplete") : t("markComplete")}
+          </button>
+          <p className="text-xs text-muted">{t("autoCompleteHint", { hours: job ? AUTO_COMPLETE_HOURS.maintenance : AUTO_COMPLETE_HOURS.errands })}</p>
+        </>
       )}
       {CANCELLABLE.has(order.status) && confirmBox("cancel")}
     </div>

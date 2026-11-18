@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { orderError } from "@/lib/order-errors";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -46,7 +47,7 @@ export async function PUT(request: Request) {
 
   const db = createAdminClient();
   const { provider } = await myErrandProfiles(db, user.id);
-  if (!provider) return NextResponse.json({ error: "Your Delivery & Errands provider profile needs to be approved first" }, { status: 403 });
+  if (!provider) return NextResponse.json(orderError("needs_approval"), { status: 403 });
   await db
     .from("generic_profiles")
     .update({ available_now: parsed.data.available, available_changed_at: new Date().toISOString() })

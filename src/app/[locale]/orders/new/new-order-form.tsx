@@ -14,6 +14,13 @@ import { ERRAND_SERVICES, type ErrandService } from "@/lib/validation/errands";
 import { NEEDS_DROPOFF } from "@/lib/validation/errand-order";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
 import ErrandServiceIcon from "@/components/errand-service-icon";
+import { useOrderErrorText } from "@/components/orders/order-bits";
+
+// "2026-11-03T15:30" for a datetime-local input, in the phone's own time zone.
+const localInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
+/** From now to 30 days ahead, as the date picker's limits. */
+const scheduleRange = () => ({ min: localInput(new Date()), max: localInput(new Date(Date.now() + 30 * 86_400_000)) });
+const isPast = (local: string) => Date.parse(local) <= Date.now();
 
 type Place = { governorateId: string | null; districtId: string | null; areaId: string | null; detail: string };
 const emptyPlace: Place = { governorateId: null, districtId: null, areaId: null, detail: "" };
@@ -62,12 +69,14 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   const ts = useTranslations("ErrandServices");
   const tp = useTranslations("PlacePicker");
   const router = useRouter();
+  const errorText = useOrderErrorText();
   const [service, setService] = useState<ErrandService>(prefill?.service ?? "delivery");
   const [description, setDescription] = useState(prefill?.description ?? "");
   const [pickup, setPickup] = useState<Place>(prefill?.pickup ?? emptyPlace);
   const [dropoff, setDropoff] = useState<Place>(prefill ? { ...emptyPlace, detail: prefill.dropoffDetail } : emptyPlace);
   const [timing, setTiming] = useState<"asap" | "scheduled">(prefill?.timing ?? "asap");
   const [scheduledAt, setScheduledAt] = useState(prefill?.scheduledAt ?? "");
+  const [range, setRange] = useState<{ min: string; max: string } | null>(null);
   const [budget, setBudget] = useState(prefill?.budget ?? "");
   // A new customer: the order makes their request, so it needs their name.
   const [fullName, setFullName] = useState("");
@@ -253,6 +262,10 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       setError(t("pickRider"));
       return;
     }
+    if (timing === "scheduled" && (!scheduledAt || isPast(scheduledAt))) {
+      setError(t("errors.schedule_past"));
+      return;
+    }
     setSending(true);
     const res = await request("/api/errand-orders", {
       method: "POST",
@@ -281,7 +294,10 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       return;
     }
     if (!res?.ok || !body?.order) {
-      setError(typeof body?.error === "string" ? body.error : t("error"));
+      // A contact number the check refused is on the places step.
+      if (body?.code === "invalid_phone" || body?.code === "not_in_lebanon" || body?.code === "choose_from_list") setStep(2);
+      if (body?.code === "invalid_description" || body?.code === "contact_info") setStep(1);
+      setError(errorText(body));
       return;
     }
     try {
@@ -409,7 +425,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
               <p className="text-sm font-medium text-ink">{tp("distanceAbout", { km: Math.round(straightLineKm(pickupMap.point, dropoffMap.point) * 10) / 10 })}</p>
             )
           )}
-          <p className="-mt-2 text-xs text-muted">{t("mapPrivacyHint")}</p>
+          <p className="-mt-2 text-xs text-muted">{ride ? t("mapPrivacyHintRide") : t("mapPrivacyHint")}</p>
         </>
       ) : (
         <>
@@ -457,12 +473,27 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
           <button type="button" aria-pressed={timing === "asap"} className={ui.pill(timing === "asap")} onClick={() => setTiming("asap")}>
             {t("asap")}
           </button>
-          <button type="button" aria-pressed={timing === "scheduled"} className={ui.pill(timing === "scheduled")} onClick={() => setTiming("scheduled")}>
+          <button type="button" aria-pressed={timing === "scheduled"} className={ui.pill(timing === "scheduled")} onClick={() => {
+              setTiming("scheduled");
+              setRange(scheduleRange());
+            }}>
             {t("scheduled")}
           </button>
         </div>
         {timing === "scheduled" && (
-          <input type="datetime-local" required className={ui.input} value={scheduledAt} onChange={(e) => setScheduledAt(e.target.value)} />
+          <input
+            type="datetime-local"
+            required
+            className={ui.input}
+            min={range?.min}
+            max={range?.max}
+            onFocus={() => setRange(scheduleRange())}
+            value={scheduledAt}
+            onChange={(e) => setScheduledAt(e.target.value)}
+          />
+        )}
+        {timing === "scheduled" && (
+          <p className="text-xs text-muted">{t("scheduledHint")}</p>
         )}
       </section>
 

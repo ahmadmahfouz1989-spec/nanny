@@ -71,6 +71,8 @@ export type OrderMatching = {
   chooseUntil: string | null;
   /** The chosen provider confirms by then. */
   confirmUntil: string | null;
+  /** A scheduled delivery not yet sent: it goes out to riders then. */
+  sendAt: string | null;
 };
 
 export type OrderView = {
@@ -243,7 +245,9 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
       contactPhone: contact ? (side === "pickup" ? order.pickup_contact_phone : order.dropoff_contact_phone) : null,
     };
   };
-  const pickupPlace = place("pickup", true);
+  // A ride starts where the passenger is -- often their home: riders asked
+  // see the area, like a delivery's drop-off; the one who confirms, the spot.
+  const pickupPlace = place("pickup", full || order.service !== "moto_taxi");
   const dropoffPlace = order.dropoff_district_id ? place("dropoff", full) : null;
   const routeKm = pickupPlace.point && dropoffPlace?.point ? distanceKm({ lat: pickupPlace.point.lat, lon: pickupPlace.point.lng }, { lat: dropoffPlace.point.lat, lon: dropoffPlace.point.lng }) : null;
   const route: OrderRoute = {
@@ -342,6 +346,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
           chooseUntil: order.choose_until,
           // A provider only learns their own confirmation deadline.
           confirmUntil: viewer !== "provider" || order.provider_user_id === viewerUserId ? order.confirm_until : null,
+          sendAt: order.status === "open" && order.wave === 0 && order.wave_until && Date.parse(order.wave_until) > Date.now() ? order.wave_until : null,
         }
       : null,
     serverNow: new Date().toISOString(),
@@ -395,6 +400,7 @@ export async function orderSummaries(db: Admin, orders: OrderRow[]) {
       createdAt: o.created_at,
       timing: o.timing,
       scheduledAt: o.scheduled_at,
+      budgetUsd: o.budget_usd,
       offers: mine.filter((r) => r.status === "offered" || r.status === "selected").length,
       sent: mine.length,
       /** Offers are in and the customer is picking one. */

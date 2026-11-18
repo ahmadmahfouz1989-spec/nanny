@@ -7,6 +7,7 @@ import { errandProviderSchema, errandSeekerSchema } from "@/lib/validation/erran
 import { cleaningProviderSchema, cleaningSeekerSchema } from "@/lib/validation/cleaning";
 import { beautyProviderSchema, beautySeekerSchema } from "@/lib/validation/beauty";
 import { carProviderSchema, carSeekerSchema } from "@/lib/validation/car";
+import { orderCreateSchema } from "@/lib/validation/errand-order";
 
 const LOCATION = "11111111-1111-4111-8111-111111111111";
 const DISTRICT = "22222222-2222-4222-8222-222222222222";
@@ -230,5 +231,23 @@ describe("profile validation", () => {
     const r = nannySeekerSchema.safeParse({ ...base, locationId: null });
     expect(r.success).toBe(false);
     expect(r.error?.issues.some((i) => i.message === "Choose your governorate")).toBe(true);
+  });
+});
+
+describe("order contact phone and schedule", () => {
+  const base = { service: "delivery", description: "A bag", pickupPoint: { lat: 33.8, lng: 35.5 }, dropoffPoint: { lat: 33.9, lng: 35.5 }, timing: "asap" };
+  const ok = (extra: Record<string, unknown>) => orderCreateSchema.safeParse({ ...base, ...extra }).success;
+
+  it("takes Lebanese numbers however they're written", () => {
+    for (const phone of ["03/123456", "03 123 456", "+961 3-123.456", "٠٣١٢٣٤٥٦", "(01) 123456", ""]) expect(ok({ pickupContactPhone: phone }), phone).toBe(true);
+    for (const phone of ["12345", "call me", "03 123 456 789 1234 5"]) expect(ok({ pickupContactPhone: phone }), phone).toBe(false);
+    expect(orderCreateSchema.parse({ ...base, pickupContactPhone: "٠٣١٢٣٤٥٦" }).pickupContactPhone).toBe("03123456");
+  });
+
+  it("schedules only from now on, within 30 days", () => {
+    const at = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString();
+    expect(ok({ timing: "scheduled", scheduledAt: at(2) })).toBe(true);
+    expect(ok({ timing: "scheduled", scheduledAt: at(-1) })).toBe(false);
+    expect(ok({ timing: "scheduled", scheduledAt: at(24 * 31) })).toBe(false);
   });
 });

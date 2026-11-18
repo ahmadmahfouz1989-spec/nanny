@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
 import { advancedOrder } from "@/lib/errand-orders";
+import { orderError } from "@/lib/order-errors";
 import { providerAction, seekerAction, PROVIDER_ACTIONS, SEEKER_ACTIONS } from "@/lib/errand-order-actions";
 
 /**
@@ -20,12 +21,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const db = createAdminClient();
   // Moves it on first if a deadline has passed (a wave's time, the choice, the confirmation).
   const order = await advancedOrder(db, id);
-  if (!order) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+  if (!order) return NextResponse.json(orderError("not_found"), { status: 404 });
 
   const body = await request.json().catch(() => ({}));
   const isSeeker = order.seeker_user_id === user.id;
-  if (isSeeker && !(SEEKER_ACTIONS as readonly string[]).includes(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });
-  if (!isSeeker && !(PROVIDER_ACTIONS as readonly string[]).includes(action)) return NextResponse.json({ error: "Unknown action" }, { status: 400 });
+  if (isSeeker && !(SEEKER_ACTIONS as readonly string[]).includes(action)) return NextResponse.json(orderError("unknown_action"), { status: 400 });
+  if (!isSeeker && !(PROVIDER_ACTIONS as readonly string[]).includes(action)) return NextResponse.json(orderError("unknown_action"), { status: 400 });
 
   const result = isSeeker
     ? await seekerAction(db, order, { userId: user.id, role: "seeker" }, action, body)

@@ -1,6 +1,7 @@
 "use client";
 
 import { celebrate } from "@/lib/celebrate";
+import { useOrderErrorText } from "@/components/orders/order-bits";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
@@ -17,6 +18,7 @@ const MAX_PHOTOS = 3;
 /** A repair job asking for quotes: trade, what's wrong, photos, where, when. */
 export default function QuoteForm({ needsName, initialTrade }: { needsName: boolean; initialTrade: Trade | null }) {
   const t = useTranslations("Orders");
+  const errorText = useOrderErrorText();
   const tTrades = useTranslations("Trades");
   const router = useRouter();
   const [trade, setTrade] = useState<Trade | null>(initialTrade);
@@ -88,7 +90,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
     const body = await res?.json().catch(() => null);
     setSending(false);
     if (!res?.ok || !body?.order) {
-      setError(typeof body?.error === "string" ? body.error : t("error"));
+      setError(errorText(body));
       return;
     }
     celebrate();

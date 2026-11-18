@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useLocale, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ChevronIcon, ScooterIcon, WrenchIcon } from "@/components/home-icons";
 import { ui } from "@/lib/ui";
@@ -15,6 +15,7 @@ import {
   useDistanceLabel,
   useOrderTitle,
   useSecondsLeft,
+  useOrderErrorText,
   useServiceLabel,
 } from "@/components/orders/order-bits";
 import type { OrderSummary } from "@/lib/errand-order-view";
@@ -37,6 +38,9 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
   const serviceLabel = useServiceLabel();
   const orderTitle = useOrderTitle();
   const locale = useLocale();
+  const format = useFormatter();
+  const errorText = useOrderErrorText();
+  const [switchError, setSwitchError] = useState<string | null>(null);
   const [tab, setTab] = useState(initialTab);
   const [mine, setMine] = useState<Mine | null>(null);
   const [provider, setProvider] = useState<ProviderLists | null>(null);
@@ -77,6 +81,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
   async function toggleAvailability() {
     if (!availability) return;
     setSwitching(true);
+    setSwitchError(null);
     const res = await request("/api/errand-availability", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -87,6 +92,8 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
       setAvailability(body.availability);
       // The app frame starts or stops sending where the phone is.
       window.dispatchEvent(new CustomEvent(RIDER_AVAILABILITY_EVENT, { detail: !!body.availability.availableNow }));
+    } else {
+      setSwitchError(errorText(body));
     }
     setSwitching(false);
   }
@@ -108,6 +115,19 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
               </>
             )}
           </p>
+          {/* When it's for, and what they'd pay: a rider decides from the list. */}
+          {((o.timing === "scheduled" && o.scheduledAt) || o.budgetUsd !== null) && (
+            <p className="mt-1 text-sm text-ink/80">
+              {[
+                o.timing === "scheduled" && o.scheduledAt
+                  ? t("scheduledFor", { date: format.dateTime(new Date(o.scheduledAt), { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }) })
+                  : null,
+                o.budgetUsd !== null ? t("budgetLine", { budget: o.budgetUsd }) : null,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          )}
         </div>
         <OrderStatusBadge status={o.status} category={o.category} choosing={o.choosing} />
       </div>
@@ -184,6 +204,7 @@ export default function OrdersClient({ initialTab }: { initialTab: "seeker" | "p
                   {t(`status_${availability.status}`)}
                 </p>
                 <p className="mt-1 text-sm text-muted">{t(`${availability.status}Hint`)}</p>
+                {switchError && <p className="mt-1 text-sm text-danger">{switchError}</p>}
               </div>
               {(availability.status === "available" || availability.status === "offline") && (
                 <button type="button" onClick={toggleAvailability} disabled={switching} className={(availability.availableNow ? ui.buttonSecondary : ui.buttonPrimary) + " shrink-0"}>

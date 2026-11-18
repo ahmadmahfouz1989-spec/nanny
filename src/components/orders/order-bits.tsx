@@ -6,6 +6,20 @@ import { ui } from "@/lib/ui";
 
 // Small pieces shared by the order pages.
 
+/**
+ * What to show for a failed order request: the API's error code in the
+ * screen's language (Orders.errors.<code>), else the general message --
+ * never the API's English text.
+ */
+export function useOrderErrorText() {
+  const t = useTranslations("Orders");
+  return (body: unknown): string => {
+    const code = (body as { code?: unknown } | null)?.code;
+    if (typeof code === "string" && t.has(`errors.${code}`)) return t(`errors.${code}` as "error");
+    return t("error");
+  };
+}
+
 type Tone = "success" | "warning" | "danger" | "secondary" | "accent" | "berry";
 
 const STATUS_TONE: Record<string, Tone> = {

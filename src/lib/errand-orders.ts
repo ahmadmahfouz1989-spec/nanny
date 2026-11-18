@@ -4,6 +4,7 @@ import { placeOf, placeScore } from "@/lib/matching/place";
 import { notify } from "@/lib/push";
 import { quickestByRoad } from "@/lib/travel-time";
 import { DEFAULT_RIDER_RANGE_KM, type ErrandService } from "@/lib/validation/errands";
+import { AUTO_COMPLETE_HOURS } from "@/lib/validation/errand-order";
 import type { Trade } from "@/lib/validation/maintenance";
 import type { Tables } from "@/lib/supabase/database.types";
 
@@ -130,6 +131,22 @@ export const openMinutesFor = (settings: ErrandSettings, category: string) =>
   category === "maintenance" ? settings.quote_open_minutes : settings.open_minutes;
 
 const inSeconds = (seconds: number) => new Date(Date.now() + seconds * 1000).toISOString();
+
+/** A scheduled delivery goes out to riders this long before its time (sooner than that, at once). */
+export const SCHEDULED_LEAD_MINUTES = 60;
+
+/**
+ * When a scheduled delivery should go out to riders, or null to send it
+ * now. Until then it waits as an open order at wave 0, with `wave_until`
+ * holding that moment (tickOrder sends the first wave once it passes).
+ */
+export function scheduledSendAt(timing: string, scheduledAt: string | null | undefined): string | null {
+  if (timing !== "scheduled" || !scheduledAt) return null;
+  const at = Date.parse(scheduledAt) - SCHEDULED_LEAD_MINUTES * 60_000;
+  return Number.isFinite(at) && at > Date.now() ? new Date(at).toISOString() : null;
+}
+
+const autoCompleteHours = (category: string) => (category === "maintenance" ? AUTO_COMPLETE_HOURS.maintenance : AUTO_COMPLETE_HOURS.errands);
 
 /** Straight-line distance in km between two points (haversine). */
 export function distanceKm(a: { lat: number; lon: number }, b: { lat: number; lon: number }): number {
@@ -694,6 +711,10 @@ export async function reopenOrder(db: Admin, order: OrderRow, from: OrderStatus[
  *     no offers -> the next wave (or "no provider").
  */
 export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
+  if (order.status === "delivered") {
+    await autoComplete(db, order);
+    return;
+  }
   if (order.category === "maintenance") {
     if (order.status === "open" && isPast(order.open_until)) await closeNoProvider(db, order, "expired");
     return;
@@ -726,6 +747,9 @@ export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
     await closeNoProvider(db, order, "expired");
     return;
   }
+
+  // A scheduled delivery, held until shortly before its time.
+  if (order.wave === 0 && order.wave_until && !isPast(order.wave_until)) return;
 
   if (order.choose_until) {
     if (!isPast(order.choose_until)) {
@@ -796,6 +820,22 @@ export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
   await nextWaveOrClose(db, order);
 }
 
+/** Completes a delivered order nobody confirmed in time; see AUTO_COMPLETE_HOURS. */
+async function autoComplete(db: Admin, order: OrderRow) {
+  if (Date.now() - Date.parse(order.status_changed_at) < autoCompleteHours(order.category) * 3_600_000) return;
+  const { data } = await db
+    .from("errand_orders")
+    .update({ status: "completed", status_changed_at: new Date().toISOString() })
+    .eq("id", order.id)
+    .eq("status", "delivered")
+    .select("number");
+  if (!data?.length) return;
+  await logOrderEvent(db, order.id, SYSTEM, "status", { status: "completed", auto: true });
+  const done = { ...order, number: data[0]!.number };
+  const recipients = [order.provider_user_id, order.seeker_user_id].filter((id): id is string => !!id);
+  await notify(recipients.map((user_id) => ({ user_id, type: "errand_status", payload: orderPayload(done, { status: "completed" }) })));
+}
+
 /**
  * Moves on every order (or the given ones) with a deadline that has
  * passed. Called whenever orders are read -- the customer's screen checks
@@ -805,12 +845,17 @@ export async function tickOrder(db: Admin, order: OrderRow): Promise<void> {
 export async function advanceOrders(db: Admin, filter: { seekerUserId?: string; orderId?: string; orderIds?: string[] } = {}): Promise<number> {
   if (filter.orderIds && filter.orderIds.length === 0) return 0;
   const now = new Date().toISOString();
+  // The shortest wait; tickOrder checks each order's own (repair jobs wait longer).
+  const deliveredBefore = new Date(Date.now() - AUTO_COMPLETE_HOURS.errands * 3_600_000).toISOString();
   let query = db
     .from("errand_orders")
     .select("*")
     // Each state has its own deadline: an open order its time limits, a
-    // reserved one the provider's confirmation.
-    .or(`and(status.eq.open,or(open_until.lt.${now},wave_until.lt.${now},choose_until.lt.${now})),and(status.eq.reserved,confirm_until.lt.${now})`)
+    // reserved one the provider's confirmation, a delivered one the
+    // customer's confirmation.
+    .or(
+      `and(status.eq.open,or(open_until.lt.${now},wave_until.lt.${now},choose_until.lt.${now})),and(status.eq.reserved,confirm_until.lt.${now}),and(status.eq.delivered,status_changed_at.lt.${deliveredBefore})`,
+    )
     .order("created_at")
     .limit(200);
   if (filter.seekerUserId) query = query.eq("seeker_user_id", filter.seekerUserId);
