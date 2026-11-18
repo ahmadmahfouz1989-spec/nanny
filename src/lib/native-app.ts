@@ -66,6 +66,10 @@ export type CallsPlugin = {
   callActive(o: { callId: string; name: string }): Promise<void>;
   /** The call is over (or declined here): the phone's ringing and call screens go away. */
   callEnded(o: { callId: string }): Promise<void>;
+  /** Android builds from 1.5: whether incoming calls may take over the screen (Android 14+ asks). */
+  fullScreenCalls?(): Promise<{ needsPermission: boolean; allowed: boolean }>;
+  /** Android builds from 1.5: the phone's own switch for full-screen calls. */
+  openFullScreenCallsSettings?(): Promise<void>;
   /** iPhone: sign in through Apple's sign-in sheet; the URL it came back with. */
   signIn?(o: { url: string; scheme: string }): Promise<{ url: string }>;
   addListener(event: "callAnswered" | "callEnded", cb: (e: { callId: string }) => void): Listener | Promise<Listener>;

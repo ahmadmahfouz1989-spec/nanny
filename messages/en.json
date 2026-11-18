@@ -3098,6 +3098,11 @@
     "progressCompleted": "First service completed"
   },
   "Calls": {
+    "fullScreenTitle": "Calls on the lock screen",
+    "fullScreenOn": "On: incoming calls fill the screen, even when your phone is locked.",
+    "fullScreenOff": "Off: incoming calls ring as a banner at the top. Turn it on to see them full screen, like a phone call.",
+    "fullScreenTurnOn": "Turn on",
+    "fullScreenChange": "Change",
     "call": "Call",
     "callName": "Call {name}",
     "someone": "Someone",

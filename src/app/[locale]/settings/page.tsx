@@ -5,6 +5,7 @@ import AppShell from "@/components/app-shell";
 import DeleteAccountCard from "@/components/delete-account-card";
 import AccountDetailsCard from "@/components/account-details-card";
 import PushNotificationsCard from "@/components/push-notifications-card";
+import FullScreenCallsCard from "@/components/full-screen-calls-card";
 import SettingsRows, { SignOutRow } from "@/components/settings-rows";
 import { ChevronIcon, DocumentIcon, WhatsAppIcon } from "@/components/home-icons";
 import { SUPPORT_WHATSAPP } from "@/lib/support";
@@ -34,6 +35,7 @@ export default async function SettingsPage() {
         </div>
 
         <PushNotificationsCard />
+        <FullScreenCallsCard />
 
         <p className={label}>{t("help")}</p>
         <div className={ui.card + " mb-5 overflow-hidden divide-y divide-border"}>
