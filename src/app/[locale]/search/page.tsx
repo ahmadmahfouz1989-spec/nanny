@@ -9,6 +9,8 @@ import { REGION_COOKIE } from "@/lib/region";
 import { SEARCH_LIMIT, search, type PersonResult, type PostResult } from "@/lib/search";
 import { ui } from "@/lib/ui";
 import VerifiedCheck from "@/components/verified-check";
+import { getCategories } from "@/lib/categories";
+import { searchServices } from "@/lib/service-search";
 
 /**
  * Results for Home's search box: people offering, people looking, and
@@ -41,6 +43,9 @@ export default async function SearchPage({
   const regionName = place ? (locale === "ar" ? place.name_ar : place.name_en) : null;
 
   const results = query ? await search(query, region, user?.id ?? null, locale) : null;
+  // The services the words name ("plumber" -> Home Maintenance's plumbers),
+  // so a search leads somewhere even before anyone's profile matches.
+  const services = query ? searchServices(query, await getCategories(), locale) : [];
   const total = results ? results.offering.length + results.seeking.length + results.posts.length : 0;
   const widen = `/search?${new URLSearchParams({ q: query, all: "1" })}`;
   const narrow = `/search?${new URLSearchParams({ q: query })}`;
@@ -82,7 +87,21 @@ export default async function SearchPage({
 
         {!query && <p className="text-sm text-muted">{t("hint")}</p>}
 
-        {results && total === 0 && (
+        {services.length > 0 && (
+          <Section title={t("services")} count={services.length}>
+            {services.map((s) => (
+              <Link key={s.href + s.title} href={s.href} className="flex items-center gap-3 p-4 transition hover:bg-surface-sunken">
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="font-semibold text-ink">{s.title}</span>
+                  {s.category && <span className="text-xs text-muted">{s.category}</span>}
+                </span>
+                <ChevronIcon className="h-4 w-4 shrink-0 text-muted" />
+              </Link>
+            ))}
+          </Section>
+        )}
+
+        {results && total === 0 && services.length === 0 && (
           <div className={ui.card + " flex flex-col items-start gap-3 p-5"}>
             <p className="font-display font-semibold">{t("noResults", { query })}</p>
             <p className="text-sm text-muted">{regionName ? t("noResultsRegion") : t("noResultsBody")}</p>

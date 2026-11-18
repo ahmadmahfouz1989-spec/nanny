@@ -5,7 +5,7 @@ import AppShell from "@/components/app-shell";
 import DeleteAccountCard from "@/components/delete-account-card";
 import AccountDetailsCard from "@/components/account-details-card";
 import PushNotificationsCard from "@/components/push-notifications-card";
-import SettingsRows from "@/components/settings-rows";
+import SettingsRows, { SignOutRow } from "@/components/settings-rows";
 import { ChevronIcon, DocumentIcon, WhatsAppIcon } from "@/components/home-icons";
 import { SUPPORT_WHATSAPP } from "@/lib/support";
 import { ui } from "@/lib/ui";
@@ -30,7 +30,7 @@ export default async function SettingsPage() {
 
         <p className={label}>{t("appearance")}</p>
         <div className={ui.card + " mb-5 overflow-hidden"}>
-          <SettingsRows />
+          <SettingsRows logout={false} />
         </div>
 
         <PushNotificationsCard />
@@ -59,6 +59,10 @@ export default async function SettingsPage() {
 
         <p className={label}>{t("account")}</p>
         <AccountDetailsCard name={account?.full_name ?? null} email={account?.email ?? null} phone={account?.phone && user!.phone_confirmed_at ? account.phone : null} />
+        {/* At the bottom, away from the everyday switches. */}
+        <div className={ui.card + " mt-5 mb-5 overflow-hidden"}>
+          <SignOutRow className={row + " w-full"} />
+        </div>
         {account?.email ? (
           <DeleteAccountCard identifier={account.email} kind="email" />
         ) : account?.phone ? (

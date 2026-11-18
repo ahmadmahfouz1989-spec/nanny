@@ -15,6 +15,8 @@ import { Link } from "@/i18n/navigation";
 import { RowListSkeleton } from "@/components/skeletons";
 import { getJson } from "@/lib/request";
 import { announceUnreadChanged } from "@/lib/unread-events";
+import { VOICE_NOTE_PLACEHOLDER_BODY } from "@/lib/voice-notes";
+import { CHAT_PHOTO_PLACEHOLDER_BODY } from "@/lib/chat-photos";
 
 const TONES = ["primary", "secondary", "berry"] as const;
 const INBOX_POLL_MS = 6000;
@@ -44,10 +46,19 @@ function relativeTime(iso: string, locale: string) {
 export default function MessagesClient() {
   const t = useTranslations("Inbox");
   const tNav = useTranslations("Nav");
+  const tPush = useTranslations("Push");
+  // A voice note or a photo, in the reader's language.
+  const previewText = (body: string) =>
+    body === VOICE_NOTE_PLACEHOLDER_BODY ? tPush("voiceMessage") : body === CHAT_PHOTO_PLACEHOLDER_BODY ? tPush("photoMessage") : body;
   const locale = useLocale();
   const searchParams = useSearchParams();
   const [conversations, setConversations] = useState<Conversation[] | null>(null);
-  const [selected, setSelected] = useState<string | null>(searchParams.get("match"));
+  // The open chat lives in the address (?match=), so the phone's Back
+  // closes it instead of leaving Messages, and a reload keeps it open.
+  const selected = searchParams.get("match");
+  // Whether this screen added the history step for the open chat (then
+  // closing it goes back; otherwise it just drops ?match=).
+  const pushedChat = useRef(false);
   const [query, setQuery] = useState("");
   const [loadFailed, setLoadFailed] = useState(false);
 
@@ -58,6 +69,8 @@ export default function MessagesClient() {
   const unreadTotal = useRef<number | null>(null);
   useEffect(() => {
     selectedRef.current = selected;
+    // Closed some other way (the phone's Back): nothing of ours to go back over.
+    if (!selected) pushedChat.current = false;
   }, [selected]);
 
   useEffect(() => {
@@ -120,11 +133,35 @@ export default function MessagesClient() {
 
   function removeConversation(matchId: string) {
     setConversations((cs) => cs?.filter((c) => c.matchId !== matchId) ?? cs);
-    setSelected(null);
+    closeChat();
+  }
+
+  function urlWithMatch(matchId: string | null) {
+    const params = new URLSearchParams(window.location.search);
+    if (matchId) params.set("match", matchId);
+    else params.delete("match");
+    const query = params.toString();
+    return window.location.pathname + (query ? `?${query}` : "");
+  }
+
+  function closeChat() {
+    if (pushedChat.current) {
+      pushedChat.current = false;
+      window.history.back();
+    } else {
+      window.history.replaceState(null, "", urlWithMatch(null));
+    }
   }
 
   function select(matchId: string) {
-    setSelected(matchId);
+    if (matchId === selected) return;
+    // Switching chats side by side (wide screens) doesn't pile up Back steps.
+    if (selected) {
+      window.history.replaceState(null, "", urlWithMatch(matchId));
+    } else {
+      pushedChat.current = true;
+      window.history.pushState(null, "", urlWithMatch(matchId));
+    }
     setConversations((cs) => cs?.map((c) => (c.matchId === matchId ? { ...c, unreadCount: 0 } : c)) ?? cs);
   }
 
@@ -221,7 +258,7 @@ export default function MessagesClient() {
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <p dir={c.lastMessage ? "auto" : undefined} className="text-sm text-muted truncate">
-                    {c.lastMessage ? c.lastMessage.body : t("noMessagesYet")}
+                    {c.lastMessage ? previewText(c.lastMessage.body) : t("noMessagesYet")}
                   </p>
                   {c.unreadCount > 0 && (
                     <span className="inline-flex items-center justify-center h-5 min-w-5 px-1.5 rounded-full bg-primary text-on-primary text-xs font-semibold shrink-0">
@@ -248,7 +285,7 @@ export default function MessagesClient() {
               subtitle={[tNav.has(selectedConversation.categorySlug) ? tNav(selectedConversation.categorySlug) : "", selectedConversation.about]
                 .filter(Boolean)
                 .join(" · ")}
-              onBack={() => setSelected(null)}
+              onBack={closeChat}
               onBlocked={() => removeConversation(selectedConversation.matchId)}
             />
             <ChatThread

@@ -404,14 +404,14 @@ isOneToOne: false
                   ]
                 },"generic_messages": {
                   Row: {
-                    "audio_duration_seconds": number | null,"audio_path": string | null,"body": string,"created_at": string,"delivered_at": string | null,"id": string,"match_id": string,"read_at": string | null,"sender_id": string
+                    "audio_duration_seconds": number | null,"audio_path": string | null,"body": string,"created_at": string,"delivered_at": string | null,"id": string,"image_path": string | null,"match_id": string,"read_at": string | null,"sender_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body": string,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"match_id": string,"read_at"?: string | null,"sender_id": string
+                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body": string,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"image_path"?: string | null,"match_id": string,"read_at"?: string | null,"sender_id": string
                   }
                   Update: {
-                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body"?: string,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"match_id"?: string,"read_at"?: string | null,"sender_id"?: string
+                    "audio_duration_seconds"?: number | null,"audio_path"?: string | null,"body"?: string,"created_at"?: string,"delivered_at"?: string | null,"id"?: string,"image_path"?: string | null,"match_id"?: string,"read_at"?: string | null,"sender_id"?: string
                   }
                   Relationships: [
                     {
@@ -1373,6 +1373,9 @@ isOneToOne: false
 { Args: { "p_match_ids": (string)[],"p_user_id": string }; Returns: {
               "last_body": string,"last_created_at": string,"match_id": string,"unread_count": number
             }[]
+                           },
+"is_business_profile":
+{ Args: { "attributes": Json }; Returns: boolean
                            },
 "is_generic_profile_mutual_counterpart":
 { Args: { "p_caller_user_id": string,"p_profile_id": string }; Returns: boolean

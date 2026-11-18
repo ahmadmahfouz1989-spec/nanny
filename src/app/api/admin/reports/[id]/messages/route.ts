@@ -44,7 +44,7 @@ async function messagesForMatch(
 ): Promise<ConversationPage> {
   let query = db
     .from("generic_messages")
-    .select("id, sender_id, body, audio_path, audio_duration_seconds, created_at")
+    .select("id, sender_id, body, audio_path, audio_duration_seconds, image_path, created_at")
     .eq("match_id", matchId)
     .order("created_at", { ascending: false })
     .limit(ADMIN_MESSAGE_PAGE_SIZE + 1);
@@ -55,12 +55,16 @@ async function messagesForMatch(
   const hasOlder = rows.length > ADMIN_MESSAGE_PAGE_SIZE;
   const messages = rows.slice(0, ADMIN_MESSAGE_PAGE_SIZE).reverse();
 
-  const audioPaths = messages.map((m) => m.audio_path).filter((p): p is string => !!p);
   const signedByPath = new Map<string, string>();
-  if (audioPaths.length > 0) {
-    const { data: signed } = await db.storage.from("voice-notes").createSignedUrls(audioPaths, SIGNED_URL_TTL_SECONDS);
+  for (const [bucket, paths] of [
+    ["voice-notes", messages.map((m) => m.audio_path)],
+    ["chat-photos", messages.map((m) => m.image_path)],
+  ] as const) {
+    const wanted = paths.filter((p): p is string => !!p);
+    if (wanted.length === 0) continue;
+    const { data: signed } = await db.storage.from(bucket).createSignedUrls(wanted, SIGNED_URL_TTL_SECONDS);
     for (const s of signed ?? []) {
-      if (s.signedUrl && !s.error) signedByPath.set(s.path ?? "", s.signedUrl);
+      if (s.signedUrl && !s.error) signedByPath.set(`${bucket}:${s.path ?? ""}`, s.signedUrl);
     }
   }
 
@@ -71,7 +75,8 @@ async function messagesForMatch(
       body: m.body as string,
       created_at: m.created_at as string,
       isReporter: m.sender_id === reporterUserId,
-      audioUrl: m.audio_path ? (signedByPath.get(m.audio_path) ?? null) : null,
+      audioUrl: m.audio_path ? (signedByPath.get(`voice-notes:${m.audio_path}`) ?? null) : null,
+      imageUrl: m.image_path ? (signedByPath.get(`chat-photos:${m.image_path}`) ?? null) : null,
       audioDurationSeconds: (m.audio_duration_seconds as number | null) ?? null,
     })),
   };

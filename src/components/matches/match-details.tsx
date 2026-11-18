@@ -110,7 +110,7 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
       )}
       {typeof a.hasTransportation === "boolean" && (
         <>
-          <dt className="text-muted">{tNanny("hasTransportation")}</dt>
+          <dt className="text-muted">{t("detailOwnTransport")}</dt>
           <dd>{a.hasTransportation ? t("yes") : t("no")}</dd>
         </>
       )}
@@ -122,7 +122,7 @@ export default function MatchDetails({ profile }: { profile: OtherProfile }) {
       )}
       {typeof a.canDrive === "boolean" && (
         <>
-          <dt className="text-muted">{tNanny("canDrive")}</dt>
+          <dt className="text-muted">{t("detailCanDrive")}</dt>
           <dd>{a.canDrive ? t("yes") : t("no")}</dd>
         </>
       )}

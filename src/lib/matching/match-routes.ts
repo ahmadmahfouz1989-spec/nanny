@@ -23,6 +23,7 @@ import {
   VOICE_NOTE_PLACEHOLDER_BODY,
   VOICE_NOTES_ENABLED,
 } from "@/lib/voice-notes";
+import { ALLOWED_CHAT_PHOTO_TYPES, CHAT_PHOTO_PLACEHOLDER_BODY, MAX_CHAT_PHOTO_BYTES } from "@/lib/chat-photos";
 import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
 import { reportMetaEvent } from "@/lib/meta-capi";
 import { alertLanguage, newMessageAlert, sendWhatsAppAlert, whatsappAlertsEnabled } from "@/lib/whatsapp";
@@ -37,7 +38,7 @@ type Handler = (request: Request, ctx: Ctx) => Promise<NextResponse>;
 type Authed = { request: Request; supabase: Awaited<ReturnType<typeof createClient>>; userId: string; user: User; access: MatchAccess };
 
 const MESSAGE_PAGE_SIZE = 200;
-const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, created_at, read_at, delivered_at";
+const MESSAGE_COLUMNS = "id, sender_id, body, audio_path, audio_duration_seconds, image_path, created_at, read_at, delivered_at";
 const CONVERSATION_CLOSED = "This conversation is closed";
 
 // Raised by before_generic_message_insert (20261102000003_message_while_in_review.sql).
@@ -125,19 +126,25 @@ export const messagesGet: Handler = withAccess(async ({ request, supabase, acces
   // service role can sign a URL for one, which is exactly the point: a
   // client only ever gets a playable link by going through this
   // match-participancy check first.
-  const audioPaths = page.map((m) => m.audio_path).filter((p): p is string => !!p);
+  // Photos the same way, from their own private bucket.
   const signedByPath = new Map<string, string>();
-  if (audioPaths.length > 0) {
-    const admin = createAdminClient();
-    const { data: signed } = await admin.storage.from("voice-notes").createSignedUrls(audioPaths, SIGNED_URL_TTL_SECONDS);
+  const admin = createAdminClient();
+  for (const [bucket, paths] of [
+    ["voice-notes", page.map((m) => m.audio_path)],
+    ["chat-photos", page.map((m) => m.image_path)],
+  ] as const) {
+    const wanted = paths.filter((p): p is string => !!p);
+    if (wanted.length === 0) continue;
+    const { data: signed } = await admin.storage.from(bucket).createSignedUrls(wanted, SIGNED_URL_TTL_SECONDS);
     for (const s of signed ?? []) {
-      if (s.signedUrl && !s.error) signedByPath.set(s.path ?? "", s.signedUrl);
+      if (s.signedUrl && !s.error) signedByPath.set(`${bucket}:${s.path ?? ""}`, s.signedUrl);
     }
   }
 
   const messages = page.map((m) => ({
     ...m,
-    audioUrl: m.audio_path ? (signedByPath.get(m.audio_path) ?? null) : null,
+    audioUrl: m.audio_path ? (signedByPath.get(`voice-notes:${m.audio_path}`) ?? null) : null,
+    imageUrl: m.image_path ? (signedByPath.get(`chat-photos:${m.image_path}`) ?? null) : null,
   }));
 
   return NextResponse.json({ messages, hasMore: (data ?? []).length === MESSAGE_PAGE_SIZE });
@@ -253,10 +260,57 @@ export const messagesAudioPost: Handler = withAccess(async ({ request, supabase,
   const { data: signed } = await admin.storage.from("voice-notes").createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
 
   await emailRecipientOnFirstUnread(request, access, VOICE_NOTE_PLACEHOLDER_BODY);
-  pushNewMessage(access, null);
+  pushNewMessage(access, { kind: "voice" });
   await reportFirstMessage(supabase, user, access);
 
   return NextResponse.json({ message: { ...message, audioUrl: signed?.signedUrl ?? null } }, { status: 201 });
+});
+
+export const messagesPhotoPost: Handler = withAccess(async ({ request, supabase, userId, user, access }) => {
+  if (isBlocked(access.status)) {
+    return NextResponse.json({ error: CONVERSATION_CLOSED, code: "conversation_blocked" }, { status: 403 });
+  }
+  const formData = await request.formData().catch(() => null);
+  const file = formData?.get("file");
+  if (!(file instanceof File)) {
+    return NextResponse.json({ error: "Missing photo", code: "photo_failed" }, { status: 400 });
+  }
+  const baseType = file.type.split(";")[0] ?? file.type;
+  if (!ALLOWED_CHAT_PHOTO_TYPES.includes(baseType)) {
+    return NextResponse.json({ error: "Send a JPEG, PNG or WebP photo", code: "photo_type" }, { status: 400 });
+  }
+  if (file.size > MAX_CHAT_PHOTO_BYTES) {
+    return NextResponse.json({ error: "That photo is too big (max 5MB)", code: "photo_size" }, { status: 400 });
+  }
+
+  // Same "first folder is your own user id" rule as voice notes.
+  const ext = baseType === "image/png" ? "png" : baseType === "image/webp" ? "webp" : "jpg";
+  const path = `${userId}/${access.id}-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage.from("chat-photos").upload(path, file, { contentType: baseType, upsert: false });
+  if (uploadError) {
+    return NextResponse.json({ error: uploadError.message, code: "photo_failed" }, { status: 400 });
+  }
+
+  const { data: message, error } = await supabase
+    .from("generic_messages")
+    .insert({ match_id: access.id, sender_id: userId, body: CHAT_PHOTO_PLACEHOLDER_BODY, image_path: path })
+    .select(MESSAGE_COLUMNS)
+    .single();
+
+  const admin = createAdminClient();
+  if (error) {
+    // Don't leave the photo behind a refused message.
+    await admin.storage.from("chat-photos").remove([path]).catch(() => {});
+    return sendRefused(error);
+  }
+
+  const { data: signed } = await admin.storage.from("chat-photos").createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+
+  await emailRecipientOnFirstUnread(request, access, CHAT_PHOTO_PLACEHOLDER_BODY);
+  pushNewMessage(access, { kind: "photo" });
+  await reportFirstMessage(supabase, user, access);
+
+  return NextResponse.json({ message: { ...message, imageUrl: signed?.signedUrl ?? null } }, { status: 201 });
 });
 
 export const messagesMarkRead: Handler = withAccess(async ({ supabase, userId, access }) => {
@@ -285,9 +339,10 @@ export const messagesMarkRead: Handler = withAccess(async ({ supabase, userId, a
 /**
  * Pushes every message (unlike the email, which only goes out for the first
  * unread one) -- one notification per conversation, replaced as new messages
- * arrive. `preview` null means a voice note. Runs after the response.
+ * arrive. `preview` is the text, or which kind of attachment it was. Runs
+ * after the response.
  */
-function pushNewMessage(access: MatchAccess, preview: string | null) {
+function pushNewMessage(access: MatchAccess, preview: string | { kind: "voice" | "photo" }) {
   if (!anyPushEnabled()) return;
   after(async () => {
     const admin = createAdminClient();
@@ -296,7 +351,7 @@ function pushNewMessage(access: MatchAccess, preview: string | null) {
       const t = pushTranslator(locale, "Push");
       return {
         title: sender?.full_name ?? t("someone"),
-        body: preview ?? t("voiceMessage"),
+        body: typeof preview === "string" ? preview : t(preview.kind === "photo" ? "photoMessage" : "voiceMessage"),
         url: `/${locale}/messages?match=${access.id}`,
         tag: `message-${access.id}`,
       };

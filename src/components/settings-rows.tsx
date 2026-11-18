@@ -1,6 +1,6 @@
 "use client";
 
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "@/components/theme-switcher";
 import LocaleSwitcher from "@/components/locale-switcher";
 import SignOutButton from "@/components/sign-out-button";
@@ -18,17 +18,21 @@ function Switch({ on }: { on: boolean }) {
 }
 
 /**
- * Dark mode, language and log out as rows -- the bottom of the phone menu
- * and of Settings & Help.
+ * Dark mode, language and (unless `logout` is false) log out as rows --
+ * the bottom of the phone menu and the top of Settings & Help, which keeps
+ * Log out at its bottom instead (see SignOutRow).
  */
 export default function SettingsRows({
   rowClassName = "flex w-full items-center gap-3 px-5 py-4 text-[15px] text-ink transition-colors hover:bg-surface-sunken",
   className = "divide-y divide-border",
+  logout = true,
 }: {
   rowClassName?: string;
   className?: string;
+  logout?: boolean;
 }) {
   const t = useTranslations("Menu");
+  const locale = useLocale();
   const { theme, toggle } = useTheme();
   const chevron = <ChevronIcon className="h-5 w-5 shrink-0 text-muted" />;
 
@@ -43,17 +47,29 @@ export default function SettingsRows({
         {(label) => (
           <>
             <GlobeIcon className="h-[22px] w-[22px] text-muted" />
-            <span className="flex-1 text-start">{t("language")}</span>
-            <span className="text-sm text-muted">{label}</span>
+            {/* The language in use, and what tapping does: a row reading
+                "Language · English" in Arabic looked like English was set. */}
+            <span className="flex-1 text-start">
+              <span className="block">{t("language")}</span>
+              <span className="block text-xs text-muted">{t("switchLanguage", { language: label })}</span>
+            </span>
+            <span className="text-sm text-muted">{locale === "ar" ? "العربية" : "English"}</span>
             {chevron}
           </>
         )}
       </LocaleSwitcher>
-      <SignOutButton className={rowClassName}>
-        <LogoutIcon className="h-[22px] w-[22px] text-muted" />
-        <span className="flex-1 text-start">{t("logout")}</span>
-        {chevron}
-      </SignOutButton>
+      {logout && <SignOutRow className={rowClassName} />}
     </div>
+  );
+}
+
+export function SignOutRow({ className }: { className: string }) {
+  const t = useTranslations("Menu");
+  return (
+    <SignOutButton className={className}>
+      <LogoutIcon className="h-[22px] w-[22px] text-muted" />
+      <span className="flex-1 text-start">{t("logout")}</span>
+      <ChevronIcon className="h-5 w-5 shrink-0 text-muted" />
+    </SignOutButton>
   );
 }

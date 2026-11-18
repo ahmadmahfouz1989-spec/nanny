@@ -5,7 +5,7 @@ type Admin = ReturnType<typeof createAdminClient>;
 // Every bucket a user uploads into with their own session, all keyed by a
 // leading `${userId}/` folder (see the storage policies in the migrations).
 // id-documents and order-photos are written by the server, but keyed the same way.
-const USER_BUCKETS = ["nanny-photos", "parent-photos", "generic-photos", "voice-notes", "id-documents", "order-photos", "post-photos"] as const;
+const USER_BUCKETS = ["nanny-photos", "parent-photos", "generic-photos", "voice-notes", "chat-photos", "id-documents", "order-photos", "post-photos"] as const;
 const LIST_PAGE_SIZE = 1000;
 
 // Supabase refuses to delete an auth user who still owns Storage objects,
@@ -62,14 +62,18 @@ async function relatedToUser(db: Admin, userId: string) {
   }
 
   const otherVoiceNotes: string[] = [];
+  const otherPhotos: string[] = [];
   for (const batch of chunks(matchIds)) {
     const { data } = await db
       .from("generic_messages")
-      .select("audio_path")
+      .select("audio_path, image_path")
       .in("match_id", batch)
       .neq("sender_id", userId)
-      .not("audio_path", "is", null);
-    otherVoiceNotes.push(...(data ?? []).map((m) => m.audio_path as string));
+      .or("audio_path.not.is.null,image_path.not.is.null");
+    for (const m of data ?? []) {
+      if (m.audio_path) otherVoiceNotes.push(m.audio_path);
+      if (m.image_path) otherPhotos.push(m.image_path);
+    }
   }
 
   return {
@@ -77,6 +81,7 @@ async function relatedToUser(db: Admin, userId: string) {
     postIds: (posts ?? []).map((p) => p.id),
     replyIds: (replies ?? []).map((r) => r.id),
     otherVoiceNotes,
+    otherPhotos,
   };
 }
 
@@ -90,7 +95,7 @@ async function removeNotificationsPointingAt(db: Admin, key: string, ids: string
  * Hard-deletes a user: their files first (Storage requirement), then the
  * auth.users row, which cascades to public.users and everything under it
  * (profiles in every category, matches, messages, ratings, saved profiles,
- * posts, replies, likes, blocks, notifications). Voice notes the other
+ * posts, replies, likes, blocks, notifications). Voice notes and photos the other
  * person sent in the user's conversations, and other users' notifications
  * about the user's matches/posts/replies, are removed too (relatedToUser).
  * Reports, admin attribution and login history are ON DELETE SET NULL
@@ -107,6 +112,10 @@ export async function deleteUserAccount(userId: string): Promise<string | null> 
   for (const batch of chunks(related.otherVoiceNotes)) {
     const { error } = await db.storage.from("voice-notes").remove(batch);
     if (error) return `Could not remove conversation voice notes (${error.message}); the account was not deleted`;
+  }
+  for (const batch of chunks(related.otherPhotos)) {
+    const { error } = await db.storage.from("chat-photos").remove(batch);
+    if (error) return `Could not remove conversation photos (${error.message}); the account was not deleted`;
   }
 
   const { error } = await db.auth.admin.deleteUser(userId);

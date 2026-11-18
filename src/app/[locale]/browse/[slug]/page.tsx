@@ -89,7 +89,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
 
   const [result, { data: places }] = await Promise.all([
     browseProviders({ slug, region: region || null, service: service || null, page, idChecked: trust.idChecked, minYears: trust.minYears, language: trust.language || null }),
-    createAdminClient().from("locations").select("id, name_en, name_ar, level, parent_location_id, sort_order").in("level", ["governorate", "district"]).order("sort_order"),
+    createAdminClient().from("locations").select("id, name_en, name_ar, level, parent_location_id, sort_order").in("level", ["governorate", "district"]).not("code", "is", null).order("sort_order"),
   ]);
   const regions: RegionGroup[] = (places ?? [])
     .filter((p) => p.level === "governorate")
@@ -178,7 +178,7 @@ export default async function BrowsePage({ params, searchParams }: Props) {
         {result && result.cards.length === 0 && (
           <div className={ui.card + " flex flex-col items-start gap-3 p-5"}>
             <p className="font-medium text-ink">{t("emptyTitle")}</p>
-            <p className="text-sm text-muted">{t("emptyBody")}</p>
+            <p className="text-sm text-muted">{region ? t("emptyBody") : t("emptyBodyEverywhere")}</p>
             {filtered && (
               <Link href={`/browse/${slug}?${clear}`} className={ui.buttonSecondary}>
                 {t("clearFilters")}

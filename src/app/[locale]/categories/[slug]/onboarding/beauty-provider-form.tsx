@@ -1,5 +1,6 @@
 "use client";
 
+import { isBusinessType } from "@/lib/business-profile";
 import { useState } from "react";
 import { initialFullName } from "@/lib/draft-profile";
 import { useTranslations } from "next-intl";
@@ -172,6 +173,9 @@ export default function BeautyProviderForm({
   // Answers kept on the phone until saved or cancelled (see useFormDraft).
   const draft = useFormDraft(`form-draft:${categorySlug}:provider:${initialProfile?.id ?? "new"}`, form, setForm);
   const [photoUrl] = useState(initialProfile?.profile_photo_url ?? null);
+  // The person's own name (from "About you"): what anyone who isn't a
+  // business goes by. Only a business types a name here.
+  const [personName, setPersonName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the fields are fixed.
@@ -192,6 +196,8 @@ export default function BeautyProviderForm({
     setForm((f) => ({
       ...f,
       providerType: type,
+      // Becoming a business: its own name is typed fresh, not the person's.
+      fullName: isBusinessType(type) && !isBusinessType(f.providerType) ? "" : f.fullName,
       // One person is a woman or a man; "both" is only for a team or salon.
       gender: type === "individual" && f.gender === "mixed" ? "" : f.gender,
       // A salon works at its salon -- ticked for them, still changeable.
@@ -208,7 +214,7 @@ export default function BeautyProviderForm({
   const payload = {
     categorySlug,
     role: "provider" as const,
-    fullName: form.fullName,
+    fullName: business ? form.fullName : personName || form.fullName,
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
@@ -309,13 +315,18 @@ export default function BeautyProviderForm({
             </button>
           ))}
         </div>
-        <AccountBasicsLine />
-        <input
-          className={ui.input}
-          placeholder={business ? t("businessNamePlaceholder") : t("namePlaceholder")}
-          value={form.fullName}
-          onChange={(e) => update("fullName", e.target.value)}
-        />
+        <AccountBasicsLine onLoad={(b) => setPersonName(b.fullName ?? "")} />
+        {business && (
+          <>
+            <FieldLabel field="fullName" errors={fieldErrors}>{t("businessName")}</FieldLabel>
+            <input
+              className={ui.input}
+              placeholder={t("businessNamePlaceholder")}
+              value={form.fullName}
+              onChange={(e) => update("fullName", e.target.value)}
+            />
+          </>
+        )}
         {business && (
           <>
             <FieldLabel field="teamSize" errors={fieldErrors} optional={form.providerType === "salon"}>{t("teamSize")}</FieldLabel>

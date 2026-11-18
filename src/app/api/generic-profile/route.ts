@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isBusinessType } from "@/lib/business-profile";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { requireActiveUser } from "@/lib/session";
@@ -121,7 +122,13 @@ async function upsertGenericProfile(request: Request, mode: "create" | "update")
   // fullName/locationId are real generic_profiles columns; contactPhone is
   // shared per-account state on users; everything else lives in
   // attributes jsonb.
-  const { fullName, contactPhone, locationId: submittedLocationId, ...rest } = p;
+  const { fullName: submittedName, contactPhone, locationId: submittedLocationId, ...rest } = p;
+  // A team or company goes by its business name; anyone else by the
+  // account's name (asked once in "About you"), whatever the form sent.
+  const business = isBusinessType((rest as { providerType?: unknown }).providerType);
+  const fullName = business
+    ? submittedName
+    : ((await supabase.from("users").select("full_name").eq("id", user.id).maybeSingle()).data?.full_name ?? submittedName);
   // The district decides the governorate (and the area must be in that
   // district), so a mismatched pair from a stale form can't be saved.
   let locationId = submittedLocationId;

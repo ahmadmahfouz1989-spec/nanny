@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import VoiceNotePlayer from "./voice-note-player";
 import { useTranslations } from "next-intl";
 
@@ -10,6 +11,8 @@ export type ChatMessageData = {
   audio_path: string | null;
   audio_duration_seconds: number | null;
   audioUrl?: string | null;
+  image_path?: string | null;
+  imageUrl?: string | null;
   created_at: string;
   /** Null until the other person has seen it. */
   read_at?: string | null;
@@ -30,6 +33,7 @@ export default function ChatMessage({
   time?: string;
 }) {
   const t = useTranslations("Matches");
+  const [viewing, setViewing] = useState(false);
 
   return (
     <div className="flex flex-col">
@@ -41,10 +45,19 @@ export default function ChatMessage({
       <div
         dir="auto"
         className={`max-w-[85%] sm:max-w-md rounded-2xl text-sm ${
-          m.audio_path ? "p-2" : "px-3.5 py-2"
+          m.audio_path ? "p-2" : m.image_path ? "p-1" : "px-3.5 py-2"
         } ${own ? "self-end bg-primary text-on-primary" : "self-start bg-surface-sunken text-ink"}`}
       >
-        {m.audio_path ? (
+        {m.image_path ? (
+          m.imageUrl ? (
+            <button type="button" onClick={() => setViewing(true)} aria-label={t("photoOpen")} className="block overflow-hidden rounded-xl">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={m.imageUrl} alt="" loading="lazy" className="max-h-72 w-auto max-w-full object-cover" />
+            </button>
+          ) : (
+            <span className="block px-2.5 py-1.5 text-xs opacity-80">{t("photoLoading")}</span>
+          )
+        ) : m.audio_path ? (
           m.audioUrl ? (
             <VoiceNotePlayer src={m.audioUrl} durationSeconds={m.audio_duration_seconds} own={own} />
           ) : (
@@ -56,6 +69,19 @@ export default function ChatMessage({
           <span dir="auto" className="whitespace-pre-wrap">{m.body}</span>
         )}
       </div>
+      {viewing && m.imageUrl && (
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[90] flex items-center justify-center bg-black/90 p-4 pt-[max(1rem,env(safe-area-inset-top))]" onClick={() => setViewing(false)}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={m.imageUrl} alt="" className="max-h-full max-w-full object-contain" />
+          <button
+            type="button"
+            onClick={() => setViewing(false)}
+            className="absolute end-4 top-[max(1rem,env(safe-area-inset-top))] rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white"
+          >
+            {t("photoClose")}
+          </button>
+        </div>
+      )}
       {time && (
         <span className={`mt-0.5 inline-flex items-center gap-1 text-[11px] text-muted ${own ? "self-end" : "self-start"}`}>
           {time}

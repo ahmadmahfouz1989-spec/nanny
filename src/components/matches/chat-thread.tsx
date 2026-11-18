@@ -8,6 +8,8 @@ import { SIGNED_URL_TTL_SECONDS } from "@/lib/voice-notes";
 import { MATCHES_API } from "@/lib/matching/match-access";
 import { announceUnreadChanged } from "@/lib/unread-events";
 import ChatComposer from "./chat-composer";
+import { shrinkImage } from "@/lib/shrink-image";
+import { CHAT_PHOTO_MAX_SIDE } from "@/lib/chat-photos";
 import ChatMessage, { type ChatMessageData } from "./chat-message";
 import { useVoiceRecorder, type RecordedVoiceNote } from "./use-voice-recorder";
 import { getJson } from "@/lib/request";
@@ -101,6 +103,7 @@ export default function ChatThread({
   // id from here rather than from whatever render captured `userId`.
   const userIdRef = useRef<string | null>(null);
   const [uploadingAudio, setUploadingAudio] = useState(false);
+  const [sendingPhoto, setSendingPhoto] = useState(false);
   const [sendError, setSendError] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const listRef = useRef<HTMLDivElement>(null);
@@ -158,17 +161,19 @@ export default function ChatThread({
         setMessages((prev) => {
           const prevById = new Map((prev ?? []).map((m) => [m.id, m]));
           const next: Message[] = ((body.messages ?? []) as Message[]).map((m) => {
-            if (!m.audio_path) return m;
+            // Voice notes and photos come with signed links that expire:
+            // keep the one already showing until it's due for renewal.
+            if (!m.audio_path && !m.image_path) return m;
             const held = prevById.get(m.id);
-            if (held?.audioUrl) {
+            if (held?.audioUrl || held?.imageUrl) {
               // A URL that arrived some other way (send, upload, loadOlder)
               // was signed just before it got here -- start its clock now.
               if (!receivedAt.has(m.id)) receivedAt.set(m.id, now);
               if (now - receivedAt.get(m.id)! < AUDIO_URL_REFRESH_AFTER_MS) {
-                return { ...m, audioUrl: held.audioUrl };
+                return { ...m, audioUrl: held.audioUrl, imageUrl: held.imageUrl };
               }
             }
-            if (m.audioUrl) receivedAt.set(m.id, now);
+            if (m.audioUrl || m.imageUrl) receivedAt.set(m.id, now);
             return m;
           });
           if (!prev) return next;
@@ -188,7 +193,7 @@ export default function ChatThread({
             // renewed) its playable URL, which does need to reach the UI.
             // Or one of yours was delivered or read: the ticks change.
             const changed = prev.some(
-              (m, i) => m.audioUrl !== merged[i]?.audioUrl || m.read_at !== merged[i]?.read_at || m.delivered_at !== merged[i]?.delivered_at,
+              (m, i) => m.audioUrl !== merged[i]?.audioUrl || m.imageUrl !== merged[i]?.imageUrl || m.read_at !== merged[i]?.read_at || m.delivered_at !== merged[i]?.delivered_at,
             );
             return changed ? merged : prev;
           }
@@ -236,7 +241,7 @@ export default function ChatThread({
         { event: "INSERT", schema: "public", table: "generic_messages", filter: `match_id=eq.${matchId}` },
         (payload) => {
           const incoming = payload.new as Message;
-          if (incoming.audio_path) {
+          if (incoming.audio_path || incoming.image_path) {
             // The raw realtime row has no signed URL -- only the GET route
             // (service role) can mint one, so re-fetch instead of
             // appending the bare payload.
@@ -419,6 +424,33 @@ export default function ChatThread({
 
   const recorder = useVoiceRecorder(uploadRecording);
 
+  async function sendPhoto(picked: File) {
+    setUploadError(null);
+    setSendingPhoto(true);
+    haptic();
+    try {
+      const formData = new FormData();
+      formData.append("file", await shrinkImage(picked, CHAT_PHOTO_MAX_SIDE));
+      const res = await fetch(`${threadUrl}/photo`, { method: "POST", body: formData });
+      if (!res.ok) {
+        setUploadError(await refusalText(res, t("photoSendError")));
+        return;
+      }
+      const { message } = await res.json();
+      isNearBottomRef.current = true;
+      setMessages((prev) => {
+        const list = prev ?? [];
+        if (list.some((m) => m.id === message.id)) return list;
+        return [...list, message];
+      });
+      onMessageRef.current?.(message);
+    } catch {
+      setUploadError(t("photoSendError"));
+    } finally {
+      setSendingPhoto(false);
+    }
+  }
+
   function formatTime(iso: string) {
     return new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit" }).format(new Date(iso));
   }
@@ -530,6 +562,8 @@ export default function ChatThread({
         }}
         onStopRecording={recorder.stop}
         onCancelRecording={recorder.cancel}
+        onPickPhoto={sendPhoto}
+        sendingPhoto={sendingPhoto}
       />
     </div>
   );

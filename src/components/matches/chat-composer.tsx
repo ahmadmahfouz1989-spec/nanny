@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
-import { SendIcon, MicIcon, TrashIcon } from "@/components/nav-icons";
+import { SendIcon, MicIcon, TrashIcon, PhotoIcon } from "@/components/nav-icons";
 import { VOICE_NOTES_ENABLED, formatAudioDuration } from "@/lib/voice-notes";
 import { ui } from "@/lib/ui";
 
@@ -18,7 +18,7 @@ function coarsePointer() {
   return typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
 }
 
-/** The bar under a chat thread: type and send, or record a voice note. */
+/** The bar under a chat thread: type and send, send a photo, or record a voice note. */
 export default function ChatComposer({
   compact,
   draft,
@@ -31,6 +31,8 @@ export default function ChatComposer({
   onStartRecording,
   onStopRecording,
   onCancelRecording,
+  onPickPhoto,
+  sendingPhoto,
 }: {
   compact: boolean;
   draft: string;
@@ -43,9 +45,12 @@ export default function ChatComposer({
   onStartRecording: () => void;
   onStopRecording: () => void;
   onCancelRecording: () => void;
+  onPickPhoto: (file: File) => void;
+  sendingPhoto: boolean;
 }) {
   const t = useTranslations("Matches");
   const boxRef = useRef<HTMLTextAreaElement>(null);
+  const photoInput = useRef<HTMLInputElement>(null);
   // Fit the box to its text whenever it changes from outside too (a saved
   // draft coming back, or cleared after sending).
   useEffect(() => {
@@ -80,6 +85,27 @@ export default function ChatComposer({
         </>
       ) : (
         <>
+          <button
+            type="button"
+            onClick={() => photoInput.current?.click()}
+            disabled={uploading || sendingPhoto}
+            aria-label={sendingPhoto ? t("sendingPhoto") : t("sendPhoto")}
+            title={t("sendPhoto")}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink disabled:opacity-50"
+          >
+            {sendingPhoto ? <span className="h-5 w-5 animate-spin rounded-full border-2 border-current border-t-transparent" /> : <PhotoIcon className="h-6 w-6" />}
+          </button>
+          <input
+            ref={photoInput}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              e.target.value = "";
+              if (file) onPickPhoto(file);
+            }}
+          />
           <textarea
             ref={boxRef}
             rows={1}

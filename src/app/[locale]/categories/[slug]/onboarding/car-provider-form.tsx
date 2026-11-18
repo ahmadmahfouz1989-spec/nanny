@@ -1,5 +1,6 @@
 "use client";
 
+import { isBusinessType } from "@/lib/business-profile";
 import { useState } from "react";
 import { initialFullName } from "@/lib/draft-profile";
 import { useTranslations } from "next-intl";
@@ -165,10 +166,22 @@ export default function CarProviderForm({
   // Answers kept on the phone until saved or cancelled (see useFormDraft).
   const draft = useFormDraft(`form-draft:${categorySlug}:provider:${initialProfile?.id ?? "new"}`, form, setForm);
   const [photoUrl] = useState(initialProfile?.profile_photo_url ?? null);
+  // The person's own name (from "About you"): what anyone who isn't a
+  // business goes by. Only a business types a name here.
+  const [personName, setPersonName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   // Set by the first failed save; from then on errors update live as the fields are fixed.
   const [showErrors, setShowErrors] = useState(false);
+
+  // Becoming a business: its own name is typed fresh, not the person's.
+  function pickType(type: FormState["providerType"]) {
+    setForm((f) => ({
+      ...f,
+      providerType: type,
+      fullName: isBusinessType(type) && !isBusinessType(f.providerType) ? "" : f.fullName,
+    }));
+  }
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -190,7 +203,7 @@ export default function CarProviderForm({
   const payload = {
     categorySlug,
     role: "provider" as const,
-    fullName: form.fullName,
+    fullName: business ? form.fullName : personName || form.fullName,
     contactPhone: form.contactPhone || undefined,
     locationId: form.locationId,
     locationDetail: form.locationDetail,
@@ -283,18 +296,23 @@ export default function CarProviderForm({
         <FieldLabel field="providerType" errors={fieldErrors}>{t("providerType")}</FieldLabel>
         <div className="flex flex-wrap gap-2">
           {PROVIDER_TYPES.map((v) => (
-            <button type="button" key={v} onClick={() => update("providerType", v)} aria-pressed={form.providerType === v} className={ui.pill(form.providerType === v)}>
+            <button type="button" key={v} onClick={() => pickType(v)} aria-pressed={form.providerType === v} className={ui.pill(form.providerType === v)}>
               {tOption(`providerType.${v}`)}
             </button>
           ))}
         </div>
-        <AccountBasicsLine />
-        <input
-          className={ui.input}
-          placeholder={business ? t("businessNamePlaceholder") : t("namePlaceholder")}
-          value={form.fullName}
-          onChange={(e) => update("fullName", e.target.value)}
-        />
+        <AccountBasicsLine onLoad={(b) => setPersonName(b.fullName ?? "")} />
+        {business && (
+          <>
+            <FieldLabel field="fullName" errors={fieldErrors}>{t("businessName")}</FieldLabel>
+            <input
+              className={ui.input}
+              placeholder={t("businessNamePlaceholder")}
+              value={form.fullName}
+              onChange={(e) => update("fullName", e.target.value)}
+            />
+          </>
+        )}
         {initialProfile && (
           <>
             {business && <p className="-mt-1 text-xs text-muted">{t("logoHint")}</p>}

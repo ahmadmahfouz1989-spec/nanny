@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { isPhoneNumber, westernDigits } from "@/lib/phone-format";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
@@ -14,7 +15,9 @@ const bodySchema = z.object({
   contactPhone: z
     .string()
     .trim()
-    .refine((v) => /^\+?[0-9 ()-]{6,20}$/.test(v), "Enter a phone number"),
+    .max(30)
+    .transform(westernDigits)
+    .refine(isPhoneNumber, "Enter a phone number"),
   nationality: z.enum(NATIONALITIES, "Choose your nationality"),
   photoUrl: z.string().url().max(500).nullable().optional(),
 });

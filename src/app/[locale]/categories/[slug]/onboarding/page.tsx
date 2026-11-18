@@ -1,5 +1,6 @@
 import { redirect } from "@/i18n/navigation";
 import { accountBasics, aboutYouHref } from "@/lib/account-basics";
+import { isBusinessType } from "@/lib/business-profile";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { mustVerifyPhone } from "@/lib/phone-gate";
@@ -63,7 +64,8 @@ export default async function CategoryOnboardingPage({
   // The account's basics fill every profile: the form doesn't ask them.
   const withContact = (p: NonNullable<typeof profiles>[number], role: "seeker" | "provider") => ({
     ...p,
-    full_name: accountName ?? p.full_name,
+    // A team or company keeps its business name.
+    full_name: isBusinessType(asAttributes(p.attributes).providerType) ? p.full_name : (accountName ?? p.full_name),
     role,
     profile_photo_url: basics.photoUrl ?? p.profile_photo_url,
     attributes: { ...asAttributes(p.attributes), nationality: basics.nationality },

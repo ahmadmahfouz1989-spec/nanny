@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link, usePathname } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
@@ -13,16 +13,25 @@ import type { AccountBasics } from "@/lib/account-basics";
  * you" (name, phone, nationality, photo), with a way to change it. The form
  * doesn't ask these again; it saves them from the account.
  */
-export default function AccountBasicsLine() {
+export default function AccountBasicsLine({ onLoad }: { onLoad?: (basics: AccountBasics) => void } = {}) {
   const t = useTranslations("AboutYou");
   const tn = useTranslations("Nationality");
   const path = usePathname();
   const query = useSearchParams().toString();
   const [basics, setBasics] = useState<AccountBasics | null>(null);
+  // Loaded once; a parent's new callback each render doesn't fetch again.
+  const onLoadRef = useRef(onLoad);
+  useEffect(() => {
+    onLoadRef.current = onLoad;
+  });
   useEffect(() => {
     fetch("/api/account/basics")
       .then((r) => (r.ok ? r.json() : null))
-      .then((b) => b?.basics && setBasics(b.basics))
+      .then((b) => {
+        if (!b?.basics) return;
+        setBasics(b.basics);
+        onLoadRef.current?.(b.basics);
+      })
       .catch(() => {});
   }, []);
   const here = query ? `${path}?${query}` : path;

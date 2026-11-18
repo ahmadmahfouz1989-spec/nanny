@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isPhoneNumber, westernDigits } from "@/lib/phone-format";
 import { ERRAND_SERVICES, TIMINGS } from "@/lib/validation/errands";
 import { TRADES } from "@/lib/validation/maintenance";
 
@@ -15,16 +16,13 @@ const detail = z.string().trim().max(160, "That's too long").optional();
 // what to do there, and who to ask for. All optional: without a map (no
 // Maps key yet) an order is a district, an area and a landmark as before.
 const point = z.object({ lat: z.number().min(-90).max(90), lng: z.number().min(-180).max(180) });
-// Arabic-Indic and Persian digits typed on an Arabic keyboard count as digits.
-const westernDigits = (v: string) => v.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (d) => String((d.charCodeAt(0) & 0xf) % 10));
-// Lebanese numbers are written many ways: "03/123456", "03 123 456",
-// "+961 3-123.456", "٠٣١٢٣٤٥٦". Separators are fine; 6 to 15 digits.
+// Lebanese numbers are written many ways (see isPhoneNumber).
 const phone = z
   .string()
   .trim()
   .max(30)
   .transform(westernDigits)
-  .refine((v) => v === "" || (/^\+?[0-9 ()./-]+$/.test(v) && /^(\D*\d){6,15}\D*$/.test(v)), "Enter a phone number, or leave it empty")
+  .refine((v) => v === "" || isPhoneNumber(v), "Enter a phone number, or leave it empty")
   .optional();
 
 /**

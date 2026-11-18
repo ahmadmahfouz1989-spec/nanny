@@ -23,6 +23,7 @@ type ConversationMessage = {
   created_at: string;
   isReporter: boolean;
   audioUrl: string | null;
+  imageUrl?: string | null;
   audioDurationSeconds: number | null;
 };
 
@@ -189,7 +190,12 @@ export default function AdminReportsPage() {
                     <p className="text-[10px] uppercase tracking-wide opacity-70 mb-0.5">
                       {m.isReporter ? t("reporterLabel") : t("reportedLabel")}
                     </p>
-                    {m.audioUrl ? (
+                    {m.imageUrl ? (
+                      <a href={m.imageUrl} target="_blank" rel="noreferrer">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={m.imageUrl} alt="" className="max-h-56 rounded-lg" />
+                      </a>
+                    ) : m.audioUrl ? (
                       <audio controls preload="metadata" src={m.audioUrl} className="h-9 w-56 max-w-full" />
                     ) : (
                       m.body

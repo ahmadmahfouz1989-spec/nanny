@@ -3,7 +3,7 @@
 import { celebrate } from "@/lib/celebrate";
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -331,10 +331,8 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   return (
     <form ref={top} onSubmit={submit} className="mx-auto flex w-full max-w-2xl scroll-mt-4 flex-col gap-5 px-4 py-6">
       <div>
-        <Link href="/orders" className="text-sm text-muted hover:text-ink">
-          <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-ink">{t("newOrder")}</h1>
+        {/* The top bar's back arrow leads out; "All orders" made no sense on a first order. */}
+        <h1 className="text-2xl font-bold text-ink">{t("newOrder")}</h1>
         {prefill && <p className="mt-1 text-sm text-muted">{t("prefilledHint")}</p>}
         <div className="mt-3 flex items-center gap-2" aria-label={t("stepOf", { step, total: 3 })}>
           {[1, 2, 3].map((n) => (

@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
+import { isPhoneNumber } from "@/lib/phone-format";
 import { shrinkImage } from "@/lib/shrink-image";
 import NationalitySelect from "@/components/onboarding/nationality-select";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
@@ -57,7 +58,7 @@ export default function AboutYouForm({ initial, next, askInvite = false }: { ini
     e.preventDefault();
     setError(null);
     if (fullName.trim().length < 2) return setError({ field: "fullName", text: t("nameMissing") });
-    if (!/^\+?[0-9 ()-]{6,20}$/.test(contactPhone.trim())) return setError({ field: "contactPhone", text: t("phoneMissing") });
+    if (!isPhoneNumber(contactPhone)) return setError({ field: "contactPhone", text: t("phoneMissing") });
     if (!nationality) return setError({ field: "nationality", text: t("nationalityMissing") });
     setSaving(true);
     const res = await request("/api/account/basics", {
@@ -68,7 +69,10 @@ export default function AboutYouForm({ initial, next, askInvite = false }: { ini
     const body = await res?.json().catch(() => null);
     setSaving(false);
     if (!res?.ok) {
-      setError({ field: (body?.field as Field) ?? null, text: typeof body?.error === "string" ? body.error : t("saveFailed") });
+      // The screen's own words for what was wrong, never the server's English.
+      const field = (["fullName", "contactPhone", "nationality", "photoUrl"] as const).find((f) => f === body?.field) ?? null;
+      const text = { fullName: t("nameMissing"), contactPhone: t("phoneMissing"), nationality: t("nationalityMissing"), photoUrl: t("photoFailed") };
+      setError({ field, text: field ? text[field] : t("saveFailed") });
       return;
     }
     if (askInvite && inviteCode.trim().length >= 4) {

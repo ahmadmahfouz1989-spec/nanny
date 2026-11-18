@@ -4,7 +4,7 @@ import { celebrate } from "@/lib/celebrate";
 import { useOrderErrorText } from "@/components/orders/order-bits";
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Link, useRouter } from "@/i18n/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import LocationPicker from "@/components/onboarding/location-picker";
@@ -100,10 +100,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
   return (
     <form onSubmit={submit} className="mx-auto flex w-full max-w-2xl flex-col gap-5 px-4 py-6">
       <div>
-        <Link href="/categories/maintenance/dashboard" className="text-sm text-muted hover:text-ink">
-          <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
-        </Link>
-        <h1 className="mt-2 text-2xl font-bold text-ink">{t("quotesTitle")}</h1>
+        <h1 className="text-2xl font-bold text-ink">{t("quotesTitle")}</h1>
         <p className="mt-1 text-sm text-muted">{t("quotesSubtitle")}</p>
       </div>
 
