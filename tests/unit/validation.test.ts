@@ -250,4 +250,10 @@ describe("order contact phone and schedule", () => {
     expect(ok({ timing: "scheduled", scheduledAt: at(-1) })).toBe(false);
     expect(ok({ timing: "scheduled", scheduledAt: at(24 * 31) })).toBe(false);
   });
+
+  it("takes a photo of what to pick up, but not on a ride", () => {
+    expect(ok({ photoPaths: ["user/abc.jpg"] })).toBe(true);
+    expect(ok({ service: "moto_taxi", photoPaths: ["user/abc.jpg"] })).toBe(false);
+    expect(ok({ photoPaths: ["a", "b", "c", "d"] })).toBe(false);
+  });
 });

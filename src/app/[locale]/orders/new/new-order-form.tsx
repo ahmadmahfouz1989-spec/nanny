@@ -15,6 +15,7 @@ import { NEEDS_DROPOFF } from "@/lib/validation/errand-order";
 import { Avatar } from "@/app/[locale]/feed/feed-shared";
 import ErrandServiceIcon from "@/components/errand-service-icon";
 import { useOrderErrorText } from "@/components/orders/order-bits";
+import OrderPhotos, { type OrderPhoto } from "@/components/orders/order-photos";
 
 // "2026-11-03T15:30" for a datetime-local input, in the phone's own time zone.
 const localInput = (d: Date) => new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
@@ -48,6 +49,7 @@ type Draft = {
   dropoff: Place;
   pickupMap: MapPlace;
   dropoffMap: MapPlace;
+  photos?: OrderPhoto[];
 };
 /** A rider the customer can send the order to themselves. */
 type Rider = { profileId: string; name: string; photoUrl: string | null; rating: { average: number | null; count: number }; distanceKm: number | null };
@@ -90,6 +92,9 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   const [pickupMap, setPickupMap] = useState<MapPlace>(emptyMapPlace);
   const [dropoffMap, setDropoffMap] = useState<MapPlace>(emptyMapPlace);
   const ride = service === "moto_taxi";
+  // A photo of what to pick up (or buy): uploaded as chosen, sent with the order.
+  const [photos, setPhotos] = useState<OrderPhoto[]>([]);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [missing, setMissing] = useState<Missing | null>(null);
   // Who gets it: the nearest available riders, or one the customer picks.
   const [pickRider, setPickRider] = useState(false);
@@ -127,6 +132,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
           if (d.dropoff) setDropoff(d.dropoff);
           if (d.pickupMap) setPickupMap({ ...emptyMapPlace, ...d.pickupMap });
           if (d.dropoffMap) setDropoffMap({ ...emptyMapPlace, ...d.dropoffMap });
+          if (Array.isArray(d.photos)) setPhotos(d.photos.filter((p) => typeof p?.path === "string").slice(0, 3));
           /* eslint-enable react-hooks/set-state-in-effect */
         }
       } catch {
@@ -140,12 +146,12 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   useEffect(() => {
     if (!draftReady.current) return;
     try {
-      const draft: Draft = { service, description, timing, scheduledAt, budget, fullName, pickup, dropoff, pickupMap, dropoffMap };
+      const draft: Draft = { service, description, timing, scheduledAt, budget, fullName, pickup, dropoff, pickupMap, dropoffMap, photos };
       sessionStorage.setItem(draftKey, JSON.stringify(draft));
     } catch {
       // Storage can be off: the form still works.
     }
-  }, [draftKey, service, description, timing, scheduledAt, budget, fullName, pickup, dropoff, pickupMap, dropoffMap]);
+  }, [draftKey, service, description, timing, scheduledAt, budget, fullName, pickup, dropoff, pickupMap, dropoffMap, photos]);
 
   // Riders free to take this service, nearest to the pickup first.
   const pickupKey = useMap
@@ -279,6 +285,8 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         budgetUsd: budget ? Number(budget) : undefined,
         fullName: askName ? fullName.trim() : undefined,
         providerProfileId: chosenRider?.profileId,
+        // A ride has nothing to pick up.
+        photoPaths: ride ? [] : photos.map((p) => p.path),
       }),
     });
     const body = await res?.json().catch(() => null);
@@ -379,6 +387,17 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       </label>
       )}
 
+      {step === 1 && !ride && (
+        <OrderPhotos
+          photos={photos}
+          onChange={setPhotos}
+          label={t(service === "shopping" ? "errandPhotoShopping" : service === "delivery" ? "errandPhotoPickup" : "errandPhoto")}
+          hint={t("errandPhotoHint")}
+          onError={setError}
+          onUploading={setUploadingPhoto}
+        />
+      )}
+
       {step === 1 && askName && (
         <label ref={(el) => { sections.current.name = el; }} className="flex flex-col gap-2">
           <span className={ui.label}>{t("yourName")}</span>
@@ -452,6 +471,16 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
             </button>
           </div>
           <p dir="auto" className="line-clamp-3 text-sm text-ink/90">{description.trim()}</p>
+          {!ride && photos.length > 0 && (
+            <div className="flex gap-2">
+              {photos.map((p) =>
+                p.url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img key={p.path} src={p.url} alt="" className="h-14 w-14 rounded-lg border border-border object-cover" />
+                ) : null,
+              )}
+            </div>
+          )}
           {placesLine && (
           <div className="flex items-start gap-2 border-t border-border pt-2 text-sm text-muted">
             <span className="min-w-0 flex-1">{placesLine}</span>
@@ -578,7 +607,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
             {t("stepNext")}
           </button>
         ) : (
-          <button key="send" type="submit" disabled={sending} className={ui.buttonPrimary + " flex-1"}>
+          <button key="send" type="submit" disabled={sending || uploadingPhoto} className={ui.buttonPrimary + " flex-1"}>
             {sending ? t("placing") : chosenRider ? t("placeOrderTo", { name: chosenRider.name }) : t("placeOrder")}
           </button>
         )}

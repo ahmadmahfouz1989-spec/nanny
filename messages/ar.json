@@ -2754,7 +2754,11 @@
       "reopen_not_allowed": "بس الطلب اللي ما إلو مقدّم خدمة، أو اللي عم يستنّى تأكيد، فيك ترجع تفتحه.",
       "already_closed": "هالطلب مسكّر من قبل.",
       "needs_approval": "لازم ينقبل حسابك بالتوصيل والمشاوير أوّل."
-    }
+    },
+    "errandPhotoPickup": "صورة للغرض اللي بدّو ينجاب (اختياري)",
+    "errandPhotoShopping": "صورة للغرض اللي بدّك تشتريه (اختياري)",
+    "errandPhoto": "صور (اختياري)",
+    "errandPhotoHint": "بتساعد السائق يلاقي الغرض الصح. لحد 3 صور."
   },
   "PublicProfile": {
     "serviceIn": "{service} في {place}",

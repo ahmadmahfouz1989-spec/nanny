@@ -8,12 +8,10 @@ import { useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
 import LocationPicker from "@/components/onboarding/location-picker";
+import OrderPhotos, { type OrderPhoto } from "@/components/orders/order-photos";
 import { TRADES, type Trade } from "@/lib/validation/maintenance";
 
 type Place = { governorateId: string | null; districtId: string | null; areaId: string | null; detail: string };
-type Photo = { path: string; url: string | null };
-
-const MAX_PHOTOS = 3;
 
 /** A repair job asking for quotes: trade, what's wrong, photos, where, when. */
 export default function QuoteForm({ needsName, initialTrade }: { needsName: boolean; initialTrade: Trade | null }) {
@@ -23,7 +21,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
   const router = useRouter();
   const [trade, setTrade] = useState<Trade | null>(initialTrade);
   const [description, setDescription] = useState("");
-  const [photos, setPhotos] = useState<Photo[]>([]);
+  const [photos, setPhotos] = useState<OrderPhoto[]>([]);
   const [uploading, setUploading] = useState(false);
   const [place, setPlace] = useState<Place>({ governorateId: null, districtId: null, areaId: null, detail: "" });
   const [timing, setTiming] = useState<"asap" | "scheduled">("asap");
@@ -32,21 +30,6 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
   const [fullName, setFullName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-
-  async function addPhoto(file: File) {
-    setError(null);
-    setUploading(true);
-    const form = new FormData();
-    form.append("file", file);
-    const res = await request("/api/order-photos", { method: "POST", body: form });
-    const body = await res?.json().catch(() => null);
-    setUploading(false);
-    if (!res?.ok || typeof body?.path !== "string") {
-      setError(t("photoError"));
-      return;
-    }
-    setPhotos((list) => [...list, { path: body.path, url: body.url ?? null }].slice(0, MAX_PHOTOS));
-  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -130,43 +113,7 @@ export default function QuoteForm({ needsName, initialTrade }: { needsName: bool
         />
       </label>
 
-      <section className="flex flex-col gap-2">
-        <span className={ui.label}>{t("photos")}</span>
-        <p className="-mt-1 text-xs text-muted">{t("photosHint")}</p>
-        <div className="flex flex-wrap gap-3">
-          {photos.map((p) => (
-            <div key={p.path} className="relative h-24 w-24 overflow-hidden rounded-xl border border-border bg-surface-sunken">
-              {/* Short-lived private links: next/image can't optimise them. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              {p.url && <img src={p.url} alt="" className="h-full w-full object-cover" />}
-              <button
-                type="button"
-                aria-label={t("removePhoto")}
-                className="absolute end-1 top-1 rounded-full bg-black/60 px-2 text-sm text-white"
-                onClick={() => setPhotos((list) => list.filter((x) => x.path !== p.path))}
-              >
-                ×
-              </button>
-            </div>
-          ))}
-          {photos.length < MAX_PHOTOS && (
-            <label className="flex h-24 w-24 cursor-pointer items-center justify-center rounded-xl border border-dashed border-border text-center text-xs text-muted hover:bg-surface-sunken">
-              {uploading ? t("photoUploading") : `+ ${t("addPhoto")}`}
-              <input
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
-                className="hidden"
-                disabled={uploading}
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  e.target.value = "";
-                  if (file) void addPhoto(file);
-                }}
-              />
-            </label>
-          )}
-        </div>
-      </section>
+      <OrderPhotos photos={photos} onChange={setPhotos} label={t("photos")} hint={t("photosHint")} onError={setError} onUploading={setUploading} />
 
       <section className="flex flex-col gap-2">
         <span className={ui.label}>{t("jobPlace")}</span>

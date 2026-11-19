@@ -95,8 +95,9 @@ export const orderCreateSchema = z
     if (o.category === "maintenance" && o.providerProfileId) {
       ctx.addIssue({ code: "custom", path: ["providerProfileId"], message: "Repair requests go to every tradesperson" });
     }
-    if (o.category === "errands" && o.photoPaths.length > 0) {
-      ctx.addIssue({ code: "custom", path: ["photoPaths"], message: "Photos are for repair jobs" });
+    // A photo of what to pick up or buy; a ride has nothing to show.
+    if (o.service === "moto_taxi" && o.photoPaths.length > 0) {
+      ctx.addIssue({ code: "custom", path: ["photoPaths"], message: "A ride has no photos" });
     }
     if (!o.pickupDistrictId && !o.pickupPoint) {
       ctx.addIssue({ code: "custom", path: ["pickupDistrictId"], message: "Choose where" });

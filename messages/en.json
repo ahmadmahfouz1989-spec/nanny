@@ -2754,7 +2754,11 @@
       "reopen_not_allowed": "Only an order with no provider, or one waiting for confirmation, can be reopened.",
       "already_closed": "This order is already closed.",
       "needs_approval": "Your Delivery & Errands profile needs to be approved first."
-    }
+    },
+    "errandPhotoPickup": "Photo of what to pick up (optional)",
+    "errandPhotoShopping": "Photo of what to buy (optional)",
+    "errandPhoto": "Photos (optional)",
+    "errandPhotoHint": "Helps the rider find the right thing. Up to 3 photos."
   },
   "PublicProfile": {
     "serviceIn": "{service} in {place}",
