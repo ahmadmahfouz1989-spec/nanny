@@ -7,7 +7,7 @@ import java.util.Map;
 
 /**
  * Takes the place of the push plugin's own receiver (AndroidManifest.xml):
- * call rings and cancels are handled here, every other push goes on to
+ * call rings, cancels and missed calls are handled here, every other push goes on to
  * the plugin as before.
  */
 public class CallMessagingService extends MessagingService {
@@ -17,6 +17,10 @@ public class CallMessagingService extends MessagingService {
         String kind = data.get("kind");
         if ("incoming".equals(kind)) {
             IncomingCalls.show(this, data);
+            return;
+        }
+        if ("missed".equals(kind)) {
+            MissedCalls.show(this, data);
             return;
         }
         if ("cancel".equals(kind)) {

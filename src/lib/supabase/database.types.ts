@@ -718,14 +718,14 @@ isOneToOne: true
                   ]
                 },"native_push_tokens": {
                   Row: {
-                    "created_at": string,"id": string,"locale": string,"platform": string,"rings_calls": boolean,"token": string,"updated_at": string,"user_id": string,"voip_token": string | null
+                    "created_at": string,"id": string,"locale": string,"missed_call_actions": boolean,"platform": string,"rings_calls": boolean,"token": string,"updated_at": string,"user_id": string,"voip_token": string | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"id"?: string,"locale"?: string,"platform": string,"rings_calls"?: boolean,"token": string,"updated_at"?: string,"user_id": string,"voip_token"?: string | null
+                    "created_at"?: string,"id"?: string,"locale"?: string,"missed_call_actions"?: boolean,"platform": string,"rings_calls"?: boolean,"token": string,"updated_at"?: string,"user_id": string,"voip_token"?: string | null
                   }
                   Update: {
-                    "created_at"?: string,"id"?: string,"locale"?: string,"platform"?: string,"rings_calls"?: boolean,"token"?: string,"updated_at"?: string,"user_id"?: string,"voip_token"?: string | null
+                    "created_at"?: string,"id"?: string,"locale"?: string,"missed_call_actions"?: boolean,"platform"?: string,"rings_calls"?: boolean,"token"?: string,"updated_at"?: string,"user_id"?: string,"voip_token"?: string | null
                   }
                   Relationships: [
                     {
@@ -1322,6 +1322,9 @@ isOneToOne: false
 { Args: { "p_active_since"?: string,"p_category"?: string,"p_limit"?: number,"p_offset"?: number }; Returns: {
               "category_name_ar": string,"category_name_en": string,"category_slug": string,"from_provider": number,"from_seeker": number,"last_message_at": string,"match_id": string,"messages": number,"provider_name": string,"provider_profile_id": string,"seeker_name": string,"seeker_profile_id": string,"started_at": string,"started_by_side": string,"status": string,"total_count": number
             }[]
+                           },
+"app_badge_count":
+{ Args: { "p_user": string }; Returns: number
                            },
 "award_points":
 { Args: { "p_note"?: string,"p_ref": string,"p_rule": string,"p_user": string }; Returns: number

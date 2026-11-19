@@ -12,4 +12,8 @@
     <string name="calls_incoming">Incoming call on ouiKnow</string>
     <string name="calls_ongoing_channel">Ongoing calls</string>
     <string name="calls_ongoing">Call in progress. Tap to return.</string>
+    <string name="calls_missed_channel">Missed calls</string>
+    <string name="calls_missed">Missed call</string>
+    <string name="calls_call_back">Call back</string>
+    <string name="calls_message">Message</string>
 </resources>

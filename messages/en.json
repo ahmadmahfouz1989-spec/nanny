@@ -3178,6 +3178,7 @@
       "ongoing": "Call in progress",
       "voiceCall": "Voice call"
     },
-    "loading": "Loading calls…"
+    "loading": "Loading calls…",
+    "speaker": "Speaker"
   }
 }

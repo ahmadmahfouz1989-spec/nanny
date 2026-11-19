@@ -1,6 +1,8 @@
+import AVFoundation
 import AuthenticationServices
 import Capacitor
 import UIKit
+import UserNotifications
 
 /// The website's side of calls on iPhone ("OuiCalls" in src/lib/native-app.ts):
 /// CallKit through CallManager, and Apple's sign-in sheet for Google sign-in.
@@ -15,6 +17,9 @@ public class CallsPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "callActive", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "callEnded", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "speaker", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setBadge", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "takeOpen", returnType: CAPPluginReturnPromise),
     ]
 
     private var tokenWaiters: [CAPPluginCall] = []
@@ -77,6 +82,41 @@ public class CallsPlugin: CAPPlugin, CAPBridgedPlugin {
             CallManager.shared.ended(callId: callId)
             call.resolve()
         }
+    }
+
+    /// Loudspeaker on or off during a call ({ on }), or just where the sound goes now.
+    @objc func speaker(_ call: CAPPluginCall) {
+        let on = call.getBool("on")
+        DispatchQueue.main.async {
+            let session = AVAudioSession.sharedInstance()
+            if let on = on {
+                do {
+                    try session.overrideOutputAudioPort(on ? .speaker : .none)
+                } catch {
+                    NSLog("[calls] speaker: \(error)")
+                }
+            }
+            let speaker = session.currentRoute.outputs.contains { $0.portType == .builtInSpeaker }
+            call.resolve(["on": speaker])
+        }
+    }
+
+    /// The number on the app icon: unread messages and missed calls.
+    @objc func setBadge(_ call: CAPPluginCall) {
+        let count = max(0, call.getInt("count") ?? 0)
+        DispatchQueue.main.async {
+            if #available(iOS 16.0, *) {
+                UNUserNotificationCenter.current().setBadgeCount(count) { _ in }
+            } else {
+                UIApplication.shared.applicationIconBadgeNumber = count
+            }
+            call.resolve()
+        }
+    }
+
+    /// Android's missed-call buttons; the iPhone's notification opens the Calls tab itself.
+    @objc func takeOpen(_ call: CAPPluginCall) {
+        call.resolve([:])
     }
 
     /// Google sign-in in Apple's sign-in sheet, which returns to the app by

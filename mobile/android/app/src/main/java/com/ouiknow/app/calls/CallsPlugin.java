@@ -1,7 +1,10 @@
 package com.ouiknow.app.calls;
 
 import android.app.NotificationManager;
+import android.content.Context;
 import android.content.Intent;
+import android.media.AudioDeviceInfo;
+import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
@@ -34,6 +37,23 @@ public class CallsPlugin extends Plugin {
         if ("ring".equals(action) && plugin != null && plugin.hasListeners("callAnswered")) return; // the website finds ringing calls itself
         IncomingCalls.pendingCallId = callId;
         IncomingCalls.pendingAction = action;
+    }
+
+    /** Pending tap on a missed-call notification (takeOpen), for a page that wasn't listening yet. */
+    private static JSObject pendingOpen;
+
+    /** A tap on the missed-call notification or its buttons: to the website now, or kept for takeOpen. */
+    public static void deliverOpen(String action, String matchId, String name) {
+        JSObject data = new JSObject();
+        data.put("action", action);
+        data.put("matchId", matchId);
+        data.put("name", name == null ? "" : name);
+        CallsPlugin plugin = instance;
+        if (plugin != null && plugin.hasListeners("open")) {
+            plugin.notifyListeners("open", data);
+            return;
+        }
+        pendingOpen = data;
     }
 
     static void notifyEnded(String callId) {
@@ -119,8 +139,73 @@ public class CallsPlugin extends Plugin {
     }
 
     @PluginMethod
+    public void takeOpen(PluginCall call) {
+        JSObject result = pendingOpen != null ? pendingOpen : new JSObject();
+        pendingOpen = null;
+        call.resolve(result);
+    }
+
+    /** Android shows notification dots by itself; the count is for iPhone. */
+    @PluginMethod
+    public void setBadge(PluginCall call) {
+        call.resolve();
+    }
+
+    private boolean speakerOn(AudioManager audio) {
+        if (Build.VERSION.SDK_INT >= 31) {
+            AudioDeviceInfo device = audio.getCommunicationDevice();
+            return device != null && device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER;
+        }
+        return audio.isSpeakerphoneOn();
+    }
+
+    /** Loudspeaker on or off during a call ({ on }), or just where the sound goes now. */
+    @PluginMethod
+    public void speaker(PluginCall call) {
+        AudioManager audio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        JSObject result = new JSObject();
+        if (audio == null) {
+            result.put("on", false);
+            call.resolve(result);
+            return;
+        }
+        Boolean on = call.getBoolean("on");
+        if (on != null) {
+            if (Build.VERSION.SDK_INT >= 31) {
+                if (on) {
+                    for (AudioDeviceInfo device : audio.getAvailableCommunicationDevices()) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_SPEAKER) {
+                            audio.setCommunicationDevice(device);
+                            break;
+                        }
+                    }
+                } else {
+                    // The earpiece (or a headset, if one is connected).
+                    AudioDeviceInfo earpiece = null;
+                    for (AudioDeviceInfo device : audio.getAvailableCommunicationDevices()) {
+                        if (device.getType() == AudioDeviceInfo.TYPE_BUILTIN_EARPIECE) earpiece = device;
+                    }
+                    if (earpiece != null) audio.setCommunicationDevice(earpiece);
+                    else audio.clearCommunicationDevice();
+                }
+            } else {
+                audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
+                audio.setSpeakerphoneOn(on);
+            }
+        }
+        result.put("on", speakerOn(audio));
+        call.resolve(result);
+    }
+
+    @PluginMethod
     public void callEnded(PluginCall call) {
         IncomingCalls.cancel(getContext(), call.getString("callId"));
+        // Leave the sound where the phone normally has it.
+        AudioManager audio = (AudioManager) getContext().getSystemService(Context.AUDIO_SERVICE);
+        if (audio != null) {
+            if (Build.VERSION.SDK_INT >= 31) audio.clearCommunicationDevice();
+            else audio.setSpeakerphoneOn(false);
+        }
         CallService.stop(getContext());
         if (getActivity() instanceof MainActivity) getActivity().runOnUiThread(() -> ((MainActivity) getActivity()).leaveCallMode());
         call.resolve();

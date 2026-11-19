@@ -74,4 +74,19 @@ describe("call history", () => {
     const outsider = await createUser("calls-outsider");
     expect((await outsider.client.from("calls").select("id").eq("id", id)).data).toHaveLength(0);
   });
+
+  it("counts unread messages and unseen missed calls for the app icon", async () => {
+    await admin.from("calls").update({ seen_at: new Date().toISOString() }).eq("callee_id", nanny.id);
+    await admin.from("generic_messages").update({ read_at: new Date().toISOString() }).eq("match_id", matchId);
+    const badge = async (id: string) => (await admin.rpc("app_badge_count", { p_user: id })).data;
+    expect(await badge(nanny.id)).toBe(0);
+
+    await family.client.from("generic_messages").insert({ match_id: matchId, sender_id: family.id, body: "Are you free Monday?" });
+    await call({ status: "missed", ended_at: ago(1) });
+    expect(await badge(nanny.id)).toBe(2);
+    // Their own message doesn't count for the sender.
+    expect(await badge(family.id)).toBe(0);
+    // Only the server can ask.
+    expect((await nanny.client.rpc("app_badge_count", { p_user: nanny.id })).error).not.toBeNull();
+  });
 });

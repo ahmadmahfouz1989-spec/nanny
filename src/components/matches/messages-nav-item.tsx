@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { ChatIcon } from "@/components/nav-icons";
 import { UNREAD_CHANGED_EVENT } from "@/lib/unread-events";
+import { nativeCalls } from "@/lib/native-app";
 
 function useUnreadCount(signedIn: boolean) {
   const [unreadCount, setUnreadCount] = useState(0);
@@ -30,6 +31,8 @@ function useUnreadCount(signedIn: boolean) {
             (body.conversations ?? []).reduce((sum: number, c: { unreadCount: number }) => sum + c.unreadCount, 0) +
             (body.missedCalls ?? 0);
           setUnreadCount(total);
+          // The app icon shows the same number (iPhone, apps from 1.6).
+          nativeCalls()?.setBadge?.({ count: total }).catch(() => {});
         })
         .catch(() => {});
     }

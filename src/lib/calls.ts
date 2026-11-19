@@ -159,6 +159,21 @@ export function cancelRinging(callId: string, calleeId: string, reason: "answere
   });
 }
 
+/**
+ * Android apps from 1.6 show the missed-call notification themselves, with
+ * Call back and Message buttons (MissedCalls.java): they get it as data.
+ */
+async function missedCallPhones(calleeId: string) {
+  if (!fcmEnabled()) return [];
+  const { data, error } = await createAdminClient()
+    .from("native_push_tokens")
+    .select("token, locale")
+    .eq("user_id", calleeId)
+    .eq("platform", "android")
+    .eq("missed_call_actions", true);
+  return error ? [] : (data ?? []);
+}
+
 /** Replaces the ringing notification with a missed-call one. */
 export function pushMissedCall(callId: string) {
   if (!anyPushEnabled()) return;
@@ -175,15 +190,42 @@ export function pushMissedCall(callId: string) {
           .eq("user_id", call.caller_id)
           .maybeSingle()
       : { data: null };
-    await sendPush([call.callee_id], (locale) => {
-      const t = pushTranslator(locale, "Push");
-      return {
-        title: callerProfile?.full_name || t("someone"),
-        body: t("missedCall"),
-        url: `/${locale}/messages?tab=calls`,
-        tag: `call-${callId}`,
-      };
-    });
+    const phones = await missedCallPhones(call.callee_id);
+    await Promise.all([
+      ...(["en", "ar"] as const).map((locale) => {
+        const tokens = phones.filter((p) => (p.locale === "ar" ? "ar" : "en") === locale).map((p) => p.token);
+        if (tokens.length === 0) return null;
+        const t = pushTranslator(locale, "Push");
+        const tc = pushTranslator(locale, "Calls");
+        return sendFcmData(
+          tokens,
+          {
+            kind: "missed",
+            callId,
+            matchId: call.match_id,
+            name: callerProfile?.full_name ?? "",
+            title: callerProfile?.full_name || t("someone"),
+            body: t("missedCall"),
+            callBack: tc("callBack"),
+            message: tc("message"),
+          },
+          24 * 60 * 60,
+        );
+      }),
+      sendPush(
+        [call.callee_id],
+        (locale) => {
+          const t = pushTranslator(locale, "Push");
+          return {
+            title: callerProfile?.full_name || t("someone"),
+            body: t("missedCall"),
+            url: `/${locale}/messages?tab=calls`,
+            tag: `call-${callId}`,
+          };
+        },
+        { skipNativeTokens: new Set(phones.map((p) => p.token)) },
+      ),
+    ]);
   });
 }
 

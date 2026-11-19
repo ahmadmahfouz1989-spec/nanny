@@ -4,4 +4,8 @@
     <string name="calls_incoming">مكالمة واردة على ouiKnow</string>
     <string name="calls_ongoing_channel">المكالمات الجارية</string>
     <string name="calls_ongoing">مكالمة جارية. اضغط للعودة.</string>
+    <string name="calls_missed_channel">المكالمات الفائتة</string>
+    <string name="calls_missed">مكالمة فائتة</string>
+    <string name="calls_call_back">رجّع اتصل</string>
+    <string name="calls_message">راسل</string>
 </resources>

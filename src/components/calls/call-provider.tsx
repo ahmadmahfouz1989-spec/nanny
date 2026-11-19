@@ -9,7 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getJson, request } from "@/lib/request";
 import { useRouter } from "@/i18n/navigation";
 import { announceUnreadChanged } from "@/lib/unread-events";
-import { haptic, nativeCalls } from "@/lib/native-app";
+import { haptic, nativeCalls, type MissedCallOpen } from "@/lib/native-app";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { MicIcon } from "@/components/nav-icons";
 import { PhoneIcon } from "@/components/calls/phone-icon";
@@ -240,6 +240,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [view, setView] = useState<View | null>(null);
   const [muted, setMuted] = useState(false);
+  // Loudspeaker on/off; null where the phone can't switch it (browsers, apps before 1.6).
+  const [speaker, setSpeaker] = useState<boolean | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const sessionRef = useRef<Session | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -283,6 +285,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       // The phone's own ringing, call screen and ongoing-call notification go too.
       if (session.id) nativeCalls()?.callEnded({ callId: session.id }).catch(() => {});
       setMuted(false);
+      setSpeaker(null);
       setView((v) =>
         v
           ? { ...v, phase: "ended", reason, activeSince: undefined, minimized: false, reconnecting: false, poorConnection: false, notInApp: false }
@@ -503,6 +506,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           session.stopTone = null;
           haptic("success");
           if (session.id) nativeCalls()?.callActive({ callId: session.id, name: session.name }).catch(() => {});
+          // Where the sound comes out now (the phone picks the speaker or the earpiece first).
+          nativeCalls()
+            ?.speaker?.()
+            .then((r) => !session.closed && setSpeaker(r.on))
+            .catch(() => {});
           setView((v) => (v && v.phase !== "active" ? { ...v, phase: "active", activeSince: Date.now() } : v));
         } else if (state === "failed" || state === "disconnected") {
           // Never connected: nothing to come back to.
@@ -784,6 +792,31 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     router.push(`/messages?match=${matchId}`);
   }, [view, router]);
 
+  const toggleSpeaker = useCallback(() => {
+    if (speaker === null) return;
+    nativeCalls()
+      ?.speaker?.({ on: !speaker })
+      .then((r) => setSpeaker(r.on))
+      .catch(() => {});
+  }, [speaker]);
+
+  // Android's missed-call notification (apps from 1.6): opened, Call back or Message.
+  useEffect(() => {
+    const calls = nativeCalls();
+    if (!userId || !calls?.takeOpen) return;
+    const open = ({ action, matchId, name }: MissedCallOpen) => {
+      if (action === "callback" && matchId) void startCall(matchId, { name: name ?? "", photoUrl: null });
+      else if (action === "message" && matchId) router.push(`/messages?match=${matchId}`);
+      else if (action === "calls") router.push("/messages?tab=calls");
+    };
+    calls
+      .takeOpen()
+      .then((pending) => pending.action && open(pending))
+      .catch(() => {});
+    const sub = calls.addListener("open", open);
+    return () => void Promise.resolve(sub).then((h) => h.remove()).catch(() => {});
+  }, [userId, startCall, router]);
+
   const toggleMute = useCallback(() => {
     const stream = sessionRef.current?.stream;
     setMuted((m) => {
@@ -808,6 +841,8 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           view={view}
           elapsed={elapsed}
           muted={muted}
+          speaker={speaker}
+          onToggleSpeaker={toggleSpeaker}
           onAccept={accept}
           onDecline={decline}
           onHangUp={hangUp}
@@ -828,6 +863,8 @@ function CallScreen({
   view,
   elapsed,
   muted,
+  speaker,
+  onToggleSpeaker,
   onAccept,
   onDecline,
   onHangUp,
@@ -840,6 +877,8 @@ function CallScreen({
   view: View;
   elapsed: number;
   muted: boolean;
+  speaker: boolean | null;
+  onToggleSpeaker: () => void;
   onAccept: () => void;
   onDecline: () => void;
   onHangUp: () => void;
@@ -977,6 +1016,23 @@ function CallScreen({
             </button>
             <span className="text-sm text-muted">{muted ? t("unmute") : t("mute")}</span>
           </div>
+          {speaker !== null && (
+            <div className="flex flex-col items-center gap-2">
+              <button
+                type="button"
+                onClick={onToggleSpeaker}
+                aria-pressed={speaker}
+                aria-label={t("speaker")}
+                className={`${roundButton} ${speaker ? "bg-ink text-surface" : "bg-surface-sunken text-ink"}`}
+              >
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+                  <path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" strokeLinejoin="round" />
+                  <path d="M15.5 9a4 4 0 010 6M18 6.5a7.5 7.5 0 010 11" strokeLinecap="round" />
+                </svg>
+              </button>
+              <span className="text-sm text-muted">{t("speaker")}</span>
+            </div>
+          )}
           <div className="flex flex-col items-center gap-2">
             <button type="button" onClick={onHangUp} aria-label={t("hangUp")} className={`${roundButton} bg-danger text-white`}>
               <PhoneIcon className="h-7 w-7 rotate-[135deg]" />

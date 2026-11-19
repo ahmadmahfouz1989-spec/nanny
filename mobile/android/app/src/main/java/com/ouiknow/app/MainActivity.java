@@ -8,6 +8,7 @@ import android.view.WindowManager;
 import com.getcapacitor.BridgeActivity;
 import com.ouiknow.app.calls.CallsPlugin;
 import com.ouiknow.app.calls.IncomingCalls;
+import com.ouiknow.app.calls.MissedCalls;
 
 public class MainActivity extends BridgeActivity {
     @Override
@@ -17,12 +18,24 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(CallsPlugin.class);
         super.onCreate(savedInstanceState);
         handleCall(getIntent());
+        handleMissedCall(getIntent());
     }
 
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleCall(intent);
+        handleMissedCall(intent);
+    }
+
+    /** Opened from a missed-call notification: the Calls tab, Call back or Message. */
+    private void handleMissedCall(Intent intent) {
+        String action = intent == null ? null : intent.getStringExtra(MissedCalls.EXTRA_OPEN);
+        if (action == null) return;
+        String matchId = intent.getStringExtra(MissedCalls.EXTRA_MATCH_ID);
+        intent.removeExtra(MissedCalls.EXTRA_OPEN);
+        MissedCalls.cancel(this, matchId);
+        CallsPlugin.deliverOpen(action, matchId, intent.getStringExtra(MissedCalls.EXTRA_NAME));
     }
 
     /** Opened from an incoming call (ringing, or Answer): show over the lock screen. */

@@ -101,6 +101,8 @@ public final class IncomingCalls {
         notification.flags |= Notification.FLAG_INSISTENT;
         try {
             context.getSystemService(NotificationManager.class).notify(id, notification);
+            // It's ringing here: the caller's screen says "Ringing…".
+            CallActionReceiver.tellServer(callId, data.get("actionToken"), "reached", null);
         } catch (SecurityException e) {
             // Notifications turned off for the app: nothing to ring with.
         }

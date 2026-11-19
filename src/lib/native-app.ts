@@ -70,11 +70,21 @@ export type CallsPlugin = {
   fullScreenCalls?(): Promise<{ needsPermission: boolean; allowed: boolean }>;
   /** Android builds from 1.5: the phone's own switch for full-screen calls. */
   openFullScreenCallsSettings?(): Promise<void>;
+  /** Builds from 1.6: loudspeaker on or off (no `on`: just ask). */
+  speaker?(o?: { on?: boolean }): Promise<{ on: boolean }>;
+  /** Builds from 1.6: the number on the app icon (iPhone; Android shows dots by itself). */
+  setBadge?(o: { count: number }): Promise<void>;
+  /** Builds from 1.6: a tap on the missed-call notification (or its buttons) the page wasn't listening for yet. */
+  takeOpen?(): Promise<MissedCallOpen>;
   /** iPhone: sign in through Apple's sign-in sheet; the URL it came back with. */
   signIn?(o: { url: string; scheme: string }): Promise<{ url: string }>;
   addListener(event: "callAnswered" | "callEnded", cb: (e: { callId: string }) => void): Listener | Promise<Listener>;
   addListener(event: "voipToken", cb: (e: { token: string }) => void): Listener | Promise<Listener>;
+  addListener(event: "open", cb: (e: MissedCallOpen) => void): Listener | Promise<Listener>;
 };
+
+/** Android's missed-call notification: opened, Call back or Message. */
+export type MissedCallOpen = { action?: "calls" | "callback" | "message"; matchId?: string; name?: string };
 
 type CapacitorGlobal = {
   isNativePlatform(): boolean;
@@ -245,7 +255,14 @@ export async function enableNativePush(locale: string): Promise<PermissionState 
   const res = await fetch("/api/push/native", {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ token, platform: cap.getPlatform(), locale, voipToken, ringsCalls: calls ? true : undefined }),
+    body: JSON.stringify({
+      token,
+      platform: cap.getPlatform(),
+      locale,
+      voipToken,
+      ringsCalls: calls ? true : undefined,
+      missedCallActions: calls?.takeOpen && cap.getPlatform() === "android" ? true : undefined,
+    }),
   });
   if (!res.ok) throw new Error(`native token save failed (${res.status})`);
   try {

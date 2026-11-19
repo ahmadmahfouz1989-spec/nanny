@@ -27,6 +27,19 @@ public class CallActionReceiver extends BroadcastReceiver {
         if (callId == null || token == null) return;
 
         final PendingResult result = goAsync();
+        // The caller's phone stops ringing on its own after 45 seconds if this fails.
+        tellServer(callId, token, "decline", result::finish);
+    }
+
+    /**
+     * Tells the server about this call with the token the ring carried:
+     * "decline", or "reached" (ringing here: the caller sees "Ringing…").
+     */
+    static void tellServer(String callId, String token, String action, Runnable done) {
+        if (callId == null || token == null) {
+            if (done != null) done.run();
+            return;
+        }
         new Thread(() -> {
             HttpURLConnection connection = null;
             try {
@@ -36,16 +49,16 @@ public class CallActionReceiver extends BroadcastReceiver {
                 connection.setReadTimeout(8000);
                 connection.setDoOutput(true);
                 connection.setRequestProperty("Content-Type", "application/json");
-                JSONObject body = new JSONObject().put("token", token).put("action", "decline");
+                JSONObject body = new JSONObject().put("token", token).put("action", action);
                 try (OutputStream out = connection.getOutputStream()) {
                     out.write(body.toString().getBytes(StandardCharsets.UTF_8));
                 }
                 connection.getResponseCode();
             } catch (Exception ignored) {
-                // The caller's phone stops ringing on its own after 45 seconds.
+                // Best effort.
             } finally {
                 if (connection != null) connection.disconnect();
-                result.finish();
+                if (done != null) done.run();
             }
         }).start();
     }

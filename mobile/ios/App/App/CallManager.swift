@@ -138,6 +138,8 @@ extension CallManager: PKPushRegistryDelegate {
                     self.provider.reportCall(with: uuid, endedAt: Date(), reason: .unanswered)
                 }
                 self.calls[uuid] = Ringing(callId: callId, actionToken: token, answered: false, timer: timer)
+                // It's ringing here: the caller's screen says "Ringing…".
+                self.tellServer(callId: callId, token: token, action: "reached")
             }
             return
         }

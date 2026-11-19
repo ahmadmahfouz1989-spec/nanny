@@ -127,19 +127,31 @@ async function sendNativePush(userIds: string[], build: (locale: Locale) => Push
       .select("id, user_id, token, platform, locale")
       .in("user_id", userIds);
 
-    // One send per platform and language, so each batch shares its text.
+    // One send per platform and language, so each batch shares its text --
+    // and per person on iPhones, whose icon shows their own count.
     const gone: string[] = [];
     const batches = new Map<string, NonNullable<typeof rows>>();
     for (const row of rows ?? []) {
       if (skip?.has(row.token)) continue;
-      const key = `${row.platform}:${row.locale === "ar" ? "ar" : "en"}`;
+      const key = `${row.platform}:${row.locale === "ar" ? "ar" : "en"}:${row.platform === "ios" ? row.user_id : ""}`;
       batches.set(key, [...(batches.get(key) ?? []), row]);
     }
+    const badges = new Map<string, number>();
+    await Promise.all(
+      [...new Set((rows ?? []).filter((r) => r.platform === "ios").map((r) => r.user_id))].map(async (userId) => {
+        // Unread messages + missed calls (20261119000002); before it, no number.
+        const { data, error } = await admin.rpc("app_badge_count", { p_user: userId });
+        if (!error && typeof data === "number") badges.set(userId, data);
+      }),
+    );
     await Promise.all(
       [...batches].map(async ([key, batch]) => {
         const [platform, locale] = key.split(":") as ["ios" | "android", Locale];
-        const send = platform === "ios" ? sendApns : sendFcm;
-        const results = await send(batch.map((r) => r.token), build(locale));
+        const message = build(locale);
+        const results =
+          platform === "ios"
+            ? await sendApns(batch.map((r) => r.token), { ...message, badge: badges.get(batch[0].user_id) })
+            : await sendFcm(batch.map((r) => r.token), message);
         results.forEach((result, i) => {
           if (result === "gone") gone.push(batch[i].id);
           else count(counts, batch[i].user_id, result);
@@ -167,7 +179,7 @@ export function sendPushAfterResponse(userIds: string[], build: (locale: Locale)
 }
 
 /** Untyped-key translator, the same shape the bell gets from useTranslations. */
-export function pushTranslator(locale: Locale, namespace: "Notifications" | "Push" | "Nav") {
+export function pushTranslator(locale: Locale, namespace: "Notifications" | "Push" | "Nav" | "Calls") {
   const t = createTranslator({ locale, messages: MESSAGES[locale] as AbstractIntlMessages, namespace });
   return t as unknown as (key: string, values?: Record<string, string | number>) => string;
 }

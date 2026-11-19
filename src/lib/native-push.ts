@@ -17,7 +17,7 @@ import http2 from "node:http2";
  *                        → Service accounts → Generate new private key)
  */
 
-export type NativeMessage = { title: string; body: string; url: string; tag?: string };
+export type NativeMessage = { title: string; body: string; url: string; tag?: string; /** iPhone: the number on the app icon. */ badge?: number };
 
 /** "sent", "gone" (the app was uninstalled or the token is dead -- forget it), or "failed". */
 export type SendResult = "sent" | "gone" | "failed";
@@ -60,7 +60,7 @@ const BUNDLE_ID = () => process.env.APNS_BUNDLE_ID || "com.ouiknow.app";
 /** Sends to iPhone device tokens over one HTTP/2 connection. */
 export async function sendApns(tokens: string[], message: NativeMessage): Promise<SendResult[]> {
   const payload = JSON.stringify({
-    aps: { alert: { title: message.title, body: message.body }, sound: "default" },
+    aps: { alert: { title: message.title, body: message.body }, sound: "default", ...(message.badge !== undefined ? { badge: message.badge } : {}) },
     url: message.url,
   });
   return apnsSend(tokens, payload, { pushType: "alert", topic: BUNDLE_ID(), expiresIn: 24 * 60 * 60, collapseId: message.tag });

@@ -24,6 +24,8 @@ const registerSchema = z.object({
   // iPhone's PushKit token, and Android saying it can show the call screen.
   voipToken: z.string().regex(/^[0-9a-fA-F]{32,200}$/).optional(),
   ringsCalls: z.boolean().optional(),
+  // Android 1.6+: shows the missed-call notification itself (Call back / Message).
+  missedCallActions: z.boolean().optional(),
 });
 
 export async function PUT(request: Request) {
@@ -40,10 +42,13 @@ export async function PUT(request: Request) {
 
   // Upsert on token: an install that signs in as someone else moves to
   // that account instead of keeping the old one's notifications.
-  const { token, platform, locale, voipToken, ringsCalls } = parsed.data;
+  const { token, platform, locale, voipToken, ringsCalls, missedCallActions } = parsed.data;
   const db = createAdminClient();
   // Older apps send neither: their row is written exactly as before.
-  const calls = voipToken || ringsCalls ? { voip_token: voipToken ?? null, rings_calls: !!ringsCalls } : {};
+  const calls = {
+    ...(voipToken || ringsCalls ? { voip_token: voipToken ?? null, rings_calls: !!ringsCalls } : {}),
+    ...(missedCallActions ? { missed_call_actions: true } : {}),
+  };
   // A PushKit token moves with the install, like the token itself.
   if (voipToken) await db.from("native_push_tokens").update({ voip_token: null }).eq("voip_token", voipToken).neq("token", token);
   const { error } = await db
