@@ -6,6 +6,7 @@ import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson } from "@/lib/request";
 import { Link } from "@/i18n/navigation";
+import { formatCallLength } from "@/lib/call-history";
 
 type CategoryStats = {
   slug: string;
@@ -25,7 +26,12 @@ type Analytics = {
   conversations: number;
   openReports: number;
   suspendedUsers: number;
+  calls?: { total: number; answered: number; noAnswer: number; failed: number; avgSeconds: number | null };
 };
+
+function percent(part: number, total: number) {
+  return total ? `${Math.round((part / total) * 100)}%` : "—";
+}
 
 export default function AdminOverviewPage() {
   const t = useTranslations("Admin");
@@ -67,6 +73,26 @@ export default function AdminOverviewPage() {
           );
         })}
       </div>
+
+      {data?.calls && (
+        <>
+          <h2 className="font-display text-xl font-semibold mt-10 mb-4">{t("callsTitle")}</h2>
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+            {[
+              { label: t("statCalls"), value: String(data.calls.total) },
+              { label: t("statAnswered"), value: percent(data.calls.answered, data.calls.total) },
+              { label: t("statNoAnswer"), value: percent(data.calls.noAnswer, data.calls.total) },
+              { label: t("statFailed"), value: percent(data.calls.failed, data.calls.total) },
+              { label: t("statAvgLength"), value: data.calls.avgSeconds === null ? "—" : formatCallLength(data.calls.avgSeconds) },
+            ].map((tile) => (
+              <div key={tile.label} className={ui.card + " p-5"}>
+                <p className="text-2xl font-display font-semibold tabular-nums">{tile.value}</p>
+                <p className="text-xs text-muted mt-1">{tile.label}</p>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="font-display text-xl font-semibold mt-10 mb-4">{t("byCategoryTitle")}</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

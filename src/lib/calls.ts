@@ -89,7 +89,7 @@ export function validCallActionToken(callId: string, calleeId: string, token: st
 type RingRow = { token: string; platform: string; voip_token: string | null; rings_calls: boolean };
 
 /** The callee's app installs that ring for calls themselves (iPhone CallKit, Android call screen). */
-async function ringingDevices(calleeId: string): Promise<RingRow[]> {
+export async function ringingDevices(calleeId: string): Promise<RingRow[]> {
   const { data, error } = await createAdminClient()
     .from("native_push_tokens")
     .select("token, platform, voip_token, rings_calls")
@@ -152,6 +152,7 @@ export function pushIncomingCall(calleeId: string, callId: string, matchId: stri
  * phone that answered ignores this), declined, or the caller gave up.
  */
 export function cancelRinging(callId: string, calleeId: string, reason: "answered" | "declined" | "ended") {
+  if (!apnsEnabled() && !fcmEnabled()) return;
   after(async () => {
     const rows = await ringingDevices(calleeId);
     if (rows.length) await ring(rows, { kind: "cancel", callId, reason }, 60);
@@ -179,9 +180,79 @@ export function pushMissedCall(callId: string) {
       return {
         title: callerProfile?.full_name || t("someone"),
         body: t("missedCall"),
-        url: `/${locale}/messages?match=${call.match_id}`,
+        url: `/${locale}/messages?tab=calls`,
         tag: `call-${callId}`,
       };
     });
   });
+}
+
+/**
+ * Whether this person takes calls in this conversation: off for everyone
+ * (Settings), or just here (the conversation's menu).
+ */
+export async function takesCalls(db: Admin, userId: string, matchId: string) {
+  const [{ data: user }, { count }] = await Promise.all([
+    db.from("users").select("accepts_calls").eq("id", userId).maybeSingle(),
+    db.from("call_mutes").select("match_id", { count: "exact", head: true }).eq("user_id", userId).eq("match_id", matchId),
+  ]);
+  return user?.accepts_calls !== false && (count ?? 0) === 0;
+}
+
+/** Statuses that count as a missed call for the person called. */
+export const MISSED_STATUSES: CallStatus[] = ["missed", "busy"];
+
+/** The callee has looked at these missed calls: they stop counting on the badge. */
+export async function markMissedCallsSeen(db: Admin, userId: string, matchId?: string) {
+  let query = db
+    .from("calls")
+    .update({ seen_at: new Date().toISOString() })
+    .eq("callee_id", userId)
+    .is("seen_at", null)
+    .in("status", MISSED_STATUSES);
+  if (matchId) query = query.eq("match_id", matchId);
+  await query;
+}
+
+/** Unseen missed calls, for the Messages badge. */
+export async function unseenMissedCalls(db: Admin, userId: string) {
+  const { count } = await db
+    .from("calls")
+    .select("id", { count: "exact", head: true })
+    .eq("callee_id", userId)
+    .is("seen_at", null)
+    .in("status", MISSED_STATUSES);
+  return count ?? 0;
+}
+
+/**
+ * Rings nobody ended: the caller's app closed or lost its connection while
+ * ringing, so it never said "no answer". Run by the cron every 30 s; a
+ * little after the ring would have ended, so the caller's own timer
+ * normally gets there first. Each call is moved once (the update only
+ * matches a ringing row), so the missed-call push goes out once.
+ */
+export async function sweepStaleCalls(db: Admin) {
+  const cutoff = new Date(Date.now() - (RING_SECONDS + 15) * 1000).toISOString();
+  const { data: stale } = await db
+    .from("calls")
+    .select("id, callee_id")
+    .eq("status", "ringing")
+    .lt("created_at", cutoff)
+    .limit(100);
+  let moved = 0;
+  for (const call of stale ?? []) {
+    const { data } = await db
+      .from("calls")
+      .update({ status: "missed", ended_at: new Date().toISOString() })
+      .eq("id", call.id)
+      .eq("status", "ringing")
+      .select("id")
+      .maybeSingle();
+    if (!data) continue;
+    moved++;
+    cancelRinging(call.id, call.callee_id, "ended");
+    pushMissedCall(call.id);
+  }
+  return moved;
 }

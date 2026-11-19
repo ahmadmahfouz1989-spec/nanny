@@ -29,6 +29,7 @@ export async function GET() {
     { data: conversations },
     { count: openReports },
     { count: suspendedUsers },
+    { data: recentCalls },
   ] = await Promise.all([
     db.from("categories").select("id, slug, name_en, name_ar, status").order("sort_order", { ascending: true }),
     // A draft row is just a claimed role with nothing filled in yet (see
@@ -37,7 +38,27 @@ export async function GET() {
     db.from("generic_matches").select("category_id").not("last_message_at", "is", null),
     db.from("reports").select("id", { count: "exact", head: true }).eq("status", "open"),
     db.from("users").select("id", { count: "exact", head: true }).eq("status", "suspended"),
+    db
+      .from("calls")
+      .select("status, answered_at, ended_at")
+      .gte("created_at", new Date(Date.now() - 30 * 86_400_000).toISOString())
+      .limit(20000),
   ]);
+
+  // Whether calls actually connect: answered, never picked up, or the two
+  // phones couldn't reach each other (a sign the relay servers aren't working).
+  const callRows = recentCalls ?? [];
+  const lengths = callRows
+    .filter((c) => c.answered_at && c.ended_at)
+    .map((c) => (Date.parse(c.ended_at!) - Date.parse(c.answered_at!)) / 1000)
+    .filter((sec) => sec >= 0 && sec < 4 * 3600);
+  const calls = {
+    total: callRows.length,
+    answered: callRows.filter((c) => c.answered_at).length,
+    noAnswer: callRows.filter((c) => !c.answered_at && ["missed", "declined", "busy"].includes(c.status)).length,
+    failed: callRows.filter((c) => c.status === "failed").length,
+    avgSeconds: lengths.length ? Math.round(lengths.reduce((a, b) => a + b, 0) / lengths.length) : null,
+  };
 
   const stats: CategoryStats[] = (categories ?? []).map((category) => {
     const mine = (profiles ?? []).filter((p) => p.category_id === category.id);
@@ -60,5 +81,6 @@ export async function GET() {
     conversations: stats.reduce((sum, c) => sum + c.conversations, 0),
     openReports: openReports ?? 0,
     suspendedUsers: suspendedUsers ?? 0,
+    calls,
   });
 }

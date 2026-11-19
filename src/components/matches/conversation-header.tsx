@@ -11,7 +11,7 @@ import { Link } from "@/i18n/navigation";
 import { MoreIcon } from "@/components/nav-icons";
 import CallButton from "@/components/calls/call-button";
 import { MATCHES_API } from "@/lib/matching/match-access";
-import { request } from "@/lib/request";
+import { getJson, request } from "@/lib/request";
 
 /** Header for an open conversation, in any category. */
 export default function ConversationHeader({
@@ -37,6 +37,30 @@ export default function ConversationHeader({
 }) {
   const t = useTranslations("Matches");
   const tInbox = useTranslations("Inbox");
+  const tCalls = useTranslations("Calls");
+  // Calls from this person off (null until the menu has asked).
+  const [callsMuted, setCallsMuted] = useState<boolean | null>(null);
+  const [mutingCalls, setMutingCalls] = useState(false);
+
+  function openMenu() {
+    setMenuOpen((v) => !v);
+    if (callsMuted === null) {
+      getJson<{ muted: boolean }>(`/api/calls/preferences?match=${matchId}`).then((body) => body && setCallsMuted(body.muted));
+    }
+  }
+
+  async function toggleCalls() {
+    if (callsMuted === null) return;
+    const next = !callsMuted;
+    setMutingCalls(true);
+    const res = await request("/api/calls/preferences", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ matchId, muted: next }),
+    });
+    setMutingCalls(false);
+    if (res?.ok) setCallsMuted(next);
+  }
   const [menuOpen, setMenuOpen] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [blockError, setBlockError] = useState(false);
@@ -94,7 +118,7 @@ export default function ConversationHeader({
         <CallButton matchId={matchId} name={name} photoUrl={photoUrl} />
         <button
           type="button"
-          onClick={() => setMenuOpen((v) => !v)}
+          onClick={openMenu}
           aria-label={tInbox("menu")}
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink"
         >
@@ -106,6 +130,14 @@ export default function ConversationHeader({
             <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
             <div className="absolute top-full end-4 mt-1 w-64 rounded-xl border border-border bg-surface shadow-lg p-3 z-20 flex flex-col gap-2">
               <RatingButton matchId={matchId} counterpartName={name} />
+              {callsMuted !== null && (
+                <div className="border-t border-border pt-2">
+                  <button type="button" onClick={toggleCalls} disabled={mutingCalls} className="text-sm text-ink hover:underline disabled:opacity-60 text-start">
+                    {callsMuted ? tCalls("unmuteCalls", { name }) : tCalls("muteCalls", { name })}
+                  </button>
+                  {!callsMuted && <p className="text-xs text-muted mt-1">{tCalls("muteHint")}</p>}
+                </div>
+              )}
               <div className="border-t border-border pt-2">
                 <ReportButton profileId={profileId} matchId={matchId} />
               </div>

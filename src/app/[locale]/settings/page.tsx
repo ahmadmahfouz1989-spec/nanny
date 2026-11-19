@@ -6,6 +6,7 @@ import DeleteAccountCard from "@/components/delete-account-card";
 import AccountDetailsCard from "@/components/account-details-card";
 import PushNotificationsCard from "@/components/push-notifications-card";
 import FullScreenCallsCard from "@/components/full-screen-calls-card";
+import CallsSettingsCard from "@/components/calls/calls-settings-card";
 import SettingsRows, { SignOutRow } from "@/components/settings-rows";
 import { ChevronIcon, DocumentIcon, WhatsAppIcon } from "@/components/home-icons";
 import { SUPPORT_WHATSAPP } from "@/lib/support";
@@ -35,6 +36,7 @@ export default async function SettingsPage() {
         </div>
 
         <PushNotificationsCard />
+        <CallsSettingsCard />
         <FullScreenCallsCard />
 
         <p className={label}>{t("help")}</p>

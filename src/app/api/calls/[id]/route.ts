@@ -9,7 +9,7 @@ import { cancelRinging, profileCard, pushMissedCall, ringCutoff, type CallStatus
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const actionSchema = z.object({ action: z.enum(["accept", "decline", "busy", "end", "failed"]) });
+const actionSchema = z.object({ action: z.enum(["accept", "decline", "busy", "end", "failed", "reached"]) });
 
 /** The call, if you're one of its two people (RLS). */
 async function load(id: string) {
@@ -41,7 +41,8 @@ export async function GET(_request: Request, { params }: Ctx) {
 }
 
 /**
- * Moves a call along: the callee accepts, declines or is busy; either side
+ * Moves a call along: the callee's app says it's ringing ("reached"),
+ * the callee accepts, declines or is busy; either side
  * ends it (before an answer, the caller hanging up makes it a missed
  * call); "failed" when the two phones couldn't connect. Body as JSON, or
  * as text from navigator.sendBeacon when the page is closing.
@@ -81,6 +82,12 @@ export async function POST(request: Request, { params }: Ctx) {
 
   let status: string | null = null;
   switch (action) {
+    case "reached": {
+      // The callee's app got the call and is ringing: the caller sees "Ringing…".
+      if (isCaller) return NextResponse.json({ error: "Not your call" }, { status: 403 });
+      await db.from("calls").update({ reached_at: now }).eq("id", call.id).eq("status", "ringing").is("reached_at", null);
+      return NextResponse.json({ status: call.status });
+    }
     case "accept": {
       if (isCaller) return NextResponse.json({ error: "Not your call to answer" }, { status: 403 });
       if (call.created_at < ringCutoff()) {

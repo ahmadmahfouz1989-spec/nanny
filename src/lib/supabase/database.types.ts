@@ -82,16 +82,42 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
-                },"calls": {
+                },"call_mutes": {
                   Row: {
-                    "answered_at": string | null,"callee_id": string,"caller_id": string,"created_at": string,"ended_at": string | null,"id": string,"match_id": string,"status": string
+                    "created_at": string,"match_id": string,"user_id": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "answered_at"?: string | null,"callee_id": string,"caller_id": string,"created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id": string,"status"?: string
+                    "created_at"?: string,"match_id": string,"user_id": string
                   }
                   Update: {
-                    "answered_at"?: string | null,"callee_id"?: string,"caller_id"?: string,"created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id"?: string,"status"?: string
+                    "created_at"?: string,"match_id"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "call_mutes_match_id_fkey"
+      columns: ["match_id"]
+isOneToOne: false
+      referencedRelation: "generic_matches"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "call_mutes_user_id_fkey"
+      columns: ["user_id"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"calls": {
+                  Row: {
+                    "answered_at": string | null,"callee_id": string,"caller_id": string,"created_at": string,"ended_at": string | null,"id": string,"match_id": string,"reached_at": string | null,"seen_at": string | null,"status": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "answered_at"?: string | null,"callee_id": string,"caller_id": string,"created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id": string,"reached_at"?: string | null,"seen_at"?: string | null,"status"?: string
+                  }
+                  Update: {
+                    "answered_at"?: string | null,"callee_id"?: string,"caller_id"?: string,"created_at"?: string,"ended_at"?: string | null,"id"?: string,"match_id"?: string,"reached_at"?: string | null,"seen_at"?: string | null,"status"?: string
                   }
                   Relationships: [
                     {
@@ -1188,14 +1214,14 @@ isOneToOne: false
                   ]
                 },"users": {
                   Row: {
-                    "contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"full_name": string | null,"id": string,"last_login_at": string | null,"nationality": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"photo_url": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
+                    "accepts_calls": boolean,"contact_phone": string | null,"created_at": string,"email": string | null,"email_verified_at": string | null,"featured_until": string | null,"full_name": string | null,"id": string,"last_login_at": string | null,"nationality": string | null,"notify_new_profiles": boolean,"phone": string | null,"phone_verified_at": string | null,"photo_url": string | null,"preferred_language": string,"role": string | null,"status": string,"updated_at": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id": string,"last_login_at"?: string | null,"nationality"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"photo_url"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                    "accepts_calls"?: boolean,"contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id": string,"last_login_at"?: string | null,"nationality"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"photo_url"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Update: {
-                    "contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id"?: string,"last_login_at"?: string | null,"nationality"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"photo_url"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
+                    "accepts_calls"?: boolean,"contact_phone"?: string | null,"created_at"?: string,"email"?: string | null,"email_verified_at"?: string | null,"featured_until"?: string | null,"full_name"?: string | null,"id"?: string,"last_login_at"?: string | null,"nationality"?: string | null,"notify_new_profiles"?: boolean,"phone"?: string | null,"phone_verified_at"?: string | null,"photo_url"?: string | null,"preferred_language"?: string,"role"?: string | null,"status"?: string,"updated_at"?: string
                   }
                   Relationships: [
                     

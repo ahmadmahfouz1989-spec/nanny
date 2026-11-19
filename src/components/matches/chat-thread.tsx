@@ -11,6 +11,8 @@ import ChatComposer from "./chat-composer";
 import { shrinkImage } from "@/lib/shrink-image";
 import { CHAT_PHOTO_MAX_SIDE } from "@/lib/chat-photos";
 import ChatMessage, { type ChatMessageData } from "./chat-message";
+import ChatCallLine from "./chat-call-line";
+import type { CallEntry } from "@/lib/call-history";
 import { useVoiceRecorder, type RecordedVoiceNote } from "./use-voice-recorder";
 import { getJson } from "@/lib/request";
 import { haptic } from "@/lib/native-app";
@@ -65,15 +67,29 @@ function isSameDay(a: Date, b: Date) {
   return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 }
 
+/**
+ * Messages and calls in time order. Only calls from the loaded stretch of
+ * history: none older than the oldest message shown (those come with
+ * "Load earlier").
+ */
+function timeline(messages: Message[], calls: CallEntry[]) {
+  const items: { at: string; message?: Message; call?: CallEntry }[] = messages.map((m) => ({ at: m.created_at, message: m }));
+  for (const c of calls) items.push({ at: c.createdAt, call: c });
+  return items.sort((a, b) => a.at.localeCompare(b.at));
+}
+
 /** A match's chat thread (any category). */
 export default function ChatThread({
   matchId,
   onMessage,
   variant = "compact",
+  counterpart,
 }: {
   matchId: string;
   onMessage?: (message: Message) => void;
   variant?: "compact" | "full";
+  /** Who's on the other side, for "Call back" on a call line. */
+  counterpart?: { name: string; photoUrl: string | null };
 }) {
   const threadUrl = `${MATCHES_API}/${matchId}/messages`;
   const t = useTranslations("Matches");
@@ -84,6 +100,8 @@ export default function ChatThread({
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
+  // Calls in this conversation, shown as lines between the messages.
+  const [calls, setCalls] = useState<CallEntry[]>([]);
   const [hasMoreOlder, setHasMoreOlder] = useState(false);
   const [loadingOlder, setLoadingOlder] = useState(false);
   // Follow new messages only when the reader is already at the bottom --
@@ -158,6 +176,7 @@ export default function ChatThread({
         // trustworthy as the initial value, before there's any older
         // history loaded to contradict it.
         if (!olderLoadedRef.current) setHasMoreOlder(body.hasMore ?? false);
+        mergeCalls((body.calls ?? []) as CallEntry[]);
         setMessages((prev) => {
           const prevById = new Map((prev ?? []).map((m) => [m.id, m]));
           const next: Message[] = ((body.messages ?? []) as Message[]).map((m) => {
@@ -202,6 +221,22 @@ export default function ChatThread({
       });
   }
 
+  function mergeCalls(fresh: CallEntry[]) {
+    if (fresh.length === 0) return;
+    setCalls((prev) => {
+      const byId = new Map(prev.map((c) => [c.id, c]));
+      let changed = false;
+      for (const c of fresh) {
+        const held = byId.get(c.id);
+        if (!held || held.status !== c.status || held.seconds !== c.seconds) {
+          byId.set(c.id, c);
+          changed = true;
+        }
+      }
+      return changed ? [...byId.values()].sort((a, b) => a.createdAt.localeCompare(b.createdAt)) : prev;
+    });
+  }
+
   function loadOlder() {
     if (!messages || messages.length === 0 || loadingOlder) return;
     setLoadingOlder(true);
@@ -213,6 +248,7 @@ export default function ChatThread({
       .then((body) => {
         if (!body) return;
         setMessages((prev) => [...(body.messages ?? []), ...(prev ?? [])]);
+        mergeCalls((body.calls ?? []) as CallEntry[]);
         setHasMoreOlder(body.hasMore ?? false);
         // isNearBottomRef is false here (the user had to scroll up to reach
         // this button), so the scroll effect leaves position alone --
@@ -262,6 +298,8 @@ export default function ChatThread({
           if (incoming.sender_id !== userIdRef.current) markRead();
         },
       )
+      // A call started, was answered or ended here: its line appears or changes.
+      .on("postgres_changes", { event: "*", schema: "public", table: "calls", filter: `match_id=eq.${matchId}` }, () => refreshMessages())
       // Your message reached them, or they read it: the ticks change at once.
       .on(
         "postgres_changes",
@@ -310,7 +348,7 @@ export default function ChatThread({
     // is embedded mid-page on the dashboard).
     const el = listRef.current;
     if (el && isNearBottomRef.current) el.scrollTop = el.scrollHeight;
-  }, [messages, otherTyping]);
+  }, [messages, otherTyping, calls]);
 
   function handleDraftChange(value: string) {
     setDraft(value);
@@ -514,19 +552,30 @@ export default function ChatThread({
             {loadingOlder ? t("loadingMore") : t("loadEarlierMessages")}
           </button>
         )}
-        {messages?.map((m, i) => {
-          const prev = messages[i - 1];
-          const showDayDivider = !prev || !isSameDay(new Date(prev.created_at), new Date(m.created_at));
-          return (
-            <ChatMessage
-              key={m.id}
-              message={m}
-              own={m.sender_id === userId}
-              dayLabel={full && showDayDivider ? formatDayLabel(m.created_at) : undefined}
-              time={full ? formatTime(m.created_at) : undefined}
-            />
-          );
-        })}
+        {messages &&
+          timeline(messages, calls).map((item, i, all) => {
+            const prev = all[i - 1];
+            const showDayDivider = !prev || !isSameDay(new Date(prev.at), new Date(item.at));
+            const dayLabel = full && showDayDivider ? formatDayLabel(item.at) : undefined;
+            return item.call ? (
+              <ChatCallLine
+                key={`call-${item.call.id}`}
+                call={item.call}
+                matchId={matchId}
+                counterpart={counterpart}
+                dayLabel={dayLabel}
+                time={full ? formatTime(item.at) : undefined}
+              />
+            ) : (
+              <ChatMessage
+                key={item.message!.id}
+                message={item.message!}
+                own={item.message!.sender_id === userId}
+                dayLabel={dayLabel}
+                time={full ? formatTime(item.at) : undefined}
+              />
+            );
+          })}
         {otherTyping && (
           <div className="flex items-center gap-1.5 self-start rounded-2xl bg-surface-sunken px-3 py-2" role="status" aria-live="polite">
             <span className="sr-only">{t("typing")}</span>

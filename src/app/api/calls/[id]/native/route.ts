@@ -5,10 +5,10 @@ import { cancelRinging, validCallActionToken } from "@/lib/calls";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const bodySchema = z.object({ token: z.string().min(20).max(100), action: z.enum(["decline", "end"]) });
+const bodySchema = z.object({ token: z.string().min(20).max(100), action: z.enum(["decline", "end", "reached"]) });
 
 /**
- * Decline or hang up from the phone itself -- iOS CallKit's buttons, or
+ * Decline or hang up from the phone itself (or say it's ringing) -- iOS CallKit's buttons, or
  * Decline on Android's incoming-call notification -- when the web page may
  * not be running. No session: the ring carried a token for this call and
  * callee (callActionToken), which is the proof.
@@ -25,6 +25,11 @@ export async function POST(request: Request, { params }: Ctx) {
   }
 
   const now = new Date().toISOString();
+  // The phone is ringing: the caller's screen says so.
+  if (parsed.data.action === "reached") {
+    await db.from("calls").update({ reached_at: now }).eq("id", call.id).eq("status", "ringing").is("reached_at", null);
+    return NextResponse.json({ status: call.status });
+  }
   const to = call.status === "ringing" ? "declined" : call.status === "active" && parsed.data.action === "end" ? "ended" : null;
   if (!to) return NextResponse.json({ status: call.status });
 

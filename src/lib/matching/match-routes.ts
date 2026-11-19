@@ -25,6 +25,8 @@ import {
 } from "@/lib/voice-notes";
 import { ALLOWED_CHAT_PHOTO_TYPES, CHAT_PHOTO_PLACEHOLDER_BODY, MAX_CHAT_PHOTO_BYTES } from "@/lib/chat-photos";
 import { notify, anyPushEnabled, pushTranslator, sendPush } from "@/lib/push";
+import { markMissedCallsSeen } from "@/lib/calls";
+import { CALL_ENTRY_COLUMNS, toCallEntry } from "@/lib/call-history";
 import { reportMetaEvent } from "@/lib/meta-capi";
 import { alertLanguage, newMessageAlert, sendWhatsAppAlert, whatsappAlertsEnabled } from "@/lib/whatsapp";
 
@@ -98,7 +100,7 @@ async function reportFirstMessage(supabase: Authed["supabase"], user: User, acce
   });
 }
 
-export const messagesGet: Handler = withAccess(async ({ request, supabase, access }) => {
+export const messagesGet: Handler = withAccess(async ({ request, supabase, userId, access }) => {
   // Fetched newest-first and reversed, rather than oldest-first with no
   // bound -- PostgREST's max_rows cap (supabase/config.toml) otherwise
   // silently truncates a long thread to its OLDEST rows, hiding whatever
@@ -147,7 +149,22 @@ export const messagesGet: Handler = withAccess(async ({ request, supabase, acces
     imageUrl: m.image_path ? (signedByPath.get(`chat-photos:${m.image_path}`) ?? null) : null,
   }));
 
-  return NextResponse.json({ messages, hasMore: (data ?? []).length === MESSAGE_PAGE_SIZE });
+  const hasMore = (data ?? []).length === MESSAGE_PAGE_SIZE;
+
+  // The calls in the same stretch of the conversation, shown as lines
+  // between the messages ("Missed voice call", "Voice call · 4:05").
+  let callQuery = supabase
+    .from("calls")
+    .select(CALL_ENTRY_COLUMNS)
+    .eq("match_id", access.id)
+    .order("created_at", { ascending: false })
+    .limit(MESSAGE_PAGE_SIZE);
+  if (before) callQuery = callQuery.lt("created_at", before);
+  if (hasMore && page[0]) callQuery = callQuery.gte("created_at", page[0].created_at);
+  const { data: callRows } = await callQuery;
+  const calls = (callRows ?? []).reverse().map((row) => toCallEntry(row, userId));
+
+  return NextResponse.json({ messages, calls, hasMore });
 });
 
 const messageBodySchema = z.object({ body: z.string().trim().min(1).max(2000) });
@@ -326,6 +343,8 @@ export const messagesMarkRead: Handler = withAccess(async ({ supabase, userId, a
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
+  // Their missed calls in this conversation have been seen too.
+  await markMissedCallsSeen(createAdminClient(), userId, access.id);
 
   return NextResponse.json({ ok: true });
 });

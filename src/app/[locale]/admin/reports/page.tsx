@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson, request } from "@/lib/request";
+import { formatCallLength } from "@/lib/call-history";
 
 type AdminReport = {
   id: string;
@@ -27,7 +28,8 @@ type ConversationMessage = {
   audioDurationSeconds: number | null;
 };
 
-type ConversationState = { messages: ConversationMessage[]; hasOlder: boolean; loadingOlder: boolean };
+type ReportCall = { id: string; createdAt: string; byReporter: boolean; status: string; seconds: number | null };
+type ConversationState = { messages: ConversationMessage[]; calls?: ReportCall[]; hasOlder: boolean; loadingOlder: boolean };
 
 const REASON_LABEL_KEY: Record<string, string> = {
   inappropriate_content: "reasonInappropriateContent",
@@ -45,6 +47,7 @@ export default function AdminReportsPage() {
   const t = useTranslations("Admin");
   const tReport = useTranslations("Report");
   const tMatches = useTranslations("Matches");
+  const tCalls = useTranslations("Calls");
   const locale = useLocale();
   const [reports, setReports] = useState<AdminReport[] | null>(null);
   const [notes, setNotes] = useState<Record<string, string>>({});
@@ -85,7 +88,7 @@ export default function AdminReportsPage() {
           body &&
           setConversations((prev) => ({
             ...prev,
-            [next]: { messages: body.messages ?? [], hasOlder: !!body.hasOlder, loadingOlder: false },
+            [next]: { messages: body.messages ?? [], calls: body.calls ?? [], hasOlder: !!body.hasOlder, loadingOlder: false },
           })),
         );
     }
@@ -110,7 +113,7 @@ export default function AdminReportsPage() {
         const older = ((body.messages ?? []) as ConversationMessage[]).filter((m) => !known.has(m.id));
         return {
           ...prev,
-          [reportId]: { messages: [...older, ...latest.messages], hasOlder: !!body.hasOlder, loadingOlder: false },
+          [reportId]: { ...latest, messages: [...older, ...latest.messages], hasOlder: !!body.hasOlder, loadingOlder: false },
         };
       });
     } catch {
@@ -164,6 +167,24 @@ export default function AdminReportsPage() {
               {expanded === report.id ? t("hideConversation") : t("viewConversation")}
             </button>
 
+            {expanded === report.id && !!conversations[report.id]?.calls?.length && (
+              <div className="rounded-xl border border-border bg-background mb-3 p-3 max-h-40 overflow-y-auto">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted mb-2">{t("callLog")}</p>
+                <ul className="flex flex-col gap-1 text-sm">
+                  {conversations[report.id]!.calls!.map((c) => (
+                    <li key={c.id} className="flex flex-wrap items-center gap-x-2 text-ink/80">
+                      <span className="font-medium">{c.byReporter ? t("callByReporter") : t("callByReported")}</span>
+                      <span className="text-muted">
+                        {c.seconds !== null
+                          ? `${tCalls("log.voiceCall")} · ${formatCallLength(c.seconds)}`
+                          : tCalls(c.status === "declined" ? "log.declined" : c.status === "failed" ? "log.failed" : "log.noAnswer")}
+                      </span>
+                      <span className="text-xs text-muted">{formatTimestamp(c.createdAt, locale)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {expanded === report.id && (
               <div className="rounded-xl border border-border bg-background mb-3 p-3 max-h-64 overflow-y-auto flex flex-col gap-2">
                 {conversations[report.id] === null && <p className="text-sm text-muted">…</p>}

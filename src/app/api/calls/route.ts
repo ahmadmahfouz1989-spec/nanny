@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
 import { isBlocked, resolveMatchAccess } from "@/lib/matching/match-access";
 import { iceServers } from "@/lib/ice-servers";
-import { callAllowed, closeLeftoverCalls, profileCard, pushIncomingCall, ringCutoff, tooManyCalls } from "@/lib/calls";
+import { callAllowed, closeLeftoverCalls, profileCard, pushIncomingCall, ringCutoff, ringingDevices, takesCalls, tooManyCalls } from "@/lib/calls";
 
 const startSchema = z.object({ matchId: z.uuid() });
 
@@ -26,6 +26,9 @@ export async function POST(request: Request) {
   if (!(await callAllowed(db, access.id))) {
     return NextResponse.json({ error: "Send a message first", code: "no_conversation" }, { status: 403 });
   }
+  if (!(await takesCalls(db, access.otherUserId, access.id))) {
+    return NextResponse.json({ error: "They don't take calls", code: "calls_off" }, { status: 403 });
+  }
   if (await tooManyCalls(db, user.id)) {
     return NextResponse.json({ error: "Too many calls, try again in a few minutes", code: "too_many" }, { status: 429 });
   }
@@ -38,11 +41,23 @@ export async function POST(request: Request) {
     .single();
   if (error || !call) return NextResponse.json({ error: error?.message ?? "Couldn't start the call" }, { status: 500 });
 
-  const [me, them, servers] = await Promise.all([profileCard(db, access.myProfileId), profileCard(db, access.otherProfileId), iceServers()]);
+  const [me, them, servers, devices] = await Promise.all([
+    profileCard(db, access.myProfileId),
+    profileCard(db, access.otherProfileId),
+    iceServers(),
+    ringingDevices(access.otherUserId),
+  ]);
   pushIncomingCall(access.otherUserId, call.id, access.id, me.name);
 
   return NextResponse.json(
-    { call: { id: call.id, matchId: call.match_id, createdAt: call.created_at }, counterpart: them, iceServers: servers },
+    {
+      call: { id: call.id, matchId: call.match_id, createdAt: call.created_at },
+      counterpart: them,
+      iceServers: servers,
+      // Their phone rings for calls on its own (and doesn't yet say when it
+      // does): no "they're not in the app" hint while it may be ringing.
+      phoneRings: devices.length > 0,
+    },
     { status: 201 },
   );
 }

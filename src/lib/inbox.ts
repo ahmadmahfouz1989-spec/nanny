@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { CALL_ENTRY_COLUMNS, toCallEntry, type CallEntry } from "@/lib/call-history";
 
 export type InboxConversation = {
   matchId: string;
@@ -8,6 +9,8 @@ export type InboxConversation = {
   /** What the request in this conversation is ("2 bread, milk and panadol"), whichever side asked. */
   about: string | null;
   lastMessage: { body: string; createdAt: string } | null;
+  /** The latest call, shown instead of the last message when it's newer. */
+  lastCall: CallEntry | null;
   unreadCount: number;
 };
 
@@ -121,7 +124,10 @@ export async function allConversations(
   const otherById = new Map((otherProfiles ?? []).map((p) => [p.id, p]));
 
   const matchIds = matches.map((m) => m.match.id);
-  const { lastMessageByMatch, unreadCountByMatch } = await messageSummariesByMatch(supabase, matchIds, userId);
+  const [{ lastMessageByMatch, unreadCountByMatch }, lastCallByMatch] = await Promise.all([
+    messageSummariesByMatch(supabase, matchIds, userId),
+    lastCalls(supabase, matchIds, userId),
+  ]);
 
   const myById = new Map(myProfiles.map((p) => [p.id, p]));
   const conversations = matches.map(({ match, myProfileId, otherProfileId }) => {
@@ -135,9 +141,33 @@ export async function allConversations(
       counterpart: { id: other?.id ?? "", name: other?.full_name ?? "", photoUrl: other?.profile_photo_url ?? null },
       about: requestText(seeker?.attributes),
       lastMessage: lastMessageByMatch.get(match.id) ?? null,
+      lastCall: lastCallByMatch.get(match.id) ?? null,
       unreadCount: unreadCountByMatch.get(match.id) ?? 0,
     };
   });
 
-  return conversations.sort((a, b) => (b.lastMessage?.createdAt ?? "").localeCompare(a.lastMessage?.createdAt ?? ""));
+  return conversations.sort((a, b) => lastActivity(b).localeCompare(lastActivity(a)));
+}
+
+/** When a conversation last had a message or a call, for ordering the list. */
+export function lastActivity(c: Pick<InboxConversation, "lastMessage" | "lastCall">) {
+  const message = c.lastMessage?.createdAt ?? "";
+  const call = c.lastCall?.createdAt ?? "";
+  return call > message ? call : message;
+}
+
+/** Each conversation's latest call (the viewer's own calls, through RLS). */
+async function lastCalls(supabase: Supabase, matchIds: string[], userId: string) {
+  const byMatch = new Map<string, CallEntry>();
+  if (matchIds.length === 0) return byMatch;
+  const { data } = await supabase
+    .from("calls")
+    .select(CALL_ENTRY_COLUMNS)
+    .in("match_id", matchIds)
+    .order("created_at", { ascending: false })
+    .limit(300);
+  for (const row of data ?? []) {
+    if (!byMatch.has(row.match_id)) byMatch.set(row.match_id, toCallEntry(row, userId));
+  }
+  return byMatch;
 }

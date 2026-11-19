@@ -886,7 +886,9 @@
     "noResults": "No conversations match \"{query}\"",
     "loading": "Loading conversations…",
     "loadError": "Couldn't load — check your connection and try again.",
-    "emptyAction": "Find someone"
+    "emptyAction": "Find someone",
+    "tabChats": "Chats",
+    "tabCalls": "Calls"
   },
   "Report": {
     "action": "Report",
@@ -1179,7 +1181,16 @@
     "locationFreshMinutes": "Use a rider's shared location for this long (minutes)",
     "travelTimeCandidates": "Check road travel time for the nearest (riders, 0 = off)",
     "travelTimeDailyLimit": "Most road-time lookups per day (0 = none; about $10 per 1,000)",
-    "navPoints": "Points & invites"
+    "navPoints": "Points & invites",
+    "callLog": "Calls in this conversation",
+    "callByReporter": "Reporter called",
+    "callByReported": "Reported user called",
+    "callsTitle": "Calls, last 30 days",
+    "statCalls": "Calls",
+    "statAnswered": "Answered",
+    "statNoAnswer": "Not answered",
+    "statFailed": "Couldn't connect",
+    "statAvgLength": "Average length"
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",
@@ -3128,7 +3139,45 @@
       "too_many": "Too many calls. Try again in a few minutes.",
       "mic_denied": "ouiKnow needs your microphone for calls. Allow it in your settings, then try again.",
       "unsupported": "Calls don't work in this browser. Try the ouiKnow app.",
-      "error": "Something went wrong. Please try again."
-    }
+      "error": "Something went wrong. Please try again.",
+      "calls_off": "{name} doesn't take calls. Send them a message instead.",
+      "not_in_app": "{name} didn't pick up. They'll see a missed call."
+    },
+    "ringing": "Ringing…",
+    "notInApp": "{name} isn't in the app right now. We've sent them a notification.",
+    "reconnecting": "Reconnecting…",
+    "poorConnection": "Poor connection",
+    "minimize": "Use the app during the call",
+    "returnToCall": "Tap to return to the call",
+    "callAgain": "Call again",
+    "message": "Message",
+    "callBack": "Call back",
+    "callBackName": "Call {name} back",
+    "filterAll": "All",
+    "filterMissed": "Missed",
+    "emptyTitle": "No calls yet",
+    "emptyBody": "You can call anyone you've messaged: tap the phone at the top of the chat.",
+    "emptyMissed": "No missed calls.",
+    "loadError": "Couldn't load your calls. Pull down or try again in a moment.",
+    "settingsTitle": "Calls",
+    "settingsAllow": "Let people call me",
+    "settingsOn": "People you've messaged can call you in the app. Your phone number stays private.",
+    "settingsOff": "Nobody can call you. They'll see that you don't take calls and can send you a message instead.",
+    "muteCalls": "Turn off calls from {name}",
+    "unmuteCalls": "Turn on calls from {name}",
+    "muteHint": "They won't be able to call you in this chat. Messages still come through.",
+    "log": {
+      "missed": "Missed voice call",
+      "noAnswer": "No answer",
+      "declined": "Declined",
+      "declinedByYou": "You declined",
+      "busy": "Busy",
+      "outgoing": "Outgoing call",
+      "incoming": "Incoming call",
+      "failed": "Couldn't connect",
+      "ongoing": "Call in progress",
+      "voiceCall": "Voice call"
+    },
+    "loading": "Loading calls…"
   }
 }

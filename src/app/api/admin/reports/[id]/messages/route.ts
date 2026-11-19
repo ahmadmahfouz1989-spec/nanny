@@ -82,6 +82,22 @@ async function messagesForMatch(
   };
 }
 
+async function callsForMatch(db: Admin, matchId: string, reporterUserId: string) {
+  const { data } = await db
+    .from("calls")
+    .select("id, caller_id, status, created_at, answered_at, ended_at")
+    .eq("match_id", matchId)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return (data ?? []).map((c) => ({
+    id: c.id,
+    createdAt: c.created_at,
+    byReporter: c.caller_id === reporterUserId,
+    status: c.status,
+    seconds: c.answered_at && c.ended_at ? Math.max(0, Math.round((Date.parse(c.ended_at) - Date.parse(c.answered_at)) / 1000)) : null,
+  }));
+}
+
 async function directConversation(
   db: Admin,
   matchId: string,
@@ -179,5 +195,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({ matchId: null, messages: [], hasOlder: false });
   }
 
-  return NextResponse.json(conversation);
+  // Their calls (times and how they went -- calls are never recorded), with the first page.
+  const calls = before ? [] : await callsForMatch(db, conversation.matchId, reporterUserId);
+  return NextResponse.json({ ...conversation, calls });
 }

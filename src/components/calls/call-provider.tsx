@@ -7,6 +7,8 @@ import { useTranslations } from "next-intl";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import { getJson, request } from "@/lib/request";
+import { useRouter } from "@/i18n/navigation";
+import { announceUnreadChanged } from "@/lib/unread-events";
 import { haptic, nativeCalls } from "@/lib/native-app";
 import AvatarIllustration from "@/components/illustrations/avatar-illustration";
 import { MicIcon } from "@/components/nav-icons";
@@ -29,7 +31,14 @@ import { PhoneIcon } from "@/components/calls/phone-icon";
 
 const RING_SECONDS = 45; // as in src/lib/calls.ts
 const CONNECT_TIMEOUT_MS = 25_000;
-const DISCONNECTED_GRACE_MS = 10_000;
+// A dropped connection (walking out of Wi-Fi, a tunnel) gets this long to
+// come back, with the caller asking for a new route every few seconds.
+const DISCONNECTED_GRACE_MS = 20_000;
+const RECONNECT_EVERY_MS = 4000;
+// No sign of their app ringing by then (and no phone of theirs that rings
+// on its own): say they're not in the app, while it keeps ringing.
+const NOT_IN_APP_AFTER_MS = 12_000;
+const QUALITY_CHECK_MS = 3000;
 const READY_RESEND_MS = 1500;
 const ENDED_SCREEN_MS = 2500;
 
@@ -47,8 +56,10 @@ type EndReason =
   | "too_many"
   | "mic_denied"
   | "unsupported"
+  | "calls_off"
+  | "not_in_app"
   | "error";
-type ServerAction = "accept" | "decline" | "busy" | "end" | "failed";
+type ServerAction = "accept" | "decline" | "busy" | "end" | "failed" | "reached";
 type Signal =
   | { kind: "ready" }
   | { kind: "offer"; sdp: RTCSessionDescriptionInit }
@@ -74,9 +85,30 @@ type Session = {
   timers: ReturnType<typeof setTimeout>[];
   stopTone: (() => void) | null;
   closed: boolean;
+  /** The callee's app said it's ringing. */
+  reached: boolean;
+  /** The callee has a phone that rings on its own (no "not in the app" hint). */
+  phoneRings: boolean;
 };
 
-type View = { phase: Phase; counterpart: Counterpart; reason?: EndReason; activeSince?: number };
+type View = {
+  phase: Phase;
+  counterpart: Counterpart;
+  matchId: string;
+  role: "caller" | "callee";
+  reason?: EndReason;
+  activeSince?: number;
+  /** "Ringing…" instead of "Calling…". */
+  reached?: boolean;
+  notInApp?: boolean;
+  reconnecting?: boolean;
+  poorConnection?: boolean;
+  /** Shrunk to a bar so the app can be used during the call. */
+  minimized?: boolean;
+};
+
+/** Reasons after which the end screen stays up with Call again / Message. */
+const FOLLOW_UP_REASONS: EndReason[] = ["no_answer", "not_in_app", "declined", "busy", "failed", "calls_off", "missed"];
 
 type CallContextValue = {
   startCall: (matchId: string, counterpart: Counterpart) => void;
@@ -180,6 +212,8 @@ function newSession(role: Session["role"], matchId: string, id: string | null, c
     timers: [],
     stopTone: null,
     closed: false,
+    reached: false,
+    phoneRings: false,
   };
 }
 
@@ -249,8 +283,17 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       // The phone's own ringing, call screen and ongoing-call notification go too.
       if (session.id) nativeCalls()?.callEnded({ callId: session.id }).catch(() => {});
       setMuted(false);
-      setView((v) => (v ? { ...v, phase: "ended", reason, activeSince: undefined } : v));
+      setView((v) =>
+        v
+          ? { ...v, phase: "ended", reason, activeSince: undefined, minimized: false, reconnecting: false, poorConnection: false, notInApp: false }
+          : v,
+      );
+      if (reason === "missed") announceUnreadChanged();
       if (idleTimer.current) clearTimeout(idleTimer.current);
+      // A call that didn't happen stays up with Call again / Message; one
+      // that just ended goes by itself.
+      const followUp = !session.accepted && (session.role === "caller" ? FOLLOW_UP_REASONS.includes(reason) : reason === "missed");
+      if (followUp) return;
       idleTimer.current = setTimeout(() => {
         if (!sessionRef.current) setView(null);
       }, ENDED_SCREEN_MS);
@@ -291,7 +334,10 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             if (pc.localDescription) send(session, { kind: "offer", sdp: pc.localDescription.toJSON() });
             break;
           case "offer":
-            if (session.role !== "callee" || !pc || session.gotOffer) return;
+            if (session.role !== "callee" || !pc) return;
+            // A second offer is the caller finding a new route after the
+            // connection dropped (ICE restart): answer it the same way.
+            if (session.gotOffer && pc.signalingState !== "stable") return;
             session.gotOffer = true;
             await pc.setRemoteDescription(msg.sdp);
             await flushIce(session);
@@ -333,8 +379,13 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         const row = supabase
           .channel(`call-row:${id}`)
           .on("postgres_changes", { event: "UPDATE", schema: "public", table: "calls", filter: `id=eq.${id}` }, ({ new: next }) => {
-            const status = (next as { status: string }).status;
+            const { status, reached_at } = next as { status: string; reached_at: string | null };
             if (session.closed) return;
+            if (status === "ringing" && reached_at && session.role === "caller" && !session.reached) {
+              session.reached = true;
+              setView((v) => (v && v.phase === "outgoing" ? { ...v, reached: true, notInApp: false } : v));
+              return;
+            }
             if (status === "active") {
               // Answered on another of the callee's devices: this one stops ringing.
               if (session.role === "callee" && !session.accepted) return finish(session, "ended");
@@ -344,7 +395,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
             const reason: Record<string, EndReason> = {
               declined: "declined",
               busy: "busy",
-              missed: session.role === "caller" ? "no_answer" : "missed",
+              missed: session.role === "caller" ? (session.reached || session.phoneRings ? "no_answer" : "not_in_app") : "missed",
               ended: "ended",
               failed: "failed",
             };
@@ -374,26 +425,93 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         audio.play().catch(() => {});
       };
       let graceTimer: ReturnType<typeof setTimeout> | null = null;
+      let restartTimer: ReturnType<typeof setInterval> | null = null;
+      let qualityTimer: ReturnType<typeof setInterval> | null = null;
+      // The caller asks for a fresh route (ICE restart); the callee answers
+      // the new offer in handleSignal.
+      const restart = async () => {
+        if (session.closed || session.role !== "caller") return;
+        try {
+          // The last attempt's answer never came back: start that one over.
+          if (pc.signalingState === "have-local-offer") await pc.setLocalDescription({ type: "rollback" });
+          if (pc.signalingState !== "stable") return;
+          await pc.setLocalDescription(await pc.createOffer({ iceRestart: true }));
+          if (pc.localDescription) send(session, { kind: "offer", sdp: pc.localDescription.toJSON() });
+        } catch (err) {
+          console.error("[call] ice restart", err);
+        }
+      };
+      const stopReconnecting = () => {
+        if (graceTimer) clearTimeout(graceTimer);
+        if (restartTimer) clearInterval(restartTimer);
+        graceTimer = null;
+        restartTimer = null;
+      };
+      const startReconnecting = () => {
+        setView((v) => (v && v.phase === "active" ? { ...v, reconnecting: true } : v));
+        if (graceTimer) return;
+        graceTimer = setTimeout(() => {
+          stopReconnecting();
+          if (pc.connectionState !== "connected") finish(session, "failed", "failed");
+        }, DISCONNECTED_GRACE_MS);
+        session.timers.push(graceTimer);
+        void restart();
+        restartTimer = setInterval(() => void restart(), RECONNECT_EVERY_MS);
+        session.timers.push(restartTimer as unknown as ReturnType<typeof setTimeout>);
+      };
+      // Round trip and lost audio, every few seconds: "Poor connection".
+      let lastLost = 0;
+      let lastReceived = 0;
+      const checkQuality = async () => {
+        if (session.closed || pc.connectionState !== "connected") return;
+        try {
+          const stats = await pc.getStats();
+          let rtt = 0;
+          let lost = 0;
+          let received = 0;
+          stats.forEach((r) => {
+            if (r.type === "candidate-pair" && r.nominated && r.state === "succeeded") rtt = r.currentRoundTripTime ?? 0;
+            if (r.type === "inbound-rtp" && r.kind === "audio") {
+              lost = r.packetsLost ?? 0;
+              received = r.packetsReceived ?? 0;
+            }
+          });
+          const dl = lost - lastLost;
+          const dr = received - lastReceived;
+          lastLost = lost;
+          lastReceived = received;
+          const lossRatio = dl + dr > 0 ? dl / (dl + dr) : 0;
+          const poor = rtt > 0.6 || lossRatio > 0.1;
+          setView((v) => (v && v.phase === "active" && !!v.poorConnection !== poor ? { ...v, poorConnection: poor } : v));
+        } catch {}
+      };
       pc.onconnectionstatechange = () => {
-        if (session.closed) return;
+        if (session.closed) {
+          if (qualityTimer) clearInterval(qualityTimer);
+          return;
+        }
         const state = pc.connectionState;
         if (state === "connected") {
           session.accepted = true;
-          if (graceTimer) clearTimeout(graceTimer);
-          graceTimer = null;
+          stopReconnecting();
+          setView((v) => (v?.reconnecting ? { ...v, reconnecting: false } : v));
+          if (!qualityTimer) {
+            qualityTimer = setInterval(() => void checkQuality(), QUALITY_CHECK_MS);
+            session.timers.push(qualityTimer as unknown as ReturnType<typeof setTimeout>);
+          }
           session.stopTone?.();
           session.stopTone = null;
           haptic("success");
           if (session.id) nativeCalls()?.callActive({ callId: session.id, name: session.name }).catch(() => {});
           setView((v) => (v && v.phase !== "active" ? { ...v, phase: "active", activeSince: Date.now() } : v));
-        } else if (state === "failed") {
-          finish(session, "failed", "failed");
-        } else if (state === "disconnected" && !graceTimer) {
-          // Often a moment's signal loss: give it a chance to come back.
-          graceTimer = setTimeout(() => {
-            if (pc.connectionState !== "connected") finish(session, "failed", "failed");
-          }, DISCONNECTED_GRACE_MS);
-          session.timers.push(graceTimer);
+        } else if (state === "failed" || state === "disconnected") {
+          // Never connected: nothing to come back to.
+          if (!session.accepted || !pc.remoteDescription) {
+            if (state === "failed") finish(session, "failed", "failed");
+            return;
+          }
+          // Often a moment's signal loss: try to come back first.
+          startReconnecting();
         }
       };
       return pc;
@@ -411,7 +529,7 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       session.name = counterpart.name;
       sessionRef.current = session;
       setMuted(false);
-      setView({ phase: "starting", counterpart });
+      setView({ phase: "starting", counterpart, matchId, role: "caller" });
 
       const mic = await getMic();
       if (typeof mic === "string") return finish(session, mic);
@@ -427,13 +545,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
         call?: { id: string };
         counterpart?: Counterpart;
         iceServers?: RTCIceServer[];
+        phoneRings?: boolean;
         code?: string;
       } | null;
       if (!res?.ok || !body?.call) {
-        const known: Record<string, EndReason> = { no_conversation: "no_conversation", blocked: "blocked", too_many: "too_many" };
+        const known: Record<string, EndReason> = {
+          no_conversation: "no_conversation",
+          blocked: "blocked",
+          too_many: "too_many",
+          calls_off: "calls_off",
+        };
         return finish(session, known[body?.code ?? ""] ?? "error");
       }
       session.id = body.call.id;
+      session.phoneRings = !!body.phoneRings;
       // Hung up while it was being placed.
       if (session.closed) return void tellServer(session.id, "end");
       if (body.counterpart?.name) setView((v) => (v ? { ...v, counterpart: { ...v.counterpart, ...body.counterpart } } : v));
@@ -443,8 +568,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       if (session.closed) return;
       setView((v) => (v && v.phase === "starting" ? { ...v, phase: "outgoing" } : v));
       session.stopTone = playTone("ringback");
+      later(session, NOT_IN_APP_AFTER_MS, () => {
+        if (!session.reached && !session.phoneRings && !session.accepted) setView((v) => (v && v.phase === "outgoing" ? { ...v, notInApp: true } : v));
+      });
       later(session, RING_SECONDS * 1000, () => {
-        if (!session.accepted) finish(session, "no_answer", "end");
+        if (!session.accepted) finish(session, session.reached || session.phoneRings ? "no_answer" : "not_in_app", "end");
       });
     },
     [finish, listen, makePeer, tellServer],
@@ -473,7 +601,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
       if (idleTimer.current) clearTimeout(idleTimer.current);
       setMuted(false);
       session.name = counterpart?.name ?? "";
-      setView({ phase: answered ? "connecting" : "incoming", counterpart: counterpart ?? { name: "", photoUrl: null } });
+      setView({ phase: answered ? "connecting" : "incoming", counterpart: counterpart ?? { name: "", photoUrl: null }, matchId: call.matchId, role: "callee" });
+      // The caller's screen moves on to "Ringing…".
+      if (!answered) void tellServer(call.id, "reached");
       // In the apps the phone rings itself (CallKit, Android's call notification).
       if (!nativeCalls() && !answered) session.stopTone = playTone("ring");
       later(session, ringFor, () => !session.accepted && finish(session, "missed"));
@@ -640,6 +770,20 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(id);
   }, [activeSince]);
 
+  const router = useRouter();
+  const minimize = useCallback((minimized: boolean) => setView((v) => (v && v.phase !== "incoming" && v.phase !== "ended" ? { ...v, minimized } : v)), []);
+  const callAgain = useCallback(() => {
+    if (!view || sessionRef.current) return;
+    const { matchId, counterpart } = view;
+    void startCall(matchId, counterpart);
+  }, [view, startCall]);
+  const openChat = useCallback(() => {
+    if (!view) return;
+    const { matchId } = view;
+    setView(null);
+    router.push(`/messages?match=${matchId}`);
+  }, [view, router]);
+
   const toggleMute = useCallback(() => {
     const stream = sessionRef.current?.stream;
     setMuted((m) => {
@@ -657,7 +801,9 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
     <CallContext.Provider value={value}>
       {children}
       <audio ref={audioRef} autoPlay playsInline className="hidden" />
-      {view && (
+      {view?.minimized ? (
+        <CallBar view={view} elapsed={elapsed} onRestore={() => minimize(false)} onHangUp={hangUp} />
+      ) : view ? (
         <CallScreen
           view={view}
           elapsed={elapsed}
@@ -667,8 +813,11 @@ export function CallProvider({ children }: { children: React.ReactNode }) {
           onHangUp={hangUp}
           onToggleMute={toggleMute}
           onClose={() => setView(null)}
+          onMinimize={() => minimize(true)}
+          onCallAgain={callAgain}
+          onMessage={openChat}
         />
-      )}
+      ) : null}
     </CallContext.Provider>
   );
 }
@@ -684,6 +833,9 @@ function CallScreen({
   onHangUp,
   onToggleMute,
   onClose,
+  onMinimize,
+  onCallAgain,
+  onMessage,
 }: {
   view: View;
   elapsed: number;
@@ -693,21 +845,38 @@ function CallScreen({
   onHangUp: () => void;
   onToggleMute: () => void;
   onClose: () => void;
+  onMinimize: () => void;
+  onCallAgain: () => void;
+  onMessage: () => void;
 }) {
   const t = useTranslations("Calls");
   const { phase, counterpart, reason } = view;
   const name = counterpart.name || t("someone");
 
   const status =
-    phase === "starting" || phase === "outgoing"
+    phase === "starting" || (phase === "outgoing" && !view.reached)
       ? t("calling")
-      : phase === "incoming"
-        ? t("incoming")
-        : phase === "connecting"
-          ? t("connecting")
-          : phase === "active"
-            ? formatDuration(elapsed)
-            : t(`reason.${reason ?? "ended"}`);
+      : phase === "outgoing"
+        ? t("ringing")
+        : phase === "incoming"
+          ? t("incoming")
+          : phase === "connecting"
+            ? t("connecting")
+            : phase === "active"
+              ? view.reconnecting
+                ? t("reconnecting")
+                : formatDuration(elapsed)
+              : t(`reason.${reason ?? "ended"}`, { name });
+  // Under the status: why it may not be getting through, or a weak line.
+  const note =
+    phase === "outgoing" && view.notInApp
+      ? t("notInApp", { name })
+      : phase === "active" && view.poorConnection && !view.reconnecting
+        ? t("poorConnection")
+        : null;
+  const canMinimize = phase === "starting" || phase === "outgoing" || phase === "connecting" || phase === "active";
+  // After a call that didn't go through: try again, or write instead.
+  const followUp = phase === "ended" && !!reason && FOLLOW_UP_REASONS.includes(reason) && (view.role === "caller" || reason === "missed");
 
   const roundButton = "flex h-16 w-16 items-center justify-center rounded-full shadow-lg transition active:scale-90";
 
@@ -718,6 +887,19 @@ function CallScreen({
       aria-label={t("screenLabel", { name })}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-between bg-surface px-6 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-[calc(4rem+env(safe-area-inset-top))] text-ink"
     >
+      {canMinimize && (
+        <button
+          type="button"
+          onClick={onMinimize}
+          aria-label={t("minimize")}
+          title={t("minimize")}
+          className="absolute start-4 top-[calc(1rem+env(safe-area-inset-top))] inline-flex h-11 w-11 items-center justify-center rounded-full text-muted transition hover:bg-surface-sunken hover:text-ink"
+        >
+          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
       <div className="flex flex-col items-center gap-4 text-center">
         <div className={`relative ${phase === "incoming" || phase === "outgoing" ? "animate-pulse" : ""}`}>
           {counterpart.photoUrl ? (
@@ -732,6 +914,7 @@ function CallScreen({
         <p className={`text-base ${phase === "ended" ? "max-w-xs text-muted" : "text-muted tabular-nums"}`} aria-live="polite">
           {status}
         </p>
+        {note && <p className="max-w-xs text-sm text-warning">{note}</p>}
       </div>
 
       {phase === "incoming" ? (
@@ -748,6 +931,30 @@ function CallScreen({
             </button>
             <span className="text-sm text-muted">{t("accept")}</span>
           </div>
+        </div>
+      ) : phase === "ended" && followUp ? (
+        <div className="flex w-full max-w-xs flex-col items-center gap-6">
+          <div className="flex w-full items-start justify-around">
+            {reason !== "calls_off" && (
+              <div className="flex flex-col items-center gap-2">
+                <button type="button" onClick={onCallAgain} aria-label={view.role === "caller" ? t("callAgain") : t("callBack")} className={`${roundButton} bg-success text-white`}>
+                  <PhoneIcon className="h-7 w-7" />
+                </button>
+                <span className="text-sm text-muted">{view.role === "caller" ? t("callAgain") : t("callBack")}</span>
+              </div>
+            )}
+            <div className="flex flex-col items-center gap-2">
+              <button type="button" onClick={onMessage} aria-label={t("message")} className={`${roundButton} bg-primary text-on-primary`}>
+                <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+                  <path d="M4 5h16v11H8l-4 4V5z" strokeLinejoin="round" />
+                </svg>
+              </button>
+              <span className="text-sm text-muted">{t("message")}</span>
+            </div>
+          </div>
+          <button type="button" onClick={onClose} className="rounded-full border border-border px-6 py-2.5 text-sm font-medium">
+            {t("close")}
+          </button>
         </div>
       ) : phase === "ended" ? (
         <button type="button" onClick={onClose} className="rounded-full border border-border px-6 py-2.5 text-sm font-medium">
@@ -778,6 +985,38 @@ function CallScreen({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** The call, shrunk to a pill at the top, while the app is used. */
+function CallBar({ view, elapsed, onRestore, onHangUp }: { view: View; elapsed: number; onRestore: () => void; onHangUp: () => void }) {
+  const t = useTranslations("Calls");
+  const name = view.counterpart.name || t("someone");
+  const status =
+    view.phase === "active"
+      ? view.reconnecting
+        ? t("reconnecting")
+        : formatDuration(elapsed)
+      : view.phase === "connecting"
+        ? t("connecting")
+        : view.reached
+          ? t("ringing")
+          : t("calling");
+  return (
+    <div
+      role="region"
+      aria-label={t("screenLabel", { name })}
+      className="fixed inset-x-0 top-[calc(0.5rem+env(safe-area-inset-top))] z-[100] mx-auto flex w-fit max-w-[calc(100%-2rem)] items-center gap-1 rounded-full bg-success py-1 ps-1 pe-1 text-white shadow-lg"
+    >
+      <button type="button" onClick={onRestore} aria-label={t("returnToCall")} className="flex min-w-0 items-center gap-2 rounded-full px-3 py-1.5 text-sm">
+        <PhoneIcon className="h-4 w-4 shrink-0" />
+        <span dir="auto" className="truncate font-medium">{name}</span>
+        <span className="shrink-0 tabular-nums opacity-90">{status}</span>
+      </button>
+      <button type="button" onClick={onHangUp} aria-label={t("hangUp")} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-danger">
+        <PhoneIcon className="h-4 w-4 rotate-[135deg]" />
+      </button>
     </div>
   );
 }

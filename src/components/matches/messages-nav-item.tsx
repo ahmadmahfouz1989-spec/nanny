@@ -25,10 +25,10 @@ function useUnreadCount(signedIn: boolean) {
           return res.json();
         })
         .then((body) => {
-          const total = (body.conversations ?? []).reduce(
-            (sum: number, c: { unreadCount: number }) => sum + c.unreadCount,
-            0,
-          );
+          // Unread messages plus calls missed and not looked at yet.
+          const total =
+            (body.conversations ?? []).reduce((sum: number, c: { unreadCount: number }) => sum + c.unreadCount, 0) +
+            (body.missedCalls ?? 0);
           setUnreadCount(total);
         })
         .catch(() => {});
