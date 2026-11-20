@@ -24,7 +24,7 @@ import {
 import { AUTO_COMPLETE_HOURS } from "@/lib/validation/errand-order";
 import type { OrderOffer, OrderPerson, OrderView } from "@/lib/errand-order-view";
 import OrderPlaces from "@/components/orders/order-places";
-import ArrivalCard from "@/components/orders/arrival-card";
+import DeliveryHero, { showsDeliveryHero } from "@/components/orders/delivery-hero";
 
 // One order, live: polled every few seconds so offers and each stage
 // appear without a refresh (and a notification arrives as well).
@@ -136,6 +136,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
     );
   }
 
+  const hero = showsDeliveryHero(order);
   const confirmBox = (kind: "cancel" | "drop") =>
     confirming === kind ? (
       <div className={ui.card + " flex flex-col gap-3 p-4"}>
@@ -159,6 +160,42 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
       </button>
     );
 
+  const part =
+    order.viewer === "seeker" ? (
+      <SeekerPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
+    ) : (
+      <ProviderPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
+    );
+  // Before a rider has it, the offers come straight after the top.
+  const choosing = hero && (order.status === "open" || order.status === "reserved");
+  // What was asked for: under the map while the customer tracks it.
+  const summary = (
+    <OrderSummary order={order} folded={hero}>
+      <p dir="auto" className="whitespace-pre-line text-ink">
+        {order.description}
+      </p>
+      {order.photoUrls.length > 0 && (
+        <div className="flex flex-wrap gap-2 py-1">
+          {order.photoUrls.map((url) => (
+            <a key={url} href={url} target="_blank" rel="noreferrer" className="block h-24 w-24 overflow-hidden rounded-xl border border-border">
+              {/* Short-lived private links: next/image can't optimise them. */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" className="h-full w-full object-cover" />
+            </a>
+          ))}
+        </div>
+      )}
+      <p className="text-sm text-muted">
+        {order.timing === "asap"
+          ? t("asap")
+          : order.scheduledAt
+            ? t("scheduledFor", { date: format.dateTime(new Date(order.scheduledAt), { dateStyle: "medium", timeStyle: "short" }) })
+            : t("scheduled")}
+        {order.budgetUsd !== null ? ` · ${t("budgetLine", { budget: order.budgetUsd })}` : ""}
+      </p>
+    </OrderSummary>
+  );
+
   return (
     <div className="mx-auto flex w-full max-w-2xl flex-col gap-4 px-4 py-6">
       <div>
@@ -178,33 +215,11 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         </div>
       </div>
 
-      <div className={ui.card + " flex flex-col gap-2 p-4"}>
-        <p dir="auto" className="whitespace-pre-line text-ink">
-          {order.description}
-        </p>
-        {order.photoUrls.length > 0 && (
-          <div className="flex flex-wrap gap-2 py-1">
-            {order.photoUrls.map((url) => (
-              <a key={url} href={url} target="_blank" rel="noreferrer" className="block h-24 w-24 overflow-hidden rounded-xl border border-border">
-                {/* Short-lived private links: next/image can't optimise them. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={url} alt="" className="h-full w-full object-cover" />
-              </a>
-            ))}
-          </div>
-        )}
-        <p className="text-sm text-muted">
-          {order.timing === "asap"
-            ? t("asap")
-            : order.scheduledAt
-              ? t("scheduledFor", { date: format.dateTime(new Date(order.scheduledAt), { dateStyle: "medium", timeStyle: "short" }) })
-              : t("scheduled")}
-          {order.budgetUsd !== null ? ` · ${t("budgetLine", { budget: order.budgetUsd })}` : ""}
-        </p>
-      </div>
+      {/* The customer following a delivery: when, the steps and the rider, first. */}
+      {hero && <DeliveryHero order={order} />}
+      {choosing && part}
 
-      {/* The customer: when it gets there. */}
-      {order.viewer === "seeker" && <ArrivalCard order={order} />}
+      {!hero && summary}
 
       {/* From and To (or Where), with the map and directions. */}
       <OrderPlaces
@@ -213,12 +228,14 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         route={order.route}
         job={order.category === "maintenance"}
         rider={order.viewer === "provider"}
+        collapsed={hero}
         live={
           order.riderAt && order.provider
             ? { ...order.riderAt, name: order.provider.name.split(" ")[0] || order.provider.name, toward: order.status === "picked_up" ? "dropoff" : "pickup" }
             : null
         }
       />
+      {hero && summary}
       {/* The rider doing it: their position goes to the customer while it's in progress. */}
       {order.assignedToMe && order.category === "errands" && ["accepted", "on_the_way", "arrived", "picked_up"].includes(order.status) && (
         <LiveTracking orderId={order.id} />
@@ -233,16 +250,30 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
         </p>
       )}
 
-      {order.viewer === "seeker" ? (
-        <SeekerPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
-      ) : (
-        <ProviderPart order={order} busy={busy} act={act} confirmBox={confirmBox} />
-      )}
+      {!choosing && part}
 
       {order.viewer === "seeker" && order.asked.length > 0 && <AskedList order={order} />}
 
-      {stagesFor(order.category).includes(order.status) && <Timeline order={order} />}
+      {!hero && stagesFor(order.category).includes(order.status) && <Timeline order={order} />}
     </div>
+  );
+}
+
+/** What was asked for: open as a card, or folded under "Order details" while the customer tracks it. */
+function OrderSummary({ order, folded, children }: { order: OrderView; folded: boolean; children: React.ReactNode }) {
+  const t = useTranslations("Orders");
+  if (!folded) return <div className={ui.card + " flex flex-col gap-2 p-4"}>{children}</div>;
+  return (
+    <details className={ui.card + " group p-4"}>
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+        <span className="min-w-0 truncate">
+          {t("orderDetails")}
+          {order.photoUrls.length > 0 ? ` · ${t("photoCount", { count: order.photoUrls.length })}` : ""}
+        </span>
+        <span aria-hidden className="text-muted transition-transform group-open:rotate-90 rtl:-scale-x-100">›</span>
+      </summary>
+      <div className="mt-3 flex flex-col gap-2">{children}</div>
+    </details>
   );
 }
 
@@ -466,7 +497,7 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
   // Confirmed and on its way.
   return (
     <div className="flex flex-col gap-3">
-      <PersonCard title={t("yourProvider")} person={order.provider} matchId={order.matchId} rate={order.status === "completed"} />
+      {!showsDeliveryHero(order) && <PersonCard title={t("yourProvider")} person={order.provider} matchId={order.matchId} rate={order.status === "completed"} />}
       {order.status === "delivered" && (
         <>
           <button type="button" disabled={busy} className={ui.buttonPrimary} onClick={() => act("complete")}>

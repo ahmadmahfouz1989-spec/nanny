@@ -107,6 +107,8 @@ export type OrderView = {
   riderAt: { lat: number; lng: number; at: string; accuracyM: number | null } | null;
   /** Customer and admin, during a delivery: minutes to the pickup and the drop-off. */
   eta: OrderEta | null;
+  /** Customer and admin: how the confirmed rider gets around ("motorcycle", "car"...). */
+  vehicle: string | null;
   /** Provider view: this order was given to the viewer. */
   assignedToMe: boolean;
   customer: OrderPerson | null;
@@ -302,6 +304,12 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
       })
     : null;
 
+  const { data: riderProfile } =
+    viewer !== "provider" && order.provider_profile_id && order.category === "errands"
+      ? await db.from("generic_profiles").select("attributes").eq("id", order.provider_profile_id).maybeSingle()
+      : { data: null };
+  const vehicleOf = (riderProfile?.attributes as { vehicle?: unknown } | null)?.vehicle;
+
   return {
     viewer,
     id: order.id,
@@ -327,6 +335,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     matchId: viewer === "admin" || order.provider_user_id === viewerUserId || order.seeker_user_id === viewerUserId ? order.generic_match_id : null,
     riderAt,
     eta,
+    vehicle: typeof vehicleOf === "string" ? vehicleOf : null,
     assignedToMe: order.provider_user_id === viewerUserId,
     // Providers sent the order see what's asked and where, not who: the
     // customer's name and photo go only to the one doing it. Nor does a

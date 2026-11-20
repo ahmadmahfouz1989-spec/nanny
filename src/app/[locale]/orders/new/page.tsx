@@ -45,15 +45,48 @@ async function prefillFromRequest(supabase: Awaited<ReturnType<typeof createClie
   };
 }
 
+/** "Order again": the same service, description and places as one of their own orders. */
+async function prefillFromOrder(supabase: Awaited<ReturnType<typeof createClient>>, userId: string, orderId: string): Promise<OrderPrefill | null> {
+  const db = createAdminClient();
+  const { data: o } = await db.from("errand_orders").select("*").eq("id", orderId).eq("seeker_user_id", userId).eq("category", "errands").maybeSingle();
+  if (!o) return null;
+  const { data: districts } = await supabase
+    .from("locations")
+    .select("id, parent_location_id")
+    .in("id", [o.pickup_district_id, o.dropoff_district_id].filter((v): v is string => !!v));
+  const parent = (id: string | null) => (id ? (districts ?? []).find((d) => d.id === id)?.parent_location_id ?? null : null);
+  const mapPlace = (lat: number | null, lng: number | null, rest: { address: string | null; name: string | null; instructions: string | null; contactName: string | null; contactPhone: string | null }) =>
+    lat !== null && lng !== null
+      ? { point: { lat, lng }, address: rest.address ?? "", name: rest.name ?? "", instructions: rest.instructions ?? "", contactName: rest.contactName ?? "", contactPhone: rest.contactPhone ?? "" }
+      : null;
+  return {
+    service: (ERRAND_SERVICES as readonly string[]).includes(o.service) ? (o.service as ErrandService) : "delivery",
+    description: o.description,
+    pickup: { governorateId: parent(o.pickup_district_id), districtId: o.pickup_district_id, areaId: o.pickup_area_id, detail: o.pickup_detail ?? "" },
+    dropoffDetail: o.dropoff_detail ?? "",
+    dropoff: o.dropoff_district_id
+      ? { governorateId: parent(o.dropoff_district_id), districtId: o.dropoff_district_id, areaId: o.dropoff_area_id, detail: o.dropoff_detail ?? "" }
+      : undefined,
+    pickupMap:
+      mapPlace(o.pickup_lat, o.pickup_lng, { address: o.pickup_address, name: o.pickup_place_name, instructions: o.pickup_instructions, contactName: o.pickup_contact_name, contactPhone: o.pickup_contact_phone }) ?? undefined,
+    dropoffMap:
+      mapPlace(o.dropoff_lat, o.dropoff_lng, { address: o.dropoff_address, name: o.dropoff_place_name, instructions: o.dropoff_instructions, contactName: o.dropoff_contact_name, contactPhone: o.dropoff_contact_phone }) ?? undefined,
+    timing: "asap",
+    scheduledAt: "",
+    budget: o.budget_usd !== null ? String(o.budget_usd) : "",
+    again: true,
+  };
+}
+
 export default async function NewOrderPage({
   params,
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ from?: string }>;
+  searchParams: Promise<{ from?: string; again?: string }>;
 }) {
   const { locale } = await params;
-  const { from } = await searchParams;
+  const { from, again } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -63,7 +96,12 @@ export default async function NewOrderPage({
   // No "About you" first: the form asks for a name when it has none, and
   // an order needs nothing else from the account.
 
-  const prefill = from === "request" ? await prefillFromRequest(supabase, user!.id) : null;
+  const prefill =
+    again && /^[0-9a-f-]{36}$/i.test(again)
+      ? await prefillFromOrder(supabase, user!.id, again)
+      : from === "request"
+        ? await prefillFromRequest(supabase, user!.id)
+        : null;
   // The name is only asked for when none of their profiles has one yet.
   const { data: account } = await supabase.from("users").select("full_name").eq("id", user!.id).single();
   const { data: named } = await supabase

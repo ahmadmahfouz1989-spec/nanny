@@ -46,9 +46,12 @@ function Stars({
 export default function RatingButton({
   matchId,
   counterpartName,
+  startOpen = false,
 }: {
   matchId: string;
   counterpartName?: string;
+  /** Stars shown straight away when they haven't rated yet (an order just done). */
+  startOpen?: boolean;
 }) {
   const t = useTranslations("Rating");
   const [data, setData] = useState<RatingResponse | null>(null);
@@ -66,12 +69,14 @@ export default function RatingButton({
         if (body.mine) {
           setScore(body.mine.score);
           setComment(body.mine.comment ?? "");
+        } else if (startOpen && body.canRate) {
+          setOpen(true);
         }
       });
     return () => {
       active = false;
     };
-  }, [matchId]);
+  }, [matchId, startOpen]);
 
   async function submit() {
     if (score < 1) return;

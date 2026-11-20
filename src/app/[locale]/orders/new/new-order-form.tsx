@@ -35,6 +35,11 @@ export type OrderPrefill = {
   timing: "asap" | "scheduled";
   scheduledAt: string;
   budget: string;
+  /** "Order again": the places of an earlier order, exactly. */
+  dropoff?: Place;
+  pickupMap?: MapPlace;
+  dropoffMap?: MapPlace;
+  again?: boolean;
 };
 
 type Missing = "description" | "name" | "pickup" | "dropoff";
@@ -75,7 +80,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   const [service, setService] = useState<ErrandService>(prefill?.service ?? "delivery");
   const [description, setDescription] = useState(prefill?.description ?? "");
   const [pickup, setPickup] = useState<Place>(prefill?.pickup ?? emptyPlace);
-  const [dropoff, setDropoff] = useState<Place>(prefill ? { ...emptyPlace, detail: prefill.dropoffDetail } : emptyPlace);
+  const [dropoff, setDropoff] = useState<Place>(prefill?.dropoff ?? (prefill ? { ...emptyPlace, detail: prefill.dropoffDetail } : emptyPlace));
   const [timing, setTiming] = useState<"asap" | "scheduled">(prefill?.timing ?? "asap");
   const [scheduledAt, setScheduledAt] = useState(prefill?.scheduledAt ?? "");
   const [range, setRange] = useState<{ min: string; max: string } | null>(null);
@@ -89,8 +94,8 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   // With a Google Maps key: exact places on a map (From and To, each
   // anywhere). Without one: the area search, as before.
   const useMap = mapsEnabled();
-  const [pickupMap, setPickupMap] = useState<MapPlace>(emptyMapPlace);
-  const [dropoffMap, setDropoffMap] = useState<MapPlace>(emptyMapPlace);
+  const [pickupMap, setPickupMap] = useState<MapPlace>(prefill?.pickupMap ?? emptyMapPlace);
+  const [dropoffMap, setDropoffMap] = useState<MapPlace>(prefill?.dropoffMap ?? emptyMapPlace);
   const ride = service === "moto_taxi";
   // A photo of what to pick up (or buy): uploaded as chosen, sent with the order.
   const [photos, setPhotos] = useState<OrderPhoto[]>([]);
@@ -341,7 +346,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       <div>
         {/* The top bar's back arrow leads out; "All orders" made no sense on a first order. */}
         <h1 className="text-2xl font-bold text-ink">{t("newOrder")}</h1>
-        {prefill && <p className="mt-1 text-sm text-muted">{t("prefilledHint")}</p>}
+        {prefill && <p className="mt-1 text-sm text-muted">{prefill.again ? t("prefilledAgainHint") : t("prefilledHint")}</p>}
         <div className="mt-3 flex items-center gap-2" aria-label={t("stepOf", { step, total: 3 })}>
           {[1, 2, 3].map((n) => (
             <span key={n} className={`h-1.5 flex-1 rounded-full ${n <= step ? "bg-primary" : "bg-surface-sunken"}`} />

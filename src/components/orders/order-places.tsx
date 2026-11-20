@@ -32,6 +32,7 @@ export default function OrderPlaces({
   job = false,
   rider = false,
   live = null,
+  collapsed = false,
 }: {
   pickup: OrderPlace;
   dropoff: OrderPlace | null;
@@ -39,13 +40,13 @@ export default function OrderPlaces({
   job?: boolean;
   rider?: boolean;
   live?: LiveRider | null;
+  /** The customer during a delivery: the map first, the places folded under it. */
+  collapsed?: boolean;
 }) {
   const t = useTranslations("PlacePicker");
   const showMap = mapsEnabled() && !!pickup.point;
-  return (
-    <div className={ui.card + " flex flex-col gap-3 p-4"}>
-      {showMap && <RouteMap pickup={pickup} dropoff={dropoff} live={live} />}
-      {live && <LiveLine live={live} target={live.toward === "pickup" ? pickup.point : (dropoff?.point ?? null)} />}
+  const places = (
+    <>
       <PlaceBlock place={pickup} label={job ? t("where") : dropoff ? t("from") : t("where")} colour={PICKUP_COLOUR} rider={rider} />
       {dropoff && <PlaceBlock place={dropoff} label={t("to")} colour={DROPOFF_COLOUR} rider={rider} />}
       {(route.km !== null || route.mapsUrl) && (
@@ -71,6 +72,23 @@ export default function OrderPlaces({
             )}
           </div>
         </div>
+      )}
+    </>
+  );
+  return (
+    <div className={ui.card + " flex flex-col gap-3 p-4"}>
+      {showMap && <RouteMap pickup={pickup} dropoff={dropoff} live={live} />}
+      {live && <LiveLine live={live} target={live.toward === "pickup" ? pickup.point : (dropoff?.point ?? null)} />}
+      {collapsed ? (
+        <details className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+            {dropoff ? t("placesSummary") : t("where")}
+            <span aria-hidden className="text-muted transition-transform group-open:rotate-90 rtl:-scale-x-100">›</span>
+          </summary>
+          <div className="mt-3 flex flex-col gap-3">{places}</div>
+        </details>
+      ) : (
+        places
       )}
     </div>
   );
@@ -128,6 +146,9 @@ function RouteMap({ pickup, dropoff, live }: { pickup: OrderPlace; dropoff: Orde
   const el = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const riderMarker = useRef<google.maps.Marker | null>(null);
+  const riderLine = useRef<google.maps.Polyline | null>(null);
+  // The leg the map was last fitted to: it refits once when the rider picks up.
+  const fittedLeg = useRef<string | null>(null);
   const key = `${pickup.point?.lat},${pickup.point?.lng},${dropoff?.point?.lat},${dropoff?.point?.lng},${dropoff?.approximate}`;
 
   useEffect(() => {
@@ -140,6 +161,8 @@ function RouteMap({ pickup, dropoff, live }: { pickup: OrderPlace; dropoff: Orde
         const map = new Map(el.current, { center: pickup.point, zoom: 14, disableDefaultUI: true, clickableIcons: false, keyboardShortcuts: false, gestureHandling: "cooperative" });
         mapRef.current = map;
         riderMarker.current = null;
+        riderLine.current = null;
+        fittedLeg.current = null;
         const dot = (colour: string) => ({ path: gm.SymbolPath.CIRCLE, scale: 8, fillColor: colour, fillOpacity: 1, strokeColor: "#fff", strokeWeight: 2 });
         new Marker({ map, position: pickup.point, icon: dot(PICKUP_COLOUR) });
         const bounds = new gm.LatLngBounds(pickup.point);
@@ -169,9 +192,32 @@ function RouteMap({ pickup, dropoff, live }: { pickup: OrderPlace; dropoff: Orde
     if (!live) {
       riderMarker.current?.setMap(null);
       riderMarker.current = null;
+      riderLine.current?.setMap(null);
+      riderLine.current = null;
       return;
     }
     const at = { lat: live.lat, lng: live.lng };
+    // Where they're heading now, faded and dashed: the pickup, then the drop-off.
+    const target = live.toward === "pickup" ? pickup.point : (dropoff?.point ?? null);
+    if (target) {
+      const path = [at, target];
+      if (riderLine.current) riderLine.current.setPath(path);
+      else
+        riderLine.current = new google.maps.Polyline({
+          map,
+          path,
+          strokeOpacity: 0,
+          icons: [{ icon: { path: "M 0,-1 0,1", strokeOpacity: 0.55, strokeColor: RIDER_COLOUR, scale: 3 }, offset: "0", repeat: "12px" }],
+        });
+    }
+    // Fitted to the rider and where they're heading, once per leg; after
+    // that the map stays where the customer put it.
+    if (fittedLeg.current !== live.toward) {
+      fittedLeg.current = live.toward;
+      const bounds = new google.maps.LatLngBounds(at);
+      if (target) bounds.extend(target);
+      map.fitBounds(bounds, 48);
+    }
     if (riderMarker.current) {
       // Glides to the new place rather than jumping (under a second).
       const marker = riderMarker.current;
@@ -198,10 +244,6 @@ function RouteMap({ pickup, dropoff, live }: { pickup: OrderPlace; dropoff: Orde
       title: live.name,
       icon: { path: google.maps.SymbolPath.CIRCLE, scale: 9, fillColor: RIDER_COLOUR, fillOpacity: 1, strokeColor: "#fff", strokeWeight: 3 },
     });
-    const bounds = new google.maps.LatLngBounds(at);
-    if (pickup.point) bounds.extend(pickup.point);
-    if (dropoff?.point) bounds.extend(dropoff.point);
-    map.fitBounds(bounds, 40);
   }, [live, pickup.point, dropoff?.point]);
 
   return <div ref={el} className={`overflow-hidden rounded-xl border border-border bg-surface-sunken ${live ? "h-60" : "h-44"}`} />;

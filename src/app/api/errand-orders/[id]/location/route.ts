@@ -3,8 +3,12 @@ import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireActiveUser } from "@/lib/session";
-import { BUSY_STATUSES, type OrderStatus } from "@/lib/errand-orders";
+import { BUSY_STATUSES, distanceKm, logOrderEvent, type OrderStatus } from "@/lib/errand-orders";
+import { notify } from "@/lib/push";
 import { readTrackingToken } from "@/lib/tracking-token";
+
+/** "Almost there" goes out once the rider is this close to where the customer waits. */
+const NEAR_KM = 1;
 
 const bodySchema = z.object({
   lat: z.number().min(-90).max(90),
@@ -33,7 +37,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   }
 
   const db = createAdminClient();
-  const { data: order } = await db.from("errand_orders").select("provider_user_id, status, category").eq("id", id).maybeSingle();
+  const { data: order } = await db.from("errand_orders").select("id, number, provider_user_id, seeker_user_id, status, category, service, pickup_lat, pickup_lng, dropoff_lat, dropoff_lng").eq("id", id).maybeSingle();
   if (!order || order.provider_user_id !== userId || order.category !== "errands") return NextResponse.json({ error: "Not your delivery" }, { status: 403 });
   if (!BUSY_STATUSES.includes(order.status as OrderStatus)) return NextResponse.json({ ok: false, reason: "not_active" });
 
@@ -45,5 +49,18 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     located_at: new Date().toISOString(),
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  // Where the customer is waiting: the drop-off once it's picked up, or
+  // the pickup for a ride (the passenger). Told once per leg.
+  const leg = order.status === "picked_up" ? "dropoff" : order.service === "moto_taxi" && ["accepted", "on_the_way"].includes(order.status) ? "pickup" : null;
+  const lat = leg === "dropoff" ? order.dropoff_lat : order.pickup_lat;
+  const lng = leg === "dropoff" ? order.dropoff_lng : order.pickup_lng;
+  if (leg && lat !== null && lng !== null && distanceKm({ lat: parsed.data.lat, lon: parsed.data.lng }, { lat, lon: lng }) <= NEAR_KM) {
+    const { count } = await db.from("errand_order_events").select("id", { count: "exact", head: true }).eq("order_id", id).eq("type", "near").contains("detail", { leg });
+    if (!count) {
+      await logOrderEvent(db, id, { userId, role: "provider" }, "near", { leg });
+      await notify({ user_id: order.seeker_user_id, type: "errand_status", payload: { order_id: id, order_number: order.number, category_slug: order.category, status: "nearby" } });
+    }
+  }
   return NextResponse.json({ ok: true });
 }

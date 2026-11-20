@@ -61,3 +61,44 @@ describe("live rider tracking", () => {
     expect(data).toEqual([]);
   });
 });
+
+describe("almost there", () => {
+  let customer: TestUser, rider: TestUser, orderId: string;
+  beforeAll(async () => {
+    [customer, rider] = await Promise.all([createUser("near-customer"), createUser("near-rider")]);
+    const seeker = await createProfile(customer, "errands", "seeker", { errandService: "delivery" });
+    const provider = await createProfile(rider, "errands", "provider", { errandServices: ["delivery"] });
+    const { data: district } = await admin.from("locations").select("id").eq("level", "district").limit(1).single();
+    const { data } = await admin
+      .from("errand_orders")
+      .insert({
+        seeker_user_id: customer.id, seeker_profile_id: seeker, provider_user_id: rider.id, provider_profile_id: provider,
+        service: "delivery", description: "A parcel", pickup_district_id: district!.id, pickup_lat: 33.88, pickup_lng: 35.5,
+        dropoff_district_id: district!.id, dropoff_lat: 33.9, dropoff_lng: 35.53,
+        timing: "asap", status: "picked_up", open_until: new Date(Date.now() + 3600_000).toISOString(),
+      })
+      .select("id")
+      .single();
+    orderId = data!.id;
+  });
+  afterAll(cleanupUsers);
+
+  const send = async (lat: number, lng: number) => {
+    const { POST } = await import("@/app/api/errand-orders/[id]/location/route");
+    const { makeTrackingToken } = await import("@/lib/tracking-token");
+    const body = JSON.stringify({ lat, lng, token: makeTrackingToken(orderId, rider.id).token });
+    return POST(new Request("http://localhost/x", { method: "POST", body }), { params: Promise.resolve({ id: orderId }) });
+  };
+  const nearbyCount = async () => {
+    const { data } = await admin.from("notifications").select("payload").eq("user_id", customer.id).eq("type", "errand_status");
+    return (data ?? []).filter((n) => (n.payload as { status?: string })?.status === "nearby").length;
+  };
+
+  it("tells the customer once, when the rider gets close to the drop-off", async () => {
+    expect((await send(33.85, 35.45)).status).toBe(200); // ~9 km away
+    expect(await nearbyCount()).toBe(0);
+    await send(33.903, 35.532); // ~0.4 km away
+    await send(33.901, 35.531);
+    expect(await nearbyCount()).toBe(1);
+  });
+});
