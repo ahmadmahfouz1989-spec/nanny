@@ -1190,7 +1190,29 @@
     "statAnswered": "Answered",
     "statNoAnswer": "Not answered",
     "statFailed": "Couldn't connect",
-    "statAvgLength": "Average length"
+    "statAvgLength": "Average length",
+    "navFlashNews": "Flash news",
+    "flashTitle": "Flash news",
+    "flashDescription": "A line of news that scrolls across the top of the app for everyone until you remove it. You can also send it to everyone's phone as a notification.",
+    "flashBody": "News (English)",
+    "flashBodyAr": "News (Arabic, optional)",
+    "flashBodyArHint": "Shown in the Arabic app. Without it, the Arabic app shows the English text.",
+    "flashPost": "Post to the banner",
+    "flashPosting": "Posting…",
+    "flashLive": "Showing now",
+    "flashPast": "Removed",
+    "flashNone": "Nothing is showing in the banner.",
+    "flashPush": "Send as notification",
+    "flashPushConfirm": "Send to everyone now",
+    "flashCancel": "Cancel",
+    "flashRemove": "Remove from banner",
+    "flashPostedAt": "Posted {date}",
+    "flashEndedAt": "removed {date}",
+    "flashPushSending": "notification sending…",
+    "flashPushed": "notification reached {sent} devices ({failed} failed)",
+    "flashTooShort": "Write the news first.",
+    "flashError": "That didn't work. Try again.",
+    "flashPushOff": "Notifications aren't set up on the server."
   },
   "NannyOnboarding": {
     "editTitle": "Edit your profile",
@@ -3184,5 +3206,9 @@
     },
     "loading": "Loading calls…",
     "speaker": "Speaker"
+  },
+  "FlashNews": {
+    "label": "Flash news",
+    "hide": "Hide"
   }
 }

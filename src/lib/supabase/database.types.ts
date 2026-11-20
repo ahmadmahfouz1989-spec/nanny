@@ -396,6 +396,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"flash_news": {
+                  Row: {
+                    "body": string,"body_ar": string | null,"created_at": string,"created_by": string | null,"ended_at": string | null,"id": string,"push_failed": number | null,"push_sent": number | null,"pushed_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "body": string,"body_ar"?: string | null,"created_at"?: string,"created_by"?: string | null,"ended_at"?: string | null,"id"?: string,"push_failed"?: number | null,"push_sent"?: number | null,"pushed_at"?: string | null
+                  }
+                  Update: {
+                    "body"?: string,"body_ar"?: string | null,"created_at"?: string,"created_by"?: string | null,"ended_at"?: string | null,"id"?: string,"push_failed"?: number | null,"push_sent"?: number | null,"pushed_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "flash_news_created_by_fkey"
+      columns: ["created_by"]
+isOneToOne: false
+      referencedRelation: "users"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"generic_matches": {
                   Row: {
                     "category_id": string,"created_at": string,"id": string,"initiated_by": string | null,"interest_expires_at": string | null,"last_message_at": string | null,"provider_profile_id": string,"responded_at": string | null,"score": number,"score_breakdown": NonNullable<Json>,"seeker_profile_id": string,"started_at": string | null,"started_by": string | null,"status": string,"updated_at": string

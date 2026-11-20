@@ -1,3 +1,4 @@
+import FlashNewsBar from "@/components/shell/flash-news-bar";
 import { cookies } from "next/headers";
 import PageTransition from "@/components/motion/page-transition";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -293,6 +294,8 @@ export default async function AppShell({
                   out of this box, the space kept for the tab bar (main's
                   padding) came after the box instead of after the page, and
                   the last button (Send on New order) stayed under the tabs. */}
+              {/* News from ouiKnow, on every page but Messages (which fills the screen exactly). */}
+              {active !== "messages" && <FlashNewsBar />}
               <PageTransition className={active === "messages" ? "h-full" : "min-h-full"}>{children}</PageTransition>
             </main>
           </div>

@@ -512,3 +512,36 @@ html[data-chrome="hidden"] .app-chrome-top {
   .tab-item svg, .rise-in > *, .pop, .step-now::after { animation: none !important; }
   .press:active { transform: none; }
 }
+
+/* Flash news (flash-news-bar.tsx): the line scrolls in from the end the
+   text reads towards and out the other side, over and over. Still, and
+   wrapped, for people who'd rather nothing moves. */
+.flash-news-text {
+  display: inline-block;
+  padding-inline-start: 100%;
+  animation: flash-news-scroll linear infinite;
+}
+[dir="rtl"] .flash-news-text {
+  animation-name: flash-news-scroll-rtl;
+}
+@keyframes flash-news-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+}
+@keyframes flash-news-scroll-rtl {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .flash-news-text {
+    animation: none;
+    padding-inline-start: 0.75rem;
+    white-space: normal;
+  }
+}
+/* An open chat on a phone has the whole screen. */
+@media (max-width: 639px) {
+  html[data-chat="open"] .flash-news-bar {
+    display: none;
+  }
+}

@@ -1190,7 +1190,29 @@
     "statAnswered": "انردّ عليها",
     "statNoAnswer": "ما انردّ عليها",
     "statFailed": "ما زبط الاتصال",
-    "statAvgLength": "متوسط المدة"
+    "statAvgLength": "متوسط المدة",
+    "navFlashNews": "أخبار عاجلة",
+    "flashTitle": "أخبار عاجلة",
+    "flashDescription": "سطر أخبار بيمرق بأعلى التطبيق للكل لحد ما تشيلو. فيك كمان تبعتو إشعار على تلفونات الكل.",
+    "flashBody": "الخبر (إنكليزي)",
+    "flashBodyAr": "الخبر (عربي، اختياري)",
+    "flashBodyArHint": "بيبين بالتطبيق العربي. بلاه، التطبيق العربي بيعرض النص الإنكليزي.",
+    "flashPost": "انشر عالشريط",
+    "flashPosting": "عم ننشر…",
+    "flashLive": "عم يبين هلّق",
+    "flashPast": "انشالت",
+    "flashNone": "ما في شي عم يبين عالشريط.",
+    "flashPush": "ابعت كإشعار",
+    "flashPushConfirm": "ابعت للكل هلّق",
+    "flashCancel": "إلغاء",
+    "flashRemove": "شيل عن الشريط",
+    "flashPostedAt": "انتشر {date}",
+    "flashEndedAt": "انشال {date}",
+    "flashPushSending": "الإشعار عم ينبعت…",
+    "flashPushed": "الإشعار وصل على {sent} جهاز ({failed} ما وصل)",
+    "flashTooShort": "اكتب الخبر أول.",
+    "flashError": "ما زبط. جرّب مرة تانية.",
+    "flashPushOff": "الإشعارات مش مفعّلة عالسيرفر."
   },
   "NannyOnboarding": {
     "editTitle": "تعديل ملفك الشخصي",
@@ -3184,5 +3206,9 @@
     },
     "loading": "عم نحمّل المكالمات…",
     "speaker": "مكبّر الصوت"
+  },
+  "FlashNews": {
+    "label": "عاجل",
+    "hide": "إخفاء"
   }
 }
