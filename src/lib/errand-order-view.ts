@@ -2,6 +2,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ratingAggregatesByUser, type RatingAggregate } from "@/lib/ratings";
 import { distanceKm, type OrderStatus } from "@/lib/errand-orders";
 import type { Tables } from "@/lib/supabase/database.types";
+import { orderEta, type OrderEta } from "@/lib/order-eta";
 
 // What each side sees of an order. The customer sees the offers (price,
 // time, the provider's name, photo, rating and distance) but not who
@@ -104,6 +105,8 @@ export type OrderView = {
   matchId: string | null;
   /** Customer and admin, during a delivery: where the rider was a moment ago. */
   riderAt: { lat: number; lng: number; at: string; accuracyM: number | null } | null;
+  /** Customer and admin, during a delivery: minutes to the pickup and the drop-off. */
+  eta: OrderEta | null;
   /** Provider view: this order was given to the viewer. */
   assignedToMe: boolean;
   customer: OrderPerson | null;
@@ -285,6 +288,20 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     .filter((e) => e.type === "status" || e.type === "created")
     .map((e) => ({ status: e.type === "created" ? "open" : String((e.detail as { status?: unknown })?.status ?? ""), at: e.created_at }));
 
+  const riderRow = order.provider_user_id ? all.find((r) => r.provider_user_id === order.provider_user_id) : undefined;
+  const eta = tracked
+    ? await orderEta(db, {
+        orderId: order.id,
+        status: order.status,
+        pickup: pickupPlace.point,
+        dropoff: dropoffPlace?.point ?? null,
+        rider: riderAt,
+        offeredMinutes: riderRow?.eta_minutes ?? null,
+        confirmedAt: timeline.find((e) => e.status === "accepted")?.at ?? null,
+        pickedUpAt: [...timeline].reverse().find((e) => e.status === "picked_up")?.at ?? null,
+      })
+    : null;
+
   return {
     viewer,
     id: order.id,
@@ -309,6 +326,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     // The chat is only for the two people on the order.
     matchId: viewer === "admin" || order.provider_user_id === viewerUserId || order.seeker_user_id === viewerUserId ? order.generic_match_id : null,
     riderAt,
+    eta,
     assignedToMe: order.provider_user_id === viewerUserId,
     // Providers sent the order see what's asked and where, not who: the
     // customer's name and photo go only to the one doing it. Nor does a

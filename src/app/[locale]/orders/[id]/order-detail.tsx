@@ -24,6 +24,7 @@ import {
 import { AUTO_COMPLETE_HOURS } from "@/lib/validation/errand-order";
 import type { OrderOffer, OrderPerson, OrderView } from "@/lib/errand-order-view";
 import OrderPlaces from "@/components/orders/order-places";
+import ArrivalCard from "@/components/orders/arrival-card";
 
 // One order, live: polled every few seconds so offers and each stage
 // appear without a refresh (and a notification arrives as well).
@@ -201,6 +202,9 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
           {order.budgetUsd !== null ? ` · ${t("budgetLine", { budget: order.budgetUsd })}` : ""}
         </p>
       </div>
+
+      {/* The customer: when it gets there. */}
+      {order.viewer === "seeker" && <ArrivalCard order={order} />}
 
       {/* From and To (or Where), with the map and directions. */}
       <OrderPlaces

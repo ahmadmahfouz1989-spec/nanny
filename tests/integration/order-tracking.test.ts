@@ -34,10 +34,13 @@ describe("live rider tracking", () => {
   it("the customer sees where the rider is", async () => {
     const v = await view("seeker", customer.id);
     expect(v.riderAt).toMatchObject({ lat: 33.87, lng: 35.51 });
+    // And when it gets there, from that position.
+    expect(v.eta?.basis).toBe("live");
   });
 
   it("nobody else does (the rider's own view, another provider)", async () => {
     expect((await view("provider", rider.id)).riderAt).toBeNull();
+    expect((await view("provider", rider.id)).eta).toBeNull();
     expect((await view("provider", stranger.id)).riderAt).toBeNull();
   });
 
