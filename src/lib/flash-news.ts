@@ -6,9 +6,7 @@ import { sendPushCounted } from "@/lib/push";
  * everyone, scrolling in a banner at the top of the app until it's taken
  * down (FlashNewsBar), and pushed to phones once if the admin chooses.
  */
-export type FlashNews = { id: string; body: string; bodyAr: string | null; createdAt: string };
-
-export const FLASH_NEWS_MAX = 300;
+export { FLASH_NEWS_MAX, type FlashNews } from "@/lib/flash-news-shared";
 
 type Db = ReturnType<typeof createAdminClient>;
 

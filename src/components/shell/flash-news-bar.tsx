@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import type { FlashNews } from "@/lib/flash-news";
+import type { FlashNews } from "@/lib/flash-news-shared";
 
 const CHECK_EVERY_MS = 2 * 60_000;
 const HIDDEN_KEY = "flash-news-hidden";

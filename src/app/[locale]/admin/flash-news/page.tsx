@@ -5,7 +5,7 @@ import { useFormatter, useTranslations } from "next-intl";
 import { ui } from "@/lib/ui";
 import AdminPageHeader from "@/components/admin/admin-page-header";
 import { getJson, request } from "@/lib/request";
-import { FLASH_NEWS_MAX } from "@/lib/flash-news";
+import { FLASH_NEWS_MAX } from "@/lib/flash-news-shared";
 
 type Row = {
   id: string;
