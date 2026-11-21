@@ -20,6 +20,7 @@ export const ORDER_ERRORS = {
   schedule_past: "Pick a time from now on",
   schedule_too_far: "Pick a time within the next 30 days",
   invalid_order: "Check the order and try again",
+  auto_needs_budget: "Enter a budget to take the first rider who accepts",
   // Offers and quotes
   contact_info_offer: "Please remove phone numbers, emails, or social handles. You can share them in chat once confirmed.",
   invalid_price: "Enter a price",
@@ -71,6 +72,8 @@ export function orderFieldError(field: unknown): OrderErrorCode {
       return "schedule_past";
     case "fullName":
       return "name_required";
+    case "budgetUsd":
+      return "auto_needs_budget";
     case "priceUsd":
       return "invalid_price";
     case "priceMaxUsd":

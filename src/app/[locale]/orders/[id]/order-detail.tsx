@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { celebrate } from "@/lib/celebrate";
-import { useFormatter, useTranslations } from "next-intl";
+import { useFormatter, useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import { ui } from "@/lib/ui";
 import { request } from "@/lib/request";
@@ -20,9 +20,11 @@ import {
   useServiceLabel,
   useOrderErrorText,
   useStatusLabel,
+  placeLabel,
 } from "@/components/orders/order-bits";
 import { AUTO_COMPLETE_HOURS } from "@/lib/validation/errand-order";
-import type { OrderOffer, OrderPerson, OrderView } from "@/lib/errand-order-view";
+import type { OrderOffer, OrderPerson, OrderPlace, OrderView } from "@/lib/errand-order-view";
+import ReportButton from "@/components/matches/report-button";
 import OrderPlaces from "@/components/orders/order-places";
 import DeliveryHero, { showsDeliveryHero } from "@/components/orders/delivery-hero";
 
@@ -46,6 +48,7 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   const serviceLabel = useServiceLabel();
   const orderTitle = useOrderTitle();
   const format = useFormatter();
+  const locale = useLocale();
   const router = useRouter();
   const errorText = useOrderErrorText();
   const [order, setOrder] = useState<OrderView | null | undefined>(undefined);
@@ -137,6 +140,9 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
   }
 
   const hero = showsDeliveryHero(order);
+  // A place as the customer knows it: its name, the start of its address, or its area.
+  const placeTitle = (p: OrderPlace) =>
+    p.name || p.address?.split(",")[0] || placeLabel(p.area, locale) || placeLabel(p.district, locale) || p.detail || "";
   const confirmBox = (kind: "cancel" | "drop") =>
     confirming === kind ? (
       <div className={ui.card + " flex flex-col gap-3 p-4"}>
@@ -203,15 +209,37 @@ export default function OrderDetail({ orderId }: { orderId: string }) {
           <span aria-hidden className="inline-block rtl:-scale-x-100">←</span> {t("back")}
         </Link>
         <div className="mt-2 flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm text-muted">{serviceLabel(order.service, order.category)}</p>
-            <h1 className="text-2xl font-bold text-ink">{orderTitle(order.number, order.category)}</h1>
-          </div>
-          <OrderStatusBadge
-            status={order.status}
-            category={order.category}
-            choosing={order.viewer === "seeker" && !!order.matching?.chooseUntil && order.offers.some((o) => o.status === "offered")}
-          />
+          {hero ? (
+            // The customer's own words for it: where from, where to. The
+            // steps below say where it's at, so no status badge.
+            <div className="min-w-0">
+              <p className="text-sm text-muted">
+                {serviceLabel(order.service, order.category)}
+                {order.number !== null ? ` · #${order.number}` : ""}
+              </p>
+              <h1 dir="auto" className="text-2xl font-bold text-ink text-balance">
+                {placeTitle(order.pickup)}
+                {order.dropoff && (
+                  <>
+                    {" "}
+                    <span aria-hidden className="inline-block text-muted rtl:-scale-x-100">→</span> {placeTitle(order.dropoff)}
+                  </>
+                )}
+              </h1>
+            </div>
+          ) : (
+            <>
+              <div>
+                <p className="text-sm text-muted">{serviceLabel(order.service, order.category)}</p>
+                <h1 className="text-2xl font-bold text-ink">{orderTitle(order.number, order.category)}</h1>
+              </div>
+              <OrderStatusBadge
+                status={order.status}
+                category={order.category}
+                choosing={order.viewer === "seeker" && !!order.matching?.chooseUntil && order.offers.some((o) => o.status === "offered")}
+              />
+            </>
+          )}
         </div>
       </div>
 
@@ -507,6 +535,13 @@ function SeekerPart({ order, busy, act, confirmBox }: PartProps) {
         </>
       )}
       {CANCELLABLE.has(order.status) && confirmBox("cancel")}
+      {/* Past the point of cancelling: say so, and what they can do instead. */}
+      {order.status === "picked_up" && order.provider && (
+        <div className="flex flex-col items-start gap-1 text-sm text-muted">
+          <p>{t("cantCancelPickedUp", { name: order.provider.name.split(" ")[0] || order.provider.name })}</p>
+          <ReportButton profileId={order.provider.profileId} matchId={order.matchId ?? undefined} />
+        </div>
+      )}
     </div>
   );
 }

@@ -93,6 +93,8 @@ export type OrderView = {
   timing: string;
   scheduledAt: string | null;
   budgetUsd: number | null;
+  /** The first offer at or under the budget is taken straight away. */
+  autoAccept: boolean;
   status: OrderStatus;
   /** How many providers were ever asked: none means nobody heard about it. */
   sentTo: number;
@@ -324,6 +326,7 @@ export async function orderView(db: Admin, order: OrderRow, viewer: Viewer, view
     timing: order.timing,
     scheduledAt: order.scheduled_at,
     budgetUsd: order.budget_usd,
+    autoAccept: order.auto_accept,
     status: order.status as OrderStatus,
     sentTo: all.length,
     statusChangedAt: order.status_changed_at,

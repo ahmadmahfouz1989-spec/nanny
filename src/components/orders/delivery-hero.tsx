@@ -71,6 +71,7 @@ export default function DeliveryHero({ order }: { order: OrderView }) {
   if (order.status === "open") {
     const offers = order.offers.some((o) => o.status === "offered");
     headline = offers ? t("heroOffersIn") : t("heroFinding");
+    if (order.autoAccept && order.budgetUsd !== null) detail = t("heroTakingFirst", { budget: order.budgetUsd });
   } else if (order.status === "reserved") {
     headline = t("heroConfirming", { name });
   } else if (order.status === "delivered" || order.status === "completed") {
@@ -94,6 +95,12 @@ export default function DeliveryHero({ order }: { order: OrderView }) {
   }
   const showClock = arrival !== null && waitFor !== null && waitFor > 2 && step >= 0 && step < 3;
 
+  // When each step was reached, shown under it once done.
+  const reachedAt = (i: number) => {
+    const status = ["accepted", "arrived", "picked_up", "delivered"][i];
+    const at = [...order.timeline].reverse().find((e) => e.status === status)?.at;
+    return at ? clock(Date.parse(at)) : null;
+  };
   const steps = ride
     ? [t("stepAccepted"), t("stepRiderHere"), t("stepOnRide"), t("stepRideDone")]
     : carries
@@ -131,7 +138,8 @@ export default function DeliveryHero({ order }: { order: OrderView }) {
                   className={`absolute inset-y-0 start-0 rounded-full transition-all duration-700 ${done ? (current ? "bg-primary" : "bg-success") : ""} ${current ? "w-full animate-pulse motion-reduce:animate-none" : done ? "w-full" : "w-0"}`}
                 />
               </span>
-              <span className={`truncate text-[11px] ${done ? "font-semibold text-ink" : "text-muted"}`}>{label}</span>
+              <span className={`truncate text-xs ${done ? "font-semibold text-ink" : "text-muted"}`}>{label}</span>
+              {done && reachedAt(i) && <span className="-mt-1 text-[11px] text-muted tabular-nums">{reachedAt(i)}</span>}
             </li>
           );
         })}

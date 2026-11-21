@@ -40,6 +40,7 @@ export type OrderPrefill = {
   pickupMap?: MapPlace;
   dropoffMap?: MapPlace;
   again?: boolean;
+  autoAccept?: boolean;
 };
 
 type Missing = "description" | "name" | "pickup" | "dropoff";
@@ -103,11 +104,14 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
   const [missing, setMissing] = useState<Missing | null>(null);
   // Who gets it: the nearest available riders, or one the customer picks.
   const [pickRider, setPickRider] = useState(false);
+  // Take the first rider who offers within the budget, instead of choosing.
+  const [autoAccept, setAutoAccept] = useState(prefill?.autoAccept ?? false);
   const [riders, setRiders] = useState<Rider[] | null>(null);
   const [riderId, setRiderId] = useState<string | null>(null);
   const [ridersTick, setRidersTick] = useState(0);
   const sections = useRef<Partial<Record<Missing, HTMLElement | null>>>({});
-  const [step, setStep] = useState<Step>(1);
+  // Order again: everything's filled in, so straight to the summary and Send.
+  const [step, setStep] = useState<Step>(prefill?.again ? 3 : 1);
   const top = useRef<HTMLFormElement>(null);
   const goTo = (next: Step) => {
     setStep(next);
@@ -273,6 +277,11 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
       setError(t("pickRider"));
       return;
     }
+    const takeFirst = !pickRider && autoAccept;
+    if (takeFirst && !(Number(budget) > 0)) {
+      setError(t("errors.auto_needs_budget"));
+      return;
+    }
     if (timing === "scheduled" && (!scheduledAt || isPast(scheduledAt))) {
       setError(t("errors.schedule_past"));
       return;
@@ -290,6 +299,7 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
         budgetUsd: budget ? Number(budget) : undefined,
         fullName: askName ? fullName.trim() : undefined,
         providerProfileId: chosenRider?.profileId,
+        autoAccept: takeFirst || undefined,
         // A ride has nothing to pick up.
         photoPaths: ride ? [] : photos.map((p) => p.path),
       }),
@@ -594,6 +604,22 @@ export default function NewOrderForm({ prefill = null, needsName = false, userId
               <p className="text-xs text-muted">{t("chosenHint")}</p>
             </>
           ))}
+        {!pickRider && (
+          <div className="flex flex-col gap-2 pt-1">
+            <span className={ui.label}>{t("howToChoose")}</span>
+            <div className="flex flex-wrap gap-2">
+              <button type="button" aria-pressed={!autoAccept} className={ui.pill(!autoAccept)} onClick={() => setAutoAccept(false)}>
+                {t("chooseMyself")}
+              </button>
+              <button type="button" aria-pressed={autoAccept} className={ui.pill(autoAccept)} onClick={() => setAutoAccept(true)}>
+                {t("takeFirst")}
+              </button>
+            </div>
+            <p className="text-xs text-muted">
+              {!autoAccept ? t("chooseMyselfHint") : Number(budget) > 0 ? t("takeFirstHint", { budget: Number(budget) }) : t("takeFirstNeedsBudget")}
+            </p>
+          </div>
+        )}
       </section>
       </>
       )}

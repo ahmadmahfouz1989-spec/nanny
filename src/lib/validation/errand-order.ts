@@ -84,6 +84,8 @@ export const orderCreateSchema = z
     photoPaths: z.array(z.string().max(200)).max(3, "Up to 3 photos").default([]),
     // A delivery sent to one rider the customer picked, not the nearest ones.
     providerProfileId: uuid.optional(),
+    // Take the first rider who offers at or under the budget, no choosing.
+    autoAccept: z.boolean().optional(),
     // Only asked when we don't know the customer's name yet.
     fullName: z.string().trim().min(2, "Enter your name").max(80, "Name is too long").optional(),
   })
@@ -104,6 +106,12 @@ export const orderCreateSchema = z
     }
     if ((NEEDS_DROPOFF as readonly string[]).includes(o.service) && !o.dropoffDistrictId && !o.dropoffPoint) {
       ctx.addIssue({ code: "custom", path: ["dropoffDistrictId"], message: "Choose where to" });
+    }
+    if (o.autoAccept && !(o.budgetUsd && o.budgetUsd > 0)) {
+      ctx.addIssue({ code: "custom", path: ["budgetUsd"], message: "Enter a budget to take the first rider" });
+    }
+    if (o.autoAccept && (o.category === "maintenance" || o.providerProfileId)) {
+      ctx.addIssue({ code: "custom", path: ["autoAccept"], message: "Only for deliveries sent to nearby riders" });
     }
     if (o.timing === "scheduled" && !o.scheduledAt) {
       ctx.addIssue({ code: "custom", path: ["scheduledAt"], message: "Pick a date and time" });

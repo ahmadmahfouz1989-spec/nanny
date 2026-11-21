@@ -84,7 +84,15 @@ async function myRecipient(db: Admin, order: OrderRow, userId: string) {
   return data;
 }
 
-export async function seekerAction(db: Admin, order: OrderRow, actor: Actor, action: string, body: unknown): Promise<ActionResult> {
+export async function seekerAction(
+  db: Admin,
+  order: OrderRow,
+  actor: Actor,
+  action: string,
+  body: unknown,
+  /** Picked by the order itself ("take the first rider"): the rider isn't asked to confirm what they just offered. */
+  automatic = false,
+): Promise<ActionResult> {
   const b = (body ?? {}) as Record<string, unknown>;
   switch (action) {
     case "select": {
@@ -103,7 +111,8 @@ export async function seekerAction(db: Admin, order: OrderRow, actor: Actor, act
       });
       if (!ok) return fail(409, "order_changed");
       await db.from("errand_order_recipients").update({ status: "selected" }).eq("id", r.id);
-      await logOrderEvent(db, order.id, actor, "status", { status: "reserved", provider_profile_id: r.provider_profile_id, price_usd: r.price_usd });
+      await logOrderEvent(db, order.id, actor, "status", { status: "reserved", provider_profile_id: r.provider_profile_id, price_usd: r.price_usd, ...(automatic ? { automatic } : {}) });
+      if (automatic) return { ok: true };
       await notify({
         user_id: r.provider_user_id,
         type: "errand_selected",
@@ -245,6 +254,17 @@ export async function providerAction(db: Admin, order: OrderRow, actor: Actor, a
         eta_minutes: offer.etaMinutes ?? null,
         visit_at: offer.visitAt ?? null,
       });
+      // "Take the first rider within my budget": this offer fits, so it's
+      // theirs -- chosen and confirmed in one go, nothing for anyone to tap.
+      if (!job && order.auto_accept && order.budget_usd !== null && offer.priceUsd <= Number(order.budget_usd)) {
+        const customer = { userId: order.seeker_user_id, role: "seeker" as const };
+        const picked = await seekerAction(db, order, customer, "select", { recipientId: mine.id }, true);
+        if (picked.ok) {
+          const { data: reserved } = await db.from("errand_orders").select("*").eq("id", order.id).single();
+          const confirmed = reserved ? await providerAction(db, reserved, actor, "confirm", {}) : picked;
+          if (confirmed.ok) return { ok: true };
+        }
+      }
       if (first) await notify({ user_id: order.seeker_user_id, type: "errand_offer", payload: payload(order) });
       await afterAnswer(db, order);
       return { ok: true };

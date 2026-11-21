@@ -75,6 +75,7 @@ async function prefillFromOrder(supabase: Awaited<ReturnType<typeof createClient
     scheduledAt: "",
     budget: o.budget_usd !== null ? String(o.budget_usd) : "",
     again: true,
+    autoAccept: o.auto_accept,
   };
 }
 

@@ -234,6 +234,7 @@ export async function POST(request: Request) {
       timing: o.timing,
       scheduled_at: o.timing === "scheduled" ? (o.scheduledAt ?? null) : null,
       budget_usd: o.budgetUsd ?? null,
+      auto_accept: !!o.autoAccept,
       ...(o.providerProfileId ? { chosen_provider_profile_id: o.providerProfileId } : {}),
       open_until: new Date((holdUntil ? Date.parse(holdUntil) : Date.now()) + openMinutesFor(settings, o.category) * 60_000).toISOString(),
       ...(holdUntil ? { wave_until: holdUntil } : {}),
