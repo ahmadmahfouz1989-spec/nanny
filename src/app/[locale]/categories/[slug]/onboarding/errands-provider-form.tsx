@@ -157,6 +157,7 @@ export default function ErrandsProviderForm({
   // Set by the first failed save; from then on errors update live as the
   // fields are fixed.
   const [showErrors, setShowErrors] = useState(false);
+  const tId = useTranslations("IdDocument");
 
   function update<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -217,7 +218,9 @@ export default function ErrandsProviderForm({
     shortIntro: form.shortIntro || undefined,
   };
   const fieldErrors = showErrors ? fieldErrorsFor(errandProviderSchema, payload) : {};
-  const progress = requiredProgress(errandProviderSchema, payload);
+  // The ID photo is required too, though it's saved on its own.
+  const answered = requiredProgress(errandProviderSchema, payload);
+  const progress = { done: answered.done + (idStatus ? 1 : 0), total: answered.total + 1 };
 
   async function handleSave() {
     setError(null);
@@ -260,7 +263,10 @@ export default function ErrandsProviderForm({
       restored={draft.restored}
       title={isRealEdit ? t("editTitle") : t("createTitle")}
       saveLabel={isRealEdit ? undefined : tw("submitProfile")}
-      error={error ?? (Object.keys(fieldErrors).length > 0 || (showErrors && !idStatus) ? tw("fixHighlighted") : null)}
+      error={
+        error ??
+        (Object.keys(fieldErrors).length > 0 ? tw("fixHighlighted") : showErrors && !idStatus ? tId("requiredToFinish") : null)
+      }
       onCancel={() => {
         draft.clear();
         router.push(`/categories/${categorySlug}/dashboard`);

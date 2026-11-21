@@ -95,6 +95,20 @@ export default function EditShell({
       else window.scrollTo({ top: 0, behavior: "smooth" });
     });
   }
+  // Next doesn't leave a step that's showing a mistake (they show once a
+  // save has failed): otherwise saving sends them back here, they tap Next
+  // through to the end again, and it goes round in a loop.
+  function next() {
+    const mistake = groups()
+      .filter(({ index }) => index === step)
+      .map(({ el }) => el.querySelector("[data-field-error]"))
+      .find(Boolean);
+    if (mistake) {
+      mistake.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    go(step + 1);
+  }
   const stepped = !!onSave && steps > 1;
   const last = !stepped || step >= steps - 1;
   const editing = !saveLabel;
@@ -190,7 +204,7 @@ export default function EditShell({
                   </button>
                 )}
                 {onSave && !last && (
-                  <button type="button" onClick={() => go(step + 1)} className={ui.buttonPrimary}>
+                  <button type="button" onClick={next} className={ui.buttonPrimary}>
                     {tw("next")}
                   </button>
                 )}

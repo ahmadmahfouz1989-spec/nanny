@@ -1684,7 +1684,8 @@
     "badge": "ID checked",
     "adminView": "View ID document",
     "adminMissing": "No ID uploaded — required for delivery providers.",
-    "whyOptional": "Optional. Only the ouiKnow team sees it — never customers. Once checked, your profile shows “ID checked”, which families look for before letting someone into their home."
+    "whyOptional": "Optional. Only the ouiKnow team sees it — never customers. Once checked, your profile shows “ID checked”, which families look for before letting someone into their home.",
+    "requiredToFinish": "One thing left: upload a photo of your ID or driving licence (step 1), then create your profile."
   },
   "CleaningServices": {
     "home": "Regular home cleaning",
